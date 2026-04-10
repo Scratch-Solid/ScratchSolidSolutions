@@ -1,0 +1,12 @@
+# requirements.txt for FastAPI backend
+fastapi
+uvicorn[standard]
+python-dotenv
+pydantic
+httpx
+python-multipart
+passlib[bcrypt]
+bleach
+sqlalchemy
+alembic
+psycopg2-binary
