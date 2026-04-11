@@ -1,0 +1,72 @@
+.dashboard-container {
+  max-width: 600px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+  font-family: 'Segoe UI', Arial, sans-serif;
+}
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+.dashboard-header h1 {
+  margin: 0;
+  font-size: 2rem;
+  color: #2d3a4a;
+}
+.dashboard-header button {
+  background: #e74c3c;
+  color: #fff;
+  border: none;
+  padding: 0.5rem 1.2rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+section {
+  margin-bottom: 2rem;
+}
+.booking-card {
+  background: #f6f8fa;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+.booking-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  margin-top: 1rem;
+}
+.booking-form input,
+.booking-form select {
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 5px;
+  font-size: 1rem;
+}
+.booking-form button {
+  background: #3498db;
+  color: #fff;
+  border: none;
+  padding: 0.5rem 1.2rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  margin-right: 0.5rem;
+}
+.success-msg {
+  color: #27ae60;
+  margin-top: 0.5rem;
+}
+.error-msg {
+  color: #e74c3c;
+  margin-top: 0.5rem;
+}
+ul {
+  padding-left: 1.2rem;
+}
