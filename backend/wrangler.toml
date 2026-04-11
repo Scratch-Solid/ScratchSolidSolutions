@@ -3,7 +3,7 @@
 
 name = "cleaning-service-backend"
 type = "python"
-account_id = "<YOUR_CLOUDFLARE_ACCOUNT_ID>"
+account_id = "${CLOUDFLARE_ACCOUNT_ID}"
 workers_dev = true
 route = ""
 zone_id = ""
@@ -11,7 +11,7 @@ compatibility_date = "2026-04-11"
 
 [env.production]
 name = "cleaning-service-backend-prod"
-account_id = "<YOUR_CLOUDFLARE_ACCOUNT_ID>"
+account_id = "${CLOUDFLARE_ACCOUNT_ID}"
 route = ""
 zone_id = ""
 
