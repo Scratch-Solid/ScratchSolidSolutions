@@ -1,0 +1,9 @@
+{
+  "first_name": "Alice",
+  "last_name": "Smith",
+  "address": "123 Main St",
+  "cellphone": "5551112222",
+  "whatsapp": "5551112222",
+  "email": "alice@example.com",
+  "password": "TestPassword1"
+}

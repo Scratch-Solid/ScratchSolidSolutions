@@ -1,0 +1,9 @@
+# Cloudflare Pages configuration for frontend (marketing site)
+# Uses jasetsha@gmail.com for all accounts.
+
+[build]
+command = "npm run build"
+directory = "out"
+
+[env.production]
+# Add production-specific settings here if needed

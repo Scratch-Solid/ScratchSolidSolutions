@@ -9,7 +9,7 @@ class UserCreate(BaseModel):
     cellphone: str
     whatsapp: str
     email: Optional[EmailStr] = None
-    password: constr(min_length=8)
+    password: constr(min_length=8, max_length=72)
 
 class UserLogin(BaseModel):
     first_name: str
