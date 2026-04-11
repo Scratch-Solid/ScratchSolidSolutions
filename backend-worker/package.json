@@ -1,0 +1,14 @@
+{
+  "name": "cleaning-service-backend-worker",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler publish"
+  },
+  "devDependencies": {
+    "wrangler": "^3.14.1",
+    "typescript": "^5.4.5"
+  }
+}

@@ -1,4 +1,4 @@
-name: Deploy Backend to Cloudflare Workers
+name: Deploy Backend Worker to Cloudflare Workers
 
 on:
   push:
@@ -12,23 +12,18 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
       - name: Install dependencies
         run: |
-          cd backend
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          cd backend-worker
+          npm ci
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3.14.1
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: publish
-          workingDirectory: backend
+          workingDirectory: backend-worker
