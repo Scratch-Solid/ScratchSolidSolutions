@@ -1,4 +1,5 @@
 
+import React, { useState, useEffect } from 'react';
 import './Dashboard.css';
 
 function Dashboard({ user, onSignOut }) {
@@ -20,7 +21,7 @@ function Dashboard({ user, onSignOut }) {
         setCurrentBooking(currData.current || null);
         const prevRes = await fetch(`/bookings/previous?user_id=${user.id}`);
         const prevData = await prevRes.json();
-        setPreviousBookings(prevData.bookings || []);
+        setPreviousBookings(Array.isArray(prevData) ? prevData : prevData.bookings || []);
       } catch (err) {
         setError('Failed to load bookings.');
       }

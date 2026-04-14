@@ -16,6 +16,7 @@ class UserLogin(BaseModel):
     password: str
 
 class BookingCreate(BaseModel):
+    user_id: int
     date: date
     timeslot: str
     special_instructions: Optional[str] = None

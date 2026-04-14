@@ -8,6 +8,10 @@ export default defineConfig({
     proxy: {
       '/signup': 'http://127.0.0.1:8000',
       '/login': 'http://127.0.0.1:8000',
+      '/book': 'http://127.0.0.1:8000',
+      '/bookings': 'http://127.0.0.1:8000',
+      '/create_test_user': 'http://127.0.0.1:8000',
+      '/healthz': 'http://127.0.0.1:8000',
     },
   },
 })
