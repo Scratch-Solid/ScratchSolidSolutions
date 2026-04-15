@@ -36,6 +36,12 @@ export default function RootLayout({
           <a href="/gallery" className="text-blue-700 font-semibold px-4 py-2 rounded hover:bg-blue-50 dark:hover:bg-zinc-900 transition-colors">Gallery</a>
           <a href="/services" className="text-blue-700 font-semibold px-4 py-2 rounded hover:bg-blue-50 dark:hover:bg-zinc-900 transition-colors">Services</a>
           <a href="/about" className="text-blue-700 font-semibold px-4 py-2 rounded hover:bg-blue-50 dark:hover:bg-zinc-900 transition-colors">About Us</a>
+          <a href="/CleanerDashboard" className="text-green-700 font-semibold px-4 py-2 rounded hover:bg-green-50 dark:hover:bg-green-900 transition-colors">Cleaner Dashboard</a>
+          <a href="/Payroll" className="text-green-700 font-semibold px-4 py-2 rounded hover:bg-green-50 dark:hover:bg-green-900 transition-colors">Payroll</a>
+          <a href="/AdminDashboard" className="text-red-700 font-semibold px-4 py-2 rounded hover:bg-red-50 dark:hover:bg-red-900 transition-colors">Admin Dashboard</a>
+          <a href="/AdminContractsPayroll" className="text-red-700 font-semibold px-4 py-2 rounded hover:bg-red-50 dark:hover:bg-red-900 transition-colors">Admin Contracts & Payroll</a>
+          <a href="/Notifications" className="text-purple-700 font-semibold px-4 py-2 rounded hover:bg-purple-50 dark:hover:bg-purple-900 transition-colors">Notifications</a>
+          <a href="/Accounting" className="text-orange-700 font-semibold px-4 py-2 rounded hover:bg-orange-50 dark:hover:bg-orange-900 transition-colors">Accounting</a>
         </nav>
         {children}
         <ChatbotMount />

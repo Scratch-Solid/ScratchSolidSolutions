@@ -1,4 +1,7 @@
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { getServices } from "../directusApi";
 
 export const metadata = {
   title: "Services | Scratch Solid Solutions",
@@ -6,6 +9,15 @@ export const metadata = {
 };
 
 export default function ServicesPage() {
+  const [services, setServices] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    getServices().then((data) => {
+      setServices(data);
+      setLoading(false);
+    });
+  }, []);
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-white py-16 px-4 font-sans animate-fade-in">
       <div className="max-w-2xl w-full bg-white rounded-3xl shadow-2xl border-2 border-blue-200 p-10 relative">
@@ -20,13 +32,17 @@ export default function ServicesPage() {
           />
         </div>
         <h1 className="text-4xl font-extrabold text-blue-700 mb-6 text-center drop-shadow-lg">Our Services</h1>
-        <ul className="text-lg text-zinc-800 mb-8 list-disc pl-6 relative z-10">
-          <li className="mb-2"><b>Residential Cleaning:</b> Homes, apartments, and complexes</li>
-          <li className="mb-2"><b>Office Cleaning:</b> Workspaces, offices, and business premises</li>
-          <li className="mb-2"><b>Deep Cleaning:</b> Intensive cleaning for kitchens, bathrooms, carpets, and more</li>
-          <li className="mb-2"><b>Move-In/Move-Out Cleaning:</b> End-of-lease and pre-occupancy cleaning</li>
-          <li className="mb-2"><b>Custom Cleaning:</b> Tailored solutions for unique needs</li>
-        </ul>
+        {loading ? (
+          <div className="text-center text-zinc-500">Loading...</div>
+        ) : (
+          <ul className="text-lg text-zinc-800 mb-8 list-disc pl-6 relative z-10">
+            {services.map((service, i) => (
+              <li className="mb-2" key={i}>
+                <b>{service.title}:</b> {service.description}
+              </li>
+            ))}
+          </ul>
+        )}
         <div className="text-center text-blue-700 font-semibold text-lg mb-6 relative z-10">
           <span>Contact us for a detailed quote or to discuss your specific requirements!</span>
         </div>

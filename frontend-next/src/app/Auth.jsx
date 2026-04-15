@@ -1,0 +1,96 @@
+"use client";
+
+import React, { useState } from "react";
+import PrimaryButton from "./components/PrimaryButton";
+import SecondaryButton from "./components/SecondaryButton";
+
+const API_URL = "";
+
+export default function Auth({ onAuth }) {
+  const [isLogin, setIsLogin] = useState(true);
+  const [form, setForm] = useState({
+    first_name: "",
+    last_name: "",
+    address: "",
+    cellphone: "",
+    whatsapp: "",
+    email: "",
+    password: ""
+  });
+  const [error, setError] = useState("");
+
+  const handleChange = e => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async e => {
+    e.preventDefault();
+    setError("");
+    try {
+      const endpoint = isLogin ? "/login" : "/signup";
+      const body = isLogin
+        ? { first_name: form.first_name, password: form.password }
+        : form;
+      let res, data;
+      try {
+        res = await fetch(`${API_URL}${endpoint}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        });
+      } catch (networkErr) {
+        throw new Error("Network error: Unable to reach the server. Please check your connection or try again later.");
+      }
+      try {
+        data = await res.json();
+      } catch (jsonErr) {
+        throw new Error("Server error: Received invalid response. Please contact support if this persists.");
+      }
+      if (!res.ok) {
+        let msg = typeof data === "object" && (data.detail || data.message) ? (data.detail || data.message) : res.statusText || "Unknown error";
+        throw new Error(msg);
+      }
+      // If login, expect { access_token, user }
+      if (isLogin && data.access_token && data.user) {
+        onAuth({ user: data.user, token: data.access_token });
+      } else if (!isLogin && data.id) {
+        // On signup, auto-login: call login endpoint
+        const loginRes = await fetch(`${API_URL}/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ first_name: form.first_name, password: form.password })
+        });
+        const loginData = await loginRes.json();
+        if (loginRes.ok && loginData.access_token && loginData.user) {
+          onAuth({ user: loginData.user, token: loginData.access_token });
+        } else {
+          setError("Signup succeeded but login failed. Please try logging in.");
+        }
+      } else {
+        setError("Unexpected response from server. Please try again.");
+      }
+    } catch (err) {
+      setError(err.message || "An unexpected error occurred. Please try again.");
+    }
+  };
+
+  return (
+    <div className="auth-container glass-panel" style={{ padding: 28, maxWidth: 520, margin: "40px auto" }}>
+      <h2>{isLogin ? "Login" : "Sign Up"}</h2>
+      <form onSubmit={handleSubmit} className="form-row" style={{ marginTop: 24 }}>
+        <input name="first_name" placeholder="First Name" value={form.first_name} onChange={handleChange} required />
+        {!isLogin && <input name="last_name" placeholder="Last Name" value={form.last_name} onChange={handleChange} required />}
+        {!isLogin && <input name="address" placeholder="Address" value={form.address} onChange={handleChange} required />}
+        {!isLogin && <input name="cellphone" placeholder="Cellphone" value={form.cellphone} onChange={handleChange} required />}
+        {!isLogin && <input name="whatsapp" placeholder="WhatsApp" value={form.whatsapp} onChange={handleChange} required />}
+        {!isLogin && <input name="email" placeholder="Email (optional)" value={form.email} onChange={handleChange} />}
+        <input name="password" type="password" placeholder="Password" value={form.password} onChange={handleChange} required />
+        <PrimaryButton type="submit">{isLogin ? "Login" : "Sign Up"}</PrimaryButton>
+      </form>
+      <SecondaryButton type="button" onClick={() => setIsLogin(!isLogin)} style={{ marginTop: 18 }}>
+        {isLogin ? "Need an account? Sign Up" : "Already have an account? Login"}
+      </SecondaryButton>
+      {error && <div className="error-msg">{error}</div>}
+    </div>
+  );
+}

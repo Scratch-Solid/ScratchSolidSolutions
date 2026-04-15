@@ -1,0 +1,43 @@
+/* Unified glassmorphism and premium theme for both marketing and app */
+@import "../../frontend-next/src/app/glass-theme.css";
+
+/* Marketing-site specific overrides (if needed) */
+body {
+  font-family: var(--sans);
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+a:hover {
+  color: var(--accent-strong);
+}
+
+nav a {
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 0.5rem 1.2rem;
+  transition: background 0.2s, color 0.2s;
+}
+nav a:hover {
+  background: var(--accent-bg);
+  color: var(--accent-strong);
+}
+
+/* Keep marketing-site animations and utility classes */
+@keyframes fab-pop {
+  0% { opacity: 0; transform: translateY(20px) scale(0.95); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-fab-pop {
+  animation: fab-pop 0.22s cubic-bezier(0.4,0,0.2,1);
+}
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fade-in 0.3s ease;
+}

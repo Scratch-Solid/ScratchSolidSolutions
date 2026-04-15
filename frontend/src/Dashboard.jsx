@@ -61,28 +61,31 @@ function Dashboard({ user, onSignOut }) {
   };
 
   return (
-    <div className="dashboard-container">
+    <div className="dashboard-container glass-panel" style={{ padding: 28, margin: '32px auto', gap: 24 }}>
       <div className="dashboard-header">
-        <h1>Welcome, {user.first_name}!</h1>
-        <button onClick={onSignOut}>Sign Out</button>
+        <div>
+          <h1>Welcome, {user.first_name}!</h1>
+          <p style={{ marginTop: 8, color: 'var(--text)' }}>Your next cleaning booking is just a few clicks away.</p>
+        </div>
+        <button className="secondary-button" onClick={onSignOut}>Sign Out</button>
       </div>
       {loading ? <p>Loading...</p> : (
         <>
-          <section>
+          <section className="glass-card" style={{ marginBottom: 22 }}>
             <h2>Current Booking</h2>
             {currentBooking ? (
               <div className="booking-card">
-                <p>Date: {currentBooking.date}</p>
-                <p>Timeslot: {currentBooking.timeslot}</p>
-                <p>Status: {currentBooking.status}</p>
-                {currentBooking.special_instructions && <p>Notes: {currentBooking.special_instructions}</p>}
+                <p><strong>Date:</strong> {currentBooking.date}</p>
+                <p><strong>Timeslot:</strong> {currentBooking.timeslot}</p>
+                <p><strong>Status:</strong> {currentBooking.status}</p>
+                {currentBooking.special_instructions && <p><strong>Notes:</strong> {currentBooking.special_instructions}</p>}
               </div>
             ) : <p>No current booking.</p>}
           </section>
-          <section>
+          <section className="glass-card" style={{ marginBottom: 22 }}>
             <h2>Previous Bookings</h2>
             {previousBookings.length === 0 ? <p>No previous bookings.</p> : (
-              <ul>
+              <ul style={{ textAlign: 'left', paddingLeft: 20, marginTop: 18 }}>
                 {previousBookings.map(b => (
                   <li key={b.id}>
                     {b.date} ({b.timeslot}) - {b.status}
@@ -91,21 +94,31 @@ function Dashboard({ user, onSignOut }) {
               </ul>
             )}
           </section>
-          <section>
-            <h2>Book a Cleaning</h2>
-            {showBookingForm ? (
-              <form onSubmit={handleBook} className="booking-form">
-                <input type="date" name="date" value={form.date} onChange={handleFormChange} required />
-                <select name="timeslot" value={form.timeslot} onChange={handleFormChange} required>
-                  <option value="morning">Morning</option>
-                  <option value="afternoon">Afternoon</option>
-                </select>
+          <section className="glass-card" style={{ marginBottom: 5 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+              <div>
+                <h2>Book a Cleaning</h2>
+                <p style={{ marginTop: 8, color: 'var(--text)' }}>Select a date, timeslot, and instructions for your service.</p>
+              </div>
+              {!showBookingForm && (
+                <button className="primary-button" onClick={() => setShowBookingForm(true)}>New Booking</button>
+              )}
+            </div>
+            {showBookingForm && (
+              <form onSubmit={handleBook} className="form-row" style={{ marginTop: 24 }}>
+                <div className="form-row-inline">
+                  <input type="date" name="date" value={form.date} onChange={handleFormChange} required />
+                  <select name="timeslot" value={form.timeslot} onChange={handleFormChange} required>
+                    <option value="morning">Morning</option>
+                    <option value="afternoon">Afternoon</option>
+                  </select>
+                </div>
                 <input name="special_instructions" placeholder="Special Instructions" value={form.special_instructions} onChange={handleFormChange} />
-                <button type="submit">Book</button>
-                <button type="button" onClick={() => setShowBookingForm(false)}>Cancel</button>
+                <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                  <button type="submit" className="primary-button">Book</button>
+                  <button type="button" className="secondary-button" onClick={() => setShowBookingForm(false)}>Cancel</button>
+                </div>
               </form>
-            ) : (
-              <button onClick={() => setShowBookingForm(true)}>New Booking</button>
             )}
             {bookingMsg && <p className="success-msg">{bookingMsg}</p>}
           </section>

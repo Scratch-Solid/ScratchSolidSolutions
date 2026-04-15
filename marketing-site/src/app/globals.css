@@ -15,6 +15,7 @@
   animation: fade-in 0.3s ease;
 }
 @import "tailwindcss";
+@import "./unified-theme.css";
 
 :root {
   --background: #ffffff;

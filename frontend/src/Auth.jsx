@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const API_URL = '';
+const API_URL = 'http://localhost:8000';
 
 export default function Auth({ onAuth }) {
   const [isLogin, setIsLogin] = useState(true);
@@ -53,9 +53,9 @@ export default function Auth({ onAuth }) {
   };
 
   return (
-    <div className="auth-container">
+    <div className="auth-container glass-panel" style={{ padding: 28, maxWidth: 520, margin: '40px auto' }}>
       <h2>{isLogin ? 'Login' : 'Sign Up'}</h2>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} className="form-row" style={{ marginTop: 24 }}>
         <input name="first_name" placeholder="First Name" value={form.first_name} onChange={handleChange} required />
         {!isLogin && <input name="last_name" placeholder="Last Name" value={form.last_name} onChange={handleChange} required />}
         {!isLogin && <input name="address" placeholder="Address" value={form.address} onChange={handleChange} required />}
@@ -63,12 +63,12 @@ export default function Auth({ onAuth }) {
         {!isLogin && <input name="whatsapp" placeholder="WhatsApp" value={form.whatsapp} onChange={handleChange} required />}
         {!isLogin && <input name="email" placeholder="Email (optional)" value={form.email} onChange={handleChange} />}
         <input name="password" type="password" placeholder="Password" value={form.password} onChange={handleChange} required />
-        <button type="submit">{isLogin ? 'Login' : 'Sign Up'}</button>
+        <button type="submit" className="primary-button">{isLogin ? 'Login' : 'Sign Up'}</button>
       </form>
-      <button onClick={() => setIsLogin(!isLogin)}>
+      <button type="button" onClick={() => setIsLogin(!isLogin)} className="secondary-button" style={{ marginTop: 18 }}>
         {isLogin ? 'Need an account? Sign Up' : 'Already have an account? Login'}
       </button>
-      {error && <div className="error">{error}</div>}
+      {error && <div className="error-msg">{error}</div>}
     </div>
   );
 }
