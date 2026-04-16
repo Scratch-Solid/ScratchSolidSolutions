@@ -121,6 +121,10 @@ export default function Dashboard({ user, token, onSignOut }) {
                     <option value="morning">Morning</option>
                     <option value="afternoon">Afternoon</option>
                   </select>
+                  <select name="payment_method" value={form.payment_method || "cash"} onChange={handleFormChange} required style={{ marginLeft: 12 }}>
+                    <option value="cash">Cash</option>
+                    <option value="eft">EFT</option>
+                  </select>
                 </div>
                 <input name="special_instructions" placeholder="Special Instructions" value={form.special_instructions} onChange={handleFormChange} />
                 <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
