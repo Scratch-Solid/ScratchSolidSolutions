@@ -6,9 +6,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
-    "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload"
+    "start": "next start",
+    "lint": "next lint",
+    "deploy": "npm run build && npx wrangler pages deploy .next --project-name=scratchsolid-portal --commit-dirty=true"
   },
   "keywords": [],
   "author": "",

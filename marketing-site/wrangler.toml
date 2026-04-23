@@ -1,0 +1,7 @@
+name = "scratchsolidsolutions"
+pages_build_output_dir = ".next"
+
+[[d1_databases]]
+binding = "scratchsolid_db"
+database_name = "scratchsolid-db"
+database_id = "0b0b6006-1b2d-4ab1-8909-dc684666e6d3"
