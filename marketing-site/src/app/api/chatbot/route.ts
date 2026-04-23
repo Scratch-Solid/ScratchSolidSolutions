@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { withAuth, withTracing, withSecurityHeaders } from "@/lib/middleware";
 import fs from "fs";
 import path from "path";
 
@@ -35,14 +36,21 @@ function searchContent(query: string) {
 }
 
 export async function POST(req: NextRequest) {
+  const traceId = withTracing(req);
+  const authResult = await withAuth(req);
+  if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
+
   const { question } = await req.json();
   if (!question || typeof question !== "string") {
-    return NextResponse.json({ error: "No question provided." }, { status: 400 });
+    const response = NextResponse.json({ error: "No question provided." }, { status: 400 });
+    return withSecurityHeaders(response, traceId);
   }
   const results = searchContent(question);
   if (results.length === 0) {
-    return NextResponse.json({ answer: "Sorry, I couldn't find an answer in our site content." });
+    const response = NextResponse.json({ answer: "Sorry, I couldn't find an answer in our site content." });
+    return withSecurityHeaders(response, traceId);
   }
   // Return the first relevant snippet
-  return NextResponse.json({ answer: results[0].text });
+  const response = NextResponse.json({ answer: results[0].text });
+  return withSecurityHeaders(response, traceId);
 }

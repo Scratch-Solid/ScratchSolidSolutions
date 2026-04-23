@@ -1,6 +1,18 @@
-name = "cleaning-service-backend-worker"
-type = "javascript"
-account_id = "c181b222cb7be7cdad81e772393ffa4c"
-workers_dev = true
-compatibility_date = "2026-04-11"
-main = "index.ts"
+name = "cleaning-service-backend"
+main = "src/index.js"
+compatibility_date = "2026-04-19"
+
+[env.production]
+name = "cleaning-service-backend-prod"
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "scratchsolid_business-db"
+database_id = "903066df-d4e2-4d3f-9510-b86df0a1c22c"
+
+# Environment variables
+[vars]
+ENVIRONMENT = "production"
+# JWT_SECRET must be set via: wrangler secret put JWT_SECRET
+

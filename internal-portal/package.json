@@ -1,0 +1,38 @@
+{
+  "name": "internal-portal",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/node": "^25.6.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "autoprefixer": "^10.5.0",
+    "bcryptjs": "^3.0.3",
+    "eslint": "^9.39.4",
+    "eslint-config-next": "^16.2.4",
+    "jsonwebtoken": "^9.0.3",
+    "next": "^16.2.4",
+    "postcss": "^8.5.10",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "tailwindcss": "^4.2.4",
+    "typescript": "^6.0.3"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260422.1",
+    "@opennextjs/cloudflare": "^1.19.4",
+    "@types/jest": "^29.5.14",
+    "@types/jsonwebtoken": "^9.0.10"
+  }
+}

@@ -1,15 +1,22 @@
 {
-  "name": "cleaning-service-backend-worker",
+  "name": "cleaning-service-backend",
   "version": "1.0.0",
-  "main": "index.ts",
+  "main": "src/index.js",
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
-    "build": "tsc --noEmit",
-    "deploy": "wrangler publish"
+    "deploy": "wrangler deploy",
+    "deploy:prod": "node deploy.js",
+    "setup:d1": "node setup-d1.js",
+    "build": "echo 'No build step required for Workers'"
+  },
+  "dependencies": {
+    "itty-router": "^4.0.25",
+    "@noble/hashes": "^1.3.3",
+    "@tsndr/cloudflare-worker-jwt": "^2.4.1"
   },
   "devDependencies": {
-    "wrangler": "^3.14.1",
-    "typescript": "^5.4.5"
+    "wrangler": "^3.114.17",
+    "@cloudflare/workers-types": "^4.20240512.0"
   }
 }

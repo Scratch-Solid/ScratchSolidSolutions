@@ -1,12 +1,8 @@
+"use client";
 
 import Link from "next/link";
 import { getAboutUs } from "../directusApi";
 import { useEffect, useState } from "react";
-
-export const metadata = {
-  title: "About Us | Scratch Solid Solutions",
-  description: "Learn more about Scratch Solid Solutions and our commitment to spotless, reliable cleaning services.",
-};
 
 export default function AboutPage() {
   const [about, setAbout] = useState<any>(null);

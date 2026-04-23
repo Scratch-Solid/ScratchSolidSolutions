@@ -1,0 +1,24 @@
+name = "scratchsolid-reverse-proxy"
+main = "worker.js"
+compatibility_date = "2026-04-19"
+
+# KV namespace for edge caching
+[[kv_namespaces]]
+binding = "CACHE_KV"
+id = "YOUR_CACHE_KV_ID"
+
+# KV namespace for distributed rate limiting
+[[kv_namespaces]]
+binding = "RATE_LIMIT_KV"
+id = "YOUR_RATE_LIMIT_KV_ID"
+
+[env.production]
+name = "scratchsolid-proxy-prod"
+
+[[env.production.kv_namespaces]]
+binding = "CACHE_KV"
+id = "YOUR_PROD_CACHE_KV_ID"
+
+[[env.production.kv_namespaces]]
+binding = "RATE_LIMIT_KV"
+id = "YOUR_PROD_RATE_LIMIT_KV_ID"

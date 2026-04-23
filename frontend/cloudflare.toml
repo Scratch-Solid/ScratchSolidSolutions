@@ -1,9 +1,0 @@
-# Cloudflare Pages configuration for dashboard frontend
-# Uses jasetsha@gmail.com for all accounts.
-
-[build]
-command = "npm run build"
-directory = "dist"
-
-[env.production]
-# Add production-specific settings here if needed

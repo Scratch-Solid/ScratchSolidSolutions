@@ -1,0 +1,36 @@
+import { NextRequest, NextResponse } from 'next/server';
+
+const PUBLIC_PATHS = ['/api/health', '/api/status', '/api/auth/login', '/api/auth/register', '/api/content/'];
+
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Skip public paths
+  if (PUBLIC_PATHS.some(p => pathname.startsWith(p))) {
+    return NextResponse.next();
+  }
+
+  // Only enforce auth on API routes
+  if (!pathname.startsWith('/api/')) {
+    return NextResponse.next();
+  }
+
+  // Check for auth token
+  const token = request.headers.get('Authorization')?.replace('Bearer ', '') ||
+                request.cookies.get('authToken')?.value;
+
+  if (!token) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  // Add trace ID if not present
+  const traceId = request.headers.get('X-Request-ID') || request.headers.get('X-Trace-ID') || crypto.randomUUID();
+  const response = NextResponse.next();
+  response.headers.set('X-Request-ID', traceId);
+  response.headers.set('X-Trace-ID', traceId);
+  return response;
+}
+
+export const config = {
+  matcher: ['/api/:path*'],
+};

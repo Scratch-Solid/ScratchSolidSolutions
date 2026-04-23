@@ -1,19 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { v4 as uuidv4 } from "uuid";
+import { withAuth, withTracing, withSecurityHeaders } from "@/lib/middleware";
 
-// Multer-like parser for Next.js API routes
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+export const dynamic = "force-static";
 
 const REGION = "auto"; // R2 uses 'auto' region
 const BUCKET = process.env.R2_BUCKET!;
 const ACCOUNT_ID = process.env.R2_ACCOUNT_ID!;
 const ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID!;
 const SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY!;
+
+const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 const s3 = new S3Client({
   region: REGION,
@@ -30,10 +29,21 @@ async function parseFormData(req: NextRequest) {
   if (!file || typeof file === "string") throw new Error("No file uploaded");
   // @ts-ignore
   const buffer = Buffer.from(await file.arrayBuffer());
-  return { buffer, filename: file.name, mimetype: file.type };
+  // @ts-ignore
+  if (buffer.length > MAX_FILE_SIZE) throw new Error("File exceeds 5MB limit");
+  // @ts-ignore
+  if (!ALLOWED_MIME_TYPES.includes(file.type)) throw new Error("File type not allowed. Accepted: JPEG, PNG, GIF, WebP, PDF");
+  // @ts-ignore
+  const safeFilename = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+  // @ts-ignore
+  return { buffer, filename: safeFilename, mimetype: file.type };
 }
 
 export async function POST(req: NextRequest) {
+  const traceId = withTracing(req);
+  const authResult = await withAuth(req);
+  if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
+
   try {
     const { buffer, filename, mimetype } = await parseFormData(req);
     const key = `${uuidv4()}-${filename}`;
@@ -43,12 +53,13 @@ export async function POST(req: NextRequest) {
         Key: key,
         Body: buffer,
         ContentType: mimetype,
-        ACL: "public-read",
       })
     );
     const url = `https://${ACCOUNT_ID}.r2.cloudflarestorage.com/${BUCKET}/${key}`;
-    return NextResponse.json({ url });
+    const response = NextResponse.json({ url });
+    return withSecurityHeaders(response, traceId);
   } catch (err) {
-    return NextResponse.json({ error: (err as Error).message }, { status: 500 });
+    const response = NextResponse.json({ error: (err as Error).message }, { status: 400 });
+    return withSecurityHeaders(response, traceId);
   }
 }

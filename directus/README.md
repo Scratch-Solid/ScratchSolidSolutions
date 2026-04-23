@@ -7,13 +7,12 @@
 
 ```bash
 cd directus
-cp .env.example .env
-# (Edit .env as needed)
 docker compose up -d
 ```
 
 3. Access Directus at: http://localhost:8055
-   - Default admin: admin@example.com / admin1234
+   - Admin email: it@scratchsolid.co.za
+   - Admin password: admin1234
    - Change password after first login!
 
 4. Data is stored in `directus/directus-data/` (SQLite by default).

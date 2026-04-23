@@ -1,0 +1,104 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { getDb } from '../../../../lib/db';
+import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
+
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+  const traceId = withTracing(request);
+  const authResult = await withAuth(request, ['business', 'admin']);
+  if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
+  const { db } = authResult;
+
+  try {
+    const contract = await db.prepare('SELECT * FROM contracts WHERE id = ?').bind(params.id).first();
+    if (!contract) {
+      const response = NextResponse.json({ error: 'Contract not found' }, { status: 404 });
+      return withSecurityHeaders(response, traceId);
+    }
+    const response = NextResponse.json(contract);
+    response.headers.set('Cache-Control', 'private, max-age=60');
+    return withSecurityHeaders(response, traceId);
+  } catch (error) {
+    console.error('Error fetching contract:', error);
+    const response = NextResponse.json({ error: 'Failed to fetch contract' }, { status: 500 });
+    return withSecurityHeaders(response, traceId);
+  }
+}
+
+export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+  const traceId = withTracing(request);
+  const authResult = await withAuth(request, ['admin']);
+  if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
+  const { db } = authResult;
+
+  try {
+    const existingContract = await db.prepare('SELECT * FROM contracts WHERE id = ?').bind(params.id).first();
+    
+    if (!existingContract) {
+      return NextResponse.json({ error: 'Contract not found' }, { status: 404 });
+    }
+
+    if (existingContract.is_immutable === 1) {
+      return NextResponse.json({ error: 'Contract is immutable and cannot be modified' }, { status: 403 });
+    }
+
+    const body = await request.json();
+    const { contract_type, rate_per_hour, weekend_rate_multiplier, end_date, terms, status, is_immutable } = body;
+
+    const updates: string[] = [];
+    const values: any[] = [];
+
+    if (contract_type !== undefined) { updates.push('contract_type = ?'); values.push(contract_type); }
+    if (rate_per_hour !== undefined) { updates.push('rate_per_hour = ?'); values.push(rate_per_hour); }
+    if (weekend_rate_multiplier !== undefined) { updates.push('weekend_rate_multiplier = ?'); values.push(weekend_rate_multiplier); }
+    if (end_date !== undefined) { updates.push('end_date = ?'); values.push(end_date); }
+    if (terms !== undefined) { updates.push('terms = ?'); values.push(terms); }
+    if (status !== undefined) { updates.push('status = ?'); values.push(status); }
+    if (is_immutable !== undefined) { updates.push('is_immutable = ?'); values.push(is_immutable ? 1 : 0); }
+
+    if (updates.length === 0) {
+      return NextResponse.json({ error: 'No fields to update' }, { status: 400 });
+    }
+
+    updates.push('updated_at = datetime(\'now\')');
+    values.push(params.id);
+
+    const result = await db.prepare(
+      `UPDATE contracts SET ${updates.join(', ')} WHERE id = ? RETURNING *`
+    ).bind(...values).first();
+
+    const response = NextResponse.json(result);
+    return withSecurityHeaders(response, traceId);
+  } catch (error) {
+    console.error('Error updating contract:', error);
+    const response = NextResponse.json({ error: 'Failed to update contract' }, { status: 500 });
+    return withSecurityHeaders(response, traceId);
+  }
+}
+
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+  const traceId = withTracing(request);
+  const authResult = await withAuth(request, ['admin']);
+  if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
+  const { db } = authResult;
+
+  try {
+    const existingContract = await db.prepare('SELECT * FROM contracts WHERE id = ?').bind(params.id).first();
+    
+    if (!existingContract) {
+      return NextResponse.json({ error: 'Contract not found' }, { status: 404 });
+    }
+
+    if (existingContract.is_immutable === 1) {
+      return NextResponse.json({ error: 'Contract is immutable and cannot be deleted' }, { status: 403 });
+    }
+
+    await db.prepare('DELETE FROM contracts WHERE id = ?').bind(params.id).run();
+
+    const response = NextResponse.json({ success: true });
+    return withSecurityHeaders(response, traceId);
+  } catch (error) {
+    console.error('Error deleting contract:', error);
+    const response = NextResponse.json({ error: 'Failed to delete contract' }, { status: 500 });
+    return withSecurityHeaders(response, traceId);
+  }
+}

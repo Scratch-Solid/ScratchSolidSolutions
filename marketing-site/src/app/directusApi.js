@@ -78,6 +78,11 @@ const FALLBACKS = {
   gallery_images: [
     { url: "example1.jpg", caption: "Sparkling kitchen after deep clean", alt_text: "Clean kitchen", order: 1 },
     { url: "example2.jpg", caption: "Office space ready for work", alt_text: "Clean office", order: 2 }
+  ],
+  background_images: [
+    { url: "/default-bg.jpg", section: "marketing", active: true },
+    { url: "/default-bg.jpg", section: "booking", active: true },
+    { url: "/default-bg.jpg", section: "dashboard", active: true }
   ]
 };
 

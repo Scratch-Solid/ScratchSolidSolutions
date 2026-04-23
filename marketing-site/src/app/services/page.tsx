@@ -1,12 +1,8 @@
+"use client";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getServices } from "../directusApi";
-
-export const metadata = {
-  title: "Services | Scratch Solid Solutions",
-  description: "Explore our detailed list of cleaning services and request a quote.",
-};
 
 export default function ServicesPage() {
   const [services, setServices] = useState<any[]>([]);
