@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth, withTracing, withSecurityHeaders } from "@/lib/middleware";
-import fs from "fs";
-import path from "path";
 
 // Expanded in-memory knowledge base for practical Q&A
 const siteContent = [
