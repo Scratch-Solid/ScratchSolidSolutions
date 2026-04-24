@@ -16,7 +16,7 @@
     }
   ],
   "vars": {
-    "JWT_SECRET": "scratchsolid-solutions-jwt-secret-2024-secure-key-change-in-production",
+    "JWT_SECRET": "",
     "RESEND_API_KEY": ""
   },
   "observability": {

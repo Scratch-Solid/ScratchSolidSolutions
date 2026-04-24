@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const DIRECTUS_URL = process.env.DIRECTUS_URL || 'http://localhost:8055';
+const DIRECTUS_URL = process.env.DIRECTUS_URL || '';
 const DIRECTUS_TOKEN = process.env.DIRECTUS_TOKEN || '';
 
 export async function GET(request: NextRequest, { params }: { params: { page: string } }) {

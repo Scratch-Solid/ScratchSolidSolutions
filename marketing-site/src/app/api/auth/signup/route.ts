@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unable to create account. Please try again or contact support.' }, { status: 500 });
     }
 
-    const token = jwt.sign({ id: (user as any).id, email: (user as any).email, role: (user as any).role }, JWT_SECRET, { expiresIn: '30d' });
+    const token = jwt.sign({ id: (user as any).id, email: (user as any).email, role: (user as any).role }, getJWTSecret(), { expiresIn: '30d' });
     await createSession(db, (user as any).id, token);
 
     return NextResponse.json({

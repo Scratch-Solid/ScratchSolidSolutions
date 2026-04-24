@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb, deleteSession } from "@/lib/db";
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required');
+}
 
 export async function POST(request: NextRequest) {
   const db = getDb(request);
@@ -28,7 +32,7 @@ export async function POST(request: NextRequest) {
     // Delete session from database
     await deleteSession(db, token);
 
-    return NextResponse.json({ message: 'Logout successful' });
+    return NextResponse.json({ message: 'Logged out successfully' }, { status: 200 });
   } catch (error) {
     console.error('Error during logout:', error);
     return NextResponse.json({ error: 'Logout failed' }, { status: 500 });
