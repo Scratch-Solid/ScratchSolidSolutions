@@ -30,7 +30,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy --name=scratchsolidsolutions
+          command: deploy
           workingDirectory: marketing-site
 
   deploy-portal:
@@ -58,7 +58,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy --name=scratchsolid-portal
+          command: deploy
           workingDirectory: internal-portal
 
   deploy-backend:
