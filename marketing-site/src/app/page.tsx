@@ -89,44 +89,25 @@ export default function Home() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-white py-8 px-2 sm:px-4 font-sans relative">
       {/* Navigation Bar - Only on main page */}
-      <nav className="fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-md shadow-md z-40 px-4 py-2 sm:px-6 sm:py-4">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="hidden md:flex items-center space-x-6 lg:space-x-8">
-            <Link href="/services" className="text-gray-800 hover:text-blue-600 font-medium text-sm sm:text-base transition-colors">
-              Services
-            </Link>
-            <Link href="/about" className="text-gray-800 hover:text-blue-600 font-medium text-sm sm:text-base transition-colors">
-              About Us
-            </Link>
-            <Link href="/gallery" className="text-gray-800 hover:text-blue-600 font-medium text-sm sm:text-base transition-colors">
-              Gallery
-            </Link>
-            {isLoggedIn && (
-              <button onClick={handleLogout} className="text-red-600 hover:text-red-700 font-medium text-sm sm:text-base transition-colors">
-                Logout
-              </button>
-            )}
-          </div>
-          {/* Mobile Navigation */}
-          <div className="md:hidden flex items-center space-x-4">
-            <Link href="/services" className="text-black hover:text-blue-600 font-medium text-xs transition-colors">
-              Services
-            </Link>
-            <Link href="/about" className="text-black hover:text-blue-600 font-medium text-xs transition-colors">
-              About
-            </Link>
-            <Link href="/gallery" className="text-black hover:text-blue-600 font-medium text-xs transition-colors">
-              Gallery
-            </Link>
-            {isLoggedIn && (
-              <button onClick={handleLogout} className="text-red-600 hover:text-red-700 font-medium text-xs transition-colors">
-                Logout
-              </button>
-            )}
-          </div>
+      <nav className="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-md shadow-lg z-40 px-4 py-3">
+        <div className="max-w-6xl mx-auto flex items-center justify-center space-x-8">
+          <Link href="/services" className="text-gray-700 hover:text-blue-600 active:text-blue-600 font-semibold text-base sm:text-lg transition-colors">
+            Services
+          </Link>
+          <Link href="/about" className="text-gray-700 hover:text-blue-600 active:text-blue-600 font-semibold text-base sm:text-lg transition-colors">
+            About Us
+          </Link>
+          <Link href="/gallery" className="text-gray-700 hover:text-blue-600 active:text-blue-600 font-semibold text-base sm:text-lg transition-colors">
+            Gallery
+          </Link>
+          {isLoggedIn && (
+            <button onClick={handleLogout} className="text-red-600 hover:text-red-700 active:text-red-700 font-semibold text-base sm:text-lg transition-colors">
+              Logout
+            </button>
+          )}
         </div>
       </nav>
-      <div className="max-w-xl sm:max-w-2xl w-full bg-white rounded-2xl sm:rounded-3xl shadow-xl sm:shadow-2xl border-2 border-blue-200 p-6 sm:p-8 lg:p-10 relative mt-16 sm:mt-20">
+      <div className="max-w-xl sm:max-w-2xl w-full bg-white rounded-2xl sm:rounded-3xl shadow-xl sm:shadow-2xl border-2 border-blue-200 p-6 sm:p-8 lg:p-10 relative mt-12 sm:mt-16 flex items-center justify-center">
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0">
           <Image
             src="/scratchsolid-logo.jpg"
@@ -180,7 +161,7 @@ export default function Home() {
       {/* Overlay Logo Button - Bottom-left corner */}
       <div className="fixed bottom-6 left-6 z-50">
         <div className="relative group">
-          <button className="w-12 h-12 bg-white rounded-full shadow-lg border-2 border-blue-200 flex items-center justify-center hover:bg-blue-50 transition-colors">
+          <button className="w-12 h-12 bg-white rounded-full shadow-lg border-2 border-blue-200 flex items-center justify-center hover:bg-blue-50 transition-colors active:bg-blue-100">
             <img
               src="/scratchsolid-logo.jpg"
               alt="Scratch Solid Logo"
@@ -189,8 +170,8 @@ export default function Home() {
               className="object-contain"
             />
           </button>
-          {/* Dropdown Menu */}
-          <div className="absolute left-0 mb-2 w-48 bg-white rounded-lg shadow-xl border border-blue-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 bottom-full">
+          {/* Dropdown Menu - Hover on desktop, click/tap on mobile */}
+          <div className="absolute left-0 mb-2 w-48 bg-white rounded-lg shadow-xl border border-blue-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible group-active:opacity-100 group-active:visible transition-all duration-200 bottom-full">
             <div className="py-2">
               <Link href="/privacy" className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
                 Privacy Policy

@@ -1,10 +1,7 @@
 "use client";
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { getGalleryImages } from "../directusApi";
-
-const UploadTest = dynamic(() => import("./UploadTest"), { ssr: false });
 
 export default function GalleryClient() {
   const [images, setImages] = useState<any[]>([]);
@@ -82,7 +79,6 @@ export default function GalleryClient() {
         )}
       </div>
       
-      <UploadTest />
       <Link href="/" className="text-blue-600 hover:underline font-semibold">Back to Home</Link>
     </div>
   );
