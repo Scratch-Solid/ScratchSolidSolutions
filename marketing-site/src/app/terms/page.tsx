@@ -55,35 +55,29 @@ export default function TermsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-16 px-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-2xl border-2 border-blue-200 p-8">
-          {renderMarkdown(content)}
-
-          {/* Navigation Buttons */}
-          <div className="mt-12 flex flex-col sm:flex-row justify-between items-center gap-4">
-            <Link
-              href="/"
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-            >
-              Back to Home
-            </Link>
-            
-            <div className="flex gap-4">
-              <Link
-                href="/privacy"
-                className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-300 transition-colors"
-              >
-                Privacy Policy
-              </Link>
-              <Link
-                href="/contact"
-                className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-300 transition-colors"
-              >
-                Contact Us
-              </Link>
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white py-16 px-4 font-sans">
+      <div className="max-w-2xl mx-auto bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20 p-10 relative">
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0">
+          <img
+            src="/scratchsolid-logo.jpg"
+            alt="Scratch Solid Logo Background"
+            width={400}
+            height={400}
+            className="opacity-10 w-96 h-96 object-contain"
+            aria-hidden="true"
+          />
+        </div>
+        <h1 className="text-4xl font-extrabold text-blue-700 mb-6 text-center drop-shadow-lg">Terms of Service</h1>
+        {content ? (
+          <div className="text-lg text-zinc-800 mb-8 relative z-10 prose prose-blue max-w-none">
+            <div dangerouslySetInnerHTML={{ __html: content }} />
           </div>
+        ) : (
+          <div className="text-center text-zinc-500">No content available.</div>
+        )}
+        <div className="flex justify-center gap-4 mt-8 relative z-10">
+          <Link href="/privacy" className="rounded-full bg-zinc-200 px-8 py-3 text-lg font-semibold text-blue-700 shadow hover:bg-zinc-300 transition-colors">Privacy Policy</Link>
+          <Link href="/contact" className="rounded-full bg-zinc-200 px-8 py-3 text-lg font-semibold text-blue-700 shadow hover:bg-zinc-300 transition-colors">Contact Us</Link>
         </div>
       </div>
     </div>
