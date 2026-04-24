@@ -12,6 +12,13 @@ export function getDb(request: Request): D1Database | null {
   // In Cloudflare Pages Functions, the env is available via process.env or globalThis
   // The D1 binding is injected by wrangler
   try {
+    // Try to get from request context (Cloudflare Pages Edge Runtime)
+    // @ts-ignore - Cloudflare Pages injects env in request
+    if ((request as any).env?.scratchsolid_db) {
+      return (request as any).env.scratchsolid_db;
+    }
+
+    // Try globalThis (Cloudflare Pages Functions)
     // @ts-ignore - Cloudflare Pages injects env globally
     const env = (globalThis as any).__env__ as Env;
     if (env?.scratchsolid_db) return env.scratchsolid_db;
@@ -22,7 +29,9 @@ export function getDb(request: Request): D1Database | null {
       // @ts-ignore
       return (process as any).env.scratchsolid_db as D1Database;
     }
-  } catch {}
+  } catch (error) {
+    console.error('Error getting database:', error);
+  }
   return null;
 }
 
