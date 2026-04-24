@@ -359,9 +359,9 @@ export default function BookingPage() {
         </div>
 
         {showIndemnity && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto p-8 m-4">
-              <h3 className="text-2xl font-bold mb-4">Indemnity Form</h3>
+          <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-white/90 backdrop-blur-md rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto p-8 m-4 shadow-2xl border border-white/20">
+              <h3 className="text-2xl font-bold mb-4 text-gray-800">Indemnity Form</h3>
               <div className="text-sm text-gray-700 space-y-2">
                 {indemnityContent ? (
                   <div dangerouslySetInnerHTML={{ __html: indemnityContent }} />
@@ -369,9 +369,28 @@ export default function BookingPage() {
                   <p>Loading indemnity form...</p>
                 )}
               </div>
-              <button onClick={() => setShowIndemnity(false)} className="mt-6 w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-                Close
-              </button>
+              <div className="mt-6 flex gap-4">
+                <button 
+                  onClick={() => {
+                    setShowIndemnity(false);
+                    // Go back to previous step
+                    setStep(4);
+                  }} 
+                  className="flex-1 px-4 py-3 rounded-lg border-2 border-gray-300 hover:border-gray-400 text-gray-700 font-semibold transition-colors"
+                >
+                  Decline
+                </button>
+                <button 
+                  onClick={() => {
+                    setShowIndemnity(false);
+                    // Proceed to dashboard after agreeing
+                    window.location.href = "/client-dashboard";
+                  }} 
+                  className="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 font-semibold transition-colors"
+                >
+                  I Agree
+                </button>
+              </div>
             </div>
           </div>
         )}

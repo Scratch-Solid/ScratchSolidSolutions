@@ -40,16 +40,16 @@ export async function POST(request: NextRequest) {
     const address = sanitizeString(rawAddress || '');
 
     // Validate required fields
-    if (!type || !name || !password) {
-      return NextResponse.json({ error: 'Please fill in all required fields (name and password)' }, { status: 400 });
+    if (!type || !name || !email || !password) {
+      return NextResponse.json({ error: 'Please fill in all required fields (name, email, and password)' }, { status: 400 });
     }
 
-    // Email is optional for individuals, required for business
-    if (type === 'business' && !email) {
-      return NextResponse.json({ error: 'Email is required for business accounts' }, { status: 400 });
+    // Email is now required for all accounts
+    if (!email) {
+      return NextResponse.json({ error: 'Email is required for all accounts' }, { status: 400 });
     }
 
-    if (email && !validateEmailFormat(email)) {
+    if (!validateEmailFormat(email)) {
       return NextResponse.json({ error: 'Please enter a valid email address' }, { status: 400 });
     }
 
@@ -58,12 +58,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Password does not meet requirements', details: pwdCheck.errors }, { status: 400 });
     }
 
-    // Check if user already exists (only if email is provided)
-    if (email) {
-      const existingUser = await getUserByEmail(db, email);
-      if (existingUser) {
-        return NextResponse.json({ error: 'An account with this email already exists. Please login or use a different email.' }, { status: 409 });
-      }
+    // Check if user already exists
+    const existingUser = await getUserByEmail(db, email);
+    if (existingUser) {
+      return NextResponse.json({ error: 'An account with this email already exists. Please login or use a different email.' }, { status: 409 });
     }
 
     // Handle business signup

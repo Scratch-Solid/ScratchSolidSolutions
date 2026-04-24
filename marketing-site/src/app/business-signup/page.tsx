@@ -66,13 +66,13 @@ export default function BusinessSignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white py-16 px-4 font-sans">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white py-16 px-4 font-sans">
       <div className="max-w-2xl mx-auto">
         <h1 className="text-4xl font-bold text-center text-blue-700 mb-8">
           Business Registration
         </h1>
-        
-        <div className="bg-white rounded-2xl shadow-2xl border-2 border-blue-200 p-8">
+
+        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-4">
               <div>

@@ -68,7 +68,7 @@ export default function ClientSignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white py-16 px-4 font-sans">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white py-16 px-4 font-sans">
       <div className="max-w-md mx-auto">
         <h1 className="text-4xl font-bold text-center text-blue-700 mb-2">
           Create Account
@@ -76,8 +76,8 @@ export default function ClientSignupPage() {
         <p className="text-center text-gray-600 mb-8">
           Sign up as an individual client
         </p>
-        
-        <div className="bg-white rounded-2xl shadow-2xl border-2 border-blue-200 p-8">
+
+        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 p-8">
           {error && (
             <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-red-600 text-sm">{error}</p>
@@ -102,13 +102,14 @@ export default function ClientSignupPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address (Optional)
+                Email Address *
               </label>
               <input
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleInputChange}
+                required
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="your@email.com"
               />
