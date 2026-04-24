@@ -160,8 +160,18 @@ export default function Home() {
 
       {/* Overlay Logo Button - Bottom-left corner */}
       <div className="fixed bottom-6 left-6 z-50">
-        <div className="relative group">
-          <button className="w-14 h-14 bg-white/90 backdrop-blur-md rounded-full shadow-lg border-2 border-blue-200 flex items-center justify-center hover:bg-blue-50 transition-all duration-200 active:scale-95">
+        <div className="relative" id="overlay-menu">
+          <button 
+            onClick={() => {
+              const menu = document.getElementById('overlay-menu-dropdown');
+              if (menu) {
+                menu.classList.toggle('opacity-0');
+                menu.classList.toggle('invisible');
+                menu.classList.toggle('visible');
+              }
+            }}
+            className="w-14 h-14 bg-white/90 backdrop-blur-md rounded-full shadow-lg border-2 border-blue-200 flex items-center justify-center hover:bg-blue-50 transition-all duration-200 active:scale-95"
+          >
             <img
               src="/scratchsolid-logo.jpg"
               alt="Scratch Solid Logo"
@@ -171,7 +181,7 @@ export default function Home() {
             />
           </button>
           {/* Dropdown Menu - Glassified overlay */}
-          <div className="absolute left-0 mb-3 w-56 bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 bottom-full">
+          <div id="overlay-menu-dropdown" className="absolute left-0 mb-3 w-56 bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 opacity-0 invisible transition-all duration-200 bottom-full">
             <div className="py-3">
               <Link href="/client-signup" className="block px-4 py-2.5 hover:bg-blue-50 text-gray-700 font-medium transition-colors">Client Signup</Link>
               <Link href="/business-signup" className="block px-4 py-2.5 hover:bg-blue-50 text-gray-700 font-medium transition-colors">Business Signup</Link>
