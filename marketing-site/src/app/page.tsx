@@ -87,45 +87,45 @@ export default function Home() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-white py-8 px-2 sm:px-4 font-sans relative">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-white py-4 sm:py-8 px-2 sm:px-4 font-sans relative">
       {/* Navigation Bar - Only on main page */}
-      <nav className="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-md shadow-lg z-40 px-4 py-3">
-        <div className="max-w-6xl mx-auto flex items-center justify-center space-x-8">
-          <Link href="/services" className="text-gray-700 hover:text-blue-600 active:text-blue-600 font-semibold text-base sm:text-lg transition-colors">
+      <nav className="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-md shadow-lg z-40 px-2 sm:px-4 py-2 sm:py-3">
+        <div className="max-w-6xl mx-auto flex items-center justify-center space-x-4 sm:space-x-8">
+          <Link href="/services" className="text-gray-700 hover:text-blue-600 active:text-blue-600 font-semibold text-sm sm:text-base lg:text-lg transition-colors">
             Services
           </Link>
-          <Link href="/about" className="text-gray-700 hover:text-blue-600 active:text-blue-600 font-semibold text-base sm:text-lg transition-colors">
+          <Link href="/about" className="text-gray-700 hover:text-blue-600 active:text-blue-600 font-semibold text-sm sm:text-base lg:text-lg transition-colors">
             About Us
           </Link>
-          <Link href="/gallery" className="text-gray-700 hover:text-blue-600 active:text-blue-600 font-semibold text-base sm:text-lg transition-colors">
+          <Link href="/gallery" className="text-gray-700 hover:text-blue-600 active:text-blue-600 font-semibold text-sm sm:text-base lg:text-lg transition-colors">
             Gallery
           </Link>
           {isLoggedIn && (
-            <button onClick={handleLogout} className="text-red-600 hover:text-red-700 active:text-red-700 font-semibold text-base sm:text-lg transition-colors">
+            <button onClick={handleLogout} className="text-red-600 hover:text-red-700 active:text-red-700 font-semibold text-sm sm:text-base lg:text-lg transition-colors">
               Logout
             </button>
           )}
         </div>
       </nav>
-      <div className="max-w-xl sm:max-w-2xl w-full bg-white rounded-2xl sm:rounded-3xl shadow-xl sm:shadow-2xl border-2 border-blue-200 p-6 sm:p-8 lg:p-10 relative mt-12 sm:mt-16 flex items-center justify-center">
+      <div className="max-w-xl sm:max-w-2xl w-full bg-white rounded-2xl sm:rounded-3xl shadow-xl sm:shadow-2xl border-2 border-blue-200 p-4 sm:p-6 lg:p-10 relative mt-16 sm:mt-20 flex items-center justify-center">
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0">
           <Image
             src="/scratchsolid-logo.jpg"
             alt="Scratch Solid Logo Background"
-            width={400}
-            height={400}
-            className="opacity-10 w-96 h-96 object-contain"
+            width={300}
+            height={300}
+            className="opacity-10 w-72 h-72 sm:w-96 sm:h-96 object-contain"
             aria-hidden="true"
           />
         </div>
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-center text-blue-700 mb-4 sm:mb-6 tracking-tight">
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-extrabold text-center text-blue-700 mb-2 sm:mb-4 lg:mb-6 tracking-tight">
           Scratch Solid Solutions
         </h1>
-        <div className="text-center text-black mb-6 sm:mb-8 text-sm sm:text-base lg:text-lg">
+        <div className="text-center text-black mb-4 sm:mb-6 lg:mb-8 text-xs sm:text-sm lg:text-base xl:text-lg">
           {promotions.length > 0 ? (
             promotions.map((promo, index) => (
               <div key={index} className="mb-2 sm:mb-4">
-                <div className="text-blue-600 font-semibold text-base sm:text-xl mb-2">{promo.title}</div>
+                <div className="text-blue-600 font-semibold text-sm sm:text-base lg:text-xl mb-1 sm:mb-2">{promo.title}</div>
                 <div className="text-black text-xs sm:text-sm">{promo.description}</div>
               </div>
             ))
@@ -133,14 +133,14 @@ export default function Home() {
             <div className="mb-2 sm:mb-4">Professional, reliable, and affordable cleaning services for homes and businesses.</div>
           )}
           {homeTiles.length > 0 && homeTiles[0].subtitle && (
-            <div className="text-blue-600 font-semibold text-base sm:text-xl mb-2">{homeTiles[0].subtitle}</div>
+            <div className="text-blue-600 font-semibold text-sm sm:text-base lg:text-xl mb-1 sm:mb-2">{homeTiles[0].subtitle}</div>
           )}
           <div className="text-black text-xs sm:text-sm">Experienced cleaners | Quality guaranteed | Fully insured</div>
         </div>
-        <div className="flex justify-center mb-6 sm:mb-8">
+        <div className="flex justify-center mb-4 sm:mb-6 lg:mb-8">
           <button
             onClick={handleBookCleaner}
-            className="rounded-full bg-blue-600 px-16 sm:px-20 lg:px-24 py-4 sm:py-5 lg:py-6 text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white shadow-2xl hover:bg-blue-700 transition-all transform hover:scale-105 active:scale-95"
+            className="rounded-full bg-blue-600 px-12 sm:px-16 lg:px-20 xl:px-24 py-3 sm:py-4 lg:py-5 xl:py-6 text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-extrabold text-white shadow-2xl hover:bg-blue-700 transition-all transform hover:scale-105 active:scale-95"
           >
             Book a Cleaner
           </button>

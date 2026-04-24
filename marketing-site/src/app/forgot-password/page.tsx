@@ -43,16 +43,16 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white py-16 px-4 font-sans">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white py-8 sm:py-16 px-2 sm:px-4 font-sans">
       <div className="max-w-md mx-auto">
-        <h1 className="text-4xl font-bold text-center text-blue-700 mb-2">
+        <h1 className="text-3xl sm:text-4xl font-bold text-center text-blue-700 mb-2">
           Reset Password
         </h1>
-        <p className="text-center text-gray-600 mb-8">
+        <p className="text-center text-gray-600 mb-6 sm:mb-8">
           Recover your account password
         </p>
 
-        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 p-8">
+        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 p-6 sm:p-8">
           {error && (
             <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-red-600 text-sm">{error}</p>
