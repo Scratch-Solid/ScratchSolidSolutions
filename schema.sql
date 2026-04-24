@@ -46,6 +46,25 @@ CREATE TABLE IF NOT EXISTS role_permissions (
   UNIQUE(role_id, permission_id)
 );
 
+-- Content Pages (for marketing site - privacy, terms, contact, etc.)
+CREATE TABLE IF NOT EXISTS content_pages (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  content TEXT NOT NULL,
+  slug TEXT UNIQUE NOT NULL,
+  last_updated TEXT DEFAULT (datetime('now')),
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+-- Background Images (for marketing site)
+CREATE TABLE IF NOT EXISTS background_images (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  url TEXT NOT NULL,
+  name TEXT NOT NULL,
+  is_active INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
 -- Cleaner profiles (extended profile for cleaners)
 CREATE TABLE IF NOT EXISTS cleaner_profiles (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -304,6 +323,24 @@ CREATE TABLE IF NOT EXISTS templates (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL,
   content TEXT DEFAULT '',
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+-- Task completions (for cleaner payroll tracking)
+CREATE TABLE IF NOT EXISTS task_completions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  booking_id INTEGER REFERENCES bookings(id),
+  cleaner_id INTEGER REFERENCES users(id),
+  completed_at TEXT DEFAULT (datetime('now')),
+  earnings REAL DEFAULT 150,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+-- AI responses (for chatbot)
+CREATE TABLE IF NOT EXISTS ai_responses (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  question TEXT NOT NULL,
+  response TEXT NOT NULL,
   created_at TEXT DEFAULT (datetime('now'))
 );
 

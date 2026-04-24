@@ -1,7 +1,9 @@
 // Shared D1 Database Helper for Cloudflare Pages
 // Both marketing-site and internal-portal use this same pattern
 
+import type { D1Database } from '@cloudflare/workers-types';
 import bcrypt from 'bcryptjs';
+import { logger } from './logger';
 
 export interface Env {
   scratchsolid_db: D1Database;
@@ -30,7 +32,7 @@ export function getDb(request: Request): D1Database | null {
       return (process as any).env.scratchsolid_db as D1Database;
     }
   } catch (error) {
-    console.error('Error getting database:', error);
+    logger.error('Error getting database', error as Error);
   }
   return null;
 }
