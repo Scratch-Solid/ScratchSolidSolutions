@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "deploy": "npm run build && npx wrangler pages deploy .next --project-name=scratchsolid-portal --commit-dirty=true"
+    "deploy": "npx opennextjs-cloudflare build && npx wrangler deploy --name=scratchsolid-portal"
   },
   "keywords": [],
   "author": "",

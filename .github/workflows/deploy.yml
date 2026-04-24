@@ -21,16 +21,16 @@ jobs:
           cache-dependency-path: marketing-site/package-lock.json
 
       - run: npm ci
-      - run: npx @cloudflare/next-on-pages
+      - run: npx opennextjs-cloudflare build
         env:
-          NEXT_ON_PAGES_EXPERIMENTAL_NEXT_16: 1
+          NODE_ENV: production
 
-      - name: Deploy to Cloudflare Pages
+      - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy .vercel/output/static --project-name=scratchsolidsolutions
+          command: deploy --name=scratchsolidsolutions
           workingDirectory: marketing-site
 
   deploy-portal:
@@ -49,16 +49,16 @@ jobs:
           cache-dependency-path: internal-portal/package-lock.json
 
       - run: npm ci
-      - run: npx @cloudflare/next-on-pages
+      - run: npx opennextjs-cloudflare build
         env:
-          NEXT_ON_PAGES_EXPERIMENTAL_NEXT_16: 1
+          NODE_ENV: production
 
-      - name: Deploy to Cloudflare Pages
+      - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy .vercel/output/static --project-name=scratchsolid-portal
+          command: deploy --name=scratchsolid-portal
           workingDirectory: internal-portal
 
   deploy-backend:
