@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export default function BookingPage() {
@@ -21,6 +21,23 @@ export default function BookingPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showIndemnity, setShowIndemnity] = useState(false);
+  const [indemnityContent, setIndemnityContent] = useState("");
+
+  useEffect(() => {
+    fetchIndemnityContent();
+  }, []);
+
+  const fetchIndemnityContent = async () => {
+    try {
+      const response = await fetch('/api/content?type=indemnity');
+      if (response.ok) {
+        const data = await response.json() as { content?: string };
+        setIndemnityContent(data.content || '');
+      }
+    } catch (error) {
+      console.error('Failed to fetch indemnity content:', error);
+    }
+  };
 
   const timeSlots = ["08:00-12:00", "13:00-17:00"];
 
@@ -346,14 +363,11 @@ export default function BookingPage() {
             <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto p-8 m-4">
               <h3 className="text-2xl font-bold mb-4">Indemnity Form</h3>
               <div className="text-sm text-gray-700 space-y-2">
-                <p>By booking a cleaning service with Scratch Solid Solutions, you agree to the following terms:</p>
-                <ul className="list-disc pl-5 space-y-1">
-                  <li>Scratch Solid Solutions will exercise reasonable care in providing cleaning services</li>
-                  <li>We are not liable for any damage to personal property unless caused by our negligence</li>
-                  <li>Customers must secure valuables before our arrival</li>
-                  <li>Payment is due upon completion of service unless otherwise agreed</li>
-                  <li>Cancellations must be made at least 24 hours in advance</li>
-                </ul>
+                {indemnityContent ? (
+                  <div dangerouslySetInnerHTML={{ __html: indemnityContent }} />
+                ) : (
+                  <p>Loading indemnity form...</p>
+                )}
               </div>
               <button onClick={() => setShowIndemnity(false)} className="mt-6 w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
                 Close

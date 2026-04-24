@@ -26,6 +26,9 @@ export async function GET(request: NextRequest) {
       case "about":
         collection = "about_us";
         break;
+      case "indemnity":
+        collection = "indemnity_form";
+        break;
       default:
         collection = "privacy_policy";
     }
@@ -80,6 +83,9 @@ export async function PUT(request: NextRequest) {
         break;
       case "about":
         collection = "about_us";
+        break;
+      case "indemnity":
+        collection = "indemnity_form";
         break;
       default:
         collection = "privacy_policy";

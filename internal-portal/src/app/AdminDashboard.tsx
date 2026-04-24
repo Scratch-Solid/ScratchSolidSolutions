@@ -465,7 +465,7 @@ export default function AdminDashboard() {
 }
 
 function ContentManagement() {
-  const [contentType, setContentType] = useState<'contact' | 'privacy' | 'terms' | 'services' | 'about'>('contact');
+  const [contentType, setContentType] = useState<'contact' | 'privacy' | 'terms' | 'services' | 'about' | 'indemnity'>('contact');
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -526,6 +526,7 @@ function ContentManagement() {
           <option value="terms">Terms of Service</option>
           <option value="services">Services</option>
           <option value="about">About Us</option>
+          <option value="indemnity">Indemnity Form</option>
         </select>
       </div>
 
