@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { logger } from "@/lib/logger";
 import { getJWTSecret } from "@/lib/env";
+import { validateEmail, validatePassword } from "@/lib/validation";
 
 export async function POST(request: NextRequest) {
   const db = getDb(request);
@@ -15,7 +16,17 @@ export async function POST(request: NextRequest) {
     const body = await request.json() as { email?: string; password?: string };
     const { email, password } = body;
 
-    // Validate required fields
+    // Validate email and password
+    const emailValidation = validateEmail(email || '');
+    if (!emailValidation.valid) {
+      return NextResponse.json({ error: emailValidation.errors.join(', ') }, { status: 400 });
+    }
+
+    const passwordValidation = validatePassword(password || '');
+    if (!passwordValidation.valid) {
+      return NextResponse.json({ error: passwordValidation.errors.join(', ') }, { status: 400 });
+    }
+
     if (!email || !password) {
       return NextResponse.json({ error: 'Please enter your email and password' }, { status: 400 });
     }
@@ -24,12 +35,12 @@ export async function POST(request: NextRequest) {
     const sanitizedEmail = sanitizeEmail(rawEmail);
 
     // Check account lockout
-    if (await isAccountLocked(db, email)) {
+    if (await isAccountLocked(db, sanitizedEmail)) {
       return NextResponse.json({ error: 'Account temporarily locked due to too many failed attempts. Please try again in 15 minutes.' }, { status: 423 });
     }
 
     // Authenticate user against database (includes lockout tracking)
-    const user = await validateLogin(db, email, password);
+    const user = await validateLogin(db, sanitizedEmail, password);
 
     if (!user) {
       return NextResponse.json({ error: 'Invalid email or password. Please check your credentials and try again.' }, { status: 401 });

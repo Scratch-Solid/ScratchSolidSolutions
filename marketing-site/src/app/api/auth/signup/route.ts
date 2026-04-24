@@ -4,20 +4,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { logger } from "@/lib/logger";
 import { getJWTSecret } from "@/lib/env";
-
-function validatePasswordPolicy(password: string): { valid: boolean; errors: string[] } {
-  const errors: string[] = [];
-  if (password.length < 8) errors.push('Password must be at least 8 characters');
-  if (!/[A-Z]/.test(password)) errors.push('Password must contain at least one uppercase letter');
-  if (!/[a-z]/.test(password)) errors.push('Password must contain at least one lowercase letter');
-  if (!/[0-9]/.test(password)) errors.push('Password must contain at least one number');
-  if (!/[^A-Za-z0-9]/.test(password)) errors.push('Password must contain at least one special character');
-  return { valid: errors.length === 0, errors };
-}
-
-function validateEmailFormat(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
+import { validateEmail, validatePassword } from "@/lib/validation";
 
 export async function POST(request: NextRequest) {
   const db = getDb(request);
@@ -60,11 +47,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Email is required for all accounts' }, { status: 400 });
     }
 
-    if (!validateEmailFormat(sanitizedEmail)) {
-      return NextResponse.json({ error: 'Please enter a valid email address' }, { status: 400 });
+    const emailValidation = validateEmail(sanitizedEmail);
+    if (!emailValidation.valid) {
+      return NextResponse.json({ error: emailValidation.errors.join(', ') }, { status: 400 });
     }
 
-    const pwdCheck = validatePasswordPolicy(password);
+    const pwdCheck = validatePassword(password || '');
     if (!pwdCheck.valid) {
       return NextResponse.json({ error: 'Password does not meet requirements', details: pwdCheck.errors }, { status: 400 });
     }

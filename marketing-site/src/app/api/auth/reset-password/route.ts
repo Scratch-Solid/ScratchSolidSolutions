@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb, validatePasswordResetToken, deletePasswordResetToken, getUserById } from "@/lib/db";
 import bcrypt from 'bcryptjs';
 import { logger } from "@/lib/logger";
+import { validatePassword } from "@/lib/validation";
 
 export async function POST(request: NextRequest) {
   const db = getDb(request);
@@ -34,7 +35,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate password policy
-    const pwdCheck = validatePasswordPolicy(newPassword);
+    const pwdCheck = validatePassword(newPassword || '');
     if (!pwdCheck.valid) {
       return NextResponse.json({ error: 'Password does not meet requirements', details: pwdCheck.errors }, { status: 400 });
     }
@@ -62,14 +63,4 @@ export async function POST(request: NextRequest) {
     logger.error('Error in reset password', error as Error);
     return NextResponse.json({ error: "An unexpected error occurred. Please try again." }, { status: 500 });
   }
-}
-
-function validatePasswordPolicy(password: string): { valid: boolean; errors: string[] } {
-  const errors: string[] = [];
-  if (password.length < 8) errors.push('Password must be at least 8 characters');
-  if (!/[A-Z]/.test(password)) errors.push('Password must contain at least one uppercase letter');
-  if (!/[a-z]/.test(password)) errors.push('Password must contain at least one lowercase letter');
-  if (!/[0-9]/.test(password)) errors.push('Password must contain at least one number');
-  if (!/[^A-Za-z0-9]/.test(password)) errors.push('Password must contain at least one special character');
-  return { valid: errors.length === 0, errors };
 }
