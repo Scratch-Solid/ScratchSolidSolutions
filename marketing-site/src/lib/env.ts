@@ -1,0 +1,75 @@
+// Environment Variable Validation
+// Ensures all required environment variables are set before the application starts
+
+interface EnvConfig {
+  JWT_SECRET: string;
+  RESEND_API_KEY: string;
+  NEXT_PUBLIC_BASE_URL: string;
+  NEXT_PUBLIC_API_URL: string;
+  NEXT_PUBLIC_DIRECTUS_URL?: string;
+  ZOHO_ORG_ID?: string;
+  ZOHO_CLIENT_ID?: string;
+  ZOHO_CLIENT_SECRET?: string;
+  ZOHO_REFRESH_TOKEN?: string;
+}
+
+export function validateEnv(): EnvConfig {
+  const errors: string[] = [];
+
+  // Required environment variables
+  if (!process.env.JWT_SECRET) {
+    errors.push('JWT_SECRET is required for authentication');
+  }
+
+  if (!process.env.RESEND_API_KEY) {
+    errors.push('RESEND_API_KEY is required for email functionality');
+  }
+
+  if (!process.env.NEXT_PUBLIC_BASE_URL) {
+    errors.push('NEXT_PUBLIC_BASE_URL is required for generating links');
+  }
+
+  if (!process.env.NEXT_PUBLIC_API_URL) {
+    errors.push('NEXT_PUBLIC_API_URL is required for API calls');
+  }
+
+  // Optional environment variables (log warnings if missing in production)
+  if (process.env.NODE_ENV === 'production') {
+    if (!process.env.NEXT_PUBLIC_DIRECTUS_URL) {
+      console.warn('NEXT_PUBLIC_DIRECTUS_URL is recommended in production for CMS integration');
+    }
+  }
+
+  if (errors.length > 0) {
+    throw new Error(`Missing required environment variables:\n${errors.join('\n')}`);
+  }
+
+  return {
+    JWT_SECRET: process.env.JWT_SECRET!,
+    RESEND_API_KEY: process.env.RESEND_API_KEY!,
+    NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL!,
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL!,
+    NEXT_PUBLIC_DIRECTUS_URL: process.env.NEXT_PUBLIC_DIRECTUS_URL,
+    ZOHO_ORG_ID: process.env.ZOHO_ORG_ID,
+    ZOHO_CLIENT_ID: process.env.ZOHO_CLIENT_ID,
+    ZOHO_CLIENT_SECRET: process.env.ZOHO_CLIENT_SECRET,
+    ZOHO_REFRESH_TOKEN: process.env.ZOHO_REFRESH_TOKEN
+  };
+}
+
+export function getEnv(): EnvConfig {
+  try {
+    return validateEnv();
+  } catch (error) {
+    console.error('Environment validation failed:', error);
+    throw error;
+  }
+}
+
+export function getJWTSecret(): string {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error('JWT_SECRET environment variable is required');
+  }
+  return secret;
+}

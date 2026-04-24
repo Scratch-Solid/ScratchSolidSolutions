@@ -2,12 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb, deleteSession } from "@/lib/db";
 import jwt from 'jsonwebtoken';
 import { logger } from "@/lib/logger";
-
-const JWT_SECRET = process.env.JWT_SECRET;
-
-if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET environment variable is required');
-}
+import { getJWTSecret } from "@/lib/env";
 
 export async function POST(request: NextRequest) {
   const db = getDb(request);
@@ -25,10 +20,7 @@ export async function POST(request: NextRequest) {
     
     // Verify token
     try {
-      if (!JWT_SECRET) {
-        return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
-      }
-      jwt.verify(token, JWT_SECRET);
+      jwt.verify(token, getJWTSecret());
     } catch {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }

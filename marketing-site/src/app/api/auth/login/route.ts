@@ -3,13 +3,7 @@ import { getDb, getUserByEmail, createSession, deleteSession, validateLogin, isA
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { logger } from "@/lib/logger";
-
-const JWT_SECRET = process.env.JWT_SECRET || '';
-
-function getJWTSecret(): string {
-  if (!JWT_SECRET) throw new Error('JWT_SECRET environment variable is required');
-  return JWT_SECRET;
-}
+import { getJWTSecret } from "@/lib/env";
 
 export async function POST(request: NextRequest) {
   const db = getDb(request);
