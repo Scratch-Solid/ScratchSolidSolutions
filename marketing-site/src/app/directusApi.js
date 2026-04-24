@@ -192,3 +192,34 @@ export async function getServices() {
     return FALLBACKS.services;
   }
 }
+
+// Fetch Background Images
+export async function getBackgroundImages() {
+  const key = 'background_images';
+  const cached = cacheGet(key);
+  if (cached) return cached;
+  try {
+    const result = await directus.items('background_images').readByQuery({
+      limit: 20,
+      fields: ['*'],
+      sort: ['sort']
+    });
+    
+    if (result.data && result.data.length > 0) {
+      const data = result.data.map(img => ({
+        id: img.id,
+        name: img.name,
+        url: img.image ? `${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${img.image}` : null,
+        page: img.page || 'home',
+        is_active: img.status === 'published'
+      }));
+      cacheSet(key, data);
+      return data;
+    }
+    
+    cacheSet(key, FALLBACKS.background_images);
+    return FALLBACKS.background_images;
+  } catch {
+    return FALLBACKS.background_images;
+  }
+}

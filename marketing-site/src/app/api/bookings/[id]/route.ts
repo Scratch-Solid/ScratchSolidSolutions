@@ -31,12 +31,26 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   const { db } = authResult;
 
   try {
-    const body = await request.json();
+    const body = await request.json() as {
+      cleaner_id?: number;
+      status?: string;
+      weekend_assigned?: boolean;
+    };
+
     const booking = await updateBooking(db, parseInt(params.id), body);
+    
     if (!booking) {
       const response = NextResponse.json({ error: 'Booking not found' }, { status: 404 });
       return withSecurityHeaders(response, traceId);
     }
+
+    // If this is a weekend assignment, update the weekend assignment record
+    if (body.weekend_assigned !== undefined && body.cleaner_id) {
+      await db.prepare(
+        `UPDATE weekend_assignments SET status = 'assigned', assigned_cleaner_id = ?, assigned_cleaner_name = (SELECT name FROM users WHERE id = ?), updated_at = datetime('now') WHERE contract_id IN (SELECT id FROM contracts WHERE business_id = (SELECT client_id FROM bookings WHERE id = ?)) AND status = 'pending'`
+      ).bind(body.cleaner_id, body.cleaner_id, parseInt(params.id)).run();
+    }
+
     const response = NextResponse.json(booking);
     return withSecurityHeaders(response, traceId);
   } catch (error) {

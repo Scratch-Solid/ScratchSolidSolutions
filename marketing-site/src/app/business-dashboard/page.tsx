@@ -182,6 +182,31 @@ export default function BusinessDashboard() {
     }
   };
 
+  const handleExportPDF = async (contractId: number) => {
+    try {
+      const token = localStorage.getItem("authToken");
+      const response = await fetch(`/api/contracts/${contractId}/export`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `contract-${contractId}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        alert("Failed to export contract PDF");
+      }
+    } catch (error) {
+      alert("Network error. Please try again.");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-16 px-4 font-sans">
       <div className="max-w-4xl mx-auto">
@@ -216,8 +241,22 @@ export default function BusinessDashboard() {
                       </div>
                       <p className="text-sm text-gray-600">Rate: R{contract.rate_per_hour}/hr</p>
                       <p className="text-sm text-gray-600">Weekend Multiplier: {contract.weekend_rate_multiplier}x</p>
+                      {contract.start_date && (
+                        <p className="text-sm text-gray-600">Start: {new Date(contract.start_date).toLocaleDateString()}</p>
+                      )}
+                      {contract.end_date && (
+                        <p className="text-sm text-gray-600">End: {new Date(contract.end_date).toLocaleDateString()}</p>
+                      )}
                       {contract.is_immutable === 1 && (
-                        <p className="text-xs text-orange-600 mt-1">Contract is locked</p>
+                        <div className="flex items-center justify-between mt-2">
+                          <p className="text-xs text-orange-600">Contract is locked (read-only)</p>
+                          <button
+                            onClick={() => handleExportPDF(contract.id)}
+                            className="text-xs bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+                          >
+                            Export PDF
+                          </button>
+                        </div>
                       )}
                     </div>
                   ))
