@@ -38,6 +38,11 @@ export function validateEnv(): EnvConfig {
     if (!process.env.NEXT_PUBLIC_DIRECTUS_URL) {
       console.warn('NEXT_PUBLIC_DIRECTUS_URL is recommended in production for CMS integration');
     }
+    
+    // Zoho credentials for payment integration
+    if (!process.env.ZOHO_ORG_ID || !process.env.ZOHO_CLIENT_ID || !process.env.ZOHO_CLIENT_SECRET || !process.env.ZOHO_REFRESH_TOKEN) {
+      console.warn('Zoho Books credentials are recommended in production for payment integration');
+    }
   }
 
   if (errors.length > 0) {
@@ -72,4 +77,25 @@ export function getJWTSecret(): string {
     throw new Error('JWT_SECRET environment variable is required');
   }
   return secret;
+}
+
+export function getResendApiKey(): string {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) {
+    throw new Error('RESEND_API_KEY environment variable is required');
+  }
+  return key;
+}
+
+export function getZohoCredentials(): { orgId: string; clientId: string; clientSecret: string; refreshToken: string } {
+  const orgId = process.env.ZOHO_ORG_ID;
+  const clientId = process.env.ZOHO_CLIENT_ID;
+  const clientSecret = process.env.ZOHO_CLIENT_SECRET;
+  const refreshToken = process.env.ZOHO_REFRESH_TOKEN;
+  
+  if (!orgId || !clientId || !clientSecret || !refreshToken) {
+    throw new Error('Zoho Books credentials are required for payment integration');
+  }
+  
+  return { orgId, clientId, clientSecret, refreshToken };
 }

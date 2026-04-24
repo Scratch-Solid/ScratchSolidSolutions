@@ -1,8 +1,9 @@
 // Email service using Resend API
 import { Resend } from 'resend';
 import { logger } from './logger';
+import { getResendApiKey } from './env';
 
-const resend = new Resend(process.env.RESEND_API_KEY || '');
+const resend = new Resend(getResendApiKey());
 
 interface SendEmailOptions {
   to: string;
@@ -12,12 +13,6 @@ interface SendEmailOptions {
 }
 
 export async function sendEmail({ to, subject, html, from }: SendEmailOptions) {
-  if (!process.env.RESEND_API_KEY) {
-    logger.info('RESEND_API_KEY not set. Skipping email send.');
-    logger.info(`Would send to: ${to}, subject: ${subject}`);
-    return { success: false, message: 'Email service not configured' };
-  }
-
   try {
     const { data, error } = await resend.emails.send({
       from: from || 'Scratch Solid Solutions <onboarding@resend.dev>',
