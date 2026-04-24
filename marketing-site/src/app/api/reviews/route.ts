@@ -1,0 +1,102 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { getDb } from '@/lib/db';
+import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
+
+export const dynamic = "force-dynamic";
+
+export async function POST(request: NextRequest) {
+  const traceId = withTracing(request);
+  const authResult = await withAuth(request, ['client']);
+  if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
+  const { db } = authResult;
+
+  try {
+    const body = await request.json() as {
+      user_id?: string;
+      booking_id?: number;
+      rating?: number;
+      text?: string;
+      images?: string[];
+    };
+
+    const { user_id, booking_id, rating = 5, text, images = [] } = body;
+
+    if (!user_id || !booking_id || !text) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    // Validate review length (100 words max)
+    const wordCount = text.trim().split(/\s+/).length;
+    if (wordCount > 100) {
+      return NextResponse.json({ error: 'Review must be 100 words or less' }, { status: 400 });
+    }
+
+    // Validate images (max 3)
+    if (images.length > 3) {
+      return NextResponse.json({ error: 'Maximum 3 images allowed' }, { status: 400 });
+    }
+
+    // Verify booking belongs to user and is completed
+    const booking = await db.prepare(
+      `SELECT * FROM bookings WHERE id = ? AND client_id = ? AND status = 'completed'`
+    ).bind(booking_id, parseInt(user_id)).first();
+
+    if (!booking) {
+      return NextResponse.json({ error: 'Booking not found or not completed' }, { status: 404 });
+    }
+
+    // Check if review already exists for this booking
+    const existingReview = await db.prepare(
+      `SELECT * FROM reviews WHERE booking_id = ?`
+    ).bind(booking_id).first();
+
+    if (existingReview) {
+      return NextResponse.json({ error: 'Review already exists for this booking' }, { status: 400 });
+    }
+
+    // Insert review
+    const result = await db.prepare(
+      `INSERT INTO reviews (user_id, booking_id, rating, text, images, status, created_at)
+       VALUES (?, ?, ?, ?, ?, 'approved', datetime('now')) RETURNING *`
+    ).bind(parseInt(user_id), booking_id, rating, text, JSON.stringify(images)).first();
+
+    if (!result) {
+      return NextResponse.json({ error: 'Review creation failed' }, { status: 500 });
+    }
+
+    const response = NextResponse.json(result, { status: 201 });
+    return withSecurityHeaders(response, traceId);
+  } catch (error) {
+    console.error('Error creating review:', error);
+    const response = NextResponse.json({ error: 'Review creation failed' }, { status: 500 });
+    return withSecurityHeaders(response, traceId);
+  }
+}
+
+export async function GET(request: NextRequest) {
+  const traceId = withTracing(request);
+  const { db } = getDb(request);
+
+  try {
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get('status') || 'approved';
+    const limit = parseInt(searchParams.get('limit') || '20');
+
+    const reviews = await db.prepare(
+      `SELECT r.*, u.name as user_name, b.location as service_location 
+       FROM reviews r
+       LEFT JOIN users u ON r.user_id = u.id
+       LEFT JOIN bookings b ON r.booking_id = b.id
+       WHERE r.status = ?
+       ORDER BY r.created_at DESC
+       LIMIT ?`
+    ).bind(status, limit).all();
+
+    const response = NextResponse.json(reviews);
+    return withSecurityHeaders(response, traceId);
+  } catch (error) {
+    console.error('Error fetching reviews:', error);
+    const response = NextResponse.json({ error: 'Failed to fetch reviews' }, { status: 500 });
+    return withSecurityHeaders(response, traceId);
+  }
+}

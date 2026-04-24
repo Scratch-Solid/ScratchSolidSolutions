@@ -213,6 +213,12 @@ export default function AdminDashboard() {
         >
           Employees
         </button>
+        <button
+          onClick={() => setActiveTab("content")}
+          className={`px-4 py-2 rounded ${activeTab === "content" ? "primary-button" : "secondary-button"}`}
+        >
+          Content
+        </button>
       </div>
 
       {activeTab === "overview" ? (
@@ -416,7 +422,7 @@ export default function AdminDashboard() {
             </div>
           )}
         </>
-      ) : (
+      ) : activeTab === "employees" ? (
         <div className="glass-card">
           <h3 className="font-bold text-lg mb-2">Employees</h3>
           {employees.length === 0 ? (
@@ -448,7 +454,102 @@ export default function AdminDashboard() {
               </ul>
             )}
           </div>
+      ) : activeTab === "content" ? (
+        <ContentManagement />
+      ) : null}
+    </div>
+  );
+}
+
+function ContentManagement() {
+  const [contentType, setContentType] = useState<'contact' | 'privacy' | 'terms' | 'services' | 'about'>('contact');
+  const [content, setContent] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    fetchContent();
+  }, [contentType]);
+
+  const fetchContent = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`https://scratchsolidsolutions.org/api/content?type=${contentType}`);
+      if (response.ok) {
+        const data = await response.json() as { content?: string };
+        setContent(data.content || '');
+      }
+    } catch (error) {
+      setMessage('Failed to load content');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`https://scratchsolidsolutions.org/api/content?type=${contentType}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content })
+      });
+      if (response.ok) {
+        setMessage('Content updated successfully');
+        setTimeout(() => setMessage(''), 3000);
+      } else {
+        setMessage('Failed to update content');
+      }
+    } catch (error) {
+      setMessage('Failed to update content');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="glass-card">
+      <h3 className="font-bold text-lg mb-4">Content Management</h3>
+      
+      <div className="mb-4">
+        <label className="block text-sm font-medium mb-2">Content Type</label>
+        <select
+          value={contentType}
+          onChange={(e) => setContentType(e.target.value as any)}
+          className="w-full px-3 py-2 border rounded"
+        >
+          <option value="contact">Contact Information</option>
+          <option value="privacy">Privacy Policy</option>
+          <option value="terms">Terms of Service</option>
+          <option value="services">Services</option>
+          <option value="about">About Us</option>
+        </select>
+      </div>
+
+      <div className="mb-4">
+        <label className="block text-sm font-medium mb-2">Content (Markdown supported)</label>
+        <textarea
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          rows={15}
+          className="w-full px-3 py-2 border rounded font-mono text-sm"
+          placeholder="Enter content here..."
+        />
+      </div>
+
+      {message && (
+        <div className={`mb-4 p-3 rounded ${message.includes('success') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+          {message}
+        </div>
       )}
+
+      <button
+        onClick={handleSave}
+        disabled={loading}
+        className="primary-button px-4 py-2"
+      >
+        {loading ? 'Saving...' : 'Save Content'}
+      </button>
     </div>
   );
 }
