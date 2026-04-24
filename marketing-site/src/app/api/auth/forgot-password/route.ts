@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, getUserByEmail, getUserByPhone, createPasswordResetToken, sanitizeEmail, sanitizePhone } from "@/lib/db";
+import { sendPasswordResetEmail } from "@/lib/email";
 
 export async function POST(request: NextRequest) {
   const db = getDb(request);
@@ -30,12 +31,22 @@ export async function POST(request: NextRequest) {
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
       const resetToken = await createPasswordResetToken(db, (user as any).id, otp, "whatsapp");
 
-      // TODO: Integrate WhatsApp API to send OTP
-      // For now, we'll simulate sending
+      // WhatsApp API requires paid service - no free option available
+      // For now, we'll use email as fallback if user has email
+      if ((user as any).email) {
+        const resetLink = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://scratchsolidsolutions.org'}/reset-password?token=${resetToken}&method=whatsapp&otp=${otp}`;
+        await sendPasswordResetEmail((user as any).email, resetLink);
+        return NextResponse.json({ 
+          message: "A password reset link has been sent to your email (WhatsApp integration requires paid API).",
+          resetToken: resetToken
+        }, { status: 200 });
+      }
+      
+      // Log OTP for development/testing
       console.log(`WhatsApp OTP for ${phone}: ${otp}`);
       
       return NextResponse.json({ 
-        message: "A verification code has been sent to your WhatsApp. Please check your messages.",
+        message: "WhatsApp integration requires paid API. Please contact support for password reset.",
         resetToken: resetToken
       }, { status: 200 });
 
@@ -52,9 +63,8 @@ export async function POST(request: NextRequest) {
       const resetToken = await createPasswordResetToken(db, (user as any).id, null, "email");
       const resetLink = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://scratchsolidsolutions.org'}/reset-password?token=${resetToken}`;
 
-      // TODO: Integrate email service to send reset link
-      // For now, we'll simulate sending
-      console.log(`Email reset link for ${email}: ${resetLink}`);
+      // Send email using Resend (free tier: 3,000 emails/month)
+      await sendPasswordResetEmail(email, resetLink);
       
       return NextResponse.json({ 
         message: "A password reset link has been sent to your email. Please check your inbox.",
