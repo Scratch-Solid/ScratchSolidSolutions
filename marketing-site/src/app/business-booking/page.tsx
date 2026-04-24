@@ -300,6 +300,21 @@ export default function BusinessBookingPage() {
                 </p>
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Rate per Hour (Admin Only)
+                </label>
+                <input
+                  type="number"
+                  value={formData.rate_per_hour}
+                  disabled
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed focus:outline-none"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Rate is set by admin and cannot be modified
+                </p>
+              </div>
+
               <div className="bg-yellow-50 p-4 rounded-lg">
                 <h4 className="font-semibold text-yellow-800 mb-2">Contract Information</h4>
                 <p className="text-sm text-gray-700">

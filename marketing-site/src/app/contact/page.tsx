@@ -10,7 +10,7 @@ export default function ContactPage() {
   useEffect(() => {
     const loadContent = async () => {
       try {
-        const res = await fetch("/api/content/contact");
+        const res = await fetch("/api/content?type=contact");
         if (res.ok) {
           const page = await res.json();
           setContent(page.content || "");

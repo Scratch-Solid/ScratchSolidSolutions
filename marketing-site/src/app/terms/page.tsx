@@ -10,7 +10,7 @@ export default function TermsPage() {
   useEffect(() => {
     const loadContent = async () => {
       try {
-        const res = await fetch("/api/content/terms");
+        const res = await fetch("/api/content?type=terms");
         if (res.ok) {
           const page = await res.json();
           setContent(page.content || "");

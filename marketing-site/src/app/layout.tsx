@@ -29,11 +29,6 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <nav className="w-full flex justify-center mt-4 mb-2 z-40 gap-2">
-          <a href="/gallery" className="text-blue-700 font-semibold px-4 py-2 rounded hover:bg-blue-50 dark:hover:bg-zinc-900 transition-colors">Gallery</a>
-          <a href="/services" className="text-blue-700 font-semibold px-4 py-2 rounded hover:bg-blue-50 dark:hover:bg-zinc-900 transition-colors">Services</a>
-          <a href="/about" className="text-blue-700 font-semibold px-4 py-2 rounded hover:bg-blue-50 dark:hover:bg-zinc-900 transition-colors">About Us</a>
-        </nav>
         {children}
       </body>
     </html>

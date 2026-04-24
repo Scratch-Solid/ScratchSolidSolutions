@@ -15,12 +15,14 @@ export default function BookingPage() {
     special_instructions: "",
     cleaning_type: "standard",
     payment_method: "cash",
+    booking_type: "once_off",
+    recurring_rule: "",
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showIndemnity, setShowIndemnity] = useState(false);
 
-  const timeSlots = ["08:00", "10:00", "12:00", "14:00", "16:00"];
+  const timeSlots = ["08:00-12:00", "13:00-17:00"];
 
   const handleSubmit = async () => {
     setError("");
@@ -146,6 +148,49 @@ export default function BookingPage() {
                     <option value="move_out">Move Out</option>
                   </select>
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Booking Type</label>
+                  <div className="space-y-2">
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="booking_type"
+                        value="once_off"
+                        checked={formData.booking_type === "once_off"}
+                        onChange={handleInputChange}
+                        className="mr-2"
+                      />
+                      <span>Once-off</span>
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="booking_type"
+                        value="recurring"
+                        checked={formData.booking_type === "recurring"}
+                        onChange={handleInputChange}
+                        className="mr-2"
+                      />
+                      <span>Recurring</span>
+                    </label>
+                  </div>
+                </div>
+                {formData.booking_type === "recurring" && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Recurring Schedule</label>
+                    <select
+                      name="recurring_rule"
+                      value={formData.recurring_rule}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Select frequency</option>
+                      <option value="weekly">Weekly</option>
+                      <option value="biweekly">Every 2 Weeks</option>
+                      <option value="monthly">Monthly</option>
+                    </select>
+                  </div>
+                )}
                 <div className="flex gap-4">
                   <button onClick={() => setStep(1)} className="flex-1 px-4 py-2 rounded-lg border-2 border-gray-300 hover:border-gray-400">Back</button>
                   <button onClick={() => setStep(3)} disabled={!formData.service_type} className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50">Next</button>
@@ -235,16 +280,30 @@ export default function BookingPage() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
-                  <select
-                    name="payment_method"
-                    value={formData.payment_method}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="cash">Cash</option>
-                    <option value="eft">EFT</option>
-                    <option value="card">Card</option>
-                  </select>
+                  <div className="space-y-2">
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="payment_method"
+                        value="cash"
+                        checked={formData.payment_method === "cash"}
+                        onChange={handleInputChange}
+                        className="mr-2"
+                      />
+                      <span>Cash</span>
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="payment_method"
+                        value="eft"
+                        checked={formData.payment_method === "eft"}
+                        onChange={handleInputChange}
+                        className="mr-2"
+                      />
+                      <span>EFT</span>
+                    </label>
+                  </div>
                 </div>
                 <button
                   onClick={() => setShowIndemnity(true)}

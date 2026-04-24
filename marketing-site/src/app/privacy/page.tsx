@@ -10,7 +10,7 @@ export default function PrivacyPage() {
   useEffect(() => {
     const loadContent = async () => {
       try {
-        const res = await fetch("/api/content/privacy");
+        const res = await fetch("/api/content?type=privacy");
         if (res.ok) {
           const page = await res.json();
           setContent(page.content || "");
