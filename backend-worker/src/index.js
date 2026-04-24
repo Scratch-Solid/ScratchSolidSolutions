@@ -11,9 +11,14 @@ const router = Router();
 
 // CORS middleware - restrict to known origins only
 const ALLOWED_ORIGINS = [
+  'https://scratchsolidsolutions.org',
+  'https://portal.scratchsolidsolutions.org',
+  'https://www.scratchsolidsolutions.org',
   'https://scratchsolid.com',
   'https://portal.scratchsolid.com',
   'https://www.scratchsolid.com',
+  'http://localhost:3000',
+  'http://localhost:3001'
 ];
 
 function getCorsHeaders(request) {
