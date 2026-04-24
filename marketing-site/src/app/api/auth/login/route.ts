@@ -13,7 +13,7 @@ function getJWTSecret(): string {
 export async function POST(request: NextRequest) {
   const db = getDb(request);
   if (!db) {
-    return NextResponse.json({ error: "Database not available" }, { status: 500 });
+    return NextResponse.json({ error: "Service temporarily unavailable. Please try again later." }, { status: 503 });
   }
 
   try {
@@ -22,21 +22,21 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields
     if (!rawEmail || !password) {
-      return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
+      return NextResponse.json({ error: 'Please enter your email and password' }, { status: 400 });
     }
 
     const email = sanitizeEmail(rawEmail);
 
     // Check account lockout
     if (await isAccountLocked(db, email)) {
-      return NextResponse.json({ error: 'Account temporarily locked due to too many failed attempts. Try again later.' }, { status: 423 });
+      return NextResponse.json({ error: 'Account temporarily locked due to too many failed attempts. Please try again in 15 minutes.' }, { status: 423 });
     }
 
     // Authenticate user against database (includes lockout tracking)
     const user = await validateLogin(db, email, password);
 
     if (!user) {
-      return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
+      return NextResponse.json({ error: 'Invalid email or password. Please check your credentials and try again.' }, { status: 401 });
     }
 
     // Generate JWT token
@@ -55,6 +55,6 @@ export async function POST(request: NextRequest) {
     }, { status: 200 });
   } catch (error) {
     console.error('Error during login:', error);
-    return NextResponse.json({ error: 'Login failed' }, { status: 500 });
+    return NextResponse.json({ error: 'An unexpected error occurred. Please try again.' }, { status: 500 });
   }
 }

@@ -27,7 +27,7 @@ function validateEmailFormat(email: string): boolean {
 export async function POST(request: NextRequest) {
   const db = getDb(request);
   if (!db) {
-    return NextResponse.json({ error: "Database not available" }, { status: 500 });
+    return NextResponse.json({ error: "Service temporarily unavailable. Please try again later." }, { status: 503 });
   }
 
   try {
@@ -40,23 +40,30 @@ export async function POST(request: NextRequest) {
     const address = sanitizeString(rawAddress || '');
 
     // Validate required fields
-    if (!type || !name || !email || !password) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    if (!type || !name || !password) {
+      return NextResponse.json({ error: 'Please fill in all required fields (name and password)' }, { status: 400 });
     }
 
-    if (!validateEmailFormat(email)) {
-      return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
+    // Email is optional for individuals, required for business
+    if (type === 'business' && !email) {
+      return NextResponse.json({ error: 'Email is required for business accounts' }, { status: 400 });
+    }
+
+    if (email && !validateEmailFormat(email)) {
+      return NextResponse.json({ error: 'Please enter a valid email address' }, { status: 400 });
     }
 
     const pwdCheck = validatePasswordPolicy(password);
     if (!pwdCheck.valid) {
-      return NextResponse.json({ error: 'Password policy violation', details: pwdCheck.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Password does not meet requirements', details: pwdCheck.errors }, { status: 400 });
     }
 
-    // Check if user already exists
-    const existingUser = await getUserByEmail(db, email);
-    if (existingUser) {
-      return NextResponse.json({ error: 'Email already registered' }, { status: 409 });
+    // Check if user already exists (only if email is provided)
+    if (email) {
+      const existingUser = await getUserByEmail(db, email);
+      if (existingUser) {
+        return NextResponse.json({ error: 'An account with this email already exists. Please login or use a different email.' }, { status: 409 });
+      }
     }
 
     // Handle business signup
@@ -103,21 +110,21 @@ export async function POST(request: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.json({ error: 'Failed to create account' }, { status: 500 });
+      return NextResponse.json({ error: 'Unable to create account. Please try again or contact support.' }, { status: 500 });
     }
 
     const token = jwt.sign({ id: (user as any).id, email: (user as any).email, role: (user as any).role }, JWT_SECRET, { expiresIn: '30d' });
     await createSession(db, (user as any).id, token);
 
-    return NextResponse.json({ 
-      id: (user as any).id, 
+    return NextResponse.json({
+      id: (user as any).id,
       email: (user as any).email,
       role: (user as any).role,
       token: token,
-      message: 'Account created successfully' 
+      message: 'Account created successfully'
     }, { status: 201 });
   } catch (error) {
     console.error('Error creating user:', error);
-    return NextResponse.json({ error: 'Signup failed' }, { status: 500 });
+    return NextResponse.json({ error: 'An unexpected error occurred during signup. Please try again.' }, { status: 500 });
   }
 }
