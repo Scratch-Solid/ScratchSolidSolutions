@@ -9,7 +9,20 @@ export async function POST(request: NextRequest) {
   const { db } = authResult;
 
   try {
-    const body = await request.json();
+    const body = await request.json() as {
+      client_id?: number;
+      client_name?: string;
+      location?: string;
+      service_type?: string;
+      booking_date?: string;
+      booking_time?: string;
+      special_instructions?: string;
+      booking_type?: string;
+      cleaning_type?: string;
+      payment_method?: string;
+      loyalty_discount?: number;
+      cleaner_id?: number;
+    };
     const {
       client_id,
       client_name,
@@ -21,8 +34,13 @@ export async function POST(request: NextRequest) {
       booking_type = 'standard',
       cleaning_type = 'standard',
       payment_method = 'cash',
-      loyalty_discount = 0
+      loyalty_discount = 0,
+      cleaner_id
     } = body;
+
+    if (!client_id || !booking_date || !booking_time) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
 
     // Business contract advance verification
     const user = await db.prepare('SELECT role FROM users WHERE id = ?').bind(client_id).first();
@@ -33,13 +51,75 @@ export async function POST(request: NextRequest) {
       }
       if (contract.is_immutable === 1) {
         const bookingDate = new Date(booking_date);
-        const contractStart = new Date(contract.start_date);
+        const contractStart = new Date((contract as any).start_date as string);
         if (bookingDate < contractStart) {
           return NextResponse.json({ error: 'Booking date is before contract start date' }, { status: 403 });
         }
-        if (contract.end_date && bookingDate > new Date(contract.end_date)) {
+        const contractEndDate = (contract as any).end_date;
+        if (contractEndDate && bookingDate > new Date(contractEndDate as string)) {
           return NextResponse.json({ error: 'Booking date is after contract end date' }, { status: 403 });
         }
+      }
+    }
+
+    // Cleaner fallback logic
+    let assignedCleanerId = cleaner_id;
+    
+    if (cleaner_id) {
+      // Check if preferred cleaner is available
+      const cleanerBookings = (await db.prepare(
+        `SELECT * FROM bookings WHERE cleaner_id = ? AND booking_date = ? AND status != 'cancelled'`
+      ).bind(cleaner_id, booking_date).all()) as unknown as any[];
+      
+      const isCleanerAvailable = !cleanerBookings || cleanerBookings.length === 0 || cleanerBookings.every((b: any) => {
+        const requestedStart = booking_time;
+        const requestedEnd = addHours(requestedStart, 4);
+        const existingStart = b.booking_time;
+        const existingEnd = addHours(existingStart, 4);
+        return !timeOverlap(requestedStart, requestedEnd, existingStart, existingEnd);
+      });
+      
+      if (!isCleanerAvailable) {
+        // Fallback to general pool - assign next available cleaner
+        const availableCleaners = (await db.prepare(
+          `SELECT id FROM users WHERE role = 'cleaner' AND status = 'active'`
+        ).all()) as unknown as any[];
+        
+        if (availableCleaners && availableCleaners.length > 0) {
+          // Find first available cleaner
+          for (const cleaner of availableCleaners) {
+            const cleanerSchedule = (await db.prepare(
+              `SELECT * FROM bookings WHERE cleaner_id = ? AND booking_date = ? AND status != 'cancelled'`
+            ).bind(cleaner.id, booking_date).all()) as unknown as any[];
+            
+            const isAvailable = !cleanerSchedule || cleanerSchedule.length === 0 || cleanerSchedule.every((b: any) => {
+              const requestedStart = booking_time;
+              const requestedEnd = addHours(requestedStart, 4);
+              const existingStart = b.booking_time;
+              const existingEnd = addHours(existingStart, 4);
+              return !timeOverlap(requestedStart, requestedEnd, existingStart, existingEnd);
+            });
+            
+            if (isAvailable) {
+              assignedCleanerId = cleaner.id;
+              break;
+            }
+          }
+        }
+        
+        // If no cleaner available, assign first one (admin will need to reassign)
+        if (!assignedCleanerId && availableCleaners && availableCleaners.length > 0) {
+          assignedCleanerId = availableCleaners[0].id;
+        }
+      }
+    } else {
+      // No cleaner specified, assign first available
+      const availableCleaners = (await db.prepare(
+        `SELECT id FROM users WHERE role = 'cleaner' AND status = 'active'`
+      ).all()) as unknown as any[];
+      
+      if (availableCleaners && availableCleaners.length > 0) {
+        assignedCleanerId = availableCleaners[0].id;
       }
     }
 
@@ -47,9 +127,9 @@ export async function POST(request: NextRequest) {
     const conflictingBookings = await getBookingsByDateRange(db, booking_date, booking_date);
     const timeConflicts = conflictingBookings?.filter((b: any) => {
       const requestedStart = booking_time;
-      const requestedEnd = addHours(requestedStart, 2);
+      const requestedEnd = addHours(requestedStart, 4);
       const existingStart = b.booking_time;
-      const existingEnd = addHours(existingStart, 2);
+      const existingEnd = addHours(existingStart, 4);
       return timeOverlap(requestedStart, requestedEnd, existingStart, existingEnd);
     });
 
@@ -64,9 +144,9 @@ export async function POST(request: NextRequest) {
 
     const booking = await createBooking(db, {
       client_id,
-      client_name,
-      location,
-      service_type,
+      client_name: client_name || 'Unknown',
+      location: location || '',
+      service_type: service_type || 'standard',
       booking_date,
       booking_time,
       special_instructions,
@@ -74,6 +154,7 @@ export async function POST(request: NextRequest) {
       cleaning_type,
       payment_method,
       loyalty_discount,
+      cleaner_id: assignedCleanerId,
       status: 'pending'
     });
 

@@ -1,8 +1,44 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
+import { createInvoice, recordPayment } from '@/lib/zoho';
 
 export const dynamic = "force-dynamic";
+
+// Zoho Books integration - actual API calls
+async function createZohoInvoice(paymentData: any) {
+  try {
+    // Create customer in Zoho if not exists (using user_id as customer ID)
+    const customerId = `CUST-${paymentData.user_id}`;
+    
+    // Create line item for the cleaning service
+    const lineItems = [{
+      item_id: 'cleaning-service',
+      name: 'Cleaning Service',
+      description: `Booking #${paymentData.booking_id}`,
+      quantity: 1,
+      rate: paymentData.amount,
+    }];
+
+    // Create invoice in Zoho Books
+    const invoiceResponse = await createInvoice(customerId, lineItems);
+    
+    if (invoiceResponse.code === 0 && invoiceResponse.invoice) {
+      const invoiceId = invoiceResponse.invoice.invoice_id;
+      
+      // Record payment based on payment method
+      const paymentMode = paymentData.payment_method === 'cash' ? 'cash' : 'eft';
+      await recordPayment(invoiceId, paymentData.amount, paymentMode, new Date().toISOString().split('T')[0]);
+      
+      return { invoice_id: invoiceId };
+    }
+    
+    throw new Error('Failed to create Zoho invoice');
+  } catch (error) {
+    console.error('Zoho Books integration error:', error);
+    throw error;
+  }
+}
 
 export async function POST(request: NextRequest) {
   const traceId = withTracing(request);
@@ -18,20 +54,49 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
+    // Process payment
     const result = await db.prepare(
       `INSERT INTO payments (user_id, booking_id, amount, method, status, created_at)
-       VALUES (?, ?, ?, ?, 'pending', datetime('now')) RETURNING *`
+       VALUES (?, ?, ?, ?, 'confirmed', datetime('now')) RETURNING *`
     ).bind(user_id, booking_id, amount, payment_method).first();
 
     if (!result) {
       return NextResponse.json({ error: 'Payment creation failed' }, { status: 500 });
     }
 
-    const response = NextResponse.json(result, { status: 201 });
+    // Trigger Zoho Books integration
+    try {
+      const zohoInvoice = await createZohoInvoice({
+        payment_id: (result as any).id,
+        booking_id,
+        amount,
+        payment_method,
+        user_id,
+      });
+      
+      // Update payment record with Zoho invoice ID
+      await db.prepare(
+        `UPDATE payments SET zoho_invoice_id = ? WHERE id = ?`
+      ).bind(zohoInvoice.invoice_id, (result as any).id).run();
+    } catch (zohoError) {
+      console.error('Zoho Books integration failed:', zohoError);
+      // Mark payment as pending Zoho sync
+      await db.prepare(
+        `UPDATE payments SET status = 'pending_zoho_sync' WHERE id = ?`
+      ).bind((result as any).id).run();
+    }
+
+    const response = NextResponse.json({ 
+      ...result,
+      message: 'Payment confirmed successfully'
+    }, { status: 201 });
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     console.error('Error creating payment:', error);
-    const response = NextResponse.json({ error: 'Payment processing failed' }, { status: 500 });
+    const response = NextResponse.json({ 
+      error: 'Payment processing failed',
+      message: 'Please retry or contact admin'
+    }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

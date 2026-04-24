@@ -82,8 +82,21 @@ export default function BookingPage() {
         </h1>
 
         {error && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-600 text-sm">{error}</p>
+          <div className={`mb-4 p-4 border-2 rounded-lg ${
+            error.includes("Payment") 
+              ? "bg-yellow-50 border-yellow-300" 
+              : "bg-red-50 border-red-200"
+          }`}>
+            <p className={`text-sm font-semibold ${
+              error.includes("Payment") 
+                ? "text-yellow-800" 
+                : "text-red-600"
+            }`}>
+              {error.includes("Payment") 
+                ? "Payment not confirmed, retry or contact admin." 
+                : error
+              }
+            </p>
           </div>
         )}
 

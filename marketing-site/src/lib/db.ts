@@ -247,11 +247,12 @@ export async function createBooking(db: D1Database, data: {
   cleaning_type?: string;
   payment_method?: string;
   loyalty_discount?: number;
+  cleaner_id?: number;
   status?: string;
 }) {
   const result = await db.prepare(
-    `INSERT INTO bookings (client_id, client_name, location, service_type, booking_date, booking_time, special_instructions, booking_type, cleaning_type, payment_method, loyalty_discount, status)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`
+    `INSERT INTO bookings (client_id, client_name, location, service_type, booking_date, booking_time, special_instructions, booking_type, cleaning_type, payment_method, loyalty_discount, cleaner_id, status)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`
   ).bind(
     data.client_id, 
     data.client_name, 
@@ -264,6 +265,7 @@ export async function createBooking(db: D1Database, data: {
     data.cleaning_type || 'standard',
     data.payment_method || 'cash',
     data.loyalty_discount || 0,
+    data.cleaner_id || null,
     data.status || 'pending'
   ).first();
   return result;
