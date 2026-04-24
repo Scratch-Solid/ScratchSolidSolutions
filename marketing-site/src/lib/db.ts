@@ -55,6 +55,11 @@ export async function getUserByEmail(db: D1Database, email: string) {
   return result;
 }
 
+export async function getUserByPhone(db: D1Database, phone: string) {
+  const result = await db.prepare('SELECT id, email, role, name, phone, address, business_name, password_hash, failed_attempts, locked_until FROM users WHERE phone = ?').bind(phone).first();
+  return result;
+}
+
 export async function getUserById(db: D1Database, id: number) {
   const result = await db.prepare('SELECT * FROM users WHERE id = ?').bind(id).first();
   return result;
@@ -134,6 +139,29 @@ export async function validateSession(db: D1Database, token: string) {
 
 export async function deleteSession(db: D1Database, token: string) {
   await db.prepare('DELETE FROM sessions WHERE token = ?').bind(token).run();
+}
+
+// Password reset operations
+export async function createPasswordResetToken(db: D1Database, userId: number, otp: string | null, method: 'whatsapp' | 'email'): Promise<string> {
+  const token = crypto.randomUUID();
+  const expiresAt = method === 'whatsapp' ? `datetime('now', '+15 minutes')` : `datetime('now', '+1 hour')`;
+  
+  await db.prepare(
+    `INSERT INTO password_reset_tokens (user_id, token, otp, expires_at, method) VALUES (?, ?, ?, ?, ?)`
+  ).bind(userId, token, otp || null, expiresAt, method).run();
+  
+  return token;
+}
+
+export async function validatePasswordResetToken(db: D1Database, token: string) {
+  const resetToken = await db.prepare(
+    `SELECT * FROM password_reset_tokens WHERE token = ? AND expires_at > datetime('now')`
+  ).bind(token).first();
+  return resetToken;
+}
+
+export async function deletePasswordResetToken(db: D1Database, token: string) {
+  await db.prepare('DELETE FROM password_reset_tokens WHERE token = ?').bind(token).run();
 }
 
 // Cleaner profile operations

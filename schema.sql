@@ -181,6 +181,17 @@ CREATE TABLE IF NOT EXISTS sessions (
   expires_at TEXT DEFAULT (datetime('now', '+30 days'))
 );
 
+-- Password reset tokens (for forgot password flow)
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER REFERENCES users(id),
+  token TEXT UNIQUE NOT NULL,
+  otp TEXT DEFAULT NULL,
+  method TEXT NOT NULL, -- 'whatsapp' or 'email'
+  expires_at TEXT NOT NULL,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
 -- Audit logs (for tracking admin actions)
 CREATE TABLE IF NOT EXISTS audit_logs (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -214,6 +225,9 @@ CREATE INDEX IF NOT EXISTS idx_bookings_date ON bookings(booking_date);
 CREATE INDEX IF NOT EXISTS idx_bookings_date_status ON bookings(booking_date, status);
 CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token);
 CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at);
+CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_token ON password_reset_tokens(token);
+CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user_id ON password_reset_tokens(user_id);
+CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_expires ON password_reset_tokens(expires_at);
 CREATE INDEX IF NOT EXISTS idx_cleaner_profiles_user_id ON cleaner_profiles(user_id);
 CREATE INDEX IF NOT EXISTS idx_cleaner_profiles_username ON cleaner_profiles(username);
 CREATE INDEX IF NOT EXISTS idx_cleaner_profiles_status ON cleaner_profiles(status);
