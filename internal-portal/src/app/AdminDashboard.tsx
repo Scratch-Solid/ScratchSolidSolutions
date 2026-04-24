@@ -338,14 +338,17 @@ export default function AdminDashboard() {
 
           {/* Management Buttons */}
           <div className="mb-6 flex space-x-4">
-            <button className="primary-button">
-              Manage Templates
+            <button 
+              onClick={() => window.open('https://scratchsolidsolutions.org/client-dashboard', '_blank')}
+              className="primary-button"
+            >
+              View Client Dashboard
             </button>
-            <button className="primary-button">
-              View User Dashboards
-            </button>
-            <button className="primary-button">
-              View Cleaner Dashboards
+            <button 
+              onClick={() => window.open('https://portal.scratchsolidsolutions.org/cleaner-dashboard', '_blank')}
+              className="primary-button"
+            >
+              View Cleaner Dashboard
             </button>
           </div>
         </>
