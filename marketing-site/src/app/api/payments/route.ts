@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { getDb } from "@/lib/db";
+import { logger } from "@/lib/logger";
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { createInvoice, recordPayment } from '@/lib/zoho';
 
@@ -35,7 +36,7 @@ async function createZohoInvoice(paymentData: any) {
     
     throw new Error('Failed to create Zoho invoice');
   } catch (error) {
-    console.error('Zoho Books integration error:', error);
+    logger.error('Zoho Books integration error', error as Error);
     throw error;
   }
 }
@@ -79,7 +80,7 @@ export async function POST(request: NextRequest) {
         `UPDATE payments SET zoho_invoice_id = ? WHERE id = ?`
       ).bind(zohoInvoice.invoice_id, (result as any).id).run();
     } catch (zohoError) {
-      console.error('Zoho Books integration failed:', zohoError);
+      logger.error('Zoho Books integration failed', zohoError as Error);
       // Mark payment as pending Zoho sync
       await db.prepare(
         `UPDATE payments SET status = 'pending_zoho_sync' WHERE id = ?`
@@ -92,7 +93,7 @@ export async function POST(request: NextRequest) {
     }, { status: 201 });
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    console.error('Error creating payment:', error);
+    logger.error('Error creating payment', error as Error);
     const response = NextResponse.json({ 
       error: 'Payment processing failed',
       message: 'Please retry or contact admin'

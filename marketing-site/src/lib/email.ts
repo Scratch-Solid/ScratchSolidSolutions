@@ -1,4 +1,6 @@
+// Email service using Resend API
 import { Resend } from 'resend';
+import { logger } from './logger';
 
 const resend = new Resend(process.env.RESEND_API_KEY || '');
 
@@ -11,8 +13,8 @@ interface SendEmailOptions {
 
 export async function sendEmail({ to, subject, html, from }: SendEmailOptions) {
   if (!process.env.RESEND_API_KEY) {
-    console.log('RESEND_API_KEY not set. Skipping email send.');
-    console.log(`Would send to: ${to}, subject: ${subject}`);
+    logger.info('RESEND_API_KEY not set. Skipping email send.');
+    logger.info(`Would send to: ${to}, subject: ${subject}`);
     return { success: false, message: 'Email service not configured' };
   }
 
@@ -25,14 +27,14 @@ export async function sendEmail({ to, subject, html, from }: SendEmailOptions) {
     });
 
     if (error) {
-      console.error('Email send error:', error);
-      return { success: false, error };
+      logger.error('Error sending email', error as Error);
+      return { success: false, message: 'Failed to send email', error };
     }
 
     return { success: true, data };
   } catch (error) {
-    console.error('Email send error:', error);
-    return { success: false, error };
+    logger.error('Error sending email', error as Error);
+    return { success: false, message: 'Failed to send email', error };
   }
 }
 

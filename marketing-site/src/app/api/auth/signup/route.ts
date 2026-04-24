@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb, getUserByEmail, createUser, createSession, sanitizeEmail, sanitizeString, sanitizePhone } from "@/lib/db";
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { logger } from "@/lib/logger";
 
 const JWT_SECRET = process.env.JWT_SECRET || '';
 
@@ -122,7 +123,7 @@ export async function POST(request: NextRequest) {
       message: 'Account created successfully'
     }, { status: 201 });
   } catch (error) {
-    console.error('Error creating user:', error);
+    logger.error('Error creating user', error as Error);
     return NextResponse.json({ error: 'An unexpected error occurred during signup. Please try again.' }, { status: 500 });
   }
 }

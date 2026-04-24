@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb, getUserByEmail, createSession, deleteSession, validateLogin, isAccountLocked, sanitizeEmail } from "@/lib/db";
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { logger } from "@/lib/logger";
 
 const JWT_SECRET = process.env.JWT_SECRET || '';
 
@@ -54,7 +55,7 @@ export async function POST(request: NextRequest) {
       message: 'Login successful' 
     }, { status: 200 });
   } catch (error) {
-    console.error('Error during login:', error);
+    logger.error('Error during login', error as Error);
     return NextResponse.json({ error: 'An unexpected error occurred. Please try again.' }, { status: 500 });
   }
 }

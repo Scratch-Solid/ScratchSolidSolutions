@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, getUserByEmail, getUserByPhone, createPasswordResetToken, sanitizeEmail, sanitizePhone } from "@/lib/db";
 import { sendPasswordResetEmail } from "@/lib/email";
+import { logger } from "@/lib/logger";
 
 export async function POST(request: NextRequest) {
   const db = getDb(request);
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
       }
       
       // Log OTP for development/testing
-      console.log(`WhatsApp OTP for ${phone}: ${otp}`);
+      logger.info(`WhatsApp OTP for ${phone}: ${otp}`);
       
       return NextResponse.json({ 
         message: "WhatsApp integration requires paid API. Please contact support for password reset.",
@@ -75,7 +76,7 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('Error in forgot password:', error);
+    logger.error('Error in forgot password', error as Error);
     return NextResponse.json({ error: "An unexpected error occurred. Please try again." }, { status: 500 });
   }
 }

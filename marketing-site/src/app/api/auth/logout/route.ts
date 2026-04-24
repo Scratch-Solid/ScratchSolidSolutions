@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, deleteSession } from "@/lib/db";
 import jwt from 'jsonwebtoken';
+import { logger } from "@/lib/logger";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -24,6 +25,9 @@ export async function POST(request: NextRequest) {
     
     // Verify token
     try {
+      if (!JWT_SECRET) {
+        return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+      }
       jwt.verify(token, JWT_SECRET);
     } catch {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
@@ -34,7 +38,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ message: 'Logged out successfully' }, { status: 200 });
   } catch (error) {
-    console.error('Error during logout:', error);
+    logger.error('Error during logout', error as Error);
     return NextResponse.json({ error: 'Logout failed' }, { status: 500 });
   }
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, createBooking, getBookingsByDateRange, getBookingsByCleaner } from "@/lib/db";
+import { logger } from "@/lib/logger";
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 
 export async function POST(request: NextRequest) {
@@ -161,7 +162,7 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json(booking, { status: 201 });
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    console.error('Error creating booking:', error);
+    logger.error('Error creating booking', error as Error);
     const response = NextResponse.json({ error: 'Failed to create booking' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
@@ -193,7 +194,7 @@ export async function GET(request: NextRequest) {
     response.headers.set('Cache-Control', 'private, max-age=30');
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    console.error('Error fetching bookings:', error);
+    logger.error('Error fetching bookings', error as Error);
     const response = NextResponse.json({ error: 'Failed to fetch bookings' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }

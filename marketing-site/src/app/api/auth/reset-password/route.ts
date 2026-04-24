@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, validatePasswordResetToken, deletePasswordResetToken, getUserById } from "@/lib/db";
+import { getDb, validatePasswordResetToken, deletePasswordResetToken, getUserById, validatePasswordPolicy } from "@/lib/db";
 import bcrypt from 'bcryptjs';
+import { logger } from "@/lib/logger";
 
 export async function POST(request: NextRequest) {
   const db = getDb(request);
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest) {
     }, { status: 200 });
 
   } catch (error) {
-    console.error('Error in reset password:', error);
+    logger.error('Error in reset password', error as Error);
     return NextResponse.json({ error: "An unexpected error occurred. Please try again." }, { status: 500 });
   }
 }
