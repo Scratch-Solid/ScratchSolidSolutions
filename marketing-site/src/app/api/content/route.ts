@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { directus } from "../../directusClient";
+import { logger } from "@/lib/logger";
 
 export const runtime = "edge";
 
@@ -50,8 +51,8 @@ export async function GET(request: NextRequest) {
       type 
     }, { status: 404 });
   } catch (error) {
-    console.error("Error loading content from Directus:", error);
-    return NextResponse.json({ error: "Failed to load content" }, { status: 500 });
+    logger.error('Error loading content from Directus', error as Error);
+    return NextResponse.json({ error: 'Failed to load content' }, { status: 500 });
   }
 }
 
@@ -108,7 +109,7 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({ message: "Content updated successfully" });
   } catch (error) {
-    console.error("Error updating content in Directus:", error);
-    return NextResponse.json({ error: "Failed to update content" }, { status: 500 });
+    logger.error('Error updating content in Directus', error as Error);
+    return NextResponse.json({ error: 'Failed to update content' }, { status: 500 });
   }
 }

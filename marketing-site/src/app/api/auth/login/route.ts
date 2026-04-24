@@ -18,15 +18,16 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = await request.json();
-    const { email: rawEmail, password } = body;
+    const body = await request.json() as { email?: string; password?: string };
+    const { email, password } = body;
 
     // Validate required fields
-    if (!rawEmail || !password) {
+    if (!email || !password) {
       return NextResponse.json({ error: 'Please enter your email and password' }, { status: 400 });
     }
 
-    const email = sanitizeEmail(rawEmail);
+    const rawEmail = email;
+    const sanitizedEmail = sanitizeEmail(rawEmail);
 
     // Check account lockout
     if (await isAccountLocked(db, email)) {

@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = await request.json();
+    const body = await request.json() as { type?: string; identifier?: string };
     const { type, identifier } = body;
 
     if (!type || !identifier) {

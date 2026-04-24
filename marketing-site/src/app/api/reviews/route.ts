@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { getDb } from "@/lib/db";
+import { logger } from "@/lib/logger";
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 
 export const dynamic = "force-dynamic";
@@ -67,7 +68,7 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json(result, { status: 201 });
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    console.error('Error creating review:', error);
+    logger.error('Error creating review', error as Error);
     const response = NextResponse.json({ error: 'Review creation failed' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
@@ -75,7 +76,10 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   const traceId = withTracing(request);
-  const { db } = getDb(request);
+  const db = getDb(request);
+  if (!db) {
+    return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 });
+  }
 
   try {
     const { searchParams } = new URL(request.url);
@@ -95,7 +99,7 @@ export async function GET(request: NextRequest) {
     const response = NextResponse.json(reviews);
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    console.error('Error fetching reviews:', error);
+    logger.error('Error fetching reviews', error as Error);
     const response = NextResponse.json({ error: 'Failed to fetch reviews' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }

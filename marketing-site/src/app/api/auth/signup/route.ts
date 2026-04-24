@@ -32,25 +32,41 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = await request.json();
-    const { type, name: rawName, email: rawEmail, phone: rawPhone, address: rawAddress, businessName, registration, password, role, business_info } = body;
+    const body = await request.json() as {
+      type?: string;
+      name?: string;
+      email?: string;
+      phone?: string;
+      address?: string;
+      businessName?: string;
+      registration?: string;
+      password?: string;
+      role?: string;
+      business_info?: string;
+    };
+    const { type, name, email, phone, address, businessName, registration, password, role, business_info } = body;
 
-    const name = sanitizeString(rawName);
-    const email = sanitizeEmail(rawEmail);
-    const phone = sanitizePhone(rawPhone || '');
-    const address = sanitizeString(rawAddress || '');
+    const rawName = name;
+    const rawEmail = email;
+    const rawPhone = phone;
+    const rawAddress = address;
+
+    const sanitizedName = sanitizeString(rawName || '');
+    const sanitizedEmail = sanitizeEmail(rawEmail || '');
+    const sanitizedPhone = sanitizePhone(rawPhone || '');
+    const sanitizedAddress = sanitizeString(rawAddress || '');
 
     // Validate required fields
-    if (!type || !name || !email || !password) {
+    if (!type || !sanitizedName || !sanitizedEmail || !password) {
       return NextResponse.json({ error: 'Please fill in all required fields (name, email, and password)' }, { status: 400 });
     }
 
     // Email is now required for all accounts
-    if (!email) {
+    if (!sanitizedEmail) {
       return NextResponse.json({ error: 'Email is required for all accounts' }, { status: 400 });
     }
 
-    if (!validateEmailFormat(email)) {
+    if (!validateEmailFormat(sanitizedEmail)) {
       return NextResponse.json({ error: 'Please enter a valid email address' }, { status: 400 });
     }
 
@@ -60,7 +76,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user already exists
-    const existingUser = await getUserByEmail(db, email);
+    const existingUser = await getUserByEmail(db, sanitizedEmail);
     if (existingUser) {
       return NextResponse.json({ error: 'An account with this email already exists. Please login or use a different email.' }, { status: 409 });
     }
@@ -72,10 +88,10 @@ export async function POST(request: NextRequest) {
       }
 
       const user = await createUser(db, {
-        name,
-        email,
-        phone,
-        address,
+        name: sanitizedName,
+        email: sanitizedEmail,
+        phone: sanitizedPhone,
+        address: sanitizedAddress,
         business_name: businessName,
         business_registration: registration,
         password_hash: await bcrypt.hash(password, 10),
@@ -100,10 +116,10 @@ export async function POST(request: NextRequest) {
 
     // Handle individual signup
     const user = await createUser(db, {
-      name,
-      email,
-      phone,
-      address,
+      name: sanitizedName,
+      email: sanitizedEmail,
+      phone: sanitizedPhone,
+      address: sanitizedAddress,
       password_hash: await bcrypt.hash(password, 10),
       role: role || 'client'
     });

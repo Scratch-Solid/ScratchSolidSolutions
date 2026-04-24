@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, validatePasswordResetToken, deletePasswordResetToken, getUserById, validatePasswordPolicy } from "@/lib/db";
+import { getDb, validatePasswordResetToken, deletePasswordResetToken, getUserById } from "@/lib/db";
 import bcrypt from 'bcryptjs';
 import { logger } from "@/lib/logger";
 
@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = await request.json();
+    const body = await request.json() as { token?: string; otp?: string; newPassword?: string };
     const { token, otp, newPassword } = body;
 
     if (!token || !newPassword) {
