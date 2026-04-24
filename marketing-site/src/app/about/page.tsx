@@ -15,8 +15,8 @@ export default function AboutPage() {
   }, []);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-white py-16 px-4 font-sans animate-fade-in">
-      <div className="max-w-2xl w-full bg-white rounded-3xl shadow-2xl border-2 border-blue-200 p-10">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-white py-16 px-4 font-sans animate-fade-in">
+      <div className="max-w-2xl w-full bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20 p-10 relative">
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0">
           <img
             src="/scratchsolid-logo.jpg"
@@ -31,7 +31,7 @@ export default function AboutPage() {
         {loading ? (
           <div className="text-center text-zinc-500">Loading...</div>
         ) : about ? (
-          <>
+          <div className="text-lg text-zinc-800 mb-8 relative z-10">
             <p className="text-lg text-zinc-800 mb-6 text-center">{about.intro}</p>
             <div className="my-8">
               <h2 className="text-2xl font-bold text-blue-700 mb-2 text-center">Our Mission</h2>
@@ -47,7 +47,7 @@ export default function AboutPage() {
             </div>
             <p className="text-lg text-zinc-800 mb-6 text-center">{about.outro}</p>
             <p className="text-xl font-bold text-green-700 text-center mb-4">{about.slogan}</p>
-          </>
+          </div>
         ) : (
           <div className="text-center text-red-500">Failed to load content.</div>
         )}

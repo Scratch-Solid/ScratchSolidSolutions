@@ -20,16 +20,16 @@ export default function GalleryClient() {
   }, []);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen py-16 px-4 bg-white/90 dark:bg-black/80">
-      <h1 className="text-4xl font-extrabold text-center text-black dark:text-zinc-50 mb-6 tracking-tight">
+    <div className="flex flex-col items-center justify-center min-h-screen py-16 px-4 bg-gradient-to-br from-blue-50 to-white">
+      <h1 className="text-4xl font-extrabold text-center text-black mb-6 tracking-tight">
         Real Results & Reviews
       </h1>
-      <p className="text-center text-zinc-700 dark:text-zinc-300 mb-8 max-w-xl">
+      <p className="text-center text-zinc-700 mb-8 max-w-xl">
         See real photos from our completed jobs and read authentic reviews from our clients. All content is uploaded directly by our cleaners and clients.
       </p>
       
       {/* Before & After Gallery */}
-      <div className="w-full max-w-2xl mb-8">
+      <div className="w-full max-w-2xl mb-8 bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20 p-6">
         <h2 className="text-2xl font-bold text-blue-700 mb-2 text-center">Before & After Gallery</h2>
         {loading ? (
           <div className="text-center text-zinc-500">Loading...</div>
@@ -48,38 +48,36 @@ export default function GalleryClient() {
       </div>
 
       {/* Client Reviews Section */}
-      <div className="w-full max-w-4xl mb-8">
+      <div className="w-full max-w-4xl mb-8 bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20 p-6">
         <h2 className="text-2xl font-bold text-green-700 mb-4 text-center">Client Reviews</h2>
         {loading ? (
           <div className="text-center text-zinc-500">Loading reviews...</div>
         ) : reviews.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {reviews.map((review) => (
-              <div key={review.id} className="bg-zinc-50 rounded-lg p-4 border border-zinc-200">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-semibold text-zinc-800">{review.user_name || 'Anonymous'}</span>
-                  <div className="flex text-yellow-400">
-                    {'★'.repeat(review.rating || 5)}
-                  </div>
-                </div>
-                <p className="text-zinc-600 text-sm mb-3">{review.text}</p>
-                {review.images && JSON.parse(review.images).length > 0 && (
-                  <div className="flex gap-2 mb-2">
-                    {JSON.parse(review.images).map((img: string, i: number) => (
-                      <img key={i} src={img} alt={`Review image ${i+1}`} className="w-16 h-16 object-cover rounded" />
+          <div className="space-y-4">
+            {reviews.map((review, i) => (
+              <div key={i} className="bg-zinc-50 rounded-lg p-4 border border-zinc-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="flex">
+                    {[...Array(5)].map((_, starIndex) => (
+                      <span key={starIndex} className={starIndex < review.rating ? "text-yellow-400" : "text-zinc-300"}>★</span>
                     ))}
                   </div>
-                )}
-                <p className="text-xs text-zinc-400">{new Date(review.created_at).toLocaleDateString()}</p>
+                  <span className="text-sm text-zinc-500">{new Date(review.created_at).toLocaleDateString()}</span>
+                </div>
+                <p className="text-zinc-800">{review.text}</p>
               </div>
             ))}
           </div>
         ) : (
-          <div className="text-center text-zinc-400">No reviews yet.</div>
+          <div className="text-center text-zinc-400">No reviews found.</div>
         )}
       </div>
-      
-      <Link href="/" className="text-blue-600 hover:underline font-semibold">Back to Home</Link>
+
+      <div className="mt-8">
+        <Link href="/" className="rounded-full bg-blue-600 px-8 py-3 text-lg font-semibold text-white shadow-lg hover:bg-blue-700 transition-colors">
+          Back to Home
+        </Link>
+      </div>
     </div>
   );
 }
