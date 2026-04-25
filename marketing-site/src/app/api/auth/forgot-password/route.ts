@@ -2,8 +2,25 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb, getUserByEmail, getUserByPhone, createPasswordResetToken, sanitizeEmail, sanitizePhone } from "@/lib/db";
 import { sendPasswordResetEmail } from "@/lib/email";
 import { logger } from "@/lib/logger";
+import { withRateLimit, rateLimits } from "@/lib/rateLimit";
 
 export async function POST(request: NextRequest) {
+  // Rate limiting check
+  const rateLimitResult = await withRateLimit(request, rateLimits.auth);
+  if (rateLimitResult && !rateLimitResult.success) {
+    return NextResponse.json(
+      { error: 'Too many password reset attempts. Please try again later.' },
+      { 
+        status: 429,
+        headers: {
+          'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+          'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+          'X-RateLimit-Reset': rateLimitResult.reset.toString()
+        }
+      }
+    );
+  }
+
   const db = getDb(request);
   if (!db) {
     return NextResponse.json({ error: "Service temporarily unavailable. Please try again later." }, { status: 503 });
