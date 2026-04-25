@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { logger } from '@/lib/logger';
+import { validateString, validateNumber } from '@/lib/validation';
+import { withRateLimit, rateLimits } from '@/lib/rateLimit';
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +12,25 @@ export async function POST(request: NextRequest) {
   const authResult = await withAuth(request);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
+
+  // Rate limiting check
+  const rateLimitResult = await withRateLimit(request, rateLimits.standard);
+  if (rateLimitResult && !rateLimitResult.success) {
+    return withSecurityHeaders(
+      NextResponse.json(
+        { error: 'Too many notification requests. Please try again later.' },
+        { 
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+            'X-RateLimit-Reset': rateLimitResult.reset.toString()
+          }
+        }
+      ),
+      traceId
+    );
+  }
 
   try {
     const body = await request.json() as {
@@ -44,6 +65,25 @@ export async function GET(request: NextRequest) {
   const authResult = await withAuth(request);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db, user } = authResult;
+
+  // Rate limiting check
+  const rateLimitResult = await withRateLimit(request, rateLimits.standard);
+  if (rateLimitResult && !rateLimitResult.success) {
+    return withSecurityHeaders(
+      NextResponse.json(
+        { error: 'Too many notification requests. Please try again later.' },
+        { 
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+            'X-RateLimit-Reset': rateLimitResult.reset.toString()
+          }
+        }
+      ),
+      traceId
+    );
+  }
 
   try {
     const { searchParams } = new URL(request.url);
