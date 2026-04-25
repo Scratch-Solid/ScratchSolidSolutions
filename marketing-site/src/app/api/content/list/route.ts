@@ -1,18 +1,16 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
 import { logger } from "@/lib/logger";
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { withRateLimit, rateLimits } from '@/lib/rateLimit';
-import { validateString } from '@/lib/validation';
 import { getDb } from '@/lib/db';
 
 export const runtime = "edge";
 
-export async function GET(request: NextRequest, { params }: { params: { page: string } }) {
+export async function GET(request: NextRequest) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
 
-  // Rate limiting check
   const rateLimitResult = await withRateLimit(request, rateLimits.standard);
   if (rateLimitResult && !rateLimitResult.success) {
     return withSecurityHeaders(
@@ -37,23 +35,11 @@ export async function GET(request: NextRequest, { params }: { params: { page: st
   }
 
   try {
-    const pageSlug = params.page;
-    const slugValidation = validateString(pageSlug, 'slug', 1, 100);
-    if (!slugValidation.valid) {
-      return NextResponse.json({ error: slugValidation.errors.join(', ') }, { status: 400 });
-    }
+    const result = await db.prepare('SELECT id, slug, title, text, created_at, updated_at FROM content ORDER BY updated_at DESC').all();
 
-    const result = await db.prepare('SELECT title, text as content, slug FROM content WHERE slug = ?').bind(pageSlug).first();
-
-    if (!result) {
-      return NextResponse.json({ error: 'Page not found' }, { status: 404 });
-    }
-
-    const response = NextResponse.json({ title: (result as any).title, content: (result as any).content, slug: (result as any).slug });
-    response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=600');
-    return response;
+    return NextResponse.json({ content: result.results });
   } catch (error) {
-    logger.error('Error loading page from D1', error as Error);
-    return NextResponse.json({ error: 'Failed to load page' }, { status: 500 });
+    logger.error('Error loading content list from D1', error as Error);
+    return NextResponse.json({ error: 'Failed to load content' }, { status: 500 });
   }
 }

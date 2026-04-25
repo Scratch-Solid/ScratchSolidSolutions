@@ -22,8 +22,7 @@
     "JWT_SECRET": "",
     "RESEND_API_KEY": "",
     "NEXT_PUBLIC_BASE_URL": "https://scratchsolidsolutions.org",
-    "NEXT_PUBLIC_API_URL": "https://scratchsolidsolutions.org/api",
-    "NEXT_PUBLIC_DIRECTUS_URL": ""
+    "NEXT_PUBLIC_API_URL": "https://scratchsolidsolutions.org/api"
   },
   "observability": {
     "enabled": true

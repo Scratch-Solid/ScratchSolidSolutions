@@ -6,7 +6,6 @@ interface EnvConfig {
   RESEND_API_KEY: string;
   NEXT_PUBLIC_BASE_URL: string;
   NEXT_PUBLIC_API_URL: string;
-  NEXT_PUBLIC_DIRECTUS_URL?: string;
   ZOHO_ORG_ID?: string;
   ZOHO_CLIENT_ID?: string;
   ZOHO_CLIENT_SECRET?: string;
@@ -35,10 +34,6 @@ export function validateEnv(): EnvConfig {
 
   // Optional environment variables (log warnings if missing in production)
   if (process.env.NODE_ENV === 'production') {
-    if (!process.env.NEXT_PUBLIC_DIRECTUS_URL) {
-      console.warn('NEXT_PUBLIC_DIRECTUS_URL is recommended in production for CMS integration');
-    }
-    
     // Zoho credentials for payment integration
     if (!process.env.ZOHO_ORG_ID || !process.env.ZOHO_CLIENT_ID || !process.env.ZOHO_CLIENT_SECRET || !process.env.ZOHO_REFRESH_TOKEN) {
       console.warn('Zoho Books credentials are recommended in production for payment integration');
@@ -54,7 +49,6 @@ export function validateEnv(): EnvConfig {
     RESEND_API_KEY: process.env.RESEND_API_KEY!,
     NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL!,
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL!,
-    NEXT_PUBLIC_DIRECTUS_URL: process.env.NEXT_PUBLIC_DIRECTUS_URL,
     ZOHO_ORG_ID: process.env.ZOHO_ORG_ID,
     ZOHO_CLIENT_ID: process.env.ZOHO_CLIENT_ID,
     ZOHO_CLIENT_SECRET: process.env.ZOHO_CLIENT_SECRET,

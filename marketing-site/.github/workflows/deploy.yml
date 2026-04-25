@@ -22,9 +22,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build and deploy with OpenNext
+      - name: Build with OpenNext
         run: npm run deploy
         env:
           NEXT_PUBLIC_BASE_URL: https://scratchsolidsolutions.org
           NEXT_PUBLIC_API_URL: https://scratchsolidsolutions.org
-          NEXT_PUBLIC_DIRECTUS_URL: https://scratch-solid-marketing.directus.app

@@ -1,19 +1,13 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { getGalleryImages } from "../directusApi";
 
 export default function GalleryClient() {
-  const [images, setImages] = useState<any[]>([]);
   const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   useEffect(() => {
-    Promise.all([
-      getGalleryImages(),
-      fetch('/api/reviews?status=approved&limit=10').then(res => res.ok ? res.json() : [])
-    ]).then(([galleryData, reviewsData]) => {
-      setImages(galleryData);
+    fetch('/api/reviews?status=approved&limit=10').then(res => res.ok ? res.json() : []).then((reviewsData) => {
       setReviews(reviewsData || []);
       setLoading(false);
     });
@@ -31,20 +25,7 @@ export default function GalleryClient() {
       {/* Before & After Gallery */}
       <div className="w-full max-w-2xl mb-6 sm:mb-8 bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20 p-4 sm:p-6">
         <h2 className="text-xl sm:text-2xl font-bold text-blue-700 mb-2 text-center">Before & After Gallery</h2>
-        {loading ? (
-          <div className="text-center text-zinc-500">Loading...</div>
-        ) : images.length > 0 ? (
-          <div className="flex flex-wrap gap-3 sm:gap-4 justify-center items-center">
-            {images.map((img, i) => (
-              <div key={i} className="w-36 h-28 sm:w-40 sm:h-32 bg-zinc-100 rounded-lg flex flex-col items-center justify-center border border-zinc-300 overflow-hidden">
-                <img src={img.url} alt={img.caption || `Gallery image ${i+1}`} className="object-cover w-full h-full" />
-                {img.caption && <div className="text-xs text-zinc-600 mt-1 px-1 text-center">{img.caption}</div>}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center text-zinc-400">No images found.</div>
-        )}
+        <div className="text-center text-zinc-400">Gallery images will be uploaded via admin panel.</div>
       </div>
 
       {/* Client Reviews Section */}

@@ -2,16 +2,12 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { getServices } from "../directusApi";
 
 export default function ServicesPage() {
-  const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    getServices().then((data) => {
-      setServices(data);
-      setLoading(false);
-    });
+    setLoading(false);
   }, []);
 
   return (
@@ -27,18 +23,23 @@ export default function ServicesPage() {
             aria-hidden="true"
           />
         </div>
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-blue-700 mb-4 sm:mb-6 text-center drop-shadow-lg">Our Services</h1>
-        {loading ? (
-          <div className="text-center text-zinc-500">Loading...</div>
-        ) : (
-          <ul className="text-base sm:text-lg text-zinc-800 mb-6 sm:mb-8 list-disc pl-6 relative z-10">
-            {services.map((service, i) => (
-              <li className="mb-2" key={i}>
-                <b>{service.title}:</b> {service.description}
-              </li>
-            ))}
-          </ul>
-        )}
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-blue-700 mb-6 sm:mb-8 text-center relative z-10">
+          Our Services
+        </h1>
+        <div className="space-y-4 sm:space-y-6 relative z-10">
+          <div className="bg-blue-50 rounded-xl p-4 sm:p-6 border-2 border-blue-100 hover:border-blue-300 transition-all">
+            <h3 className="text-xl sm:text-2xl font-bold text-blue-700 mb-2">Residential Cleaning</h3>
+            <p className="text-gray-700 text-sm sm:text-base">Professional home cleaning services tailored to your needs.</p>
+          </div>
+          <div className="bg-blue-50 rounded-xl p-4 sm:p-6 border-2 border-blue-100 hover:border-blue-300 transition-all">
+            <h3 className="text-xl sm:text-2xl font-bold text-blue-700 mb-2">Commercial Cleaning</h3>
+            <p className="text-gray-700 text-sm sm:text-base">Reliable cleaning solutions for businesses and offices.</p>
+          </div>
+          <div className="bg-blue-50 rounded-xl p-4 sm:p-6 border-2 border-blue-100 hover:border-blue-300 transition-all">
+            <h3 className="text-xl sm:text-2xl font-bold text-blue-700 mb-2">Deep Cleaning</h3>
+            <p className="text-gray-700 text-sm sm:text-base">Thorough deep cleaning for a spotless environment.</p>
+          </div>
+        </div>
         <div className="text-center text-blue-700 font-semibold text-base sm:text-lg mb-4 sm:mb-6 relative z-10">
           <span>Contact us for a detailed quote or to discuss your specific requirements!</span>
         </div>

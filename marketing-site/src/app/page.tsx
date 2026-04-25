@@ -4,19 +4,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import AIAssistant from "@/components/AIAssistant";
-import { getPromotions, getHomeTiles } from "./directusApi";
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [promotions, setPromotions] = useState<any[]>([]);
-  const [homeTiles, setHomeTiles] = useState<any[]>([]);
 
   useEffect(() => {
     // Check if user is logged in and redirect to appropriate dashboard
     const token = localStorage.getItem('authToken');
     const userRole = localStorage.getItem('userRole');
-    
+
     if (token && userRole) {
       // User is logged in, redirect to appropriate dashboard
       if (userRole === 'business') {
@@ -26,24 +22,8 @@ export default function Home() {
       }
       return;
     }
-    
+
     setIsLoggedIn(!!token);
-
-    // Load content from Directus
-    const loadContent = async () => {
-      try {
-        const promoData = await getPromotions();
-        const tileData = await getHomeTiles();
-        setPromotions(promoData);
-        setHomeTiles(tileData);
-      } catch (error) {
-        console.error("Error loading content:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadContent();
   }, []);
 
   const handleBookCleaner = () => {
@@ -77,14 +57,6 @@ export default function Home() {
     window.location.reload();
   };
 
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-white py-16 px-4 font-sans">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-        <p className="text-gray-600">Loading...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-white py-4 sm:py-8 px-2 sm:px-4 font-sans relative">
@@ -122,19 +94,7 @@ export default function Home() {
           Scratch Solid Solutions
         </h1>
         <div className="text-center text-black mb-4 sm:mb-6 lg:mb-8 text-xs sm:text-sm lg:text-base xl:text-lg">
-          {promotions.length > 0 ? (
-            promotions.map((promo, index) => (
-              <div key={index} className="mb-2 sm:mb-4">
-                <div className="text-blue-600 font-semibold text-sm sm:text-base lg:text-xl mb-1 sm:mb-2">{promo.title}</div>
-                <div className="text-black text-xs sm:text-sm">{promo.description}</div>
-              </div>
-            ))
-          ) : (
-            <div className="mb-2 sm:mb-4">Professional, reliable, and affordable cleaning services for homes and businesses.</div>
-          )}
-          {homeTiles.length > 0 && homeTiles[0].subtitle && (
-            <div className="text-blue-600 font-semibold text-sm sm:text-base lg:text-xl mb-1 sm:mb-2">{homeTiles[0].subtitle}</div>
-          )}
+          <div className="mb-2 sm:mb-4">Professional, reliable, and affordable cleaning services for homes and businesses.</div>
           <div className="text-black text-xs sm:text-sm">Experienced cleaners | Quality guaranteed | Fully insured</div>
         </div>
         <div className="flex justify-center mb-4 sm:mb-6 lg:mb-8">
