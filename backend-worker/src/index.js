@@ -9,6 +9,169 @@ import jwt from '@tsndr/cloudflare-worker-jwt';
 
 const router = Router();
 
+// Email helper function using Resend API
+async function sendEmail(env, { to, subject, html, replyTo }) {
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${env.RESEND_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: 'ScratchSolid <customerservice@scratchsolidsolutions.org>',
+      to,
+      subject,
+      html,
+      replyTo: replyTo || 'it@scratchsolidsolutions.org',
+    }),
+  });
+  return response.json();
+}
+
+// Booking confirmation email
+async function sendBookingConfirmation(env, { to, clientName, bookingDate, bookingTime, location, serviceType }) {
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #2563eb; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }
+        .detail { background: white; padding: 15px; margin: 10px 0; border-radius: 6px; border-left: 4px solid #2563eb; }
+        .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>Scratch Solid Solutions</h1>
+        </div>
+        <div class="content">
+          <h2>Booking Confirmed!</h2>
+          <p>Dear ${clientName},</p>
+          <p>Your booking has been confirmed. Here are the details:</p>
+          <div class="detail">
+            <strong>Date:</strong> ${bookingDate}<br>
+            <strong>Time:</strong> ${bookingTime}<br>
+            <strong>Location:</strong> ${location}<br>
+            <strong>Service:</strong> ${serviceType}
+          </div>
+          <p>Please ensure the location is accessible at the scheduled time. Our team will arrive on time to provide excellent service.</p>
+          <p>If you need to reschedule or cancel, please contact us at least 24 hours in advance.</p>
+        </div>
+        <div class="footer">
+          <p>&copy; 2024 Scratch Solid Solutions. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return sendEmail(env, {
+    to,
+    subject: 'Booking Confirmed - Scratch Solid Solutions',
+    html,
+  });
+}
+
+// Payment receipt email
+async function sendPaymentReceipt(env, { to, clientName, amount, paymentDate, bookingId }) {
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #10b981; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }
+        .receipt { background: white; padding: 20px; margin: 20px 0; border-radius: 6px; border: 2px solid #10b981; }
+        .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>Payment Receipt</h1>
+        </div>
+        <div class="content">
+          <h2>Payment Successful</h2>
+          <p>Dear ${clientName},</p>
+          <p>Your payment has been successfully processed. Here is your receipt:</p>
+          <div class="receipt">
+            <strong>Receipt ID:</strong> ${bookingId}<br>
+            <strong>Amount:</strong> R ${amount.toFixed(2)}<br>
+            <strong>Date:</strong> ${paymentDate}<br>
+            <strong>Status:</strong> <span style="color: #10b981; font-weight: bold;">PAID</span>
+          </div>
+          <p>Thank you for your payment. Please keep this receipt for your records.</p>
+        </div>
+        <div class="footer">
+          <p>&copy; 2024 Scratch Solid Solutions. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return sendEmail(env, {
+    to,
+    subject: 'Payment Receipt - Scratch Solid Solutions',
+    html,
+  });
+}
+
+// Admin alert email for new bookings
+async function sendAdminAlert(env, { clientName, bookingDate, bookingTime, location, serviceType, clientEmail }) {
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #dc2626; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }
+        .detail { background: white; padding: 15px; margin: 10px 0; border-radius: 6px; border-left: 4px solid #dc2626; }
+        .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>New Booking Alert</h1>
+        </div>
+        <div class="content">
+          <h2>New Booking Received</h2>
+          <p>A new booking has been submitted. Details:</p>
+          <div class="detail">
+            <strong>Client:</strong> ${clientName}<br>
+            <strong>Email:</strong> ${clientEmail}<br>
+            <strong>Date:</strong> ${bookingDate}<br>
+            <strong>Time:</strong> ${bookingTime}<br>
+            <strong>Location:</strong> ${location}<br>
+            <strong>Service:</strong> ${serviceType}
+          </div>
+          <p>Please review and confirm this booking in the admin dashboard.</p>
+        </div>
+        <div class="footer">
+          <p>&copy; 2024 Scratch Solid Solutions. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return sendEmail(env, {
+    to: 'it@scratchsolidsolutions.org',
+    subject: 'New Booking Alert - Scratch Solid Solutions',
+    html,
+    replyTo: 'customerservice@scratchsolidsolutions.org',
+  });
+}
+
 // CORS middleware - restrict to known origins only
 const ALLOWED_ORIGINS = [
   'https://scratchsolidsolutions.org',
