@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import { validateString, validateDate, validateNumber, validateRequired } from "@/lib/validation";
+import { withRateLimit, rateLimits } from "@/lib/rateLimit";
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 
 export async function POST(request: NextRequest) {
@@ -9,6 +10,25 @@ export async function POST(request: NextRequest) {
   const authResult = await withAuth(request, ['business', 'admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
+
+  // Rate limiting check
+  const rateLimitResult = await withRateLimit(request, rateLimits.standard);
+  if (rateLimitResult && !rateLimitResult.success) {
+    return withSecurityHeaders(
+      NextResponse.json(
+        { error: 'Too many contract requests. Please try again later.' },
+        { 
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+            'X-RateLimit-Reset': rateLimitResult.reset.toString()
+          }
+        }
+      ),
+      traceId
+    );
+  }
 
   try {
     const body = await request.json() as {
