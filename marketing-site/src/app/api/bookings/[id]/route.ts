@@ -2,12 +2,33 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb, getBookingById, updateBooking } from "@/lib/db";
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { logger } from '@/lib/logger';
+import { withRateLimit, rateLimits } from '@/lib/rateLimit';
+import { validateNumber, validateString } from '@/lib/validation';
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
+
+  // Rate limiting check
+  const rateLimitResult = await withRateLimit(request, rateLimits.standard);
+  if (rateLimitResult && !rateLimitResult.success) {
+    return withSecurityHeaders(
+      NextResponse.json(
+        { error: 'Too many booking requests. Please try again later.' },
+        { 
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+            'X-RateLimit-Reset': rateLimitResult.reset.toString()
+          }
+        }
+      ),
+      traceId
+    );
+  }
 
   try {
     const booking = await getBookingById(db, parseInt(params.id));
@@ -31,12 +52,46 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
 
+  // Rate limiting check
+  const rateLimitResult = await withRateLimit(request, rateLimits.standard);
+  if (rateLimitResult && !rateLimitResult.success) {
+    return withSecurityHeaders(
+      NextResponse.json(
+        { error: 'Too many booking requests. Please try again later.' },
+        { 
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+            'X-RateLimit-Reset': rateLimitResult.reset.toString()
+          }
+        }
+      ),
+      traceId
+    );
+  }
+
   try {
     const body = await request.json() as {
       cleaner_id?: number;
       status?: string;
       weekend_assigned?: boolean;
     };
+
+    // Validate inputs
+    if (body.cleaner_id !== undefined) {
+      const cleanerIdValidation = validateNumber(body.cleaner_id, 'cleaner_id', 1);
+      if (!cleanerIdValidation.valid) {
+        return NextResponse.json({ error: cleanerIdValidation.errors.join(', ') }, { status: 400 });
+      }
+    }
+
+    if (body.status !== undefined) {
+      const statusValidation = validateString(body.status, 'status', 1, 50);
+      if (!statusValidation.valid) {
+        return NextResponse.json({ error: statusValidation.errors.join(', ') }, { status: 400 });
+      }
+    }
 
     const booking = await updateBooking(db, parseInt(params.id), body);
     

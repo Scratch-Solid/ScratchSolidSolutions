@@ -2,12 +2,32 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { logger } from '@/lib/logger';
+import { withRateLimit, rateLimits } from '@/lib/rateLimit';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
+
+  // Rate limiting check
+  const rateLimitResult = await withRateLimit(request, rateLimits.standard);
+  if (rateLimitResult && !rateLimitResult.success) {
+    return withSecurityHeaders(
+      NextResponse.json(
+        { error: 'Too many user requests. Please try again later.' },
+        { 
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+            'X-RateLimit-Reset': rateLimitResult.reset.toString()
+          }
+        }
+      ),
+      traceId
+    );
+  }
 
   try {
     const { id } = await params;
@@ -30,6 +50,25 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   const authResult = await withAuth(request, ['admin', 'business']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
+
+  // Rate limiting check
+  const rateLimitResult = await withRateLimit(request, rateLimits.standard);
+  if (rateLimitResult && !rateLimitResult.success) {
+    return withSecurityHeaders(
+      NextResponse.json(
+        { error: 'Too many user requests. Please try again later.' },
+        { 
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+            'X-RateLimit-Reset': rateLimitResult.reset.toString()
+          }
+        }
+      ),
+      traceId
+    );
+  }
 
   try {
     const { id } = await params;

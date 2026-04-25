@@ -5,7 +5,7 @@ import { withAuth, withTracing, withSecurityHeaders } from "@/lib/middleware";
 import { logger } from "@/lib/logger";
 import { withRateLimit, rateLimits } from "@/lib/rateLimit";
 
-export const dynamic = "force-static";
+export const dynamic = "force-dynamic";
 
 const REGION = "auto"; // R2 uses 'auto' region
 const BUCKET = process.env.R2_BUCKET!;

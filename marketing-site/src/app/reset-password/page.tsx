@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function ResetPasswordPage() {
+function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
@@ -46,10 +46,10 @@ export default function ResetPasswordPage() {
         }),
       });
 
-      const data = await response.json();
+      const data = await response.json() as { message?: string; error?: string };
 
       if (response.ok) {
-        setMessage(data.message);
+        setMessage(data.message || "Password reset successfully");
         setTimeout(() => {
           router.push("/login");
         }, 2000);
@@ -182,5 +182,15 @@ export default function ResetPasswordPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gradient-to-br from-blue-50 to-white py-8 sm:py-16 px-2 sm:px-4 font-sans flex items-center justify-center">
+      <div className="text-center text-gray-600">Loading...</div>
+    </div>}>
+      <ResetPasswordContent />
+    </Suspense>
   );
 }

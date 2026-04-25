@@ -1,38 +1,60 @@
 import { NextRequest, NextResponse } from "next/server";
 import { directus } from "../../directusClient";
 import { logger } from "@/lib/logger";
+import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
+import { withRateLimit, rateLimits } from '@/lib/rateLimit';
+import { validateString } from '@/lib/validation';
 
 export const runtime = "edge";
 
+function getCollectionFromType(type: string): string {
+  const collectionMap: Record<string, string> = {
+    privacy: "privacy_policy",
+    terms: "terms_of_service",
+    contact: "contact_info",
+    services: "services",
+    about: "about_us",
+    indemnity: "indemnity_form",
+  };
+  return collectionMap[type] || "privacy_policy";
+}
+
 export async function GET(request: NextRequest) {
+  const traceId = withTracing(request);
+  const authResult = await withAuth(request, ['admin']);
+  if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
+
+  // Rate limiting check
+  const rateLimitResult = await withRateLimit(request, rateLimits.standard);
+  if (rateLimitResult && !rateLimitResult.success) {
+    return withSecurityHeaders(
+      NextResponse.json(
+        { error: 'Too many content requests. Please try again later.' },
+        { 
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+            'X-RateLimit-Reset': rateLimitResult.reset.toString()
+          }
+        }
+      ),
+      traceId
+    );
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get("type") || "privacy";
 
-    // Fetch from Directus CMS based on content type
-    let collection = "";
-    switch (type) {
-      case "privacy":
-        collection = "privacy_policy";
-        break;
-      case "terms":
-        collection = "terms_of_service";
-        break;
-      case "contact":
-        collection = "contact_info";
-        break;
-      case "services":
-        collection = "services";
-        break;
-      case "about":
-        collection = "about_us";
-        break;
-      case "indemnity":
-        collection = "indemnity_form";
-        break;
-      default:
-        collection = "privacy_policy";
+    // Validate type parameter
+    const typeValidation = validateString(type, 'type', 1, 50);
+    if (!typeValidation.valid) {
+      return NextResponse.json({ error: typeValidation.errors.join(', ') }, { status: 400 });
     }
+
+    // Fetch from Directus CMS based on content type
+    const collection = getCollectionFromType(type);
 
     const result = await directus.items(collection).readByQuery({
       limit: 1,
@@ -57,40 +79,48 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+  const traceId = withTracing(request);
+  const authResult = await withAuth(request, ['admin']);
+  if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
+
+  // Rate limiting check
+  const rateLimitResult = await withRateLimit(request, rateLimits.standard);
+  if (rateLimitResult && !rateLimitResult.success) {
+    return withSecurityHeaders(
+      NextResponse.json(
+        { error: 'Too many content requests. Please try again later.' },
+        { 
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+            'X-RateLimit-Reset': rateLimitResult.reset.toString()
+          }
+        }
+      ),
+      traceId
+    );
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get("type") || "privacy";
     const body = await request.json() as { content?: string };
     const { content } = body;
 
-    if (!content) {
-      return NextResponse.json({ error: "Content is required" }, { status: 400 });
+    // Validate inputs
+    const typeValidation = validateString(type, 'type', 1, 50);
+    if (!typeValidation.valid) {
+      return NextResponse.json({ error: typeValidation.errors.join(', ') }, { status: 400 });
+    }
+
+    const contentValidation = validateString(content, 'content', 1, 10000);
+    if (!contentValidation.valid) {
+      return NextResponse.json({ error: contentValidation.errors.join(', ') }, { status: 400 });
     }
 
     // Map content type to Directus collection
-    let collection = "";
-    switch (type) {
-      case "privacy":
-        collection = "privacy_policy";
-        break;
-      case "terms":
-        collection = "terms_of_service";
-        break;
-      case "contact":
-        collection = "contact_info";
-        break;
-      case "services":
-        collection = "services";
-        break;
-      case "about":
-        collection = "about_us";
-        break;
-      case "indemnity":
-        collection = "indemnity_form";
-        break;
-      default:
-        collection = "privacy_policy";
-    }
+    const collection = getCollectionFromType(type);
 
     // Check if record exists
     const existing = await directus.items(collection).readByQuery({

@@ -3,7 +3,14 @@ import { Resend } from 'resend';
 import { logger } from './logger';
 import { getResendApiKey } from './env';
 
-const resend = new Resend(getResendApiKey());
+let resend: Resend | null = null;
+
+function getResendClient(): Resend {
+  if (!resend) {
+    resend = new Resend(getResendApiKey());
+  }
+  return resend;
+}
 
 interface SendEmailOptions {
   to: string;
@@ -14,7 +21,8 @@ interface SendEmailOptions {
 
 export async function sendEmail({ to, subject, html, from }: SendEmailOptions) {
   try {
-    const { data, error } = await resend.emails.send({
+    const client = getResendClient();
+    const { data, error } = await client.emails.send({
       from: from || 'Scratch Solid Solutions <onboarding@resend.dev>',
       to,
       subject,

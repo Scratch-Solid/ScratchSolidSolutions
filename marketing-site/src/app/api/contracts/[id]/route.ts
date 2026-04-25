@@ -2,12 +2,33 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '../../../../lib/db';
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { logger } from '@/lib/logger';
+import { withRateLimit, rateLimits } from '@/lib/rateLimit';
+import { validateNumber, validateString, validateDate } from '@/lib/validation';
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['business', 'admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
+
+  // Rate limiting check
+  const rateLimitResult = await withRateLimit(request, rateLimits.standard);
+  if (rateLimitResult && !rateLimitResult.success) {
+    return withSecurityHeaders(
+      NextResponse.json(
+        { error: 'Too many contract requests. Please try again later.' },
+        { 
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+            'X-RateLimit-Reset': rateLimitResult.reset.toString()
+          }
+        }
+      ),
+      traceId
+    );
+  }
 
   try {
     const contract = await db.prepare('SELECT * FROM contracts WHERE id = ?').bind(params.id).first();
@@ -31,6 +52,25 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
 
+  // Rate limiting check
+  const rateLimitResult = await withRateLimit(request, rateLimits.standard);
+  if (rateLimitResult && !rateLimitResult.success) {
+    return withSecurityHeaders(
+      NextResponse.json(
+        { error: 'Too many contract requests. Please try again later.' },
+        { 
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+            'X-RateLimit-Reset': rateLimitResult.reset.toString()
+          }
+        }
+      ),
+      traceId
+    );
+  }
+
   try {
     const existingContract = await db.prepare('SELECT * FROM contracts WHERE id = ?').bind(params.id).first();
     
@@ -52,6 +92,49 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       is_immutable?: boolean;
     };
     const { contract_type, rate_per_hour, weekend_rate_multiplier, end_date, terms, status, is_immutable } = body;
+
+    // Validate inputs
+    if (contract_type !== undefined) {
+      const contractTypeValidation = validateString(contract_type, 'contract_type', 1, 100);
+      if (!contractTypeValidation.valid) {
+        return NextResponse.json({ error: contractTypeValidation.errors.join(', ') }, { status: 400 });
+      }
+    }
+
+    if (rate_per_hour !== undefined) {
+      const rateValidation = validateNumber(rate_per_hour, 'rate_per_hour', 0);
+      if (!rateValidation.valid) {
+        return NextResponse.json({ error: rateValidation.errors.join(', ') }, { status: 400 });
+      }
+    }
+
+    if (weekend_rate_multiplier !== undefined) {
+      const multiplierValidation = validateNumber(weekend_rate_multiplier, 'weekend_rate_multiplier', 0);
+      if (!multiplierValidation.valid) {
+        return NextResponse.json({ error: multiplierValidation.errors.join(', ') }, { status: 400 });
+      }
+    }
+
+    if (end_date !== undefined) {
+      const endDateValidation = validateDate(end_date, 'end_date');
+      if (!endDateValidation.valid) {
+        return NextResponse.json({ error: endDateValidation.errors.join(', ') }, { status: 400 });
+      }
+    }
+
+    if (terms !== undefined) {
+      const termsValidation = validateString(terms, 'terms', 1, 10000);
+      if (!termsValidation.valid) {
+        return NextResponse.json({ error: termsValidation.errors.join(', ') }, { status: 400 });
+      }
+    }
+
+    if (status !== undefined) {
+      const statusValidation = validateString(status, 'status', 1, 50);
+      if (!statusValidation.valid) {
+        return NextResponse.json({ error: statusValidation.errors.join(', ') }, { status: 400 });
+      }
+    }
 
     const updates: string[] = [];
     const values: any[] = [];
@@ -89,6 +172,25 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
   const authResult = await withAuth(request, ['admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
+
+  // Rate limiting check
+  const rateLimitResult = await withRateLimit(request, rateLimits.standard);
+  if (rateLimitResult && !rateLimitResult.success) {
+    return withSecurityHeaders(
+      NextResponse.json(
+        { error: 'Too many contract requests. Please try again later.' },
+        { 
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+            'X-RateLimit-Reset': rateLimitResult.reset.toString()
+          }
+        }
+      ),
+      traceId
+    );
+  }
 
   try {
     const existingContract = await db.prepare('SELECT * FROM contracts WHERE id = ?').bind(params.id).first();

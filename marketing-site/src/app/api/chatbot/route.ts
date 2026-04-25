@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth, withTracing, withSecurityHeaders } from "@/lib/middleware";
+import { withRateLimit, rateLimits } from "@/lib/rateLimit";
 
 // Expanded in-memory knowledge base for practical Q&A
 const siteContent = [
@@ -38,7 +39,27 @@ export async function POST(req: NextRequest) {
   const authResult = await withAuth(req);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
 
-  const { question } = await req.json();
+  // Rate limiting check
+  const rateLimitResult = await withRateLimit(req, rateLimits.standard);
+  if (rateLimitResult && !rateLimitResult.success) {
+    return withSecurityHeaders(
+      NextResponse.json(
+        { error: 'Too many chatbot requests. Please try again later.' },
+        { 
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+            'X-RateLimit-Reset': rateLimitResult.reset.toString()
+          }
+        }
+      ),
+      traceId
+    );
+  }
+
+  const body = await req.json() as { question?: string };
+  const { question } = body;
   if (!question || typeof question !== "string") {
     const response = NextResponse.json({ error: "No question provided." }, { status: 400 });
     return withSecurityHeaders(response, traceId);

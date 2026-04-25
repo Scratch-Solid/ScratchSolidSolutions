@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { logger } from '@/lib/logger';
+import { withRateLimit, rateLimits } from '@/lib/rateLimit';
 
-const ZOHO_ORG_ID = process.env.ZOHO_ORG_ID || '';
-const ZOHO_CLIENT_ID = process.env.ZOHO_CLIENT_ID || '';
-const ZOHO_CLIENT_SECRET = process.env.ZOHO_CLIENT_SECRET || '';
-const ZOHO_REFRESH_TOKEN = process.env.ZOHO_REFRESH_TOKEN || '';
+const ZOHO_ORG_ID = process.env.ZOHO_ORG_ID!;
+const ZOHO_CLIENT_ID = process.env.ZOHO_CLIENT_ID!;
+const ZOHO_CLIENT_SECRET = process.env.ZOHO_CLIENT_SECRET!;
+const ZOHO_REFRESH_TOKEN = process.env.ZOHO_REFRESH_TOKEN!;
 
 let accessToken = '';
 let tokenExpiry = 0;
@@ -49,6 +50,25 @@ export async function GET(request: NextRequest) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['client', 'business', 'admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
+
+  // Rate limiting check
+  const rateLimitResult = await withRateLimit(request, rateLimits.standard);
+  if (rateLimitResult && !rateLimitResult.success) {
+    return withSecurityHeaders(
+      NextResponse.json(
+        { error: 'Too many Zoho financial requests. Please try again later.' },
+        { 
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+            'X-RateLimit-Reset': rateLimitResult.reset.toString()
+          }
+        }
+      ),
+      traceId
+    );
+  }
 
   const { searchParams } = new URL(request.url);
   const customerId = searchParams.get('customer_id');
