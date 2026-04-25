@@ -41,6 +41,7 @@ wrangler secret put JWT_SECRET
 
 # Marketing Site secrets (set in Cloudflare Pages dashboard > Settings > Environment variables)
 JWT_SECRET=<same-as-above>
+RESEND_API_KEY=<your-resend-api-key>
 R2_BUCKET=scratchsolid-assets
 R2_ACCOUNT_ID=<your-account-id>
 R2_ACCESS_KEY_ID=<your-r2-key>
@@ -54,6 +55,13 @@ DIRECTUS_TOKEN=<your-directus-token>
 
 # Internal Portal secrets (set in Cloudflare Pages dashboard)
 JWT_SECRET=<same-as-above>
+```
+
+**For Marketing Site (wrangler.jsonc):**
+```bash
+cd marketing-site
+wrangler secret put JWT_SECRET
+wrangler secret put RESEND_API_KEY
 ```
 
 ### 3. Build & Deploy
@@ -140,6 +148,7 @@ In Cloudflare dashboard:
 | Variable | Service | Required | Description |
 |---|---|---|---|
 | `JWT_SECRET` | All | Yes | 48+ char random base64 string |
+| `RESEND_API_KEY` | Marketing | Yes | Resend API key for email services |
 | `R2_BUCKET` | Marketing | Yes | R2 bucket name for uploads |
 | `R2_ACCOUNT_ID` | Marketing | Yes | Cloudflare account ID |
 | `R2_ACCESS_KEY_ID` | Marketing | Yes | R2 API access key |
