@@ -11,16 +11,22 @@ export interface Env {
 
 // Helper to get the D1 database from the request context
 export function getDb(request: Request): D1Database | null {
-  // In Cloudflare Pages Functions, the env is available via process.env or globalThis
+  // In Cloudflare Pages Functions and OpenNext, the env is available via the request context
   // The D1 binding is injected by wrangler
   try {
-    // Try to get from request context (Cloudflare Pages Edge Runtime)
-    // @ts-ignore - Cloudflare Pages injects env in request
+    // Try to get from request context (OpenNext Cloudflare Workers)
+    // @ts-ignore - OpenNext injects env in request context
     if ((request as any).env?.scratchsolid_db) {
       return (request as any).env.scratchsolid_db;
     }
 
-    // Try globalThis (Cloudflare Pages Functions)
+    // Try to get from request context with alternative property names
+    // @ts-ignore - OpenNext may use different property names
+    if ((request as any).ctx?.env?.scratchsolid_db) {
+      return (request as any).ctx.env.scratchsolid_db;
+    }
+
+    // Try to get from globalThis (Cloudflare Pages Functions)
     // @ts-ignore - Cloudflare Pages injects env globally
     const env = (globalThis as any).__env__ as Env;
     if (env?.scratchsolid_db) return env.scratchsolid_db;
@@ -30,6 +36,12 @@ export function getDb(request: Request): D1Database | null {
     if (typeof process !== 'undefined' && (process as any).env?.scratchsolid_db) {
       // @ts-ignore
       return (process as any).env.scratchsolid_db as D1Database;
+    }
+
+    // Try to get from globalThis directly (some Cloudflare environments)
+    // @ts-ignore
+    if ((globalThis as any).scratchsolid_db) {
+      return (globalThis as any).scratchsolid_db;
     }
   } catch (error) {
     logger.error('Error getting database', error as Error);
