@@ -61,19 +61,19 @@ export default function Home() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-white py-4 sm:py-8 px-2 sm:px-4 font-sans relative">
       {/* Navigation Bar - Only on main page */}
-      <nav className="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-md shadow-lg z-40 px-2 sm:px-4 py-2 sm:py-3">
+      <nav className="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-md shadow-lg z-40 px-2 sm:px-4 py-2 sm:py-3" role="navigation" aria-label="Main navigation">
         <div className="max-w-6xl mx-auto flex items-center justify-center space-x-4 sm:space-x-8">
-          <Link href="/services" className="text-gray-700 hover:text-blue-600 active:text-blue-600 font-semibold text-sm sm:text-base lg:text-lg transition-colors">
+          <Link href="/services" className="text-gray-700 hover:text-blue-600 active:text-blue-600 font-semibold text-sm sm:text-base lg:text-lg transition-colors" aria-label="Navigate to Services page">
             Services
           </Link>
-          <Link href="/about" className="text-gray-700 hover:text-blue-600 active:text-blue-600 font-semibold text-sm sm:text-base lg:text-lg transition-colors">
+          <Link href="/about" className="text-gray-700 hover:text-blue-600 active:text-blue-600 font-semibold text-sm sm:text-base lg:text-lg transition-colors" aria-label="Navigate to About Us page">
             About Us
           </Link>
-          <Link href="/gallery" className="text-gray-700 hover:text-blue-600 active:text-blue-600 font-semibold text-sm sm:text-base lg:text-lg transition-colors">
+          <Link href="/gallery" className="text-gray-700 hover:text-blue-600 active:text-blue-600 font-semibold text-sm sm:text-base lg:text-lg transition-colors" aria-label="Navigate to Gallery page">
             Gallery
           </Link>
           {isLoggedIn && (
-            <button onClick={handleLogout} className="text-red-600 hover:text-red-700 active:text-red-700 font-semibold text-sm sm:text-base lg:text-lg transition-colors">
+            <button onClick={handleLogout} className="text-red-600 hover:text-red-700 active:text-red-700 font-semibold text-sm sm:text-base lg:text-lg transition-colors" aria-label="Logout from your account">
               Logout
             </button>
           )}
@@ -101,6 +101,7 @@ export default function Home() {
           <button
             onClick={handleBookCleaner}
             className="rounded-full bg-blue-600 px-12 sm:px-16 lg:px-20 xl:px-24 py-3 sm:py-4 lg:py-5 xl:py-6 text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-extrabold text-white shadow-2xl hover:bg-blue-700 transition-all transform hover:scale-105 active:scale-95"
+            aria-label="Book a cleaner now"
           >
             Book a Cleaner
           </button>
@@ -121,7 +122,7 @@ export default function Home() {
       {/* Overlay Logo Button - Bottom-left corner */}
       <div className="fixed bottom-6 left-6 z-50">
         <div className="relative" id="overlay-menu">
-          <button 
+          <button
             onClick={() => {
               const menu = document.getElementById('overlay-menu-dropdown');
               if (menu) {
@@ -131,6 +132,9 @@ export default function Home() {
               }
             }}
             className="w-14 h-14 bg-white/90 backdrop-blur-md rounded-full shadow-lg border-2 border-blue-200 flex items-center justify-center hover:bg-blue-50 transition-all duration-200 active:scale-95"
+            aria-label="Open menu"
+            aria-expanded="false"
+            aria-controls="overlay-menu-dropdown"
           >
             <img
               src="/scratchsolid-logo.jpg"
@@ -141,12 +145,12 @@ export default function Home() {
             />
           </button>
           {/* Dropdown Menu - Glassified overlay */}
-          <div id="overlay-menu-dropdown" className="absolute left-0 mb-3 w-56 bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 opacity-0 invisible transition-all duration-200 bottom-full">
+          <div id="overlay-menu-dropdown" className="absolute left-0 mb-3 w-56 bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 opacity-0 invisible transition-all duration-200 bottom-full" role="menu" aria-label="Quick access menu">
             <div className="py-3">
-              <Link href="/client-signup" className="block px-4 py-2.5 hover:bg-blue-50 text-gray-700 font-medium transition-colors">Client Signup</Link>
-              <Link href="/business-signup" className="block px-4 py-2.5 hover:bg-blue-50 text-gray-700 font-medium transition-colors">Business Signup</Link>
-              <Link href="/login" className="block px-4 py-2.5 hover:bg-blue-50 text-gray-700 font-medium transition-colors">Login</Link>
-              <Link href="/book" className="block px-4 py-2.5 hover:bg-blue-50 text-gray-700 font-medium transition-colors">Book Service</Link>
+              <Link href="/client-signup" className="block px-4 py-2.5 hover:bg-blue-50 text-gray-700 font-medium transition-colors" role="menuitem">Client Signup</Link>
+              <Link href="/business-signup" className="block px-4 py-2.5 hover:bg-blue-50 text-gray-700 font-medium transition-colors" role="menuitem">Business Signup</Link>
+              <Link href="/login" className="block px-4 py-2.5 hover:bg-blue-50 text-gray-700 font-medium transition-colors" role="menuitem">Login</Link>
+              <Link href="/book" className="block px-4 py-2.5 hover:bg-blue-50 text-gray-700 font-medium transition-colors" role="menuitem">Book Service</Link>
             </div>
           </div>
         </div>

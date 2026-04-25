@@ -63,6 +63,10 @@ h2 { font-size: clamp(1.5rem, 2vw, 2.1rem); }
   border: 1.5px solid var(--border);
   backdrop-filter: blur(16px) saturate(1.2);
   -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  /* Fallback for browsers that don't support backdrop-filter */
+  @supports not (backdrop-filter: blur(16px)) {
+    background: rgba(255, 255, 255, 0.95);
+  }
 }
 
 .glass-card {
@@ -72,6 +76,10 @@ h2 { font-size: clamp(1.5rem, 2vw, 2.1rem); }
   border: 1.5px solid var(--border);
   padding: 18px 22px;
   margin-bottom: 18px;
+  /* Fallback for browsers that don't support backdrop-filter */
+  @supports not (backdrop-filter: blur(16px)) {
+    background: rgba(255, 255, 255, 0.98);
+  }
 }
 
 .primary-button {
