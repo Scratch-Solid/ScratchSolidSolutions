@@ -383,3 +383,50 @@ export async function getCleanerEarnings(db: D1Database, cleanerId: number) {
   ).bind(cleanerId).first();
   return result;
 }
+
+// Weekend requests
+export async function createWeekendRequest(db: D1Database, businessId: number, requestedDate: string, specialInstructions: string = '') {
+  const result = await db.prepare(
+    `INSERT INTO weekend_requests (business_id, requested_date, special_instructions, status, created_at)
+     VALUES (?, ?, ?, 'pending', datetime('now')) RETURNING *`
+  ).bind(businessId, requestedDate, specialInstructions).first();
+  return result;
+}
+
+export async function getWeekendRequestsByBusiness(db: D1Database, businessId: number) {
+  const result = await db.prepare(
+    'SELECT * FROM weekend_requests WHERE business_id = ? ORDER BY created_at DESC'
+  ).bind(businessId).all();
+  return result.results || [];
+}
+
+export async function updateWeekendRequestStatus(db: D1Database, requestId: number, status: string, assignedCleanerId?: number, assignedCleanerName?: string) {
+  const result = await db.prepare(
+    `UPDATE weekend_requests SET status = ?, assigned_cleaner_id = ?, assigned_cleaner_name = ?, updated_at = datetime('now')
+     WHERE id = ? RETURNING *`
+  ).bind(status, assignedCleanerId || null, assignedCleanerName || '', requestId).first();
+  return result;
+}
+
+// Business events
+export async function createBusinessEvent(db: D1Database, businessId: number, eventType: string, requestedDate: string, specialInstructions: string = '') {
+  const result = await db.prepare(
+    `INSERT INTO business_events (business_id, event_type, requested_date, special_instructions, status, created_at)
+     VALUES (?, ?, ?, ?, 'pending', datetime('now')) RETURNING *`
+  ).bind(businessId, eventType, requestedDate, specialInstructions).first();
+  return result;
+}
+
+export async function getBusinessEventsByBusiness(db: D1Database, businessId: number) {
+  const result = await db.prepare(
+    'SELECT * FROM business_events WHERE business_id = ? ORDER BY created_at DESC'
+  ).bind(businessId).all();
+  return result.results || [];
+}
+
+export async function updateBusinessEventStatus(db: D1Database, eventId: number, status: string) {
+  const result = await db.prepare(
+    `UPDATE business_events SET status = ?, updated_at = datetime('now') WHERE id = ? RETURNING *`
+  ).bind(status, eventId).first();
+  return result;
+}
