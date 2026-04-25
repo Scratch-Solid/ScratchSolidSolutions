@@ -17,6 +17,9 @@
 /.next/
 /out/
 
+# opennext build artifacts
+/.open-next/
+
 # production
 /build
 
