@@ -1,152 +1,338 @@
--- D1 Database Schema for Scratch Solid Solutions
--- Run with: wrangler d1 execute scratchsolid-db --file=schema.sql
+-- Shared Cloudflare D1 Schema for Scratch Solid Solutions
+-- Used by both marketing-site and internal-portal
 
--- Users table
+-- Users (unified user table for all roles)
 CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   email TEXT UNIQUE NOT NULL,
   password_hash TEXT NOT NULL,
   role TEXT NOT NULL DEFAULT 'client',
-  name TEXT NOT NULL,
-  phone TEXT,
-  address TEXT,
-  business_name TEXT,
-  business_registration TEXT,
+  name TEXT DEFAULT '',
+  phone TEXT DEFAULT '',
+  address TEXT DEFAULT '',
+  business_name TEXT DEFAULT '',
+  business_registration TEXT DEFAULT '',
+  business_info TEXT DEFAULT '',
   failed_attempts INTEGER DEFAULT 0,
-  locked_until TEXT,
-  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+  locked_until TEXT DEFAULT NULL,
+  soft_delete_at TEXT DEFAULT NULL,
+  deleted INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
 );
 
--- Sessions table
-CREATE TABLE IF NOT EXISTS sessions (
+-- Roles and permissions for RBAC
+CREATE TABLE IF NOT EXISTS roles (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id INTEGER NOT NULL,
-  token TEXT UNIQUE NOT NULL,
-  expires_at TEXT NOT NULL,
-  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  name TEXT UNIQUE NOT NULL,
+  description TEXT DEFAULT '',
+  created_at TEXT DEFAULT (datetime('now'))
 );
 
--- Password reset tokens table
-CREATE TABLE IF NOT EXISTS password_reset_tokens (
+CREATE TABLE IF NOT EXISTS permissions (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id INTEGER NOT NULL,
-  token TEXT UNIQUE NOT NULL,
-  otp TEXT,
-  expires_at TEXT NOT NULL,
-  method TEXT NOT NULL,
-  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  name TEXT UNIQUE NOT NULL,
+  description TEXT DEFAULT '',
+  resource TEXT NOT NULL,
+  action TEXT NOT NULL,
+  created_at TEXT DEFAULT (datetime('now'))
 );
 
--- Cleaner profiles table
+CREATE TABLE IF NOT EXISTS role_permissions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  role_id INTEGER REFERENCES roles(id),
+  permission_id INTEGER REFERENCES permissions(id),
+  created_at TEXT DEFAULT (datetime('now')),
+  UNIQUE(role_id, permission_id)
+);
+
+-- Content Pages (for marketing site - privacy, terms, contact, etc.)
+CREATE TABLE IF NOT EXISTS content_pages (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  content TEXT NOT NULL,
+  slug TEXT UNIQUE NOT NULL,
+  last_updated TEXT DEFAULT (datetime('now')),
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+-- Background Images (for marketing site)
+CREATE TABLE IF NOT EXISTS background_images (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  url TEXT NOT NULL,
+  name TEXT NOT NULL,
+  is_active INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+-- Cleaner profiles (extended profile for cleaners)
 CREATE TABLE IF NOT EXISTS cleaner_profiles (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id INTEGER UNIQUE NOT NULL,
+  user_id INTEGER REFERENCES users(id),
   username TEXT UNIQUE NOT NULL,
   paysheet_code TEXT,
-  first_name TEXT,
-  last_name TEXT,
+  first_name TEXT DEFAULT '',
+  last_name TEXT DEFAULT '',
+  residential_address TEXT DEFAULT '',
+  cellphone TEXT DEFAULT '',
+  tax_number TEXT DEFAULT '',
+  profile_picture TEXT DEFAULT '',
+  emergency_contact1_name TEXT DEFAULT '',
+  emergency_contact1_phone TEXT DEFAULT '',
+  emergency_contact2_name TEXT DEFAULT '',
+  emergency_contact2_phone TEXT DEFAULT '',
   department TEXT DEFAULT 'cleaning',
-  profile_picture TEXT,
-  residential_address TEXT,
-  cellphone TEXT,
-  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-  updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  specialties TEXT DEFAULT '[]',
+  rating REAL DEFAULT 0,
+  status TEXT DEFAULT 'idle',
+  blocked INTEGER DEFAULT 0,
+  gps_lat REAL DEFAULT NULL,
+  gps_long REAL DEFAULT NULL,
+  weekday_rate REAL DEFAULT 150,
+  weekend_rate REAL DEFAULT 225,
+  deductions REAL DEFAULT 0,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
 );
 
--- Pending contracts table
-CREATE TABLE IF NOT EXISTS pending_contracts (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  client_id INTEGER NOT NULL,
-  client_name TEXT NOT NULL,
-  business_name TEXT,
-  contract_details TEXT,
-  status TEXT DEFAULT 'pending',
-  submitted_at TEXT DEFAULT CURRENT_TIMESTAMP,
-  updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (client_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
--- Employees table
-CREATE TABLE IF NOT EXISTS employees (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id INTEGER UNIQUE NOT NULL,
-  employee_code TEXT UNIQUE NOT NULL,
-  department TEXT,
-  position TEXT,
-  hire_date TEXT,
-  salary REAL,
-  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-  updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
--- Bookings table
+-- Bookings
 CREATE TABLE IF NOT EXISTS bookings (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  client_id INTEGER NOT NULL,
-  client_name TEXT NOT NULL,
-  location TEXT NOT NULL,
-  service_type TEXT NOT NULL,
-  booking_date TEXT NOT NULL,
-  booking_time TEXT NOT NULL,
-  special_instructions TEXT,
-  booking_type TEXT DEFAULT 'standard',
-  cleaning_type TEXT DEFAULT 'standard',
-  payment_method TEXT DEFAULT 'cash',
+  client_id INTEGER REFERENCES users(id),
+  client_name TEXT DEFAULT '',
+  cleaner_id INTEGER REFERENCES users(id),
+  location TEXT DEFAULT '',
+  service_type TEXT DEFAULT '',
+  booking_date TEXT DEFAULT '',
+  booking_time TEXT DEFAULT '',
+  status TEXT DEFAULT 'pending', -- pending, assigned, on_way, arrived, completed, cancelled
+  special_instructions TEXT DEFAULT '',
+  booking_type TEXT DEFAULT 'standard', -- standard, recurring, emergency
+  cleaning_type TEXT DEFAULT 'standard', -- standard, deep_clean, move_in, move_out
+  payment_method TEXT DEFAULT 'cash', -- cash, eft, card
   loyalty_discount REAL DEFAULT 0,
-  cleaner_id INTEGER,
-  status TEXT DEFAULT 'pending',
-  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-  updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (client_id) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY (cleaner_id) REFERENCES cleaner_profiles(id) ON DELETE SET NULL
+  start_time TEXT DEFAULT '',
+  end_time TEXT DEFAULT '',
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
 );
 
--- Task completions table (for cleaner earnings)
+-- Weekend requests (business premium service)
+CREATE TABLE IF NOT EXISTS weekend_requests (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  business_id INTEGER REFERENCES users(id),
+  requested_date TEXT NOT NULL,
+  special_instructions TEXT DEFAULT '',
+  status TEXT DEFAULT 'pending', -- pending, assigned, completed, cancelled
+  assigned_cleaner_id INTEGER REFERENCES users(id),
+  assigned_cleaner_name TEXT DEFAULT '',
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
+);
+
+-- Pending contracts (new joiner workflow)
+CREATE TABLE IF NOT EXISTS pending_contracts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  full_name TEXT NOT NULL,
+  id_passport_number TEXT DEFAULT '',
+  contact_number TEXT DEFAULT '',
+  position_applied_for TEXT DEFAULT '',
+  department TEXT DEFAULT '',
+  generated_username TEXT DEFAULT '',
+  status TEXT DEFAULT 'pending', -- pending, approved, rejected
+  applicant_signature TEXT DEFAULT '',
+  witness_representative TEXT DEFAULT '',
+  consent_data TEXT DEFAULT '{}',
+  submitted_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
+);
+
+-- Employees (approved joiners)
+CREATE TABLE IF NOT EXISTS employees (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  pending_contract_id INTEGER REFERENCES pending_contracts(id),
+  full_name TEXT NOT NULL,
+  id_passport_number TEXT DEFAULT '',
+  contact_number TEXT DEFAULT '',
+  position_applied_for TEXT DEFAULT '',
+  department TEXT DEFAULT '',
+  username TEXT DEFAULT '',
+  status TEXT DEFAULT 'active',
+  applicant_signature TEXT DEFAULT '',
+  witness_representative TEXT DEFAULT '',
+  consent_date TEXT DEFAULT '',
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
+);
+
+-- Contracts (business service agreements)
+CREATE TABLE IF NOT EXISTS contracts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  business_id INTEGER REFERENCES users(id),
+  business_name TEXT NOT NULL,
+  contract_type TEXT DEFAULT 'standard', -- standard, premium, enterprise
+  rate_per_hour REAL NOT NULL DEFAULT 0,
+  weekend_rate_multiplier REAL DEFAULT 1.5,
+  start_date TEXT NOT NULL,
+  end_date TEXT DEFAULT NULL,
+  status TEXT DEFAULT 'active', -- active, suspended, terminated
+  is_immutable INTEGER DEFAULT 0, -- 0 = editable, 1 = immutable
+  terms TEXT DEFAULT '',
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
+);
+
+-- Task completions (for cleaner earnings)
 CREATE TABLE IF NOT EXISTS task_completions (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  booking_id INTEGER NOT NULL,
-  cleaner_id INTEGER NOT NULL,
-  earnings REAL DEFAULT 150,
-  completed_at TEXT DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE,
-  FOREIGN KEY (cleaner_id) REFERENCES cleaner_profiles(id) ON DELETE CASCADE
+  booking_id INTEGER REFERENCES bookings(id),
+  cleaner_id INTEGER REFERENCES users(id),
+  completed_at TEXT DEFAULT (datetime('now')),
+  earnings REAL DEFAULT 150
 );
 
--- Content table (for marketing site content)
+-- Sessions (for auth token validation)
+CREATE TABLE IF NOT EXISTS sessions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER REFERENCES users(id),
+  token TEXT UNIQUE NOT NULL,
+  created_at TEXT DEFAULT (datetime('now')),
+  expires_at TEXT DEFAULT (datetime('now', '+30 days'))
+);
+
+-- Password reset tokens (for forgot password flow)
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER REFERENCES users(id),
+  token TEXT UNIQUE NOT NULL,
+  otp TEXT DEFAULT NULL,
+  method TEXT NOT NULL, -- 'whatsapp' or 'email'
+  expires_at TEXT NOT NULL,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+-- Audit logs (for tracking admin actions)
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  admin_id INTEGER REFERENCES users(id),
+  action TEXT NOT NULL,
+  resource_type TEXT NOT NULL,
+  resource_id INTEGER,
+  details TEXT DEFAULT '{}',
+  ip_address TEXT DEFAULT '',
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+-- Payments table
+CREATE TABLE IF NOT EXISTS payments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER REFERENCES users(id),
+  booking_id INTEGER REFERENCES bookings(id),
+  amount REAL NOT NULL,
+  method TEXT DEFAULT 'cash',
+  status TEXT DEFAULT 'pending',
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+-- Business events table
+CREATE TABLE IF NOT EXISTS business_events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  business_id INTEGER REFERENCES users(id),
+  event_type TEXT DEFAULT '',
+  requested_date TEXT DEFAULT '',
+  special_instructions TEXT DEFAULT '',
+  status TEXT DEFAULT 'pending',
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
+);
+
+-- Notifications table
+CREATE TABLE IF NOT EXISTS notifications (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER REFERENCES users(id),
+  type TEXT DEFAULT '',
+  title TEXT DEFAULT '',
+  message TEXT DEFAULT '',
+  read INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+-- Pricing table
+CREATE TABLE IF NOT EXISTS pricing (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  service_type TEXT NOT NULL,
+  rate REAL NOT NULL,
+  duration TEXT DEFAULT '',
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+-- Templates table
+CREATE TABLE IF NOT EXISTS templates (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  content TEXT DEFAULT '',
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+-- AI responses (for chatbot)
+CREATE TABLE IF NOT EXISTS ai_responses (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  question TEXT NOT NULL,
+  response TEXT NOT NULL,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+-- Content table (for marketing site content - legacy, use content_pages)
 CREATE TABLE IF NOT EXISTS content (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   collection TEXT NOT NULL,
   slug TEXT NOT NULL,
   title TEXT NOT NULL,
   text TEXT NOT NULL,
-  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-  updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now')),
   UNIQUE(collection, slug)
 );
 
--- AI responses table
-CREATE TABLE IF NOT EXISTS ai_responses (
+-- Migration tracking for D1 native migrations
+CREATE TABLE IF NOT EXISTS schema_migrations (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  question TEXT NOT NULL,
-  answer TEXT NOT NULL,
-  category TEXT,
-  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+  name TEXT UNIQUE NOT NULL,
+  applied_at TEXT DEFAULT (datetime('now'))
 );
 
--- Create indexes for better query performance
+-- Performance indexes for production workloads
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token);
-CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
-CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_token ON password_reset_tokens(token);
-CREATE INDEX IF NOT EXISTS idx_cleaner_profiles_username ON cleaner_profiles(username);
-CREATE INDEX IF NOT EXISTS idx_cleaner_profiles_user_id ON cleaner_profiles(user_id);
+CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+CREATE INDEX IF NOT EXISTS idx_users_deleted ON users(deleted);
 CREATE INDEX IF NOT EXISTS idx_bookings_client_id ON bookings(client_id);
 CREATE INDEX IF NOT EXISTS idx_bookings_cleaner_id ON bookings(cleaner_id);
+CREATE INDEX IF NOT EXISTS idx_bookings_status ON bookings(status);
 CREATE INDEX IF NOT EXISTS idx_bookings_date ON bookings(booking_date);
+CREATE INDEX IF NOT EXISTS idx_bookings_date_status ON bookings(booking_date, status);
+CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token);
+CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at);
+CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_token ON password_reset_tokens(token);
+CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user_id ON password_reset_tokens(user_id);
+CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_expires ON password_reset_tokens(expires_at);
+CREATE INDEX IF NOT EXISTS idx_cleaner_profiles_user_id ON cleaner_profiles(user_id);
+CREATE INDEX IF NOT EXISTS idx_cleaner_profiles_username ON cleaner_profiles(username);
+CREATE INDEX IF NOT EXISTS idx_cleaner_profiles_status ON cleaner_profiles(status);
+CREATE INDEX IF NOT EXISTS idx_cleaner_profiles_blocked ON cleaner_profiles(blocked);
+CREATE INDEX IF NOT EXISTS idx_contracts_business_id ON contracts(business_id);
+CREATE INDEX IF NOT EXISTS idx_contracts_status ON contracts(status);
+CREATE INDEX IF NOT EXISTS idx_task_completions_cleaner_id ON task_completions(cleaner_id);
+CREATE INDEX IF NOT EXISTS idx_task_completions_booking_id ON task_completions(booking_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_admin_id ON audit_logs(admin_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at);
+CREATE INDEX IF NOT EXISTS idx_weekend_requests_business_id ON weekend_requests(business_id);
+CREATE INDEX IF NOT EXISTS idx_weekend_requests_status ON weekend_requests(status);
+CREATE INDEX IF NOT EXISTS idx_pending_contracts_status ON pending_contracts(status);
+CREATE INDEX IF NOT EXISTS idx_employees_username ON employees(username);
+CREATE INDEX IF NOT EXISTS idx_payments_user_id ON payments(user_id);
+CREATE INDEX IF NOT EXISTS idx_payments_booking_id ON payments(booking_id);
+CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status);
+CREATE INDEX IF NOT EXISTS idx_business_events_business_id ON business_events(business_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_read ON notifications(read);
 CREATE INDEX IF NOT EXISTS idx_content_collection_slug ON content(collection, slug);

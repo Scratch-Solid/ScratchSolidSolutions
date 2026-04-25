@@ -115,3 +115,27 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     return withSecurityHeaders(response, traceId);
   }
 }
+
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+  const traceId = withTracing(request);
+  const authResult = await withAuth(request, ['admin']);
+  if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
+  const { db } = authResult;
+
+  try {
+    const booking = await getBookingById(db, parseInt(params.id));
+    if (!booking) {
+      const response = NextResponse.json({ error: 'Booking not found' }, { status: 404 });
+      return withSecurityHeaders(response, traceId);
+    }
+
+    await db.prepare('DELETE FROM bookings WHERE id = ?').bind(parseInt(params.id)).run();
+
+    const response = NextResponse.json({ message: 'Booking deleted successfully' });
+    return withSecurityHeaders(response, traceId);
+  } catch (error) {
+    logger.error('Error deleting booking', error as Error);
+    const response = NextResponse.json({ error: 'Failed to delete booking' }, { status: 500 });
+    return withSecurityHeaders(response, traceId);
+  }
+}
