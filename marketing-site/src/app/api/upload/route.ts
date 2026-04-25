@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { v4 as uuidv4 } from "uuid";
 import { withAuth, withTracing, withSecurityHeaders } from "@/lib/middleware";
+import { logger } from "@/lib/logger";
+import { withRateLimit, rateLimits } from "@/lib/rateLimit";
 
 export const dynamic = "force-static";
 
@@ -44,6 +46,25 @@ export async function POST(req: NextRequest) {
   const authResult = await withAuth(req);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
 
+  // Rate limiting check
+  const rateLimitResult = await withRateLimit(req, rateLimits.strict);
+  if (rateLimitResult && !rateLimitResult.success) {
+    return withSecurityHeaders(
+      NextResponse.json(
+        { error: 'Too many upload requests. Please try again later.' },
+        { 
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+            'X-RateLimit-Reset': rateLimitResult.reset.toString()
+          }
+        }
+      ),
+      traceId
+    );
+  }
+
   try {
     const { buffer, filename, mimetype } = await parseFormData(req);
     const key = `${uuidv4()}-${filename}`;
@@ -59,6 +80,7 @@ export async function POST(req: NextRequest) {
     const response = NextResponse.json({ url });
     return withSecurityHeaders(response, traceId);
   } catch (err) {
+    logger.error('Upload error', err as Error);
     const response = NextResponse.json({ error: (err as Error).message }, { status: 400 });
     return withSecurityHeaders(response, traceId);
   }

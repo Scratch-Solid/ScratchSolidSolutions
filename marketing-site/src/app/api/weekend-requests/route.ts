@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { logger } from '@/lib/logger';
+import { validateString, validateDate, validateNumber } from '@/lib/validation';
 
 export async function GET(request: NextRequest) {
   const traceId = withTracing(request);
@@ -41,6 +42,25 @@ export async function POST(request: NextRequest) {
       special_instructions?: string;
     };
     const { business_id, requested_date, special_instructions } = body;
+
+    // Validate required fields
+    const businessIdValidation = validateNumber(business_id, 'business_id');
+    if (!businessIdValidation.valid) {
+      return NextResponse.json({ error: businessIdValidation.errors.join(', ') }, { status: 400 });
+    }
+
+    const dateValidation = validateDate(requested_date, 'requested_date');
+    if (!dateValidation.valid) {
+      return NextResponse.json({ error: dateValidation.errors.join(', ') }, { status: 400 });
+    }
+
+    if (special_instructions) {
+      const instructionsValidation = validateString(special_instructions, 'special_instructions', 0, 500);
+      if (!instructionsValidation.valid) {
+        return NextResponse.json({ error: instructionsValidation.errors.join(', ') }, { status: 400 });
+      }
+    }
+
     if (!business_id || !requested_date) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
