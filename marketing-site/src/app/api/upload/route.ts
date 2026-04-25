@@ -29,16 +29,12 @@ async function parseFormData(req: NextRequest) {
   const formData = await req.formData();
   const file = formData.get("file");
   if (!file || typeof file === "string") throw new Error("No file uploaded");
-  // @ts-ignore
-  const buffer = Buffer.from(await file.arrayBuffer());
-  // @ts-ignore
+  const fileObj = file as File;
+  const buffer = Buffer.from(await fileObj.arrayBuffer());
   if (buffer.length > MAX_FILE_SIZE) throw new Error("File exceeds 5MB limit");
-  // @ts-ignore
-  if (!ALLOWED_MIME_TYPES.includes(file.type)) throw new Error("File type not allowed. Accepted: JPEG, PNG, GIF, WebP, PDF");
-  // @ts-ignore
-  const safeFilename = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-  // @ts-ignore
-  return { buffer, filename: safeFilename, mimetype: file.type };
+  if (!ALLOWED_MIME_TYPES.includes(fileObj.type)) throw new Error("File type not allowed. Accepted: JPEG, PNG, GIF, WebP, PDF");
+  const safeFilename = fileObj.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+  return { buffer, filename: safeFilename, mimetype: fileObj.type };
 }
 
 export async function POST(req: NextRequest) {
