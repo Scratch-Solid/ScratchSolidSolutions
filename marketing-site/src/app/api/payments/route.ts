@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from "@/lib/db";
 import { logger } from "@/lib/logger";
+import { validateString, validateNumber } from "@/lib/validation";
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { createInvoice, recordPayment } from '@/lib/zoho';
 
@@ -48,8 +49,34 @@ export async function POST(request: NextRequest) {
   const { db } = authResult;
 
   try {
-    const body = await request.json();
+    const body = await request.json() as {
+      booking_id?: number;
+      payment_method?: string;
+      amount?: number;
+      user_id?: number;
+    };
     const { booking_id, payment_method, amount, user_id } = body;
+
+    // Validate required fields
+    const bookingIdValidation = validateNumber(booking_id, 'booking_id');
+    if (!bookingIdValidation.valid) {
+      return NextResponse.json({ error: bookingIdValidation.errors.join(', ') }, { status: 400 });
+    }
+
+    const paymentMethodValidation = validateString(payment_method, 'payment_method');
+    if (!paymentMethodValidation.valid) {
+      return NextResponse.json({ error: paymentMethodValidation.errors.join(', ') }, { status: 400 });
+    }
+
+    const amountValidation = validateNumber(amount, 'amount', 0);
+    if (!amountValidation.valid) {
+      return NextResponse.json({ error: amountValidation.errors.join(', ') }, { status: 400 });
+    }
+
+    const userIdValidation = validateNumber(user_id, 'user_id');
+    if (!userIdValidation.valid) {
+      return NextResponse.json({ error: userIdValidation.errors.join(', ') }, { status: 400 });
+    }
 
     if (!booking_id || !payment_method || !amount || !user_id) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });

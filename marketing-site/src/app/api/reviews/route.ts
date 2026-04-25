@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from "@/lib/db";
 import { logger } from "@/lib/logger";
+import { validateString, validateNumber } from "@/lib/validation";
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 
 export const dynamic = "force-dynamic";
@@ -21,6 +22,27 @@ export async function POST(request: NextRequest) {
     };
 
     const { user_id, booking_id, rating = 5, text, images = [] } = body;
+
+    // Validate required fields
+    const userIdValidation = validateString(user_id, 'user_id');
+    if (!userIdValidation.valid) {
+      return NextResponse.json({ error: userIdValidation.errors.join(', ') }, { status: 400 });
+    }
+
+    const bookingIdValidation = validateNumber(booking_id, 'booking_id');
+    if (!bookingIdValidation.valid) {
+      return NextResponse.json({ error: bookingIdValidation.errors.join(', ') }, { status: 400 });
+    }
+
+    const textValidation = validateString(text, 'text', 1, 500);
+    if (!textValidation.valid) {
+      return NextResponse.json({ error: textValidation.errors.join(', ') }, { status: 400 });
+    }
+
+    const ratingValidation = validateNumber(rating, 'rating', 1, 5);
+    if (!ratingValidation.valid) {
+      return NextResponse.json({ error: ratingValidation.errors.join(', ') }, { status: 400 });
+    }
 
     if (!user_id || !booking_id || !text) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, createBooking, getBookingsByDateRange, getBookingsByCleaner } from "@/lib/db";
 import { logger } from "@/lib/logger";
+import { validateString, validateDate, validateNumber, validateRequired } from "@/lib/validation";
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 
 export async function POST(request: NextRequest) {
@@ -38,6 +39,22 @@ export async function POST(request: NextRequest) {
       loyalty_discount = 0,
       cleaner_id
     } = body;
+
+    // Validate required fields
+    const clientIdValidation = validateNumber(client_id, 'client_id');
+    if (!clientIdValidation.valid) {
+      return NextResponse.json({ error: clientIdValidation.errors.join(', ') }, { status: 400 });
+    }
+
+    const dateValidation = validateDate(booking_date, 'booking_date');
+    if (!dateValidation.valid) {
+      return NextResponse.json({ error: dateValidation.errors.join(', ') }, { status: 400 });
+    }
+
+    const timeValidation = validateString(booking_time, 'booking_time', 1, 50);
+    if (!timeValidation.valid) {
+      return NextResponse.json({ error: timeValidation.errors.join(', ') }, { status: 400 });
+    }
 
     if (!client_id || !booking_date || !booking_time) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });

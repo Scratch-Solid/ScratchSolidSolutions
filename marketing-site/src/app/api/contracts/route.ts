@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from "@/lib/db";
 import { logger } from "@/lib/logger";
+import { validateString, validateDate, validateNumber, validateRequired } from "@/lib/validation";
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 
 export async function POST(request: NextRequest) {
@@ -35,6 +36,24 @@ export async function POST(request: NextRequest) {
       duration = '1_year',
       weekend_required = false
     } = body;
+
+    // Validate required fields
+    const businessIdValidation = validateNumber(business_id, 'business_id');
+    if (!businessIdValidation.valid) {
+      return NextResponse.json({ error: businessIdValidation.errors.join(', ') }, { status: 400 });
+    }
+
+    const startDateValidation = validateDate(start_date, 'start_date');
+    if (!startDateValidation.valid) {
+      return NextResponse.json({ error: startDateValidation.errors.join(', ') }, { status: 400 });
+    }
+
+    if (rate_per_hour) {
+      const rateValidation = validateNumber(rate_per_hour, 'rate_per_hour', 0);
+      if (!rateValidation.valid) {
+        return NextResponse.json({ error: rateValidation.errors.join(', ') }, { status: 400 });
+      }
+    }
 
     if (!business_id || !start_date) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
