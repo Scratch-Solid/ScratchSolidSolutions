@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
+import { logger } from '@/lib/logger';
 
 export async function GET(request: NextRequest) {
   const traceId = withTracing(request);
@@ -28,7 +29,7 @@ export async function GET(request: NextRequest) {
     response.headers.set('Cache-Control', 'public, max-age=60');
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    console.error('Error fetching cleaner details:', error);
+    logger.error('Error fetching cleaner details', error as Error);
     const response = NextResponse.json({ error: 'Failed to fetch cleaner details' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }

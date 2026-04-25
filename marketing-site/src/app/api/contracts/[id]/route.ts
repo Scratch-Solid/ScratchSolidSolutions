@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '../../../../lib/db';
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
+import { logger } from '@/lib/logger';
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   const traceId = withTracing(request);
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     response.headers.set('Cache-Control', 'private, max-age=60');
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    console.error('Error fetching contract:', error);
+    logger.error('Error fetching contract', error as Error);
     const response = NextResponse.json({ error: 'Failed to fetch contract' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
@@ -41,7 +42,15 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: 'Contract is immutable and cannot be modified' }, { status: 403 });
     }
 
-    const body = await request.json();
+    const body = await request.json() as {
+      contract_type?: string;
+      rate_per_hour?: number;
+      weekend_rate_multiplier?: number;
+      end_date?: string;
+      terms?: string;
+      status?: string;
+      is_immutable?: boolean;
+    };
     const { contract_type, rate_per_hour, weekend_rate_multiplier, end_date, terms, status, is_immutable } = body;
 
     const updates: string[] = [];
@@ -69,7 +78,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     const response = NextResponse.json(result);
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    console.error('Error updating contract:', error);
+    logger.error('Error updating contract', error as Error);
     const response = NextResponse.json({ error: 'Failed to update contract' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
@@ -97,7 +106,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     const response = NextResponse.json({ success: true });
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    console.error('Error deleting contract:', error);
+    logger.error('Error deleting contract', error as Error);
     const response = NextResponse.json({ error: 'Failed to delete contract' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }

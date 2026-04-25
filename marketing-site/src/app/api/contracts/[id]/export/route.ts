@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
+import { logger } from '@/lib/logger';
 
 export const dynamic = "force-dynamic";
 
@@ -58,7 +59,7 @@ Generated on: ${new Date().toISOString()}
       },
     });
   } catch (error) {
-    console.error('Error exporting contract:', error);
+    logger.error('Error exporting contract', error as Error);
     const response = NextResponse.json({ error: 'Failed to export contract' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }

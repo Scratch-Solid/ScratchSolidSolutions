@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 const DIRECTUS_URL = process.env.DIRECTUS_URL || '';
 const DIRECTUS_TOKEN = process.env.DIRECTUS_TOKEN || '';
@@ -16,7 +17,7 @@ export async function GET(request: NextRequest, { params }: { params: { page: st
     const directusResponse = await fetch(url.toString(), { headers });
     if (!directusResponse.ok) throw new Error(`Directus error: ${directusResponse.statusText}`);
 
-    const json = await directusResponse.json();
+    const json = await directusResponse.json() as any;
     const data = json.data?.data || json.data || [];
     if (data.length === 0) return NextResponse.json({ error: 'Page not found' }, { status: 404 });
 
@@ -24,7 +25,7 @@ export async function GET(request: NextRequest, { params }: { params: { page: st
     response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=600');
     return response;
   } catch (error) {
-    console.error('Error fetching content:', error);
+    logger.error('Error fetching content', error as Error);
     return NextResponse.json({ error: 'Failed to fetch content' }, { status: 500 });
   }
 }

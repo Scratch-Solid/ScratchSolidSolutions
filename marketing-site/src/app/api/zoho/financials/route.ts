@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
+import { logger } from '@/lib/logger';
 
 const ZOHO_ORG_ID = process.env.ZOHO_ORG_ID || '';
 const ZOHO_CLIENT_ID = process.env.ZOHO_CLIENT_ID || '';
@@ -21,12 +22,12 @@ async function getZohoToken(): Promise<string> {
       grant_type: 'refresh_token'
     }),
   });
-  const json = await response.json();
+  const json = await response.json() as { access_token?: string; expires_in?: number };
   if (!json.access_token) {
     throw new Error('Zoho authentication failed: ' + JSON.stringify(json));
   }
   accessToken = json.access_token;
-  tokenExpiry = Date.now() + (json.expires_in * 1000) - 60000;
+  tokenExpiry = Date.now() + ((json.expires_in || 3600) * 1000) - 60000;
   return accessToken;
 }
 
@@ -72,7 +73,7 @@ export async function GET(request: NextRequest) {
     });
     return withSecurityHeaders(response, traceId);
   } catch (error: any) {
-    console.error('Zoho API error:', error);
+    logger.error('Zoho API error', error as Error);
     const response = NextResponse.json({ error: 'Zoho integration unavailable' }, { status: 502 });
     return withSecurityHeaders(response, traceId);
   }
