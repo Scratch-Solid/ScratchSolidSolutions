@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, createBooking, getBookingsByDateRange, getBookingsByCleaner } from "@/lib/db";
+import { getDb, createBooking, getBookingsByDateRange, getBookingsByCleaner, getUserById } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import { validateString, validateDate, validateNumber, validateRequired } from "@/lib/validation";
 import { withRateLimit, rateLimits } from "@/lib/rateLimit";
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { addHours, timeOverlap, generateAlternativeTimes } from '@/lib/bookingUtils';
+import { sendBookingConfirmationEmail, sendAdminAlertEmail } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
   const traceId = withTracing(request);
@@ -196,6 +197,38 @@ export async function POST(request: NextRequest) {
       cleaner_id: assignedCleanerId,
       status: 'pending'
     });
+
+    // Send booking confirmation email to client
+    try {
+      const user = await getUserById(db, client_id);
+      if (user && (user as any).email) {
+        await sendBookingConfirmationEmail(
+          (user as any).email,
+          client_name || 'Customer',
+          booking_date,
+          booking_time,
+          location || '',
+          service_type || 'standard'
+        );
+      }
+    } catch (emailError) {
+      logger.error('Failed to send booking confirmation email', emailError as Error);
+    }
+
+    // Send admin alert email
+    try {
+      const user = await getUserById(db, client_id);
+      await sendAdminAlertEmail(
+        client_name || 'Customer',
+        booking_date,
+        booking_time,
+        location || '',
+        service_type || 'standard',
+        (user as any).email || ''
+      );
+    } catch (emailError) {
+      logger.error('Failed to send admin alert email', emailError as Error);
+    }
 
     const response = NextResponse.json(booking, { status: 201 });
     return withSecurityHeaders(response, traceId);

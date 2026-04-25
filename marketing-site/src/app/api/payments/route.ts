@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from "@/lib/db";
+import { getDb, getUserById } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import { validateString, validateNumber } from "@/lib/validation";
 import { withRateLimit, rateLimits } from "@/lib/rateLimit";
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { createInvoice, recordPayment } from '@/lib/zoho';
+import { sendPaymentReceiptEmail } from '@/lib/email';
 
 export const dynamic = "force-dynamic";
 
@@ -24,8 +25,8 @@ async function createZohoInvoice(paymentData: any) {
     }];
 
     // Create invoice in Zoho Books
-    const invoiceResponse = await createInvoice(customerId, lineItems);
-    
+    const invoiceResponse = await createInvoice(customerId, lineItems) as any;
+
     if (invoiceResponse.code === 0 && invoiceResponse.invoice) {
       const invoiceId = invoiceResponse.invoice.invoice_id;
       
@@ -121,7 +122,7 @@ export async function POST(request: NextRequest) {
         payment_method,
         user_id,
       });
-      
+
       // Update payment record with Zoho invoice ID
       await db.prepare(
         `UPDATE payments SET zoho_invoice_id = ? WHERE id = ?`
@@ -134,7 +135,23 @@ export async function POST(request: NextRequest) {
       ).bind((result as any).id).run();
     }
 
-    const response = NextResponse.json({ 
+    // Send payment receipt email
+    try {
+      const user = await getUserById(db, user_id);
+      if (user && (user as any).email) {
+        await sendPaymentReceiptEmail(
+          (user as any).email,
+          (user as any).name || 'Customer',
+          amount,
+          new Date().toISOString().split('T')[0],
+          booking_id
+        );
+      }
+    } catch (emailError) {
+      logger.error('Failed to send payment receipt email', emailError as Error);
+    }
+
+    const response = NextResponse.json({
       ...result,
       message: 'Payment confirmed successfully'
     }, { status: 201 });
