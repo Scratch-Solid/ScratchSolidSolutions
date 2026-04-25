@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
+import { logger } from '@/lib/logger';
 
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   const traceId = withTracing(request);
@@ -16,7 +17,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     const response = NextResponse.json({ message: 'Weekend request cancelled' });
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    console.error('Error cancelling weekend request:', error);
+    logger.error('Error cancelling weekend request', error as Error);
     const response = NextResponse.json({ error: 'Failed to cancel weekend request' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }

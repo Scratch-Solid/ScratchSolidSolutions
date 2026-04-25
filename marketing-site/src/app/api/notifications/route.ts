@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
+import { logger } from '@/lib/logger';
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +12,12 @@ export async function POST(request: NextRequest) {
   const { db } = authResult;
 
   try {
-    const body = await request.json();
+    const body = await request.json() as {
+      booking_id?: number;
+      type?: string;
+      message?: string;
+      user_id?: number;
+    };
     const { booking_id, type, message, user_id } = body;
 
     if (!booking_id || !type || !message || !user_id) {
@@ -27,7 +33,7 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json(result, { status: 201 });
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    console.error('Error creating notification:', error);
+    logger.error('Error creating notification', error as Error);
     const response = NextResponse.json({ error: 'Notification creation failed' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
@@ -58,7 +64,7 @@ export async function GET(request: NextRequest) {
     response.headers.set('Cache-Control', 'private, max-age=10');
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    console.error('Error fetching notifications:', error);
+    logger.error('Error fetching notifications', error as Error);
     const response = NextResponse.json({ error: 'Fetch failed' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }

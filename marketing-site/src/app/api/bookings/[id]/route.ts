@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, getBookingById, updateBooking } from "@/lib/db";
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
+import { logger } from '@/lib/logger';
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   const traceId = withTracing(request);
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     response.headers.set('Cache-Control', 'private, max-age=30');
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    console.error('Error fetching booking:', error);
+    logger.error('Error fetching booking', error as Error);
     const response = NextResponse.json({ error: 'Failed to fetch booking' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
@@ -54,7 +55,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     const response = NextResponse.json(booking);
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    console.error('Error updating booking:', error);
+    logger.error('Error updating booking', error as Error);
     const response = NextResponse.json({ error: 'Failed to update booking' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
