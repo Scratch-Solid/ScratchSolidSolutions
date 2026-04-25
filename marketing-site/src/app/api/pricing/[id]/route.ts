@@ -6,16 +6,19 @@ import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   const traceId = withTracing(request);
-  const authResult = await withAuth(request, ['admin', 'client', 'business']);
-  if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
-  const { db } = authResult;
+  const db = getDb(request);
+  if (!db) {
+    return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 });
+  }
 
   try {
     const pricing = await db.prepare('SELECT * FROM pricing WHERE id = ?').bind(parseInt(params.id)).first();
     if (!pricing) {
       return NextResponse.json({ error: 'Pricing not found' }, { status: 404 });
     }
-    return NextResponse.json(pricing);
+    const response = NextResponse.json(pricing);
+    response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=600');
+    return withSecurityHeaders(response, traceId);
   } catch (error) {
     logger.error('Error fetching pricing', error as Error);
     return NextResponse.json({ error: 'Failed to fetch pricing' }, { status: 500 });
