@@ -344,6 +344,18 @@ CREATE TABLE IF NOT EXISTS ai_responses (
   created_at TEXT DEFAULT (datetime('now'))
 );
 
+-- Reviews table
+CREATE TABLE IF NOT EXISTS reviews (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER REFERENCES users(id),
+  booking_id INTEGER REFERENCES bookings(id),
+  rating INTEGER NOT NULL DEFAULT 5,
+  text TEXT NOT NULL,
+  images TEXT DEFAULT '[]',
+  status TEXT DEFAULT 'pending',
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
 -- Additional indexes
 CREATE INDEX IF NOT EXISTS idx_payments_user_id ON payments(user_id);
 CREATE INDEX IF NOT EXISTS idx_payments_booking_id ON payments(booking_id);
@@ -351,6 +363,9 @@ CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status);
 CREATE INDEX IF NOT EXISTS idx_business_events_business_id ON business_events(business_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_read ON notifications(read);
+CREATE INDEX IF NOT EXISTS idx_reviews_user_id ON reviews(user_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_booking_id ON reviews(booking_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_status ON reviews(status);
 
 -- Migration: Add security columns to existing users table
 -- Run these ALTER statements if the columns don't exist yet:

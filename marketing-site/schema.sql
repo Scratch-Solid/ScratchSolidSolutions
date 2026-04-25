@@ -282,6 +282,18 @@ CREATE TABLE IF NOT EXISTS ai_responses (
   created_at TEXT DEFAULT (datetime('now'))
 );
 
+-- Reviews table
+CREATE TABLE IF NOT EXISTS reviews (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER REFERENCES users(id),
+  booking_id INTEGER REFERENCES bookings(id),
+  rating INTEGER NOT NULL DEFAULT 5,
+  text TEXT NOT NULL,
+  images TEXT DEFAULT '[]',
+  status TEXT DEFAULT 'pending',
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
 -- Content table (for marketing site content - legacy, use content_pages)
 CREATE TABLE IF NOT EXISTS content (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -335,4 +347,7 @@ CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status);
 CREATE INDEX IF NOT EXISTS idx_business_events_business_id ON business_events(business_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_read ON notifications(read);
+CREATE INDEX IF NOT EXISTS idx_reviews_user_id ON reviews(user_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_booking_id ON reviews(booking_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_status ON reviews(status);
 CREATE INDEX IF NOT EXISTS idx_content_collection_slug ON content(collection, slug);

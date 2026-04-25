@@ -65,7 +65,7 @@ export default function ClientDashboard() {
 
       // Fetch available cleaners from real API
       try {
-        const cleanersRes = await fetch('/api/admin/cleaners?status=idle&blocked=0', {
+        const cleanersRes = await fetch('/api/cleaners?status=idle&blocked=0', {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (cleanersRes.ok) {
