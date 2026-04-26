@@ -62,7 +62,7 @@ export async function withAuth(request: NextRequest, allowedRoles?: string[]): P
   const rateLimitResponse = await withRateLimit(request);
   if (rateLimitResponse) return rateLimitResponse;
 
-  const db = getDb(request);
+  const db = await getDb();
   if (!db) {
     return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
   }
