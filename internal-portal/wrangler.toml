@@ -2,7 +2,6 @@ name = "scratchsolid-portal"
 pages_build_output_dir = ".next"
 
 [vars]
-JWT_SECRET = "your-secret-key-here-change-in-production"
 CSRF_SECRET = "your-csrf-secret-here-change-in-production"
 ZOHO_AUTH_TOKEN = "your-zoho-auth-token"
 ZOHO_ORG_ID = "your-zoho-org-id"
