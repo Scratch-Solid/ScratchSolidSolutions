@@ -17,17 +17,14 @@ ScratchSolidSolutions/
 │   │   ├── app/             # Next.js App Router pages
 │   │   │   ├── api/         # API routes (auth, booking, admin, etc.)
 │   │   ├── components/      # Dashboard components
-│   │   └── lib/             # Utils, db.ts, directus.ts
+│   │   └── lib/             # Utils, db.ts
 │   ├── public/
 │   └── package.json
 │
 ├── backend-worker/          # (Future) Cloudflare Workers for background jobs
 │   ├── src/
+│   │   └── worker.js
 │   └── wrangler.toml
-│
-├── directus/                # Directus CMS Docker setup
-│   ├── docker-compose.yml
-│   └── directus-data/       # SQLite database volume
 │
 ├── docs/                    # Documentation
 │   ├── product-requirements.md
@@ -48,7 +45,7 @@ ScratchSolidSolutions/
 ## Directory Responsibilities
 
 ### `marketing-site/`
-- Landing page, About Us, Services, Promotions (content from Directus)
+- Landing page, About Us, Services, Promotions
 - Booking flow (individual vs business, calendar, indemnity, payment)
 - Client signup and login
 - Public-facing only
@@ -62,11 +59,6 @@ ScratchSolidSolutions/
 ### `backend-worker/`
 - Background jobs: notification sending, payroll calculation, data cleanup
 - Scheduled triggers: daily/weekly tasks
-
-### `directus/`
-- Docker Compose for local development
-- Content collections: pages (about-us, services, indemnity, promotions)
-- Media library for CMS-managed images
 
 ### `docs/`
 - Product requirements, architecture decisions, API documentation
@@ -83,5 +75,4 @@ ScratchSolidSolutions/
 |------|---------|
 | `schema.sql` | Single source of truth for D1 schema |
 | `internal-portal/src/lib/db.ts` | D1 database connection helper |
-| `internal-portal/src/lib/directus.ts` | Directus API client |
 | `marketing-site/src/lib/db.ts` | Shared D1 helper (copy) |

@@ -1,28 +1,25 @@
 // Shared D1 Database Helper for Cloudflare Pages
 // Both marketing-site and internal-portal use this same pattern
 
+import type { D1Database } from '@cloudflare/workers-types';
 import bcrypt from 'bcryptjs';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 
 export interface Env {
   scratchsolid_db: D1Database;
 }
 
-// Helper to get the D1 database from the request context
-export function getDb(request: Request): D1Database | null {
-  // In Cloudflare Pages Functions, the env is available via process.env or globalThis
-  // The D1 binding is injected by wrangler
+// Helper to get the D1 database from the OpenNext Cloudflare context
+export async function getDb(): Promise<D1Database | null> {
   try {
-    // @ts-ignore - Cloudflare Pages injects env globally
-    const env = (globalThis as any).__env__ as Env;
-    if (env?.scratchsolid_db) return env.scratchsolid_db;
-
-    // Alternative: try to get from process.env (Next.js on CF Pages)
-    // @ts-ignore
-    if (typeof process !== 'undefined' && (process as any).env?.scratchsolid_db) {
-      // @ts-ignore
-      return (process as any).env.scratchsolid_db as D1Database;
+    // OpenNext on Workers: use getCloudflareContext
+    const { env } = await getCloudflareContext({ async: true });
+    if (env?.scratchsolid_db) {
+      return env.scratchsolid_db as D1Database;
     }
-  } catch {}
+  } catch (error) {
+    console.error('Error getting database from OpenNext context', error);
+  }
   return null;
 }
 

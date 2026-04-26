@@ -15,12 +15,10 @@
       "database_id": "0b0b6006-1b2d-4ab1-8909-dc684666e6d3"
     }
   ],
-  // NOTE: Sensitive values should be set using wrangler secrets, not in vars
-  // Use: wrangler secret put JWT_SECRET
-  // Use: wrangler secret put RESEND_API_KEY
+  // NOTE: Secrets (JWT_SECRET, RESEND_API_KEY) must be set via Cloudflare dashboard/API
+  // Do NOT define them here - they will be overwritten as empty strings
+  // Use Cloudflare Workers dashboard or API to set secrets as secret_text
   "vars": {
-    "JWT_SECRET": "",
-    "RESEND_API_KEY": "",
     "NEXT_PUBLIC_BASE_URL": "https://scratchsolidsolutions.org",
     "NEXT_PUBLIC_API_URL": "https://scratchsolidsolutions.org/api"
   },

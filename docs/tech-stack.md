@@ -18,11 +18,6 @@
 - **ORM/Query**: Raw SQL via `db.prepare().bind().all()/run()`
 - **Schema**: Defined in `schema.sql`
 
-## CMS
-- **System**: Directus
-- **Deployment**: Docker (local), Railway/Render/Fly.io (production)
-- **Database**: SQLite (local), PostgreSQL (production)
-
 ## File Storage
 - **System**: Cloudflare R2
 - **API**: S3-compatible
@@ -42,7 +37,7 @@
 
 ## DevOps
 - **CI/CD**: GitHub Actions
-- **Hosting**: Cloudflare Pages (frontend), Docker (Directus)
+- **Hosting**: Cloudflare Pages (frontend), Cloudflare Workers (backend)
 - **Environment Management**: GitHub Secrets + Cloudflare Environment Variables
 
 ## Development Tools

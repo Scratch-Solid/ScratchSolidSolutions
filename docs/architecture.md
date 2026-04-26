@@ -3,12 +3,12 @@
 ## High-Level Diagram
 
 ```
-+------------------+      +------------------+      +------------------+
-|   Marketing      |      |   Internal       |      |   Directus CMS   |
-|   Site           |      |   Portal         |      |   (Content)      |
-|   Next.js        |<---->|   Next.js        |<---->|   Docker         |
-|   (Cloudflare)   |      |   (Cloudflare)   |      |   Port 8055      |
-+------------------+      +------------------+      +------------------+
++------------------+      +------------------+
+|   Marketing      |      |   Internal       |
+|   Site           |      |   Portal         |
+|   Next.js        |<---->|   Next.js        |
+|   (Cloudflare)   |      |   (Cloudflare)   |
++------------------+      +------------------+
          |                       |
          |                       |
          v                       v
@@ -36,11 +36,6 @@
 - **Type**: SQLite-compatible edge database
 - **Tables**: users, bookings, cleaner_profiles, business_profiles, contracts, employees, pending_contracts, task_completions, sessions, audit_logs, roles, permissions, role_permissions
 
-### CMS (Directus)
-- **Type**: Headless CMS
-- **Deployment**: Docker locally, Railway/Render/Fly.io in production
-- **Content**: About Us, Services, Indemnity, Promotions pages
-
 ### File Storage (Cloudflare R2)
 - **Purpose**: Profile pictures, documents, gallery images
 - **Integration**: S3-compatible API
@@ -61,4 +56,3 @@ User -> Authenticated Request -> Cookie -> JWT Verify -> D1 (session check) -> A
 3. Cleaner updates status via dashboard → D1 cleaner_profiles + bookings updated
 4. Task completion triggers payroll → D1 task_completions inserted
 5. Invoice generated in Zoho → Payment tracked
-6. Content managed in Directus → Fetched by marketing site

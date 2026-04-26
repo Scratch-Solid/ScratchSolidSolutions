@@ -4,11 +4,10 @@ _This is a placeholder for the system architecture diagram. Replace with a prope
 
 ## System Overview
 
-- **Frontend**: Next.js (frontend-next, marketing-site)
-- **Backend**: FastAPI (backend), Cloudflare Workers (backend-worker)
-- **Database**: SQLite (dev), PostgreSQL (prod)
+- **Frontend**: Next.js (marketing-site, internal-portal)
+- **Backend**: Cloudflare Workers (OpenNext)
+- **Database**: Cloudflare D1 (SQLite)
 - **Storage**: Cloudflare R2
-- **CMS**: Directus
 - **Accounting**: Zoho Books
 - **Notifications**: WhatsApp, Email
 - **CI/CD**: GitHub Actions
@@ -16,10 +15,10 @@ _This is a placeholder for the system architecture diagram. Replace with a prope
 ## High-Level Flow
 
 1. User interacts with frontend (Next.js)
-2. Frontend communicates with backend APIs (FastAPI, Workers)
-3. Backend reads/writes to DB, triggers notifications, integrates with Directus/Zoho
+2. Frontend communicates with backend APIs (Cloudflare Workers)
+3. Backend reads/writes to DB, triggers notifications, integrates with Zoho
 4. Admin and business dashboards access advanced features
-5. Content and assets managed via Directus and R2
+5. Content and assets managed via D1 and R2
 
 ---
 

@@ -6,7 +6,7 @@ This document captures a detailed implementation plan for building a premium cle
 ## Overall Goals
 - Build a secure, scalable booking and operations platform.
 - Deliver a unified modern UI with glassmorphism styling.
-- Use Cloudflare Workers, Pages, PostgreSQL, R2, Directus, and Zoho Books.
+- Use Cloudflare Workers, Pages, D1, R2, and Zoho Books.
 - Ensure every user flow is complete and production-ready.
 
 ## Phase 0 — Architecture Alignment
@@ -27,7 +27,6 @@ This document captures a detailed implementation plan for building a premium cle
    - Client booking app
    - Cleaner dashboard
    - Admin dashboard
-   - Directus CMS content delivery
    - Zoho Books accounting integration
 2. Standardize page styling and UI components.
 3. Establish environment variables and secret management.
@@ -86,7 +85,7 @@ This document captures a detailed implementation plan for building a premium cle
 - One-off cleaning
 - Contract cleaning
 - Fixed contract rules
-- Admin pricing via Directus
+- Admin pricing via API
 
 ## Phase 3 — Cleaner Experience
 ### Objectives
@@ -128,7 +127,6 @@ This document captures a detailed implementation plan for building a premium cle
 
 ## Phase 5 — Notifications and Accounting
 ### Objectives
-- Integrate Directus for dynamic content.
 - Add notifications and Zoho accounting.
 
 ### Features

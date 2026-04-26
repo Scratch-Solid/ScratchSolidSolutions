@@ -4,47 +4,22 @@
 import type { D1Database } from '@cloudflare/workers-types';
 import bcrypt from 'bcryptjs';
 import { logger } from './logger';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 
 export interface Env {
   scratchsolid_db: D1Database;
 }
 
-// Helper to get the D1 database from the request context
-export function getDb(request: Request): D1Database | null {
-  // In Cloudflare Pages Functions and OpenNext, the env is available via the request context
-  // The D1 binding is injected by wrangler
+// Helper to get the D1 database from the OpenNext Cloudflare context
+export async function getDb(): Promise<D1Database | null> {
   try {
-    // Try to get from request context (OpenNext Cloudflare Workers)
-    // @ts-ignore - OpenNext injects env in request context
-    if ((request as any).env?.scratchsolid_db) {
-      return (request as any).env.scratchsolid_db;
-    }
-
-    // Try to get from request context with alternative property names
-    // @ts-ignore - OpenNext may use different property names
-    if ((request as any).ctx?.env?.scratchsolid_db) {
-      return (request as any).ctx.env.scratchsolid_db;
-    }
-
-    // Try to get from globalThis (Cloudflare Pages Functions)
-    // @ts-ignore - Cloudflare Pages injects env globally
-    const env = (globalThis as any).__env__ as Env;
-    if (env?.scratchsolid_db) return env.scratchsolid_db;
-
-    // Alternative: try to get from process.env (Next.js on CF Pages)
-    // @ts-ignore
-    if (typeof process !== 'undefined' && (process as any).env?.scratchsolid_db) {
-      // @ts-ignore
-      return (process as any).env.scratchsolid_db as D1Database;
-    }
-
-    // Try to get from globalThis directly (some Cloudflare environments)
-    // @ts-ignore
-    if ((globalThis as any).scratchsolid_db) {
-      return (globalThis as any).scratchsolid_db;
+    // OpenNext on Workers: use getCloudflareContext
+    const { env } = await getCloudflareContext({ async: true });
+    if (env?.scratchsolid_db) {
+      return env.scratchsolid_db as D1Database;
     }
   } catch (error) {
-    logger.error('Error getting database', error as Error);
+    logger.error('Error getting database from OpenNext context', error as Error);
   }
   return null;
 }

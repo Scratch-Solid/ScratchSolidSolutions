@@ -4,7 +4,7 @@
 Scratch Solid Solutions is a multi-role cleaning and facilities management platform consisting of:
 - **Marketing Site**: Public-facing website for bookings and client signup
 - **Internal Portal**: Admin dashboard, cleaner dashboard, business dashboard
-- **Backend**: Cloudflare D1 database, API routes, Directus CMS, Zoho Books integration
+- **Backend**: Cloudflare D1 database, API routes, Zoho Books integration
 
 ## Target Users
 1. **Individual Clients**: Book one-time or recurring cleaning services
@@ -37,7 +37,6 @@ Scratch Solid Solutions is a multi-role cleaning and facilities management platf
 - Payroll amendment
 - Contract updates with immutability
 - Audit logging
-- Directus CMS integration for content
 
 ### Phase 5: Notifications & Payments
 - WhatsApp and email notifications

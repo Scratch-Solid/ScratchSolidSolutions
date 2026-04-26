@@ -2,14 +2,24 @@
 
 ## Architecture Overview
 
-| Service | Platform | Domain |
-|---|---|---|
-| Marketing Site | Cloudflare Pages | `scratchsolid.com` |
-| Internal Portal | Cloudflare Pages | `portal.scratchsolid.com` |
-| Backend Worker | Cloudflare Workers | `api.scratchsolid.com` |
-| Database | Cloudflare D1 | `scratchsolid-db` |
+| Service | Component | Type | Domain | Notes |
+|---|---|---|---|
+| Marketing Site | Cloudflare Worker with Assets (OpenNext) | `scratchsolidsolutions.org` | Next.js 16.2.3 |
+| Internal Portal | Cloudflare Worker with Assets (OpenNext) | `portal.scratchsolidsolutions.org` | Next.js 16.2.4 |
+| Backend Worker | Cloudflare Worker | `api.scratchsolid.com` | Zoho integration, notifications |
 | File Storage | Cloudflare R2 | `scratchsolid-assets` |
-| CMS | Directus (Docker) | `cms.scratchsolid.com` |
+
+## CRITICAL: Secrets Management
+
+**NEVER commit secrets to wrangler.toml or wrangler.jsonc files.**
+- Secrets must be set via Cloudflare dashboard or API as `secret_text` bindings
+- Do NOT define JWT_SECRET, RESEND_API_KEY, or other sensitive values in wrangler configuration files
+- If secrets are defined in wrangler config files, they will overwrite the actual secrets during deployment
+
+**Correct way to set secrets:**
+1. Go to Cloudflare Dashboard → Workers & Pages → [Worker Name] → Settings → Variables and Secrets
+2. Add secrets as "Secret text" type (NOT "Plain text")
+3. Use the Cloudflare API for programmatic secret management
 
 ## Pre-Deployment Checklist
 
@@ -31,74 +41,82 @@ wrangler d1 execute scratchsolid-db --remote --command="ALTER TABLE users ADD CO
 ```
 
 ### 2. Set Cloudflare Secrets
-**CRITICAL: Never commit secrets to wrangler.toml**
+**CRITICAL: Never commit secrets to wrangler.toml or wrangler.jsonc**
 
+Set secrets via Cloudflare Dashboard → Workers & Pages → [Worker Name] → Settings → Variables and Secrets:
+
+**Marketing Site (scratchsolidsolutions Worker):**
+- JWT_SECRET (Secret text) - Generate with: `openssl rand -base64 48`
+- RESEND_API_KEY (Secret text)
+- CSRF_SECRET (Secret text)
+- ZOHO_ORG_ID (Secret text)
+- ZOHO_CLIENT_ID (Secret text)
+- ZOHO_CLIENT_SECRET (Secret text)
+- ZOHO_REFRESH_TOKEN (Secret text)
+
+**Internal Portal (scratchsolid-portal Worker):**
+- JWT_SECRET (Secret text) - Use same as marketing site
+- CSRF_SECRET (Secret text)
+- ZOHO_AUTH_TOKEN (Secret text)
+- ZOHO_ORG_ID (Secret text)
+- ZOHO_CLIENT_ID (Secret text)
+- ZOHO_CLIENT_SECRET (Secret text)
+- ZOHO_REFRESH_TOKEN (Secret text)
+- WHATSAPP_API_KEY (Secret text)
+- WHATSAPP_PHONE_ID (Secret text)
+- EMAIL_API_KEY (Secret text)
+
+**Backend Worker:**
+Set via command line:
 ```bash
-# Backend Worker secrets
 cd backend-worker
 wrangler secret put JWT_SECRET
-# Generate with: openssl rand -base64 48
-
-# Marketing Site secrets (set in Cloudflare Pages dashboard > Settings > Environment variables)
-JWT_SECRET=<same-as-above>
-RESEND_API_KEY=<your-resend-api-key>
-R2_BUCKET=scratchsolid-assets
-R2_ACCOUNT_ID=<your-account-id>
-R2_ACCESS_KEY_ID=<your-r2-key>
-R2_SECRET_ACCESS_KEY=<your-r2-secret>
-ZOHO_ORG_ID=<your-zoho-org-id>
-ZOHO_CLIENT_ID=<your-zoho-client-id>
-ZOHO_CLIENT_SECRET=<your-zoho-client-secret>
-ZOHO_REFRESH_TOKEN=<your-zoho-refresh-token>
-DIRECTUS_URL=https://cms.scratchsolid.com
-DIRECTUS_TOKEN=<your-directus-token>
-
-# Internal Portal secrets (set in Cloudflare Pages dashboard)
-JWT_SECRET=<same-as-above>
 ```
 
-**For Marketing Site (wrangler.jsonc):**
-```bash
-cd marketing-site
-wrangler secret put JWT_SECRET
-wrangler secret put RESEND_API_KEY
-```
+### 3. Build & Deploy (OpenNext Method)
 
-### 3. Build & Deploy
+**IMPORTANT: Use OpenNext deployment, NOT Pages deployment**
 
 ```bash
 # Marketing Site
 cd marketing-site
-npm run build
-wrangler pages deploy .vercel/output/static --project-name=scratchsolidsolutions
+npm ci
+npx opennextjs-cloudflare build
+npx opennextjs-cloudflare deploy
 
 # Internal Portal
 cd internal-portal
-npm run build
-wrangler pages deploy .vercel/output/static --project-name=scratchsolid-portal
+npm ci
+npx opennextjs-cloudflare build
+npx opennextjs-cloudflare deploy
 
 # Backend Worker
 cd backend-worker
 wrangler deploy
 ```
 
+**Deployment Environment:**
+- Use GitHub Codespaces or Linux environment (not Windows)
+- Windows may encounter EPERM/EBUSY errors during OpenNext build
+- Set CLOUDFLARE_API_TOKEN environment variable for non-interactive deployment
+
 ### 4. DNS Configuration
 In Cloudflare dashboard:
-- `scratchsolid.com` → Marketing Site (Pages custom domain)
-- `portal.scratchsolid.com` → Internal Portal (Pages custom domain)
+- `scratchsolidsolutions.org` → Marketing Site (Worker custom domain)
+- `portal.scratchsolidsolutions.org` → Internal Portal (Worker custom domain)
 - `api.scratchsolid.com` → Backend Worker (Custom domain in Workers settings)
 
 ### 5. Post-Deployment Verification
-- [ ] Visit `https://scratchsolid.com` — loads correctly
-- [ ] Visit `https://portal.scratchsolid.com` — loads correctly
+- [ ] Visit `https://scratchsolidsolutions.org` — loads correctly
+- [ ] Visit `https://portal.scratchsolidsolutions.org` — loads correctly
 - [ ] Test login flow on both sites
 - [ ] Test signup with password policy enforcement
 - [ ] Test failed login lockout (5 attempts → 15 min lock)
-- [ ] Verify HSTS header: `curl -I https://scratchsolid.com | grep Strict-Transport`
-- [ ] Verify CSP header: `curl -I https://scratchsolid.com | grep Content-Security-Policy`
+- [ ] Verify HSTS header: `curl -I https://scratchsolidsolutions.org | grep Strict-Transport`
+- [ ] Verify CSP header: `curl -I https://scratchsolidsolutions.org | grep Content-Security-Policy`
 - [ ] Verify CORS: `curl -H "Origin: https://evil.com" https://api.scratchsolid.com/health` → should NOT return `Access-Control-Allow-Origin: https://evil.com`
 - [ ] Test file upload (authenticated only, file type + size limits)
-- [ ] Verify Directus CMS connection
+- [ ] Verify secrets are set as secret_text (not plain_text) in Worker bindings
 
 ## Security Posture Summary
 
@@ -157,5 +175,3 @@ In Cloudflare dashboard:
 | `ZOHO_CLIENT_ID` | Marketing | Yes | Zoho OAuth client ID |
 | `ZOHO_CLIENT_SECRET` | Marketing | Yes | Zoho OAuth client secret |
 | `ZOHO_REFRESH_TOKEN` | Marketing | Yes | Zoho OAuth refresh token |
-| `DIRECTUS_URL` | Marketing | Yes | Directus CMS URL |
-| `DIRECTUS_TOKEN` | Marketing | Yes | Directus API token |

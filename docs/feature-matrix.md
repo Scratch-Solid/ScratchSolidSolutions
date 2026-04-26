@@ -36,7 +36,6 @@
 | Contract Update | Present | 4 | Immutable protection |
 | Payroll Amend | Present | 4 | Rate/deduction updates |
 | Audit Logging | Present | 4 | audit_logs table + API |
-| Directus Content API | Present | 4 | GET/PUT /admin/content/:page |
 | **Notifications** | | | |
 | WhatsApp API | Present | 5 | Placeholder ready for integration |
 | Email API | Present | 5 | Fallback notification setup |
