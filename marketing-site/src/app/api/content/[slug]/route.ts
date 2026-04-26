@@ -7,6 +7,57 @@ import { getDb } from '@/lib/db';
 
 export const runtime = "edge";
 
+export async function GET(request: NextRequest, { params }: { params: { slug: string } }) {
+  const traceId = withTracing(request);
+  const authResult = await withAuth(request, ['admin']);
+  if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
+
+  // Rate limiting check
+  const rateLimitResult = await withRateLimit(request, rateLimits.standard);
+  if (rateLimitResult && !rateLimitResult.success) {
+    return withSecurityHeaders(
+      NextResponse.json(
+        { error: 'Too many content requests. Please try again later.' },
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+            'X-RateLimit-Reset': rateLimitResult.reset.toString()
+          }
+        }
+      ),
+      traceId
+    );
+  }
+
+  const db = getDb(request);
+  if (!db) {
+    return NextResponse.json({ error: "Service temporarily unavailable" }, { status: 503 });
+  }
+
+  try {
+    const slug = params.slug;
+    const slugValidation = validateString(slug, 'slug', 1, 100);
+    if (!slugValidation.valid) {
+      return NextResponse.json({ error: slugValidation.errors.join(', ') }, { status: 400 });
+    }
+
+    const result = await db.prepare('SELECT title, text as content, slug FROM content WHERE slug = ?').bind(slug).first();
+
+    if (!result) {
+      return NextResponse.json({ error: 'Page not found' }, { status: 404 });
+    }
+
+    const response = NextResponse.json({ title: (result as any).title, content: (result as any).content, slug: (result as any).slug });
+    response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=600');
+    return response;
+  } catch (error) {
+    logger.error('Error loading page from D1', error as Error);
+    return NextResponse.json({ error: 'Failed to load page' }, { status: 500 });
+  }
+}
+
 export async function PUT(request: NextRequest, { params }: { params: { slug: string } }) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['admin']);
