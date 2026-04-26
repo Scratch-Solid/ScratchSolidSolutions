@@ -16,11 +16,7 @@
     }
   ],
   // NOTE: Sensitive values should be set using wrangler secrets, not in vars
-  // Use: wrangler secret put JWT_SECRET
-  // Use: wrangler secret put RESEND_API_KEY
   "vars": {
-    "JWT_SECRET": "",
-    "RESEND_API_KEY": "",
     "NEXT_PUBLIC_BASE_URL": "https://scratchsolidsolutions.org",
     "NEXT_PUBLIC_API_URL": "https://scratchsolidsolutions.org/api"
   },
