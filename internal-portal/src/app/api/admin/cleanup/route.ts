@@ -3,7 +3,7 @@ import { getDb } from '@/lib/db';
 import { shouldPurge } from '@/lib/data-retention';
 
 export async function POST(request: NextRequest) {
-  const db = getDb(request);
+  const db = await getDb();
   if (!db) return NextResponse.json({ error: 'Database unavailable' }, { status: 500 });
 
   try {

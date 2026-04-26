@@ -31,7 +31,7 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
     );
   }
 
-  const db = getDb(request);
+  const db = await getDb();
   if (!db) {
     return NextResponse.json({ error: "Service temporarily unavailable" }, { status: 503 });
   }
@@ -81,7 +81,7 @@ export async function PUT(request: NextRequest, { params }: { params: { slug: st
     );
   }
 
-  const db = getDb(request);
+  const db = await getDb();
   if (!db) {
     return NextResponse.json({ error: "Service temporarily unavailable" }, { status: 503 });
   }
@@ -153,7 +153,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { slug:
     );
   }
 
-  const db = getDb(request);
+  const db = await getDb();
   if (!db) {
     return NextResponse.json({ error: "Service temporarily unavailable" }, { status: 503 });
   }

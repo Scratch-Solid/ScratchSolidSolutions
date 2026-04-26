@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const db = getDb(request);
+  const db = await getDb();
   if (!db) {
     return NextResponse.json({ error: "Service temporarily unavailable. Please try again later." }, { status: 503 });
   }

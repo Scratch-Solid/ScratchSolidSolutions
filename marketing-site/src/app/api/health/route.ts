@@ -6,7 +6,7 @@ export async function GET(request: Request) {
   const checks: Record<string, boolean | string> = {};
 
   try {
-    const db = getDb(request);
+    const db = await getDb();
     if (db) {
       const result = await db.prepare('SELECT 1 as health').first();
       checks.database = result !== null;
