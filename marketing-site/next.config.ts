@@ -12,10 +12,6 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'marketing-site-ai3.pages.dev',
-      },
-      {
-        protocol: 'https',
-        hostname: 'cleaning-service-backend.sparkling-darkness-405f.workers.dev',
       }
     ],
     formats: ['image/webp', 'image/avif'],
