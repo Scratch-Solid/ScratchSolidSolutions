@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 export default function AuthPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [tab, setTab] = useState<"individual" | "business">("individual");
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
@@ -20,6 +21,33 @@ export default function AuthPage() {
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [quoteContext, setQuoteContext] = useState<{ ref: string; service: string } | null>(null);
+
+  useEffect(() => {
+    const quoteRef = searchParams.get('quote_ref');
+    const service = searchParams.get('service');
+    const type = searchParams.get('type');
+    const nameParam = searchParams.get('name');
+    const emailParam = searchParams.get('email');
+    const phoneParam = searchParams.get('phone');
+
+    if (quoteRef) {
+      setQuoteContext({ ref: quoteRef, service: service || '' });
+      setIsLogin(false); // Coming from a quote → likely new user, switch to signup
+    }
+    if (type === 'business') setTab('business');
+    else if (type === 'individual') setTab('individual');
+
+    if (nameParam || emailParam || phoneParam) {
+      setFormData(prev => ({
+        ...prev,
+        name: nameParam || prev.name,
+        email: emailParam || prev.email,
+        phone: phoneParam || prev.phone,
+        contactPerson: nameParam || prev.contactPerson,
+      }));
+    }
+  }, [searchParams]);
 
   const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,10 +87,13 @@ export default function AuthPage() {
       });
 
       if (response.ok) {
-        const result = await response.json();
+        const result = await response.json() as {
+          token: string; role: string; id: string;
+          name?: string; email?: string; phone?: string; address?: string;
+        };
         localStorage.setItem("authToken", result.token);
         localStorage.setItem("userRole", result.role);
-        localStorage.setItem("userId", result.id);
+        localStorage.setItem("userId", String(result.id));
         localStorage.setItem("userName", result.name || "");
         localStorage.setItem("userEmail", result.email || "");
         localStorage.setItem("userPhone", result.phone || "");
@@ -74,7 +105,7 @@ export default function AuthPage() {
           router.push("/client-dashboard");
         }
       } else {
-        const errorData = await response.json();
+        const errorData = await response.json() as { error?: string };
         setError(errorData.error || "Authentication failed");
       }
     } catch (error) {
@@ -95,6 +126,14 @@ export default function AuthPage() {
         <h1 className="text-4xl font-bold text-center text-blue-700 mb-8">
           {isLogin ? "Sign In" : "Create Account"}
         </h1>
+
+        {/* Quote context banner */}
+        {quoteContext && (
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl text-sm">
+            <p className="font-semibold text-blue-700 mb-0.5">📋 Accepting quote {quoteContext.ref}</p>
+            <p className="text-blue-600">{quoteContext.service} — Sign up or log in to complete your booking.</p>
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="flex mb-6 bg-white/60 backdrop-blur-sm rounded-lg p-1 border border-white/20">

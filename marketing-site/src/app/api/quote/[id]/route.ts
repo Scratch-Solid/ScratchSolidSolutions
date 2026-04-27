@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import { getEstimatePdf } from '@/lib/zoho';
+import { getEstimatePdf, markEstimateAccepted } from '@/lib/zoho';
 
 // GET /api/quote/[id] — fetch a single quote by id or ref_number
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -99,6 +99,21 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (result.meta.rows_written === 0) {
       return NextResponse.json({ error: 'Quote not found' }, { status: 404 });
     }
+
+    // When client accepts: mark the Zoho estimate as accepted (best-effort)
+    if (status === 'accepted') {
+      try {
+        const freshQuote = await db.prepare(
+          `SELECT zoho_estimate_id FROM quote_requests WHERE id = ?`
+        ).bind(id).first() as { zoho_estimate_id?: string } | null;
+        if (freshQuote?.zoho_estimate_id) {
+          await markEstimateAccepted(freshQuote.zoho_estimate_id);
+        }
+      } catch (zohoErr) {
+        console.error('Zoho mark-accepted failed (non-fatal):', zohoErr);
+      }
+    }
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error updating quote:', error);

@@ -20,9 +20,13 @@ export async function POST(request: NextRequest) {
       phone?: string;
       service_id?: number;
       service_name?: string;
+      client_type?: string;
       quantity?: number;
       unit?: string;
       baseline_price?: number;
+      special_price?: number | null;
+      special_label?: string;
+      special_discount?: number;
       promo_code?: string;
       discount_type?: string;
       discount_value?: number;
@@ -31,7 +35,7 @@ export async function POST(request: NextRequest) {
     };
 
     const {
-      name, email, phone, service_id, service_name, quantity, unit,
+      name, email, phone, service_id, service_name, client_type, quantity, unit,
       baseline_price, promo_code, discount_type, discount_value, discount_amount, final_price
     } = body;
 
@@ -52,14 +56,14 @@ export async function POST(request: NextRequest) {
     // Save quote request to DB
     const result = await db.prepare(
       `INSERT INTO quote_requests
-        (ref_number, name, email, phone, service_id, service_name, quantity, unit,
+        (ref_number, name, email, phone, service_id, service_name, client_type, quantity, unit,
          baseline_price, promo_code, discount_type, discount_value, discount_amount,
          final_price, status, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', datetime('now'), datetime('now'))`
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', datetime('now'), datetime('now'))`
     ).bind(
       refNumber,
       name.trim(), email?.trim() || '', phone?.trim() || '',
-      service_id, service_name || '', quantity || 1, unit || '',
+      service_id, service_name || '', client_type || 'individual', quantity || 1, unit || '',
       baseline_price, promo_code || '', discount_type || '', discount_value || 0,
       discount_amount || 0, final_price
     ).run();
@@ -104,6 +108,7 @@ export async function POST(request: NextRequest) {
       zoho_estimate_number: zohoEstimateNumber,
       name, email, phone,
       service_name: service_name || '',
+      client_type: client_type || 'individual',
       baseline_price,
       promo_code: promo_code || '',
       discount_type: discount_type || '',

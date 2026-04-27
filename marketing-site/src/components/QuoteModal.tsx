@@ -16,6 +16,11 @@ interface ServicePricing {
   unit: string;
   min_quantity: number;
   max_quantity: number | null;
+  client_type: string;
+  special_price: number | null;
+  special_label: string;
+  special_valid_from: string | null;
+  special_valid_until: string | null;
 }
 
 interface PromoResult {
@@ -35,10 +40,14 @@ interface QuoteResult {
   zoho_estimate_number: string;
   service_name: string;
   baseline_price: number;
+  special_price: number | null;
+  special_label: string;
+  special_discount: number;
   promo_code: string;
   discount_type: string;
   discount_amount: number;
   final_price: number;
+  client_type: string;
 }
 
 interface Props {
@@ -51,6 +60,7 @@ interface Props {
 
 export default function QuoteModal({ isOpen, onClose, services, pricing, initialServiceId }: Props) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [clientType, setClientType] = useState<'individual' | 'business'>('individual');
   const [selectedServiceId, setSelectedServiceId] = useState<number | null>(initialServiceId || null);
   const [promoInput, setPromoInput] = useState('');
   const [promoResult, setPromoResult] = useState<PromoResult | null>(null);
@@ -71,6 +81,7 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
   useEffect(() => {
     if (!isOpen) {
       setStep(1);
+      setClientType('individual');
       setPromoInput('');
       setPromoResult(null);
       setName('');
@@ -84,20 +95,49 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
     }
   }, [isOpen]);
 
+  // Get the pricing row matching current client_type (prefers exact match over 'all')
+  const getActivePricingRow = useCallback((serviceId: number): ServicePricing | null => {
+    const rows = pricing.filter(p =>
+      p.service_id === serviceId &&
+      (p.client_type === clientType || p.client_type === 'all')
+    );
+    // Prefer exact client_type match over 'all'
+    return rows.find(r => r.client_type === clientType) || rows[0] || null;
+  }, [pricing, clientType]);
+
   const getBaselinePrice = useCallback((serviceId: number): number => {
-    const prices = pricing.filter(p => p.service_id === serviceId);
-    return prices.length > 0 ? prices[0].price : 0;
-  }, [pricing]);
+    return getActivePricingRow(serviceId)?.price || 0;
+  }, [getActivePricingRow]);
+
+  // Returns the special discount amount if the special is currently active
+  const getSpecialDiscount = useCallback((serviceId: number): number => {
+    const row = getActivePricingRow(serviceId);
+    if (!row?.special_price) return 0;
+    const now = new Date().toISOString();
+    const fromOk = !row.special_valid_from || row.special_valid_from <= now;
+    const untilOk = !row.special_valid_until || row.special_valid_until >= now;
+    if (fromOk && untilOk) {
+      return Math.max(0, row.price - row.special_price);
+    }
+    return 0;
+  }, [getActivePricingRow]);
+
+  // Promo applies on top of special (to the price-after-special)
+  const getPromoDiscount = useCallback((priceAfterSpecial: number): number => {
+    if (!promoResult?.valid) return 0;
+    if (promoResult.discount_type === 'percentage') {
+      return Math.round(priceAfterSpecial * (promoResult.discount_value || 0) / 100 * 100) / 100;
+    }
+    return Math.min(promoResult.discount_value || 0, priceAfterSpecial);
+  }, [promoResult]);
 
   const getDiscountAmount = useCallback((): number => {
-    if (!promoResult?.valid || !selectedServiceId) return 0;
+    if (!selectedServiceId) return 0;
     const baseline = getBaselinePrice(selectedServiceId);
-    if (!baseline) return 0;
-    if (promoResult.discount_type === 'percentage') {
-      return Math.round(baseline * (promoResult.discount_value || 0) / 100 * 100) / 100;
-    }
-    return Math.min(promoResult.discount_value || 0, baseline);
-  }, [promoResult, selectedServiceId, getBaselinePrice]);
+    const specialDisc = getSpecialDiscount(selectedServiceId);
+    const priceAfterSpecial = Math.max(0, baseline - specialDisc);
+    return specialDisc + getPromoDiscount(priceAfterSpecial);
+  }, [selectedServiceId, getBaselinePrice, getSpecialDiscount, getPromoDiscount]);
 
   const getFinalPrice = useCallback((): number => {
     if (!selectedServiceId) return 0;
@@ -126,9 +166,13 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
     setSubmitting(true);
     setSubmitError('');
     try {
-      const baseline = getBaselinePrice(selectedServiceId);
-      const discountAmt = getDiscountAmount();
-      const finalPrice = getFinalPrice();
+      const row = getActivePricingRow(selectedServiceId);
+      const baseline = row?.price || 0;
+      const specialDisc = getSpecialDiscount(selectedServiceId);
+      const priceAfterSpecial = Math.max(0, baseline - specialDisc);
+      const promoDisc = getPromoDiscount(priceAfterSpecial);
+      const discountAmt = specialDisc + promoDisc;
+      const finalPrice = Math.max(0, baseline - discountAmt);
 
       const res = await fetch('/api/quote', {
         method: 'POST',
@@ -139,8 +183,12 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
           phone: phone.trim(),
           service_id: selectedServiceId,
           service_name: selectedService?.name || '',
+          client_type: clientType,
           quantity: 1,
           baseline_price: baseline,
+          special_price: row?.special_price || null,
+          special_label: row?.special_label || '',
+          special_discount: specialDisc,
           promo_code: promoResult?.valid ? promoInput.trim() : '',
           discount_type: promoResult?.valid ? promoResult.discount_type : '',
           discount_value: promoResult?.valid ? promoResult.discount_value : 0,
@@ -176,7 +224,15 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
         body: JSON.stringify({ status: 'accepted' }),
       });
     } catch { /* non-fatal */ }
-    window.location.href = `/auth?service=${encodeURIComponent(quoteResult.service_name)}&quote_ref=${quoteResult.ref_number}`;
+    const params = new URLSearchParams({
+      service: quoteResult.service_name,
+      quote_ref: quoteResult.ref_number,
+      type: quoteResult.client_type || clientType,
+      name,
+      email,
+      phone,
+    });
+    window.location.href = `/auth?${params.toString()}`;
   };
 
   const handleDecline = async () => {
@@ -262,6 +318,33 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
             {/* ── STEP 1: Service + Promo ── */}
             {step === 1 && (
               <>
+                {/* Client type selector */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">I am a... <span className="text-red-500">*</span></label>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => { setClientType('individual'); setSelectedServiceId(null); }}
+                      className={`flex-1 py-2.5 rounded-xl border-2 font-semibold text-sm transition-all ${
+                        clientType === 'individual'
+                          ? 'border-blue-500 bg-blue-50 text-blue-700'
+                          : 'border-gray-200 text-gray-500 hover:border-blue-200'
+                      }`}
+                    >
+                      👤 Individual
+                    </button>
+                    <button
+                      onClick={() => { setClientType('business'); setSelectedServiceId(null); }}
+                      className={`flex-1 py-2.5 rounded-xl border-2 font-semibold text-sm transition-all ${
+                        clientType === 'business'
+                          ? 'border-blue-500 bg-blue-50 text-blue-700'
+                          : 'border-gray-200 text-gray-500 hover:border-blue-200'
+                      }`}
+                    >
+                      🏢 Business
+                    </button>
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Select Service <span className="text-red-500">*</span></label>
                   <div className="space-y-2">
@@ -277,11 +360,22 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
                       >
                         <div className="flex items-center gap-2">
                           {service.icon && <span className="text-xl">{service.icon}</span>}
-                          <div>
+                          <div className="flex-1">
                             <p className="font-semibold text-sm text-gray-800">{service.name}</p>
-                            {getBaselinePrice(service.id) > 0 && (
-                              <p className="text-xs text-blue-600 font-medium">From R{getBaselinePrice(service.id).toFixed(2)}</p>
-                            )}
+                            {(() => {
+                              const row = getActivePricingRow(service.id);
+                              if (!row) return null;
+                              const sd = getSpecialDiscount(service.id);
+                              return sd > 0 ? (
+                                <p className="text-xs font-medium">
+                                  <span className="line-through text-gray-400">R{row.price.toFixed(2)}</span>
+                                  <span className="text-green-600 ml-1">R{(row.price - sd).toFixed(2)}</span>
+                                  <span className="ml-1 bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">{row.special_label || 'Special'}</span>
+                                </p>
+                              ) : row.price > 0 ? (
+                                <p className="text-xs text-blue-600 font-medium">From R{row.price.toFixed(2)}</p>
+                              ) : null;
+                            })()}
                           </div>
                         </div>
                       </button>
@@ -317,27 +411,39 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
                 </div>
 
                 {/* Live price breakdown */}
-                {selectedServiceId && baseline > 0 && (
-                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-4 border border-blue-100">
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Price Breakdown</p>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Base Price</span>
-                        <span className="font-medium">R{baseline.toFixed(2)}</span>
-                      </div>
-                      {discountAmt > 0 && (
-                        <div className="flex justify-between text-green-700">
-                          <span>Discount ({promoResult?.code})</span>
-                          <span className="font-medium">− R{discountAmt.toFixed(2)}</span>
+                {selectedServiceId && baseline > 0 && (() => {
+                  const activeRow = getActivePricingRow(selectedServiceId);
+                  const sd = getSpecialDiscount(selectedServiceId);
+                  const priceAfterSpecial = Math.max(0, baseline - sd);
+                  const pd = getPromoDiscount(priceAfterSpecial);
+                  return (
+                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-4 border border-blue-100">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Price Breakdown</p>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Base Price</span>
+                          <span className="font-medium">R{baseline.toFixed(2)}</span>
                         </div>
-                      )}
-                      <div className="flex justify-between border-t border-blue-200 pt-2">
-                        <span className="font-bold text-blue-700">Total</span>
-                        <span className="font-bold text-blue-700 text-base">R{finalPrice.toFixed(2)}</span>
+                        {sd > 0 && (
+                          <div className="flex justify-between text-green-700">
+                            <span>{activeRow?.special_label || 'Special'}</span>
+                            <span className="font-medium">− R{sd.toFixed(2)}</span>
+                          </div>
+                        )}
+                        {pd > 0 && (
+                          <div className="flex justify-between text-green-700">
+                            <span>Promo ({promoResult?.code})</span>
+                            <span className="font-medium">− R{pd.toFixed(2)}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between border-t border-blue-200 pt-2">
+                          <span className="font-bold text-blue-700">Total</span>
+                          <span className="font-bold text-blue-700 text-base">R{finalPrice.toFixed(2)}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
 
                 <button
                   onClick={() => setStep(2)}

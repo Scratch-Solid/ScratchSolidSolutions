@@ -120,6 +120,11 @@ export async function createEstimate(params: {
   return response.json() as Promise<{ estimate?: { estimate_id: string; estimate_number: string } }>;
 }
 
+export async function markEstimateAccepted(estimateId: string) {
+  const response = await zohoRequest(`/estimates/${estimateId}/status/accepted`, 'POST', {});
+  return response.json() as Promise<{ code: number; message: string }>;
+}
+
 export async function getEstimatePdf(estimateId: string): Promise<Response> {
   const token = await getZohoToken();
   return fetch(`https://books.zoho.com/api/v3/estimates/${estimateId}?accept=pdf`, {
