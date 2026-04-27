@@ -33,7 +33,7 @@ export default function BookingOptionsPage() {
 
             {userType === "business" && (
               <Link
-                href="/contract-form"
+                href="/business-booking"
                 className="block w-full bg-green-600 text-white py-6 px-8 rounded-xl font-semibold text-xl hover:bg-green-700 transition-colors text-center"
               >
                 Contract Booking
