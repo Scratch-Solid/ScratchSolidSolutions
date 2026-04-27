@@ -16,6 +16,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@opennextjs/cloudflare": "^1.19.4",
     "@types/node": "^25.6.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
@@ -29,11 +30,11 @@
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "tailwindcss": "^4.2.4",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "wrangler": "^4.84.1"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260422.1",
-    "@opennextjs/cloudflare": "^1.19.4",
     "@types/jest": "^29.5.14",
     "@types/jsonwebtoken": "^9.0.10"
   }
