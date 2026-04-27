@@ -83,6 +83,21 @@ export async function createUser(db: D1Database, data: {
   return result;
 }
 
+export async function validateLoginByPhone(db: D1Database, phone: string, password: string) {
+  const user = await getUserByPhone(db, phone);
+  if (!user) return null;
+  if ((user as any).locked_until && new Date((user as any).locked_until) > new Date()) {
+    return null;
+  }
+  const isValid = await bcrypt.compare(password, (user as any).password_hash);
+  if (isValid) {
+    if ((user as any).email) await resetFailedAttempts(db, (user as any).email);
+    return user;
+  }
+  if ((user as any).email) await incrementFailedAttempts(db, (user as any).email);
+  return null;
+}
+
 export async function validateLogin(db: D1Database, email: string, password: string) {
   const user = await getUserByEmail(db, email);
   if (!user) return null;

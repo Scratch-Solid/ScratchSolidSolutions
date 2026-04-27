@@ -112,7 +112,7 @@ export default function ForgotPasswordPage() {
               />
               <p className="text-xs text-gray-500 mt-1">
                 {userType === "individual"
-                  ? "A verification code will be sent via WhatsApp"
+                  ? "A reset link will be sent to your email if one is registered"
                   : "A reset link will be sent via email"}
               </p>
             </div>

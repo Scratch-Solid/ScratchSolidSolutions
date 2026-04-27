@@ -68,7 +68,7 @@ export default function ClientDashboard() {
 
   const fetchClientData = async () => {
     try {
-      const userId = localStorage.getItem("user_id");
+      const userId = localStorage.getItem("userId");
       const token = localStorage.getItem("authToken");
       if (!userId || !token) return;
 
@@ -162,7 +162,7 @@ export default function ClientDashboard() {
     setCleanerUnavailable(false);
 
     try {
-      const userId = localStorage.getItem("user_id");
+      const userId = localStorage.getItem("userId");
       
       // Auto-assign first available cleaner
       const availableCleaner = availableCleaners.find(c => c.available);
@@ -194,16 +194,16 @@ export default function ClientDashboard() {
           Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({
-          client_id: parseInt(userId),
-          client_name: localStorage.getItem("user_name") || '',
+          client_id: parseInt(userId || '0'),
+          client_name: localStorage.getItem("userName") || '',
           cleaner_id: parseInt(assignedCleaner.id),
-          location: localStorage.getItem("user_address") || '',
+          location: localStorage.getItem("userAddress") || '',
           booking_date: selectedDate,
           booking_time: selectedTimeSlot,
           payment_method: paymentMethod,
           type: bookingType,
           price: 350,
-          phone: localStorage.getItem("user_phone") || ''
+          phone: localStorage.getItem("userPhone") || ''
         })
       });
 
@@ -264,7 +264,7 @@ export default function ClientDashboard() {
   const fetchZohoData = async () => {
     setZohoLoading(true);
     try {
-      const userId = localStorage.getItem("user_id");
+      const userId = localStorage.getItem("userId");
       
       const token = localStorage.getItem('authToken');
       const zohoRes = await fetch(`/api/zoho/financials?customer_id=${userId}`, {
@@ -313,7 +313,7 @@ export default function ClientDashboard() {
 
     setReviewImagesLoading(true);
     try {
-      const userId = localStorage.getItem('user_id');
+      const userId = localStorage.getItem('userId');
       const token = localStorage.getItem('authToken');
       const reviewRes = await fetch('/api/reviews', {
         method: 'POST',
@@ -359,24 +359,15 @@ export default function ClientDashboard() {
     if (!assignedCleaner || typeof assignedCleaner !== 'object' || !('id' in assignedCleaner)) {
       return;
     }
-
     try {
-      const cleanerId = (assignedCleaner as any).id || (assignedCleaner as any).user_id;
-      if (!cleanerId) return;
-
-      // Call internal portal cleaner-status API
-      const response = await fetch(`${process.env.INTERNAL_PORTAL_URL || 'http://localhost:3001'}/api/cleaner-status?cleaner_id=${cleanerId}`, {
-        headers: { 
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        }
+      const cleanerId = (assignedCleaner as any).id;
+      const response = await fetch(`${process.env.NEXT_PUBLIC_INTERNAL_PORTAL_URL || ''}/api/cleaner-status?cleaner_id=${cleanerId}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` }
       });
-
       if (response.ok) {
-        const data = await response.json();
+        const data = await response.json() as { status?: string };
         if (data.status) {
-          setCleanerStatus(data.status);
-          
-          // Trigger WhatsApp message when cleaner completes
+          setCleanerStatus(data.status as any);
           if (data.status === 'completed') {
             sendWhatsAppCompletionMessage();
           }
@@ -389,7 +380,7 @@ export default function ClientDashboard() {
 
   const sendWhatsAppCompletionMessage = () => {
     // Simulate WhatsApp message to client
-    const clientPhone = localStorage.getItem('user_phone') || '+27696735947';
+    const clientPhone = localStorage.getItem('userPhone') || '+27696735947';
     const message = `Scratch Solid: Your cleaning service has been completed today! We've cleaned your premises thoroughly. Thank you for choosing our services!`;
     
     console.log('WhatsApp message sent to client:', {
@@ -405,7 +396,7 @@ export default function ClientDashboard() {
       // Simulate manual processing
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      const userEmail = localStorage.getItem('user_email') || 'client@example.com';
+      const userEmail = localStorage.getItem('userEmail') || 'client@example.com';
       console.log('Older statements request submitted for:', userEmail);
       
       setSuccess('Request submitted! Older statements will be sent to your email/WhatsApp within 24 hours.');
@@ -676,19 +667,18 @@ export default function ClientDashboard() {
                     <textarea
                       value={reviewText}
                       onChange={(e) => setReviewText(e.target.value)}
-                      maxLength={100}
                       rows={4}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="Share your experience..."
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      {reviewText.length}/100 words
+                      {reviewText.trim().split(/\s+/).filter(w => w.length > 0).length}/100 words
                     </p>
                   </div>
 
                   <button
                     onClick={handleReviewSubmit}
-                    disabled={reviewImagesLoading || reviewText.length === 0 || reviewText.length > 100}
+                    disabled={reviewImagesLoading || reviewText.trim().length === 0 || reviewText.trim().split(/\s+/).filter(w => w.length > 0).length > 100}
                     className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {reviewImagesLoading ? 'Submitting...' : 'Submit Review'}
@@ -708,11 +698,10 @@ export default function ClientDashboard() {
                         <div className="flex justify-between items-start">
                           <div>
                             <p className="font-medium text-gray-800">
-                              {new Date(booking.start_time).toLocaleDateString()}
+                              {new Date(booking.booking_date).toLocaleDateString()}
                             </p>
                             <p className="text-sm text-gray-600">
-                              {new Date(booking.start_time).toLocaleTimeString()} - 
-                              {new Date(booking.end_time).toLocaleTimeString()}
+                              {booking.booking_time}
                             </p>
                             <p className="text-sm text-gray-600">
                               Cleaner: {availableCleaners.find(c => c.id === booking.cleaner_id)?.name || 'Auto-assigned'}
@@ -841,7 +830,7 @@ export default function ClientDashboard() {
                 </button>
                 <button
                   onClick={createBooking}
-                  disabled={loading || !selectedCleaner}
+                  disabled={loading}
                   className="flex-1 rounded-full bg-blue-600 px-6 py-3 text-white font-bold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? 'Processing...' : 'Confirm Booking'}

@@ -32,7 +32,7 @@ export default function BusinessDashboard() {
 
   const fetchWeekendRequests = async () => {
     try {
-      const businessId = localStorage.getItem("user_id");
+      const businessId = localStorage.getItem("userId");
       const token = localStorage.getItem("authToken");
       if (!businessId || !token) return;
 
@@ -73,7 +73,7 @@ export default function BusinessDashboard() {
   const handleWeekendRequest = async () => {
     setLoading(true);
     try {
-      const businessId = localStorage.getItem("user_id");
+      const businessId = localStorage.getItem("userId");
       const token = localStorage.getItem("authToken");
       if (!businessId || !token) {
         alert("Authentication required");
@@ -108,7 +108,7 @@ export default function BusinessDashboard() {
 
   const fetchContracts = async () => {
     try {
-      const businessId = localStorage.getItem("user_id");
+      const businessId = localStorage.getItem("userId");
       const token = localStorage.getItem("authToken");
       const response = await fetch(`/api/contracts?business_id=${businessId}`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -124,7 +124,7 @@ export default function BusinessDashboard() {
 
   const fetchRecurringBookings = async () => {
     try {
-      const businessId = localStorage.getItem("user_id");
+      const businessId = localStorage.getItem("userId");
       const token = localStorage.getItem("authToken");
       const response = await fetch(`/api/bookings?client_id=${businessId}&booking_type=recurring`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -140,7 +140,7 @@ export default function BusinessDashboard() {
 
   const fetchUserProfile = async () => {
     try {
-      const userId = localStorage.getItem("user_id");
+      const userId = localStorage.getItem("userId");
       const token = localStorage.getItem("authToken");
       const response = await fetch(`/api/users/${userId}`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -158,7 +158,7 @@ export default function BusinessDashboard() {
     if (!confirm("Are you sure you want to delete your account? This action cannot be undone.")) return;
     
     try {
-      const userId = localStorage.getItem("user_id");
+      const userId = localStorage.getItem("userId");
       const token = localStorage.getItem("authToken");
       const response = await fetch(`/api/users/${userId}`, {
         method: 'DELETE',

@@ -63,6 +63,10 @@ export default function AuthPage() {
         localStorage.setItem("authToken", result.token);
         localStorage.setItem("userRole", result.role);
         localStorage.setItem("userId", result.id);
+        localStorage.setItem("userName", result.name || "");
+        localStorage.setItem("userEmail", result.email || "");
+        localStorage.setItem("userPhone", result.phone || "");
+        localStorage.setItem("userAddress", result.address || "");
         
         if (tab === "business") {
           router.push("/business-dashboard");

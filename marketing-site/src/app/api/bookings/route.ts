@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, createBooking, getBookingsByDateRange, getBookingsByCleaner, getUserById } from "@/lib/db";
+import { getDb, createBooking, getBookingsByDateRange, getBookingsByCleaner, getBookingsByClient, getUserById } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import { validateString, validateDate, validateNumber, validateRequired } from "@/lib/validation";
 import { withRateLimit, rateLimits } from "@/lib/rateLimit";
@@ -255,8 +255,7 @@ export async function GET(request: NextRequest) {
     if (cleanerId) {
       bookings = await getBookingsByCleaner(db, parseInt(cleanerId));
     } else if (clientId) {
-      bookings = await getBookingsByDateRange(db, date || new Date().toISOString().split('T')[0], date || new Date().toISOString().split('T')[0]);
-      bookings = bookings?.filter((b: any) => b.client_id === parseInt(clientId));
+      bookings = await getBookingsByClient(db, parseInt(clientId));
     } else {
       bookings = await getBookingsByDateRange(db, date || new Date().toISOString().split('T')[0], date || new Date().toISOString().split('T')[0]);
     }

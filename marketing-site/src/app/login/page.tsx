@@ -24,11 +24,15 @@ export default function LoginPage() {
       });
 
       if (response.ok) {
-        const result = await response.json();
+        const result = await response.json() as { token: string; role: string; id: string; name?: string; email?: string; phone?: string; address?: string };
         // Store auth token and user role in localStorage
         localStorage.setItem("authToken", result.token);
         localStorage.setItem("userRole", result.role);
         localStorage.setItem("userId", result.id);
+        localStorage.setItem("userName", result.name || "");
+        localStorage.setItem("userEmail", result.email || "");
+        localStorage.setItem("userPhone", result.phone || "");
+        localStorage.setItem("userAddress", result.address || "");
         
         // Redirect to appropriate dashboard based on role
         if (result.role === "business") {

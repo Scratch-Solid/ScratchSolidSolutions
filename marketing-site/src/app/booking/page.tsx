@@ -45,8 +45,8 @@ export default function BookingPage() {
     setLoading(true);
     setError("");
     try {
-      const userId = localStorage.getItem("user_id");
-      const userName = localStorage.getItem("user_name") || "Customer";
+      const userId = localStorage.getItem("userId");
+      const userName = localStorage.getItem("userName") || "Customer";
 
       // Parse time slot to get start and end times
       const [startTime, endTime] = selectedTime.split("-");

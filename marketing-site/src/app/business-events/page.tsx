@@ -35,7 +35,7 @@ export default function BusinessEventsPage() {
           "Authorization": `Bearer ${localStorage.getItem("token")}`,
         },
         body: JSON.stringify({
-          business_id: localStorage.getItem("user_id"),
+          business_id: localStorage.getItem("userId"),
           event_type: "extra_work",
           requested_date: new Date().toISOString(),
           special_instructions: "Additional cleaning services required",

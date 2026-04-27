@@ -108,6 +108,9 @@ export async function POST(request: NextRequest) {
         id: (user as any).id, 
         email: (user as any).email,
         role: (user as any).role,
+        name: (user as any).name,
+        phone: (user as any).phone || '',
+        address: (user as any).address || '',
         token: token,
         message: 'Business account created successfully' 
       }, { status: 201 });
@@ -134,6 +137,9 @@ export async function POST(request: NextRequest) {
       id: (user as any).id,
       email: (user as any).email,
       role: (user as any).role,
+      name: (user as any).name,
+      phone: (user as any).phone || '',
+      address: (user as any).address || '',
       token: token,
       message: 'Account created successfully'
     }, { status: 201 });

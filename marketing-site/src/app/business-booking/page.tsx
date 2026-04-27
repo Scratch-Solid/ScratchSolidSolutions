@@ -48,7 +48,7 @@ export default function BusinessBookingPage() {
     setLoading(true);
     try {
       const token = localStorage.getItem('authToken');
-      const userId = localStorage.getItem('user_id');
+      const userId = localStorage.getItem('userId');
       const res = await fetch('/api/contracts', {
         method: 'POST',
         headers: {
@@ -57,7 +57,7 @@ export default function BusinessBookingPage() {
         },
         body: JSON.stringify({
           business_id: userId,
-          business_name: localStorage.getItem('username') || '',
+          business_name: localStorage.getItem('userName') || '',
           contract_type: 'standard',
           rate_per_hour: formData.rate_per_hour || 150,
           weekend_rate_multiplier: weekendRequired ? 1.5 : 1,
@@ -102,7 +102,7 @@ export default function BusinessBookingPage() {
     setLoading(true);
     try {
       const token = localStorage.getItem('authToken');
-      const userId = localStorage.getItem('user_id');
+      const userId = localStorage.getItem('userId');
       const res = await fetch('/api/bookings', {
         method: 'POST',
         headers: {
@@ -111,7 +111,7 @@ export default function BusinessBookingPage() {
         },
         body: JSON.stringify({
           client_id: userId,
-          client_name: localStorage.getItem('username') || '',
+          client_name: localStorage.getItem('userName') || '',
           location: formData.location || '',
           service_type: 'standard',
           booking_date: formData.date,

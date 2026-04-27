@@ -55,17 +55,12 @@ export async function POST(request: NextRequest) {
         const resetLink = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://scratchsolidsolutions.org'}/reset-password?token=${resetToken}&method=whatsapp&otp=${otp}`;
         await sendPasswordResetEmail((user as any).email, resetLink);
         return NextResponse.json({ 
-          message: "A password reset link has been sent to your email (WhatsApp integration requires paid API).",
-          resetToken: resetToken
+          message: "A password reset link has been sent to your email address."
         }, { status: 200 });
       }
       
-      // Log OTP for development/testing
-      logger.info(`WhatsApp OTP for ${phone}: ${otp}`);
-      
       return NextResponse.json({ 
-        message: "WhatsApp integration requires paid API. Please contact support for password reset.",
-        resetToken: resetToken
+        message: "If a matching account was found, a reset link has been sent. Please contact support if you have no email on file."
       }, { status: 200 });
 
     } else if (type === "business") {
@@ -85,8 +80,7 @@ export async function POST(request: NextRequest) {
       await sendPasswordResetEmail(email, resetLink);
       
       return NextResponse.json({ 
-        message: "A password reset link has been sent to your email. Please check your inbox.",
-        resetToken: resetToken
+        message: "A password reset link has been sent to your email. Please check your inbox."
       }, { status: 200 });
     } else {
       return NextResponse.json({ error: "Invalid account type" }, { status: 400 });
