@@ -29,7 +29,9 @@ export default function AuthPage() {
     try {
       const endpoint = isLogin ? "/api/auth/login" : "/api/auth/signup";
       const body = isLogin
-        ? { phone: formData.phone, password: formData.password, type: tab }
+        ? tab === "individual"
+          ? { phone: formData.phone, password: formData.password }
+          : { email: formData.email, password: formData.password }
         : tab === "individual"
         ? {
             type: "individual",
@@ -45,6 +47,7 @@ export default function AuthPage() {
             registration_number: formData.registrationNumber,
             contact_person: formData.contactPerson,
             phone: formData.phone,
+            email: formData.email,
             address: formData.address,
             password: formData.password,
           };
@@ -62,9 +65,9 @@ export default function AuthPage() {
         localStorage.setItem("userId", result.id);
         
         if (tab === "business") {
-          router.push("/booking-selection");
+          router.push("/business-dashboard");
         } else {
-          router.push("/booking-selection");
+          router.push("/client-dashboard");
         }
       } else {
         const errorData = await response.json();
@@ -277,14 +280,27 @@ export default function AuthPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Cellphone Number *
+                        Email Address *
+                      </label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="business@example.com"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Cellphone Number (Optional)
                       </label>
                       <input
                         type="tel"
                         name="phone"
                         value={formData.phone}
                         onChange={handleInputChange}
-                        required
                         pattern="[0-9]{10}"
                         placeholder="0730000000"
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
