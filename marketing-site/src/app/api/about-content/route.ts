@@ -36,12 +36,16 @@ export async function POST(request: NextRequest) {
     if (!db) {
       return NextResponse.json({ error: 'Database not available' }, { status: 500 });
     }
-    const body = await request.json();
+    const body = await request.json() as { section?: string; title?: string; content?: string; display_order?: number; active?: boolean };
     
     const { section, title, content, display_order, active } = body;
     
-    if (!section || !title || !content) {
-      return NextResponse.json({ error: 'Section, title, and content are required' }, { status: 400 });
+    const validSections = ['about-main', 'mission', 'vision', 'values'];
+    if (!section || !validSections.includes(section)) {
+      return NextResponse.json({ error: `Section must be one of: ${validSections.join(', ')}` }, { status: 400 });
+    }
+    if (!content) {
+      return NextResponse.json({ error: 'Content is required' }, { status: 400 });
     }
     
     if (content.length > 5000) {
@@ -66,7 +70,7 @@ export async function PUT(request: NextRequest) {
     if (!db) {
       return NextResponse.json({ error: 'Database not available' }, { status: 500 });
     }
-    const body = await request.json();
+    const body = await request.json() as { id?: number; title?: string; content?: string; display_order?: number; active?: boolean };
     
     const { id, title, content, display_order, active } = body;
     

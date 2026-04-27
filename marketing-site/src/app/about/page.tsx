@@ -5,8 +5,15 @@ import { useEffect, useState } from "react";
 
 interface AboutContent {
   section: string;
-  title: string;
+  title?: string;
   content: string;
+}
+
+interface Statistics {
+  clients_serviced: number;
+  jobs_completed: number;
+  average_rating: number;
+  active_cleaners: number;
 }
 
 interface Leader {
@@ -19,20 +26,30 @@ interface Leader {
 export default function AboutPage() {
   const [aboutContent, setAboutContent] = useState<AboutContent[]>([]);
   const [leaders, setLeaders] = useState<Leader[]>([]);
+  const [statistics, setStatistics] = useState<Statistics | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([
-      fetch('/api/about-content').then(res => res.json()),
-      fetch('/api/leaders').then(res => res.json())
-    ]).then(([contentData, leadersData]) => {
-      setAboutContent(contentData || []);
-      setLeaders(leadersData || []);
-      setLoading(false);
-    }).catch(err => {
-      console.error('Error fetching data:', err);
-      setLoading(false);
-    });
+    const fetchAll = async () => {
+      try {
+        const [contentRes, leadersRes, statsRes] = await Promise.all([
+          fetch('/api/about-content'),
+          fetch('/api/leaders'),
+          fetch('/api/statistics'),
+        ]);
+        const contentData: AboutContent[] = contentRes.ok ? await contentRes.json() as AboutContent[] : [];
+        const leadersData: Leader[] = leadersRes.ok ? await leadersRes.json() as Leader[] : [];
+        const statsData: Statistics | null = statsRes.ok ? await statsRes.json() as Statistics : null;
+        setAboutContent(Array.isArray(contentData) ? contentData : []);
+        setLeaders(Array.isArray(leadersData) ? leadersData : []);
+        setStatistics(statsData);
+      } catch (err) {
+        console.error('Error fetching data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAll();
   }, []);
 
   const getSectionContent = (section: string) => {
@@ -58,25 +75,25 @@ export default function AboutPage() {
           <div className="text-center text-gray-500 relative z-10">Loading...</div>
         ) : (
           <div className="text-base sm:text-lg text-zinc-800 mb-6 sm:mb-8 relative z-10">
-            {getSectionContent('intro').map((item) => (
-              <p key={item.title} className="text-base sm:text-lg text-zinc-800 mb-4 sm:mb-6 text-center">{item.content}</p>
+            {getSectionContent('about-main').map((item, i) => (
+              <p key={i} className="text-base sm:text-lg text-zinc-800 mb-4 sm:mb-6 text-center">{item.content}</p>
             ))}
             
             <div className="my-6 sm:my-8">
-              {getSectionContent('mission').map((item) => (
-                <div key={item.title}>
+              {getSectionContent('mission').map((item, i) => (
+                <div key={i}>
                   <h2 className="text-xl sm:text-2xl font-bold text-blue-700 mb-2 text-center">{item.title}</h2>
                   <p className="text-zinc-800 text-center mb-3 sm:mb-4 text-sm sm:text-base">{item.content}</p>
                 </div>
               ))}
-              {getSectionContent('vision').map((item) => (
-                <div key={item.title}>
+              {getSectionContent('vision').map((item, i) => (
+                <div key={i}>
                   <h2 className="text-xl sm:text-2xl font-bold text-blue-700 mb-2 text-center">{item.title}</h2>
                   <p className="text-zinc-800 text-center mb-3 sm:mb-4 text-sm sm:text-base">{item.content}</p>
                 </div>
               ))}
-              {getSectionContent('values').map((item) => (
-                <div key={item.title}>
+              {getSectionContent('values').map((item, i) => (
+                <div key={i}>
                   <h2 className="text-xl sm:text-2xl font-bold text-blue-700 mb-2 text-center">{item.title}</h2>
                   <p className="text-zinc-800 text-center mb-3 sm:mb-4 text-sm sm:text-base whitespace-pre-line">{item.content}</p>
                 </div>
@@ -107,9 +124,29 @@ export default function AboutPage() {
               </div>
             )}
             
-            {getSectionContent('closing').map((item) => (
-              <p key={item.title} className="text-base sm:text-lg text-zinc-800 mb-4 sm:mb-6 text-center">{item.content}</p>
-            ))}
+            {statistics && (
+              <div className="my-6 sm:my-8">
+                <h2 className="text-xl sm:text-2xl font-bold text-blue-700 mb-4 text-center">By the Numbers</h2>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-blue-600 rounded-xl p-4 text-center text-white">
+                    <p className="text-3xl font-extrabold">{statistics.clients_serviced}</p>
+                    <p className="text-sm mt-1 opacity-90">Clients Serviced</p>
+                  </div>
+                  <div className="bg-blue-600 rounded-xl p-4 text-center text-white">
+                    <p className="text-3xl font-extrabold">{statistics.jobs_completed}</p>
+                    <p className="text-sm mt-1 opacity-90">Jobs Completed</p>
+                  </div>
+                  <div className="bg-blue-600 rounded-xl p-4 text-center text-white">
+                    <p className="text-3xl font-extrabold">{statistics.average_rating > 0 ? `${statistics.average_rating}★` : 'N/A'}</p>
+                    <p className="text-sm mt-1 opacity-90">Average Rating</p>
+                  </div>
+                  <div className="bg-blue-600 rounded-xl p-4 text-center text-white">
+                    <p className="text-3xl font-extrabold">{statistics.active_cleaners}</p>
+                    <p className="text-sm mt-1 opacity-90">Active Cleaners</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
         

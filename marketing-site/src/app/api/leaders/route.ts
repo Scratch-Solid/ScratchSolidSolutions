@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     if (!db) {
       return NextResponse.json({ error: 'Database not available' }, { status: 500 });
     }
-    const body = await request.json();
+    const body = await request.json() as { name?: string; title?: string; image_url?: string; description?: string; display_order?: number; active?: boolean };
     
     const { name, title, image_url, description, display_order, active } = body;
     
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     }
     
     const result = await db.prepare(
-      `INSERT INTO leaders (name, title, image_url, description, display_order, active, created_at)
+      `INSERT INTO leaders (name, title, image_url, description, display_order, is_active, created_at)
        VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`
     ).bind(name, title, image_url || null, description || null, display_order || 0, active !== false ? 1 : 0).run();
     
@@ -67,7 +67,7 @@ export async function PUT(request: NextRequest) {
     if (!db) {
       return NextResponse.json({ error: 'Database not available' }, { status: 500 });
     }
-    const body = await request.json();
+    const body = await request.json() as { id?: number; name?: string; title?: string; image_url?: string; description?: string; display_order?: number; active?: boolean };
     
     const { id, name, title, image_url, description, display_order, active } = body;
     
@@ -98,7 +98,7 @@ export async function PUT(request: NextRequest) {
            image_url = COALESCE(?, image_url),
            description = COALESCE(?, description),
            display_order = COALESCE(?, display_order),
-           active = COALESCE(?, active),
+           is_active = COALESCE(?, is_active),
            updated_at = datetime('now')
        WHERE id = ?`
     ).bind(name || null, title || null, image_url || null, description || null, display_order || null, active !== undefined ? (active ? 1 : 0) : null, id).run();
