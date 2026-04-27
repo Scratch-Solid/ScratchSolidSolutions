@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
   const start = Date.now();
 
   try {
-    const db = getDb(request);
+    const db = await getDb();
     if (!db) {
       return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
     }

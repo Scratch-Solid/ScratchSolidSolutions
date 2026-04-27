@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const db = getDb(request);
+  const db = await getDb();
   if (!db) {
     return NextResponse.json({ error: "Service temporarily unavailable" }, { status: 503 });
   }
@@ -96,7 +96,7 @@ export async function PUT(request: NextRequest) {
     );
   }
 
-  const db = getDb(request);
+  const db = await getDb();
   if (!db) {
     return NextResponse.json({ error: "Service temporarily unavailable" }, { status: 503 });
   }

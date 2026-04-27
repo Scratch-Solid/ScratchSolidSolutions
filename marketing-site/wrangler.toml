@@ -2,8 +2,6 @@ name = "scratchsolidsolutions"
 pages_build_output_dir = ".next"
 
 [vars]
-# Secrets are set via Cloudflare dashboard/API to prevent overwriting during deployment
-# JWT_SECRET and RESEND_API_KEY should be set as secret_text in Cloudflare
 CSRF_SECRET = "your-csrf-secret-here-change-in-production"
 NEXT_PUBLIC_BASE_URL = "https://scratchsolidsolutions.org"
 NEXT_PUBLIC_API_URL = "https://scratchsolidsolutions.org/api"

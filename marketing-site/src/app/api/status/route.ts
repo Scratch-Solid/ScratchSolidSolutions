@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   const start = Date.now();
 
   try {
-    const db = getDb(request);
+    const db = await getDb();
     if (!db) {
       checks.database = { status: 'fail', error: 'D1 binding not available', slaMs: DB_SLA_MS };
       alerts.push('database:binding_missing');

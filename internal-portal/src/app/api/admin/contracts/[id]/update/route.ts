@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '../../../../../../lib/db';
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
-  const db = getDb(request);
+  const db = await getDb();
   if (!db) return NextResponse.json({ error: 'Database not available' }, { status: 500 });
 
   try {

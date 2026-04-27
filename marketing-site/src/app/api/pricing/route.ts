@@ -7,7 +7,7 @@ import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 
 export async function GET(request: NextRequest) {
   const traceId = withTracing(request);
-  const db = getDb(request);
+  const db = await getDb();
   if (!db) {
     return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 });
   }

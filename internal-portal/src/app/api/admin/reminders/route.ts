@@ -4,7 +4,7 @@ import { notifyPaymentReminder } from '@/lib/notifications';
 import { getInvoiceStatus } from '@/lib/zoho';
 
 export async function GET(request: NextRequest) {
-  const db = getDb(request);
+  const db = await getDb();
   if (!db) return NextResponse.json({ error: 'Database unavailable' }, { status: 500 });
 
   try {
