@@ -9,20 +9,8 @@ export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    // Check if user is logged in and redirect to appropriate dashboard
+    // Check if user is logged in to show dashboard button
     const token = localStorage.getItem('authToken');
-    const userRole = localStorage.getItem('userRole');
-
-    if (token && userRole) {
-      // User is logged in, redirect to appropriate dashboard
-      if (userRole === 'business') {
-        window.location.href = '/business-dashboard';
-      } else {
-        window.location.href = '/client-dashboard';
-      }
-      return;
-    }
-
     setIsLoggedIn(!!token);
   }, []);
 
@@ -34,6 +22,15 @@ export default function Home() {
     } else {
       // If new user, route to auth page
       window.location.href = "/auth";
+    }
+  };
+
+  const handleDashboard = () => {
+    const userRole = localStorage.getItem('userRole');
+    if (userRole === 'business') {
+      window.location.href = '/business-dashboard';
+    } else {
+      window.location.href = '/client-dashboard';
     }
   };
 
@@ -72,6 +69,11 @@ export default function Home() {
           <Link href="/gallery" className="text-gray-700 hover:text-blue-600 active:text-blue-600 font-semibold text-sm sm:text-base lg:text-lg transition-colors" aria-label="Navigate to Gallery page">
             Gallery
           </Link>
+          {isLoggedIn && (
+            <button onClick={handleDashboard} className="text-blue-600 hover:text-blue-700 active:text-blue-700 font-semibold text-sm sm:text-base lg:text-lg transition-colors" aria-label="Go to your dashboard">
+              My Dashboard
+            </button>
+          )}
           {isLoggedIn && (
             <button onClick={handleLogout} className="text-red-600 hover:text-red-700 active:text-red-700 font-semibold text-sm sm:text-base lg:text-lg transition-colors" aria-label="Logout from your account">
               Logout
