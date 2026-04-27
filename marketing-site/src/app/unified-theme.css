@@ -1,6 +1,4 @@
 /* Unified glassmorphism and premium theme for both marketing and app */
-@import "../../frontend-next/src/app/glass-theme.css";
-
 /* Marketing-site specific overrides (if needed) */
 body {
   font-family: var(--sans);
