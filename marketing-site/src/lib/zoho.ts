@@ -12,7 +12,7 @@ async function getZohoToken() {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({ refresh_token: ZOHO_REFRESH_TOKEN, client_id: ZOHO_CLIENT_ID, client_secret: ZOHO_CLIENT_SECRET, grant_type: 'refresh_token' }),
   });
-  const json = await response.json();
+  const json = await response.json() as { access_token: string; expires_in: number };
   accessToken = json.access_token;
   tokenExpiry = Date.now() + (json.expires_in * 1000) - 60000;
   return accessToken;
@@ -37,7 +37,7 @@ export async function recordPayment(invoiceId: string, amount: number, paymentMo
 
 export async function verifyPOP(invoiceId: string, popReference: string) {
   const response = await zohoRequest(`/invoices/${invoiceId}`, 'GET');
-  const json = await response.json();
+  const json = await response.json() as { invoice?: { payments?: Array<{ description?: string }> } };
   const payments = json.invoice?.payments || [];
   const match = payments.find((p: any) => p.description?.includes(popReference));
   return { verified: !!match, payment: match || null };
@@ -61,4 +61,71 @@ export async function applyCreditNoteToInvoice(creditNoteId: string, invoiceId: 
 export async function getInvoiceStatus(invoiceId: string) {
   const response = await zohoRequest(`/invoices/${invoiceId}`, 'GET');
   return response.json();
+}
+
+export async function findOrCreateContact(name: string, email: string, phone: string) {
+  if (email) {
+    const search = await zohoRequest(`/contacts?email=${encodeURIComponent(email)}`, 'GET');
+    const searchJson = await search.json() as { contacts?: Array<{ contact_id: string }> };
+    if (searchJson.contacts && searchJson.contacts.length > 0) {
+      return searchJson.contacts[0].contact_id;
+    }
+  }
+  const create = await zohoRequest('/contacts', 'POST', {
+    contact_name: name,
+    contact_type: 'customer',
+    email,
+    phone,
+  });
+  const createJson = await create.json() as { contact?: { contact_id: string } };
+  return createJson.contact?.contact_id || null;
+}
+
+export async function createEstimate(params: {
+  contactId: string;
+  serviceName: string;
+  baselinePrice: number;
+  discountAmount: number;
+  finalPrice: number;
+  promoCode?: string;
+  refNumber: string;
+  expiryDays?: number;
+}) {
+  const today = new Date();
+  const expiry = new Date(today);
+  expiry.setDate(expiry.getDate() + (params.expiryDays || 14));
+  const fmt = (d: Date) => d.toISOString().split('T')[0];
+
+  const body: Record<string, unknown> = {
+    customer_id: params.contactId,
+    date: fmt(today),
+    expiry_date: fmt(expiry),
+    reference_number: params.refNumber,
+    line_items: [
+      {
+        name: params.serviceName,
+        rate: params.baselinePrice,
+        quantity: 1,
+      },
+    ],
+    notes: params.promoCode ? `Promo code applied: ${params.promoCode}` : '',
+  };
+
+  if (params.discountAmount > 0) {
+    body.discount = ((params.discountAmount / params.baselinePrice) * 100).toFixed(2);
+    body.is_discount_before_tax = true;
+  }
+
+  const response = await zohoRequest('/estimates', 'POST', body);
+  return response.json() as Promise<{ estimate?: { estimate_id: string; estimate_number: string } }>;
+}
+
+export async function getEstimatePdf(estimateId: string): Promise<Response> {
+  const token = await getZohoToken();
+  return fetch(`https://books.zoho.com/api/v3/estimates/${estimateId}?accept=pdf`, {
+    headers: {
+      'Authorization': `Zoho-oauthtoken ${token}`,
+      'X-com-zoho-books-organizationid': ZOHO_ORG_ID,
+    },
+  });
 }
