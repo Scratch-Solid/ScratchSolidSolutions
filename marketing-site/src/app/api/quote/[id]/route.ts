@@ -53,24 +53,38 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   }
 }
 
-// Admin PATCH: update quote status or notes
+// PATCH: update quote
+// Public: may only set status to 'accepted' or 'declined'
+// Admin (Bearer): may set any status, notes, or final_price
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const db = await getDb();
     if (!db) return NextResponse.json({ error: 'Database not available' }, { status: 500 });
 
-    const authHeader = request.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const { id } = await params;
     const body = await request.json() as { status?: string; notes?: string; final_price?: number };
     const { status, notes, final_price } = body;
 
-    const validStatuses = ['pending', 'sent', 'accepted', 'declined'];
-    if (status && !validStatuses.includes(status)) {
-      return NextResponse.json({ error: `status must be one of: ${validStatuses.join(', ')}` }, { status: 400 });
+    const isAdmin = request.headers.get('Authorization')?.startsWith('Bearer ');
+    const publicStatuses = ['accepted', 'declined'];
+    const allStatuses = ['pending', 'sent', 'accepted', 'declined'];
+
+    if (!isAdmin) {
+      // Public callers: only allowed to accept or decline
+      if (!status || !publicStatuses.includes(status)) {
+        return NextResponse.json(
+          { error: 'You may only set status to accepted or declined' },
+          { status: 403 }
+        );
+      }
+      if (notes !== undefined || final_price !== undefined) {
+        return NextResponse.json({ error: 'Unauthorized to edit notes or price' }, { status: 403 });
+      }
+    } else {
+      // Admin: validate status value
+      if (status && !allStatuses.includes(status)) {
+        return NextResponse.json({ error: `status must be one of: ${allStatuses.join(', ')}` }, { status: 400 });
+      }
     }
 
     const result = await db.prepare(

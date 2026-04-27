@@ -61,6 +61,8 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
   const [submitting, setSubmitting] = useState(false);
   const [quoteResult, setQuoteResult] = useState<QuoteResult | null>(null);
   const [submitError, setSubmitError] = useState('');
+  const [actionLoading, setActionLoading] = useState<'accept' | 'decline' | null>(null);
+  const [quoteDeclined, setQuoteDeclined] = useState(false);
 
   useEffect(() => {
     if (initialServiceId) setSelectedServiceId(initialServiceId);
@@ -77,6 +79,8 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
       setSubmitting(false);
       setQuoteResult(null);
       setSubmitError('');
+      setActionLoading(null);
+      setQuoteDeclined(false);
     }
   }, [isOpen]);
 
@@ -160,6 +164,34 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
 
   const handlePrintPdf = () => {
     window.print();
+  };
+
+  const handleAccept = async () => {
+    if (!quoteResult) return;
+    setActionLoading('accept');
+    try {
+      await fetch(`/api/quote/${quoteResult.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'accepted' }),
+      });
+    } catch { /* non-fatal */ }
+    window.location.href = `/auth?service=${encodeURIComponent(quoteResult.service_name)}&quote_ref=${quoteResult.ref_number}`;
+  };
+
+  const handleDecline = async () => {
+    if (!quoteResult) return;
+    setActionLoading('decline');
+    try {
+      await fetch(`/api/quote/${quoteResult.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'declined' }),
+      });
+    } catch { /* non-fatal */ } finally {
+      setActionLoading(null);
+      setQuoteDeclined(true);
+    }
   };
 
   if (!isOpen) return null;
@@ -383,54 +415,99 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
             {/* ── STEP 3: Quote Result ── */}
             {step === 3 && quoteResult && (
               <>
-                <div className="text-center mb-2">
-                  <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                  </div>
-                  <p className="text-lg font-bold text-gray-800">Your Quote is Ready!</p>
-                  <p className="text-xs text-gray-400 mt-1">Ref: <span className="font-mono font-semibold text-blue-600">{quoteResult.ref_number}</span></p>
-                  {quoteResult.zoho_estimate_number && (
-                    <p className="text-xs text-gray-400">Estimate #: {quoteResult.zoho_estimate_number}</p>
-                  )}
-                </div>
-
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-5 border border-blue-100 space-y-3">
-                  <p className="font-bold text-gray-800 text-base">{quoteResult.service_name}</p>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between text-gray-600">
-                      <span>Base Price</span>
-                      <span>R{quoteResult.baseline_price.toFixed(2)}</span>
+                {quoteDeclined ? (
+                  /* Decline confirmation screen */
+                  <div className="text-center py-4">
+                    <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                     </div>
-                    {quoteResult.discount_amount > 0 && (
-                      <div className="flex justify-between text-green-700">
-                        <span>Promo ({quoteResult.promo_code})</span>
-                        <span>− R{quoteResult.discount_amount.toFixed(2)}</span>
+                    <p className="text-lg font-bold text-gray-800 mb-2">No worries!</p>
+                    <p className="text-sm text-gray-500 mb-1">Your quote has been noted as declined.</p>
+                    <p className="text-sm text-gray-500 mb-6">Feel free to reach out anytime — we&apos;re here when you&apos;re ready.</p>
+                    <div className="flex flex-col gap-3">
+                      <a
+                        href="https://wa.me/27696735947"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full py-3 bg-green-500 text-white font-bold rounded-xl hover:bg-green-600 transition-colors text-center"
+                      >
+                        Chat on WhatsApp
+                      </a>
+                      <button
+                        onClick={onClose}
+                        className="w-full py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-colors"
+                      >
+                        Close
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* Quote accepted / pending decision screen */
+                  <>
+                    <div className="text-center mb-2">
+                      <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                       </div>
-                    )}
-                    <div className="flex justify-between font-bold text-blue-700 text-base border-t border-blue-200 pt-2">
-                      <span>Total</span>
-                      <span>R{quoteResult.final_price.toFixed(2)}</span>
+                      <p className="text-lg font-bold text-gray-800">Your Quote is Ready!</p>
+                      <p className="text-xs text-gray-400 mt-1">Ref: <span className="font-mono font-semibold text-blue-600">{quoteResult.ref_number}</span></p>
+                      {quoteResult.zoho_estimate_number && (
+                        <p className="text-xs text-gray-400">Estimate #: {quoteResult.zoho_estimate_number}</p>
+                      )}
                     </div>
-                  </div>
-                </div>
 
-                <p className="text-xs text-gray-400 text-center">Valid for 14 days. A copy has been sent to your email if provided.</p>
+                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-5 border border-blue-100 space-y-3">
+                      <p className="font-bold text-gray-800 text-base">{quoteResult.service_name}</p>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between text-gray-600">
+                          <span>Base Price</span>
+                          <span>R{quoteResult.baseline_price.toFixed(2)}</span>
+                        </div>
+                        {quoteResult.discount_amount > 0 && (
+                          <div className="flex justify-between text-green-700">
+                            <span>Promo ({quoteResult.promo_code})</span>
+                            <span>− R{quoteResult.discount_amount.toFixed(2)}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between font-bold text-blue-700 text-base border-t border-blue-200 pt-2">
+                          <span>Total</span>
+                          <span>R{quoteResult.final_price.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    </div>
 
-                <div className="flex gap-3">
-                  <button
-                    onClick={handlePrintPdf}
-                    className="flex-1 py-3 bg-white border-2 border-blue-600 text-blue-600 font-bold rounded-xl hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
-                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                    Download PDF
-                  </button>
-                  <a
-                    href={`/auth?service=${encodeURIComponent(quoteResult.service_name)}`}
-                    className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors text-center flex items-center justify-center"
-                  >
-                    Book Now
-                  </a>
-                </div>
+                    <p className="text-xs text-gray-400 text-center">Valid for 14 days. A copy has been sent to your email if provided.</p>
+
+                    {/* Download PDF */}
+                    <button
+                      onClick={handlePrintPdf}
+                      className="w-full py-2.5 bg-white border-2 border-gray-200 text-gray-600 font-semibold rounded-xl hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-sm"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                      Download / Print PDF
+                    </button>
+
+                    {/* Accept / Decline */}
+                    <div className="bg-gray-50 rounded-2xl p-4 border border-gray-200">
+                      <p className="text-sm font-semibold text-gray-700 text-center mb-3">Do you accept this quote?</p>
+                      <div className="flex gap-3">
+                        <button
+                          onClick={handleDecline}
+                          disabled={!!actionLoading}
+                          className="flex-1 py-3 bg-white border-2 border-red-200 text-red-500 font-bold rounded-xl hover:bg-red-50 disabled:opacity-50 transition-colors"
+                        >
+                          {actionLoading === 'decline' ? 'Declining...' : 'No, Decline'}
+                        </button>
+                        <button
+                          onClick={handleAccept}
+                          disabled={!!actionLoading}
+                          className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                        >
+                          {actionLoading === 'accept' ? 'Booking...' : 'Yes, Accept & Book'}
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
               </>
             )}
           </div>
