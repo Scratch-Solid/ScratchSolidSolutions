@@ -22,7 +22,7 @@ export default function BookingOptionsPage() {
           Select Booking Type
         </h1>
 
-        <div className="bg-white rounded-2xl shadow-2xl border-2 border-blue-200 p-8">
+        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border-2 border-white/20 p-8">
           <div className="space-y-6">
             <Link
               href="/booking"

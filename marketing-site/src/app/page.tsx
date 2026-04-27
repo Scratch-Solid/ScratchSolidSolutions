@@ -81,7 +81,7 @@ export default function Home() {
           )}
         </div>
       </nav>
-      <div className="max-w-xl sm:max-w-2xl w-full bg-white rounded-2xl sm:rounded-3xl shadow-xl sm:shadow-2xl border-2 border-blue-200 p-4 sm:p-6 lg:p-10 relative mt-16 sm:mt-20 flex items-center justify-center">
+      <div className="max-w-xl sm:max-w-2xl w-full bg-white/90 backdrop-blur-md rounded-2xl sm:rounded-3xl shadow-xl sm:shadow-2xl border-2 border-white/20 p-4 sm:p-6 lg:p-10 relative mt-16 sm:mt-20 flex items-center justify-center">
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0">
           <Image
             src="/scratchsolid-logo.jpg"

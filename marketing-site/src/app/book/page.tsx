@@ -117,7 +117,7 @@ export default function BookingPage() {
           </div>
         )}
 
-        <div className="bg-white rounded-2xl shadow-2xl border-2 border-blue-200 p-8">
+        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border-2 border-white/20 p-8">
           {step === 1 && (
             <div>
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Select Booking Type</h2>

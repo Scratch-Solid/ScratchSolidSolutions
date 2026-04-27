@@ -145,7 +145,7 @@ export default function BusinessBookingPage() {
         </h1>
 
         {!bookingType ? (
-          <div className="bg-white rounded-2xl shadow-2xl border-2 border-blue-200 p-8">
+          <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border-2 border-white/20 p-8">
             <h2 className="text-2xl font-semibold text-center text-gray-800 mb-6">
               Choose Booking Type
             </h2>
@@ -169,7 +169,7 @@ export default function BusinessBookingPage() {
             </div>
           </div>
         ) : bookingType === "once-off" ? (
-          <div className="bg-white rounded-2xl shadow-2xl border-2 border-blue-200 p-8">
+          <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border-2 border-white/20 p-8">
             <h2 className="text-2xl font-semibold text-center text-gray-800 mb-6">
               Once-off Booking
             </h2>
@@ -237,7 +237,7 @@ export default function BusinessBookingPage() {
             </form>
           </div>
         ) : (
-          <div className="bg-white rounded-2xl shadow-2xl border-2 border-blue-200 p-8">
+          <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border-2 border-white/20 p-8">
             <h2 className="text-2xl font-semibold text-center text-gray-800 mb-6">
               Contract Booking
             </h2>

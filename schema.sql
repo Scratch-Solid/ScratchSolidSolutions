@@ -105,7 +105,7 @@ CREATE TABLE IF NOT EXISTS bookings (
   service_type TEXT DEFAULT '',
   booking_date TEXT DEFAULT '',
   booking_time TEXT DEFAULT '',
-  status TEXT DEFAULT 'pending', -- pending, assigned, on_way, arrived, completed, cancelled
+  status TEXT DEFAULT 'pending', -- pending, pending_pop, pop_verified, assigned, on_way, arrived, completed, cancelled
   special_instructions TEXT DEFAULT '',
   booking_type TEXT DEFAULT 'standard', -- standard, recurring, emergency
   cleaning_type TEXT DEFAULT 'standard', -- standard, deep_clean, move_in, move_out
@@ -113,6 +113,12 @@ CREATE TABLE IF NOT EXISTS bookings (
   loyalty_discount REAL DEFAULT 0,
   start_time TEXT DEFAULT '',
   end_time TEXT DEFAULT '',
+  pop_status TEXT DEFAULT 'not_uploaded', -- not_uploaded, pending, verified, rejected
+  pop_reference TEXT DEFAULT '',
+  pop_upload_url TEXT DEFAULT '',
+  pop_verified_at TEXT DEFAULT NULL,
+  pop_verified_by INTEGER REFERENCES users(id),
+  zoho_invoice_id TEXT DEFAULT '',
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );
@@ -376,3 +382,73 @@ CREATE INDEX IF NOT EXISTS idx_reviews_status ON reviews(status);
 -- ALTER TABLE users ADD COLUMN business_info TEXT DEFAULT '';
 -- ALTER TABLE users ADD COLUMN failed_attempts INTEGER DEFAULT 0;
 -- ALTER TABLE users ADD COLUMN locked_until TEXT DEFAULT NULL;
+
+-- Cascade Delete Triggers for Data Integrity
+-- These triggers ensure related data is deleted when parent records are removed
+
+-- Trigger: Delete bookings when client is deleted
+CREATE TRIGGER IF NOT EXISTS cascade_delete_client_bookings
+AFTER DELETE ON users
+WHEN OLD.role IN ('client', 'business')
+BEGIN
+  DELETE FROM bookings WHERE client_id = OLD.id;
+  DELETE FROM payments WHERE user_id = OLD.id;
+  DELETE FROM reviews WHERE user_id = OLD.id;
+  DELETE FROM notifications WHERE user_id = OLD.id;
+  DELETE FROM sessions WHERE user_id = OLD.id;
+END;
+
+-- Trigger: Delete bookings when cleaner is deleted
+CREATE TRIGGER IF NOT EXISTS cascade_delete_cleaner_bookings
+AFTER DELETE ON users
+WHEN OLD.role = 'cleaner'
+BEGIN
+  DELETE FROM bookings WHERE cleaner_id = OLD.id;
+  DELETE FROM task_completions WHERE cleaner_id = OLD.id;
+  DELETE FROM cleaner_profiles WHERE user_id = OLD.id;
+END;
+
+-- Trigger: Delete bookings when booking is deleted
+CREATE TRIGGER IF NOT EXISTS cascade_delete_booking_dependencies
+AFTER DELETE ON bookings
+BEGIN
+  DELETE FROM task_completions WHERE booking_id = OLD.id;
+  DELETE FROM payments WHERE booking_id = OLD.id;
+  DELETE FROM reviews WHERE booking_id = OLD.id;
+END;
+
+-- Trigger: Delete weekend requests when business is deleted
+CREATE TRIGGER IF NOT EXISTS cascade_delete_weekend_requests
+AFTER DELETE ON users
+WHEN OLD.role = 'business'
+BEGIN
+  DELETE FROM weekend_requests WHERE business_id = OLD.id;
+  DELETE FROM business_events WHERE business_id = OLD.id;
+  DELETE FROM contracts WHERE business_id = OLD.id;
+END;
+
+-- Trigger: Delete contracts when business is deleted
+CREATE TRIGGER IF NOT EXISTS cascade_delete_contracts
+AFTER DELETE ON contracts
+BEGIN
+  DELETE FROM weekend_requests WHERE business_id = OLD.business_id;
+END;
+
+-- Admin Failure Logs Table
+CREATE TABLE IF NOT EXISTS admin_failure_logs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  admin_id TEXT NOT NULL,
+  action TEXT NOT NULL,
+  resource_type TEXT NOT NULL,
+  resource_id TEXT,
+  error_message TEXT NOT NULL,
+  error_code TEXT,
+  request_details TEXT,
+  ip_address TEXT,
+  user_agent TEXT,
+  created_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (admin_id) REFERENCES users(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_admin_failure_logs_admin_id ON admin_failure_logs(admin_id);
+CREATE INDEX IF NOT EXISTS idx_admin_failure_logs_created_at ON admin_failure_logs(created_at);

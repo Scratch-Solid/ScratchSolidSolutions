@@ -41,6 +41,15 @@ export default function ClientDashboard() {
   useEffect(() => {
     fetchClientData();
     fetchZohoData();
+    fetchCleanerStatus();
+    
+    // Poll for cleaner updates every 30 seconds
+    const interval = setInterval(() => {
+      fetchClientData();
+      fetchCleanerStatus();
+    }, 30000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   // Load cleaner public profile when assigned
@@ -345,14 +354,36 @@ export default function ClientDashboard() {
     setReviewImages(prev => prev.filter((_, i) => i !== index));
   };
 
-  // Cleaner status update simulation (would be triggered by cleaner dashboard)
-  const updateCleanerStatus = (status: 'idle' | 'on_way' | 'arrived' | 'completed') => {
-    setCleanerStatus(status);
-    
-    // Trigger WhatsApp message when cleaner completes
-    if (status === 'completed') {
-      sendWhatsAppCompletionMessage();
-      updateCleanerPayroll();
+  // Fetch real cleaner status from internal portal
+  const fetchCleanerStatus = async () => {
+    if (!assignedCleaner || typeof assignedCleaner !== 'object' || !('id' in assignedCleaner)) {
+      return;
+    }
+
+    try {
+      const cleanerId = (assignedCleaner as any).id || (assignedCleaner as any).user_id;
+      if (!cleanerId) return;
+
+      // Call internal portal cleaner-status API
+      const response = await fetch(`${process.env.INTERNAL_PORTAL_URL || 'http://localhost:3001'}/api/cleaner-status?cleaner_id=${cleanerId}`, {
+        headers: { 
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.status) {
+          setCleanerStatus(data.status);
+          
+          // Trigger WhatsApp message when cleaner completes
+          if (data.status === 'completed') {
+            sendWhatsAppCompletionMessage();
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch cleaner status:', error);
     }
   };
 
@@ -366,23 +397,6 @@ export default function ClientDashboard() {
       message: message,
       timestamp: new Date().toISOString()
     });
-    
-    // In production, this would call WhatsApp API
-    // fetch('/api/send-whatsapp', { method: 'POST', body: JSON.stringify({ phone: clientPhone, message }) });
-  };
-
-  const updateCleanerPayroll = () => {
-    // Simulate payroll update for cleaner
-    const payrollUpdate = {
-      amount: 150,
-      task_type: 'cleaning_completed',
-      timestamp: new Date().toISOString()
-    };
-    
-    console.log('Cleaner payroll updated:', payrollUpdate);
-    
-    // In production, this would update cleaner dashboard payroll tile
-    // fetch('/api/cleaner/payroll', { method: 'POST', body: JSON.stringify(payrollUpdate) });
   };
 
   const requestOlderStatements = async () => {
@@ -418,7 +432,7 @@ export default function ClientDashboard() {
       
       {/* Glassified Overlay */}
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen">
-        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-2xl border-2 border-blue-200 p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border-2 border-white/20 p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
           
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
@@ -469,7 +483,17 @@ export default function ClientDashboard() {
                       </div>
                     </div>
                     <div className="flex-1">
-                      <h4 className="font-semibold text-gray-800">{assignedCleaner.firstName} {assignedCleaner.lastName}</h4>
+                      <h4 className="font-semibold text-gray-800">{assignedCleaner.firstName || assignedCleaner.name?.split(' ')[0]}</h4>
+                      <div className="flex items-center space-x-2 my-2">
+                        <div className="flex items-center">
+                          <span className="text-yellow-400">{'★'.repeat(Math.floor(assignedCleaner.rating || 0))}</span>
+                          <span className="text-gray-400">{'★'.repeat(5 - Math.floor(assignedCleaner.rating || 0))}</span>
+                        </div>
+                        <span className="text-sm text-gray-600">{assignedCleaner.rating || 0}</span>
+                      </div>
+                      <p className="text-sm text-gray-600">
+                        <strong>Specialties:</strong> {assignedCleaner.specialties?.join(', ') || 'General Cleaning'}
+                      </p>
                       <p className="text-sm text-gray-600">
                         <strong>Status:</strong> 
                         <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${
@@ -485,48 +509,16 @@ export default function ClientDashboard() {
                            cleanerStatus === 'completed' ? 'Completed' : 'Unknown'}
                         </span>
                       </p>
-                      
-                      {/* Demo buttons for cleaner status (for testing) */}
-                      <div className="mt-3 flex gap-2">
-                        <button
-                          onClick={() => updateCleanerStatus('on_way')}
-                          className="text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700"
-                        >
-                          On Way
-                        </button>
-                        <button
-                          onClick={() => updateCleanerStatus('arrived')}
-                          className="text-xs bg-yellow-600 text-white px-2 py-1 rounded hover:bg-yellow-700"
-                        >
-                          Arrived
-                        </button>
-                        <button
-                          onClick={() => updateCleanerStatus('completed')}
-                          className="text-xs bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700"
-                        >
-                          Complete
-                        </button>
-                      </div>
                     </div>
                   </div>
                 </div>
               )}
 
               {/* Stats Overview */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
                 <div className="bg-blue-50 rounded-lg p-4">
                   <h3 className="font-semibold text-blue-700">Active Bookings</h3>
                   <p className="text-2xl font-bold text-blue-600">{bookings.length}</p>
-                </div>
-                <div className="bg-green-50 rounded-lg p-4">
-                  <h3 className="font-semibold text-green-700">Total Spent</h3>
-                  <p className="text-2xl font-bold text-green-600">
-                    R{payments.filter(p => p.type === 'receipt').reduce((sum, p) => sum + p.amount, 0)}
-                  </p>
-                </div>
-                <div className="bg-purple-50 rounded-lg p-4">
-                  <h3 className="font-semibold text-purple-700">Available Cleaners</h3>
-                  <p className="text-2xl font-bold text-purple-600">{availableCleaners.filter(c => c.available).length}</p>
                 </div>
               </div>
 

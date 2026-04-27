@@ -171,7 +171,7 @@ export default function BookingPage() {
           Book Your Cleaning Service
         </h1>
 
-        <div className="bg-white rounded-2xl shadow-2xl border-2 border-blue-200 p-8">
+        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border-2 border-white/20 p-8">
           {/* Error Banner */}
           {error && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">

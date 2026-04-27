@@ -63,7 +63,7 @@ export default function BusinessEventsPage() {
           Business Events & Extra Services
         </h1>
         
-        <div className="bg-white rounded-2xl shadow-2xl border-2 border-blue-200 p-8">
+        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border-2 border-white/20 p-8">
           <div className="mb-8">
             <h2 className="text-2xl font-semibold text-blue-700 mb-4">
               Request Extra Services

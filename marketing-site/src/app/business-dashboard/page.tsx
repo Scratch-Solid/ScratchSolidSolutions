@@ -14,12 +14,20 @@ export default function BusinessDashboard() {
   const [recurringBookings, setRecurringBookings] = useState<any[]>([]);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [viewingContract, setViewingContract] = useState<any>(null);
 
   useEffect(() => {
     fetchWeekendRequests();
     fetchContracts();
     fetchRecurringBookings();
     fetchUserProfile();
+    
+    // Poll for cleaner updates every 30 seconds
+    const interval = setInterval(() => {
+      fetchWeekendRequests();
+    }, 30000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   const fetchWeekendRequests = async () => {
@@ -37,12 +45,15 @@ export default function BusinessDashboard() {
         // Derive assigned cleaner from most recent assigned request
         const assigned = data.find((r: any) => r.status === 'assigned' && r.assigned_cleaner_name);
         if (assigned) {
+          const fullName = assigned.assigned_cleaner_name || '';
+          const firstName = fullName.split(' ')[0];
           setAssignedCleaner({
             id: assigned.assigned_cleaner_id || '',
-            name: assigned.assigned_cleaner_name,
-            rating: 0,
-            specialties: [],
-            available: true
+            name: firstName,
+            rating: assigned.assigned_cleaner_rating || 0,
+            specialties: assigned.assigned_cleaner_specialties || [],
+            available: true,
+            image_url: assigned.assigned_cleaner_image || ''
           });
         }
       }
@@ -214,7 +225,7 @@ export default function BusinessDashboard() {
           Business Dashboard
         </h1>
         
-        <div className="bg-white rounded-2xl shadow-2xl border-2 border-blue-200 p-8">
+        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border-2 border-white/20 p-8">
           <div className="space-y-6">
             <div className="text-center">
               <h2 className="text-2xl font-semibold text-gray-800 mb-4">Welcome Back!</h2>
@@ -250,12 +261,20 @@ export default function BusinessDashboard() {
                       {contract.is_immutable === 1 && (
                         <div className="flex items-center justify-between mt-2">
                           <p className="text-xs text-orange-600">Contract is locked (read-only)</p>
-                          <button
-                            onClick={() => handleExportPDF(contract.id)}
-                            className="text-xs bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
-                          >
-                            Export PDF
-                          </button>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => setViewingContract(contract)}
+                              className="text-xs bg-purple-600 text-white px-3 py-1 rounded hover:bg-purple-700"
+                            >
+                              View
+                            </button>
+                            <button
+                              onClick={() => handleExportPDF(contract.id)}
+                              className="text-xs bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+                            >
+                              Export PDF
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -339,11 +358,19 @@ export default function BusinessDashboard() {
                   <h3 className="font-semibold text-lg text-gray-800 mb-4">Your Assigned Cleaner</h3>
                   <div className="flex items-start space-x-6">
                     <div className="flex-shrink-0">
-                      <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center">
-                        <svg className="w-12 h-12 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12 12c2.21 0 4 1.79 4 4s-1.79 4-4 4-4 4 4-1.79 4-4-4zm0 6c-3.31 0-6 2.69-6 6h2c0 3.31 2.69 6 6 3.31 0 6-2.69 6-6-2.69-6-6z"/>
-                        </svg>
-                      </div>
+                      {assignedCleaner.image_url ? (
+                        <img
+                          src={assignedCleaner.image_url}
+                          alt={assignedCleaner.name}
+                          className="w-24 h-24 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center">
+                          <svg className="w-12 h-12 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 12c2.21 0 4 1.79 4 4s-1.79 4-4 4-4 4 4-1.79 4-4-4zm0 6c-3.31 0-6 2.69-6 6h2c0 3.31 2.69 6 6 3.31 0 6-2.69 6-6-2.69-6-6z"/>
+                          </svg>
+                        </div>
+                      )}
                       <div className="flex-1">
                         <h4 className="font-semibold text-gray-800">{assignedCleaner.name}</h4>
                         <div className="flex items-center space-x-2 my-2">
@@ -355,9 +382,6 @@ export default function BusinessDashboard() {
                         </div>
                         <p className="text-sm text-gray-600">
                           <strong>Specialties:</strong> {assignedCleaner.specialties?.join(', ') || 'General Cleaning'}
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          <strong>Contact:</strong> {assignedCleaner.phone || '+27 69 673 5947'}
                         </p>
                         <p className="text-sm text-gray-600">
                           <strong>Status:</strong> 
@@ -527,6 +551,76 @@ export default function BusinessDashboard() {
           </Link>
         </div>
       </div>
+
+      {/* Glassified Contract View Overlay */}
+      {viewingContract && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setViewingContract(null)}></div>
+          <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-2xl border-2 border-white/20 p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => setViewingContract(null)}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl font-bold"
+            >
+              ×
+            </button>
+            <h2 className="text-2xl font-bold text-blue-700 mb-6">Contract Details</h2>
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-gray-500">Contract Type</p>
+                <p className="font-semibold text-gray-800">{viewingContract.contract_type}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Status</p>
+                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                  viewingContract.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                }`}>
+                  {viewingContract.status}
+                </span>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Rate</p>
+                <p className="font-semibold text-gray-800">R{viewingContract.rate_per_hour}/hour</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Weekend Multiplier</p>
+                <p className="font-semibold text-gray-800">{viewingContract.weekend_rate_multiplier}x</p>
+              </div>
+              {viewingContract.start_date && (
+                <div>
+                  <p className="text-sm text-gray-500">Start Date</p>
+                  <p className="font-semibold text-gray-800">{new Date(viewingContract.start_date).toLocaleDateString()}</p>
+                </div>
+              )}
+              {viewingContract.end_date && (
+                <div>
+                  <p className="text-sm text-gray-500">End Date</p>
+                  <p className="font-semibold text-gray-800">{new Date(viewingContract.end_date).toLocaleDateString()}</p>
+                </div>
+              )}
+              {viewingContract.terms && (
+                <div>
+                  <p className="text-sm text-gray-500">Terms</p>
+                  <p className="text-gray-700 whitespace-pre-wrap">{viewingContract.terms}</p>
+                </div>
+              )}
+            </div>
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={() => handleExportPDF(viewingContract.id)}
+                className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+              >
+                Download PDF
+              </button>
+              <button
+                onClick={() => setViewingContract(null)}
+                className="flex-1 bg-gray-200 text-gray-700 py-3 px-6 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

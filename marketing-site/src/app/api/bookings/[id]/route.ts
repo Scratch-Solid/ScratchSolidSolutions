@@ -84,6 +84,15 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       if (!cleanerIdValidation.valid) {
         return NextResponse.json({ error: cleanerIdValidation.errors.join(', ') }, { status: 400 });
       }
+
+      // POP verification check - cleaner cannot be assigned unless POP is verified
+      const existingBooking = await db.prepare('SELECT pop_status FROM bookings WHERE id = ?').bind(parseInt(params.id)).first();
+      if (existingBooking && (existingBooking as any).pop_status !== 'verified' && (existingBooking as any).pop_status !== 'not_uploaded') {
+        return NextResponse.json({ 
+          error: 'POP verification required before cleaner can be assigned. Admin must verify proof of payment first.',
+          pop_status: (existingBooking as any).pop_status 
+        }, { status: 403 });
+      }
     }
 
     if (body.status !== undefined) {
