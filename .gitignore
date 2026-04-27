@@ -13,9 +13,11 @@ __pycache__/
 .DS_Store
 .idea/
 .next/
+.open-next/
 out/
 build/
 coverage/
+.wrangler/
 frontend/node_modules/
 backend-worker/node_modules/
 marketing-site/.next/
