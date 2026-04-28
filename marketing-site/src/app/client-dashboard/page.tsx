@@ -392,11 +392,6 @@ export default function ClientDashboard() {
     const clientPhone = localStorage.getItem('userPhone') || '+27696735947';
     const message = `Scratch Solid: Your cleaning service has been completed today! We've cleaned your premises thoroughly. Thank you for choosing our services!`;
     
-    console.log('WhatsApp message sent to client:', {
-      phone: clientPhone,
-      message: message,
-      timestamp: new Date().toISOString()
-    });
   };
 
   const requestOlderStatements = async () => {
@@ -404,9 +399,6 @@ export default function ClientDashboard() {
     try {
       // Simulate manual processing
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const userEmail = localStorage.getItem('userEmail') || 'client@example.com';
-      console.log('Older statements request submitted for:', userEmail);
       
       setSuccess('Request submitted! Older statements will be sent to your email/WhatsApp within 24 hours.');
       setTimeout(() => setSuccess(''), 3000);

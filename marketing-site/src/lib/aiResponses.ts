@@ -1,3 +1,14 @@
+/**
+ * @deprecated This file is no longer imported anywhere in the codebase.
+ *
+ * AIAssistant.tsx previously called getAIResponse() directly (server-only),
+ * which was incorrect for a client component. It now calls the /api/chatbot
+ * route handler instead, which accesses the D1 database server-side.
+ *
+ * This file can be safely deleted once the /api/chatbot route is confirmed
+ * stable in production.
+ */
+
 // AI Assistant Responses Data
 // Uses Cloudflare D1 database for AI response storage
 

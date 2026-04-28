@@ -1,5 +1,21 @@
-// Input Validation Utilities
-// Provides validation functions for API endpoints
+/**
+ * @module validation
+ * @description Input validation helpers for API route handlers.
+ *
+ * Exports:
+ *   validateEmail    — RFC-compliant e-mail format check.
+ *   validatePassword — Complexity rules (8+ chars, upper, lower, digit, special).
+ *   validatePhone    — Minimum-length phone number check.
+ *   validateRequired — Null / empty check for any value.
+ *   validateString   — Type + min/max length check for strings.
+ *   validateNumber   — Type + min/max range check for numbers.
+ *   validateDate     — Parseable date-string check.
+ *   validateEnum     — Membership check against an allowed-values list.
+ *
+ * NOTE: Input sanitisation (HTML-escaping, stripping unsafe characters) is
+ *       handled by sanitizeString / sanitizeEmail / sanitizePhone in lib/db.ts,
+ *       which are the single authoritative versions used by all API routes.
+ */
 
 export interface ValidationResult {
   valid: boolean;
@@ -126,17 +142,3 @@ export function validateEnum(value: any, fieldName: string, allowedValues: strin
   return { valid: errors.length === 0, errors };
 }
 
-export function sanitizeString(input: string): string {
-  if (!input) return '';
-  return input.trim().replace(/[<>]/g, '');
-}
-
-export function sanitizeEmail(input: string): string {
-  if (!input) return '';
-  return input.trim().toLowerCase();
-}
-
-export function sanitizePhone(input: string): string {
-  if (!input) return '';
-  return input.replace(/[\s-]/g, '');
-}

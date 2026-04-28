@@ -1,45 +1,72 @@
+/**
+ * @module middleware
+ * @description Core API middleware for Scratch Solid Solutions Next.js API routes.
+ *
+ * Exports:
+ *   withTracing        — Generates / propagates a trace ID for each request.
+ *   withSecurityHeaders — Attaches the full security-header suite to a NextResponse.
+ *   withAuth           — Validates the Bearer-token session + optional RBAC role check.
+ *   withKVRateLimit    — Cloudflare KV-backed rate limiter (persistent across isolates).
+ *   withKVCache        — Cloudflare KV read-through cache helper.
+ *   invalidateKVCache  — Clears all KV cache entries that match a key prefix.
+ *
+ * NOTE: Per-request rate limiting is handled in lib/rateLimit.ts.
+ *       withAuth does NOT perform its own rate limiting — each route handler
+ *       must call withRateLimit() from lib/rateLimit.ts before withAuth().
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, validateSession } from './db';
 
-const RATE_LIMIT_WINDOW = 60 * 1000;
-const RATE_LIMIT_MAX = 100;
-
-const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
-
-function isRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const record = rateLimitStore.get(ip);
-  if (!record || now > record.resetAt) {
-    rateLimitStore.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
-    return false;
-  }
-  if (record.count >= RATE_LIMIT_MAX) return true;
-  record.count++;
-  return false;
-}
+// ─── Internal helpers ────────────────────────────────────────────────────────
 
 function getClientIP(request: NextRequest): string {
   const forwarded = request.headers.get('x-forwarded-for');
   if (forwarded) return forwarded.split(',')[0].trim();
-  const realIP = request.headers.get('x-real-ip');
-  if (realIP) return realIP;
-  return 'unknown';
+  return request.headers.get('x-real-ip') ?? 'unknown';
 }
 
 function generateTraceId(): string {
-  return crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  return crypto.randomUUID
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
+// ─── Tracing ─────────────────────────────────────────────────────────────────
+
+/**
+ * Returns the trace ID for the current request.
+ * Re-uses an existing X-Request-ID or X-Trace-ID header when present;
+ * generates a new UUID otherwise.
+ */
 export function withTracing(request: NextRequest): string {
-  return request.headers.get('X-Request-ID') || request.headers.get('X-Trace-ID') || generateTraceId();
+  return (
+    request.headers.get('X-Request-ID') ||
+    request.headers.get('X-Trace-ID') ||
+    generateTraceId()
+  );
 }
 
+// ─── Security Headers ─────────────────────────────────────────────────────────
+
+/**
+ * Attaches the full security-header suite to a response and stamps it with
+ * the request trace ID.
+ *
+ * Headers set:
+ *   Content-Security-Policy, Strict-Transport-Security (HSTS 2-year + preload),
+ *   X-Content-Type-Options, X-Frame-Options, X-XSS-Protection,
+ *   Referrer-Policy, Permissions-Policy, X-Request-ID, X-Trace-ID.
+ */
 export function withSecurityHeaders(response: NextResponse, traceId: string): NextResponse {
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-XSS-Protection', '1; mode=block');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-  response.headers.set('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self'; connect-src 'self' https://books.zoho.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self';");
+  response.headers.set(
+    'Content-Security-Policy',
+    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self'; connect-src 'self' https://books.zoho.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self';"
+  );
   response.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(self)');
   response.headers.set('X-Request-ID', traceId);
@@ -47,18 +74,34 @@ export function withSecurityHeaders(response: NextResponse, traceId: string): Ne
   return response;
 }
 
-export async function withRateLimit(request: NextRequest): Promise<NextResponse | null> {
-  const ip = getClientIP(request);
-  if (isRateLimited(ip)) {
-    return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
-  }
-  return null;
-}
+// ─── Authentication ───────────────────────────────────────────────────────────
 
-export async function withAuth(request: NextRequest, allowedRoles?: string[]): Promise<{ user: any; db: D1Database } | NextResponse> {
-  const rateLimitResponse = await withRateLimit(request);
-  if (rateLimitResponse) return rateLimitResponse;
-
+/**
+ * Validates the Bearer token in the Authorization header against the sessions
+ * table, then optionally enforces role-based access control.
+ *
+ * Returns `{ user, db }` on success.
+ * Returns a NextResponse (401 / 403 / 503) on failure — callers must check
+ * `instanceof NextResponse` and return early.
+ *
+ * Callers are responsible for rate-limiting before invoking withAuth.
+ * Use withRateLimit() from lib/rateLimit.ts in each route handler.
+ *
+ * @param request      The incoming Next.js request.
+ * @param allowedRoles Optional list of roles permitted to access the route.
+ *
+ * @example
+ * const traceId = withTracing(request);
+ * const rl = await withRateLimit(request, rateLimits.standard);
+ * if (rl && !rl.success) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+ * const auth = await withAuth(request, ['admin']);
+ * if (auth instanceof NextResponse) return withSecurityHeaders(auth, traceId);
+ * const { user, db } = auth;
+ */
+export async function withAuth(
+  request: NextRequest,
+  allowedRoles?: string[]
+): Promise<{ user: any; db: D1Database } | NextResponse> {
   const db = await getDb();
   if (!db) {
     return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
@@ -81,21 +124,27 @@ export async function withAuth(request: NextRequest, allowedRoles?: string[]): P
   return { user: session, db };
 }
 
-export function logRequest(request: NextRequest, response: NextResponse, durationMs: number, traceId: string) {
-  const log = {
-    timestamp: new Date().toISOString(),
-    traceId,
-    method: request.method,
-    path: request.nextUrl.pathname,
-    status: response.status,
-    durationMs,
-    ip: getClientIP(request),
-    userAgent: request.headers.get('user-agent')?.slice(0, 100)
-  };
-  console.log(JSON.stringify(log));
-}
+// ─── KV Rate Limiting (production-safe) ──────────────────────────────────────
 
-export async function withKVRateLimit(request: NextRequest, kv: KVNamespace, maxRequests: number = 30, windowSeconds: number = 60): Promise<NextResponse | null> {
+/**
+ * Cloudflare KV-backed rate limiter.
+ *
+ * Unlike the in-memory implementation in lib/rateLimit.ts, this persists
+ * counts across all Worker isolates and is safe for production use.
+ * Migrate routes to this implementation to replace the in-memory limiter.
+ *
+ * @param request       Incoming request (used to extract the client IP).
+ * @param kv            KVNamespace binding from the Cloudflare environment.
+ * @param maxRequests   Allowed requests per window (default 30).
+ * @param windowSeconds Window size in seconds (default 60).
+ * @returns A 429 NextResponse if the limit is exceeded; null otherwise.
+ */
+export async function withKVRateLimit(
+  request: NextRequest,
+  kv: KVNamespace,
+  maxRequests = 30,
+  windowSeconds = 60
+): Promise<NextResponse | null> {
   const ip = getClientIP(request);
   const key = `ratelimit:${ip}:${Math.floor(Date.now() / (windowSeconds * 1000))}`;
   const current = await kv.get(key);
@@ -107,11 +156,25 @@ export async function withKVRateLimit(request: NextRequest, kv: KVNamespace, max
   return null;
 }
 
+// ─── KV Cache ─────────────────────────────────────────────────────────────────
+
+/**
+ * Read-through cache backed by Cloudflare KV.
+ *
+ * Returns the cached value on hit; calls fetchFn, stores the result, and
+ * returns it on miss. Silently falls through to fetchFn if the cached value
+ * cannot be parsed.
+ *
+ * @param kv         KVNamespace binding.
+ * @param key        Cache key.
+ * @param fetchFn    Async function that produces the canonical value on cache miss.
+ * @param ttlSeconds TTL for the stored entry (default 60 s).
+ */
 export async function withKVCache<T>(
   kv: KVNamespace,
   key: string,
   fetchFn: () => Promise<T>,
-  ttlSeconds: number = 60
+  ttlSeconds = 60
 ): Promise<T> {
   const cached = await kv.get(key, 'text');
   if (cached) {
@@ -124,6 +187,10 @@ export async function withKVCache<T>(
   return data;
 }
 
+/**
+ * Deletes all KV cache entries whose keys begin with `keyPrefix`.
+ * Call after a write mutation to invalidate stale cached reads.
+ */
 export async function invalidateKVCache(kv: KVNamespace, keyPrefix: string): Promise<void> {
   const list = await kv.list({ prefix: keyPrefix });
   for (const key of list.keys) {

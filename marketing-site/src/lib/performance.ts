@@ -1,3 +1,12 @@
+/**
+ * @deprecated This file is not imported anywhere in the codebase and is safe to delete.
+ *
+ * Performance concerns are handled at the infrastructure level (Cloudflare CDN,
+ * Next.js Image Optimization, KV caching via lib/middleware.ts).
+ * The in-memory SimpleCache / optimizedFetch below duplicate KV caching and
+ * are not shared across Cloudflare Worker isolates in production.
+ */
+
 // Performance optimization utilities
 
 // Image optimization

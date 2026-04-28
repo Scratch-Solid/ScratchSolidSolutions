@@ -26,23 +26,6 @@ export default function TermsPage() {
     loadContent();
   }, []);
 
-  const renderMarkdown = (text: string) => {
-    return text.split('\n').map((line, index) => {
-      if (line.startsWith('# ')) {
-        return <h1 key={index} className="text-4xl font-bold text-blue-700 mb-8">{line.substring(2)}</h1>;
-      } else if (line.startsWith('## ')) {
-        return <h2 key={index} className="text-2xl font-semibold text-gray-800 mb-4 mt-6">{line.substring(3)}</h2>;
-      } else if (line.startsWith('### ')) {
-        return <h3 key={index} className="text-xl font-semibold text-gray-800 mb-3 mt-4">{line.substring(4)}</h3>;
-      } else if (line.startsWith('**') && line.endsWith('**')) {
-        return <p key={index} className="font-semibold text-gray-800 mb-4">{line.substring(2, line.length - 2)}</p>;
-      } else if (line.trim() === '') {
-        return <br key={index} />;
-      } else {
-        return <p key={index} className="text-gray-700 mb-4 leading-relaxed">{line}</p>;
-      }
-    });
-  };
 
   if (loading) {
     return (

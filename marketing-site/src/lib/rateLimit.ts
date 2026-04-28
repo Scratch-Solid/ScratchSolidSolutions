@@ -1,5 +1,19 @@
-// Rate Limiting Middleware
-// Provides in-memory rate limiting for API endpoints
+/**
+ * @module rateLimit
+ * @description In-memory rate limiting for Next.js API route handlers.
+ *
+ * ⚠️  CLOUDFLARE WORKERS NOTE: This implementation stores counts in a
+ * JavaScript Map in module scope. On Cloudflare Workers (stateless/edge),
+ * each isolate has its own memory — limits are NOT shared across instances.
+ * For production enforcement, migrate to withKVRateLimit() in lib/middleware.ts,
+ * which uses Cloudflare KV for persistent, cross-isolate counting.
+ *
+ * Exports:
+ *   withRateLimit     — Primary helper used in all route handlers.
+ *   rateLimits        — Pre-defined configuration presets.
+ *   rateLimit         — Low-level factory (use withRateLimit instead).
+ *   getClientIdentifier — Extracts a stable client key from request headers.
+ */
 
 interface RateLimitStore {
   count: number;
@@ -8,81 +22,97 @@ interface RateLimitStore {
 
 const rateLimitStore = new Map<string, RateLimitStore>();
 
+/** Options passed to the rate limiter. */
 export interface RateLimitOptions {
-  windowMs: number; // Time window in milliseconds
-  maxRequests: number; // Maximum requests per window
-  skipSuccessfulRequests?: boolean; // Don't count successful requests
+  /** Time window in milliseconds. */
+  windowMs: number;
+  /** Maximum requests allowed per window per client. */
+  maxRequests: number;
 }
 
+/**
+ * Low-level rate limiter factory.
+ * Returns an async function that tracks and enforces request counts per
+ * client identifier within a sliding fixed window.
+ *
+ * Prefer withRateLimit() for use in route handlers.
+ */
 export function rateLimit(options: RateLimitOptions) {
-  const { windowMs, maxRequests, skipSuccessfulRequests = false } = options;
+  const { windowMs, maxRequests } = options;
 
-  return async (request: Request, identifier: string): Promise<{ success: boolean; limit: number; remaining: number; reset: number }> => {
+  return async (
+    _request: Request,
+    identifier: string
+  ): Promise<{ success: boolean; limit: number; remaining: number; reset: number }> => {
     const now = Date.now();
     const record = rateLimitStore.get(identifier);
 
-    // Clean up expired records
     if (record && record.resetTime < now) {
       rateLimitStore.delete(identifier);
     }
 
-    const currentRecord = rateLimitStore.get(identifier) || { count: 0, resetTime: now + windowMs };
-    
-    // Reset if window expired
+    const currentRecord = rateLimitStore.get(identifier) ?? { count: 0, resetTime: now + windowMs };
+
     if (currentRecord.resetTime < now) {
       currentRecord.count = 0;
       currentRecord.resetTime = now + windowMs;
     }
 
-    // Increment counter
     currentRecord.count++;
     rateLimitStore.set(identifier, currentRecord);
 
-    const remaining = Math.max(0, maxRequests - currentRecord.count);
-    const success = currentRecord.count <= maxRequests;
-
     return {
-      success,
+      success: currentRecord.count <= maxRequests,
       limit: maxRequests,
-      remaining,
-      reset: currentRecord.resetTime
+      remaining: Math.max(0, maxRequests - currentRecord.count),
+      reset: currentRecord.resetTime,
     };
   };
 }
 
-// Get client identifier from request
+/**
+ * Extracts a stable client identifier from request headers.
+ * Checks CF-Connecting-IP (Cloudflare), X-Forwarded-For, then X-Real-IP.
+ */
 export function getClientIdentifier(request: Request): string {
-  // Try to get IP from various headers
   const headers = request.headers as any;
-  const ip = headers.get('x-forwarded-for')?.split(',')[0] ||
-              headers.get('x-real-ip') ||
-              headers.get('cf-connecting-ip') ||
-              'unknown';
-  
+  const ip =
+    headers.get('cf-connecting-ip') ||
+    headers.get('x-forwarded-for')?.split(',')[0] ||
+    headers.get('x-real-ip') ||
+    'unknown';
   return `ip:${ip}`;
 }
 
-// Rate limit middleware for Next.js API routes
+/**
+ * Rate-limit middleware for Next.js API route handlers.
+ *
+ * Returns null if the request is within the allowed limit, or an object with
+ * `success: false` that the caller should respond to with HTTP 429.
+ *
+ * @example
+ * const rl = await withRateLimit(request, rateLimits.auth);
+ * if (rl && !rl.success) {
+ *   return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+ * }
+ */
 export async function withRateLimit(
   request: Request,
-  options: RateLimitOptions = { windowMs: 60000, maxRequests: 100 }
+  options: RateLimitOptions = rateLimits.standard
 ): Promise<{ success: boolean; limit: number; remaining: number; reset: number } | null> {
   const identifier = getClientIdentifier(request);
   const limiter = rateLimit(options);
   return await limiter(request, identifier);
 }
 
-// Predefined rate limit configurations
+/** Pre-defined rate limit presets. */
 export const rateLimits = {
-  // Strict limits for authentication endpoints
-  auth: { windowMs: 15 * 60 * 1000, maxRequests: 5 }, // 5 requests per 15 minutes
-  
-  // Standard limits for general API endpoints
-  standard: { windowMs: 60 * 1000, maxRequests: 100 }, // 100 requests per minute
-  
-  // Lenient limits for public endpoints
-  public: { windowMs: 60 * 1000, maxRequests: 200 }, // 200 requests per minute
-  
-  // Strict limits for sensitive operations
-  strict: { windowMs: 60 * 1000, maxRequests: 10 }, // 10 requests per minute
+  /** Authentication endpoints — 5 attempts per 15 minutes. (login, signup, forgot-password) */
+  auth:     { windowMs: 15 * 60 * 1000, maxRequests: 5   },
+  /** General API endpoints — 100 requests per minute. */
+  standard: { windowMs: 60 * 1000,       maxRequests: 100 },
+  /** Public / high-traffic endpoints — 200 requests per minute. */
+  public:   { windowMs: 60 * 1000,       maxRequests: 200 },
+  /** Sensitive operations — 10 requests per minute. (upload, quote, account-delete) */
+  strict:   { windowMs: 60 * 1000,       maxRequests: 10  },
 };

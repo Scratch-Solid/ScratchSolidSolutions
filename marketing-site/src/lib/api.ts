@@ -1,6 +1,12 @@
 /**
- * FastAPI backend base URL. Set NEXT_PUBLIC_API_URL in .env.local for production.
+ * @deprecated This file is a legacy remnant of an earlier FastAPI backend.
+ * It is not imported anywhere in the codebase and is safe to delete.
+ *
+ * All API calls now use Next.js API routes at /api/... directly.
+ * Authentication tokens are stored in localStorage under the key 'authToken'
+ * and read via lib/auth helpers — not sessionStorage or NEXT_PUBLIC_API_TOKEN.
  */
+
 export const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export function apiUrl(path: string): string {
