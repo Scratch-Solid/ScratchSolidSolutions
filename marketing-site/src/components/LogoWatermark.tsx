@@ -15,7 +15,7 @@ export default function LogoWatermark({ size = 'md' }: LogoWatermarkProps) {
         src="/scratchsolid-logo.jpg"
         alt=""
         aria-hidden="true"
-        className={`opacity-[0.07] object-contain ${sizeMap[size]}`}
+        className={`opacity-[0.07] object-contain animate-spin-slow ${sizeMap[size]}`}
       />
     </div>
   );

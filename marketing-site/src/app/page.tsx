@@ -112,7 +112,7 @@ export default function Home() {
               alt="Scratch Solid Logo"
               width={40}
               height={40}
-              className="object-contain"
+              className="object-contain animate-spin-slow"
             />
           </button>
           {/* Dropdown Menu - Glassified overlay */}
