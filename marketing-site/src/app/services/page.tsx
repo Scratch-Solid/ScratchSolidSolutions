@@ -34,6 +34,15 @@ export default function ServicesPage() {
   const [loading, setLoading] = useState(true);
   const [showQuote, setShowQuote] = useState(false);
   const [quoteServiceId, setQuoteServiceId] = useState<number | null>(null);
+  const [flippedCards, setFlippedCards] = useState<Set<number>>(new Set());
+
+  const toggleFlip = (id: number) => {
+    setFlippedCards(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
 
   const searchParams = useSearchParams();
 
@@ -71,6 +80,20 @@ export default function ServicesPage() {
 
   const getServicePricing = (serviceId: number) => pricing.filter(p => p.service_id === serviceId);
 
+  const getPriceLabel = (serviceId: number): string => {
+    const rows = pricing.filter(p => p.service_id === serviceId);
+    if (!rows.length) return '';
+    const row = rows[0];
+    const now = new Date().toISOString();
+    const specialActive = row.special_price !== null &&
+      (!row.special_valid_from || row.special_valid_from <= now) &&
+      (!row.special_valid_until || row.special_valid_until >= now);
+    if (specialActive && row.special_price !== null) {
+      return `R${row.special_price.toFixed(2)} · ${row.special_label || 'Special'} (was R${row.price.toFixed(2)})`;
+    }
+    return `From R${row.price.toFixed(2)}`;
+  };
+
   return (
     <>
       <SiteNav current="services" />
@@ -101,35 +124,77 @@ export default function ServicesPage() {
           {loading ? (
             <div className="text-center text-gray-500 relative z-10">Loading...</div>
           ) : (
-            <div className="space-y-4 sm:space-y-6 relative z-10">
-              {services.filter(s => s.active).map((service) => (
-                <div key={service.id} className="bg-blue-50 rounded-xl p-4 sm:p-6 border-2 border-blue-100 hover:border-blue-300 transition-all">
-                  <div className="flex items-start justify-between gap-3 mb-2">
-                    <div className="flex items-center gap-3">
-                      {service.icon && <span className="text-3xl">{service.icon}</span>}
-                      <h3 className="text-xl sm:text-2xl font-bold text-blue-700">{service.name}</h3>
-                    </div>
-                    <button
-                      onClick={() => openQuote(service.id)}
-                      className="flex-shrink-0 bg-blue-600 text-white text-xs sm:text-sm font-semibold px-3 py-1.5 rounded-full hover:bg-blue-700 transition-colors shadow"
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6 relative z-10">
+              {services.filter(s => s.active).map((service) => {
+                const isFlipped = flippedCards.has(service.id);
+                const priceLabel = getPriceLabel(service.id);
+                return (
+                  <div
+                    key={service.id}
+                    style={{ perspective: '1000px', height: '220px' }}
+                    className="cursor-pointer"
+                    onClick={() => toggleFlip(service.id)}
+                    role="button"
+                    aria-label={`${isFlipped ? 'Flip back' : 'See details for'} ${service.name}`}
+                  >
+                    <div
+                      style={{
+                        transformStyle: 'preserve-3d',
+                        transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+                        transition: 'transform 0.5s ease',
+                        position: 'relative',
+                        width: '100%',
+                        height: '100%',
+                      }}
                     >
-                      Get a Quote
-                    </button>
-                  </div>
-                  <p className="text-gray-700 text-sm sm:text-base mb-3">{service.description}</p>
-                  {getServicePricing(service.id).length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-blue-200">
-                      <p className="text-sm font-semibold text-blue-600 mb-2">Pricing:</p>
-                      {getServicePricing(service.id).map((price) => (
-                        <p key={price.id} className="text-xs text-gray-600">
-                          {price.min_quantity}{price.unit}
-                          {price.max_quantity ? ` – ${price.max_quantity}${price.unit}` : '+'}: R{price.price}
-                        </p>
-                      ))}
+                      {/* ── FRONT ── */}
+                      <div
+                        style={{ backfaceVisibility: 'hidden', position: 'absolute', inset: 0 }}
+                        className="bg-blue-50 rounded-2xl border-2 border-blue-100 p-5 flex flex-col justify-between"
+                      >
+                        <div>
+                          <div className="flex items-center gap-3 mb-2">
+                            {service.icon && <span className="text-3xl">{service.icon}</span>}
+                            <h3 className="text-lg sm:text-xl font-bold text-blue-700 leading-tight">{service.name}</h3>
+                          </div>
+                          {priceLabel && (
+                            <p className="text-sm font-semibold text-green-600 mt-1">{priceLabel}</p>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-gray-400 text-right mt-2">Tap to see details →</p>
+                      </div>
+
+                      {/* ── BACK ── */}
+                      <div
+                        style={{
+                          backfaceVisibility: 'hidden',
+                          transform: 'rotateY(180deg)',
+                          position: 'absolute',
+                          inset: 0,
+                        }}
+                        className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-4 flex flex-col"
+                        onClick={e => e.stopPropagation()}
+                      >
+                        <div className="flex items-center gap-2 mb-2 flex-shrink-0">
+                          {service.icon && <span className="text-xl">{service.icon}</span>}
+                          <h3 className="text-white font-bold text-sm leading-tight">{service.name}</h3>
+                        </div>
+                        <div className="flex-1 overflow-y-auto pr-1 text-blue-100 text-xs leading-relaxed mb-3"
+                          style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.3) transparent' }}
+                        >
+                          {service.description || 'No details available.'}
+                        </div>
+                        <button
+                          onClick={e => { e.stopPropagation(); openQuote(service.id); }}
+                          className="flex-shrink-0 w-full py-2 bg-white text-blue-700 font-bold text-xs rounded-xl hover:bg-blue-50 transition-colors shadow"
+                        >
+                          Get a Quote
+                        </button>
+                      </div>
                     </div>
-                  )}
-                </div>
-              ))}
+                  </div>
+                );
+              })}
             </div>
           )}
 
