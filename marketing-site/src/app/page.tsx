@@ -7,6 +7,7 @@ import AIAssistant from "@/components/AIAssistant";
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [overlayOpen, setOverlayOpen] = useState(false);
 
   useEffect(() => {
     // Check if user is logged in to show dashboard button
@@ -125,17 +126,10 @@ export default function Home() {
       <div className="fixed bottom-6 left-6 z-50">
         <div className="relative" id="overlay-menu">
           <button
-            onClick={() => {
-              const menu = document.getElementById('overlay-menu-dropdown');
-              if (menu) {
-                menu.classList.toggle('opacity-0');
-                menu.classList.toggle('invisible');
-                menu.classList.toggle('visible');
-              }
-            }}
+            onClick={() => setOverlayOpen(o => !o)}
             className="w-14 h-14 bg-white/90 backdrop-blur-md rounded-full shadow-lg border-2 border-blue-200 flex items-center justify-center hover:bg-blue-50 transition-all duration-200 active:scale-95"
             aria-label="Open menu"
-            aria-expanded="false"
+            aria-expanded={overlayOpen}
             aria-controls="overlay-menu-dropdown"
           >
             <img
@@ -147,7 +141,12 @@ export default function Home() {
             />
           </button>
           {/* Dropdown Menu - Glassified overlay */}
-          <div id="overlay-menu-dropdown" className="absolute left-0 mb-3 w-56 bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 opacity-0 invisible transition-all duration-200 bottom-full" role="menu" aria-label="Quick access menu">
+          <div
+            id="overlay-menu-dropdown"
+            className={`absolute left-0 mb-3 w-56 bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 bottom-full transition-all duration-200 ${overlayOpen ? 'opacity-100 visible pointer-events-auto' : 'opacity-0 invisible pointer-events-none'}`}
+            role="menu"
+            aria-label="Quick access menu"
+          >
             <div className="py-3">
               <Link href="/privacy" className="block px-4 py-2.5 hover:bg-blue-50 text-gray-700 font-medium transition-colors" role="menuitem">Privacy Policy</Link>
               <Link href="/terms" className="block px-4 py-2.5 hover:bg-blue-50 text-gray-700 font-medium transition-colors" role="menuitem">Terms of Service</Link>
