@@ -59,11 +59,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Please fill in all required fields (name, email, and password)' }, { status: 400 });
     }
 
-    // Email is now required for all accounts
-    if (!sanitizedEmail) {
-      return NextResponse.json({ error: 'Email is required for all accounts' }, { status: 400 });
-    }
-
     const emailValidation = validateEmail(sanitizedEmail);
     if (!emailValidation.valid) {
       return NextResponse.json({ error: emailValidation.errors.join(', ') }, { status: 400 });
@@ -101,7 +96,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Failed to create business account' }, { status: 500 });
       }
 
-      const token = jwt.sign({ id: (user as any).id, email: (user as any).email, role: (user as any).role }, getJWTSecret(), { expiresIn: '24h' });
+      const token = jwt.sign({ id: (user as any).id, email: (user as any).email, role: (user as any).role }, getJWTSecret(), { expiresIn: '7d' });
       await createSession(db, (user as any).id, token);
       
       return NextResponse.json({ 
@@ -130,7 +125,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unable to create account. Please try again or contact support.' }, { status: 500 });
     }
 
-    const token = jwt.sign({ id: (user as any).id, email: (user as any).email, role: (user as any).role }, getJWTSecret(), { expiresIn: '30d' });
+    const token = jwt.sign({ id: (user as any).id, email: (user as any).email, role: (user as any).role }, getJWTSecret(), { expiresIn: '7d' });
     await createSession(db, (user as any).id, token);
 
     return NextResponse.json({

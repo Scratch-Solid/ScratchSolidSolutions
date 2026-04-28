@@ -34,7 +34,7 @@ export function withTracing(request: NextRequest): string {
   return request.headers.get('X-Request-ID') || request.headers.get('X-Trace-ID') || generateTraceId();
 }
 
-export async function withSecurityHeaders(response: NextResponse, traceId: string): Promise<NextResponse> {
+export function withSecurityHeaders(response: NextResponse, traceId: string): NextResponse {
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-XSS-Protection', '1; mode=block');

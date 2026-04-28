@@ -39,17 +39,18 @@ export default function AdminDashboard() {
           fetch("/api/notifications", { headers }),
         ]);
 
-        if (employeesRes.status === 'fulfilled' && employeesRes.value.ok) {
-          setEmployees(await employeesRes.value.json());
-        }
         if (pendingContractsRes.status === 'fulfilled' && pendingContractsRes.value.ok) {
           setNewJoiners(await pendingContractsRes.value.json());
         }
         if (usersRes.status === 'fulfilled' && usersRes.value.ok) {
           setUsers(await usersRes.value.json());
         }
+        let resolvedBookings: any[] = [];
+        let resolvedEmployees: any[] = [];
+
         if (bookingsRes.status === 'fulfilled' && bookingsRes.value.ok) {
-          setBookings(await bookingsRes.value.json());
+          resolvedBookings = await bookingsRes.value.json();
+          setBookings(resolvedBookings);
         }
         if (contractsRes.status === 'fulfilled' && contractsRes.value.ok) {
           setContracts(await contractsRes.value.json());
@@ -60,11 +61,15 @@ export default function AdminDashboard() {
         if (notificationsRes.status === 'fulfilled' && notificationsRes.value.ok) {
           setNotifications(await notificationsRes.value.json());
         }
+        if (employeesRes.status === 'fulfilled' && employeesRes.value.ok) {
+          resolvedEmployees = await employeesRes.value.json();
+          setEmployees(resolvedEmployees);
+        }
 
         setStats({
-          totalBookings: Array.isArray(bookingsRes) ? bookingsRes.length : 0,
+          totalBookings: resolvedBookings.length,
           totalRevenue: 0,
-          activeCleaners: Array.isArray(employeesRes) ? employeesRes.length : 0,
+          activeCleaners: resolvedEmployees.length,
           pendingWeekendAssignments: 0,
         });
       } catch (err) {

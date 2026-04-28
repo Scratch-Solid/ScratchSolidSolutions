@@ -52,11 +52,12 @@ export default function ClientDashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  // Load cleaner public profile when assigned
+  // Load cleaner public profile when assigned (only if username is available)
   useEffect(() => {
-    if (assignedCleaner && typeof assignedCleaner === 'object' && 'id' in assignedCleaner) {
+    const username = (assignedCleaner as any)?.username;
+    if (assignedCleaner && typeof assignedCleaner === 'object' && username) {
       const token = localStorage.getItem('authToken');
-      fetch(`/api/cleaner-details?username=${(assignedCleaner as any).username || (assignedCleaner as any).id}`, {
+      fetch(`/api/cleaner-details?username=${encodeURIComponent(username)}`, {
         headers: { Authorization: `Bearer ${token}` }
       }).then(res => res.ok ? res.json() : null).then(profile => {
         if (profile) {
@@ -64,7 +65,7 @@ export default function ClientDashboard() {
         }
       });
     }
-  }, [assignedCleaner]);
+  }, [(assignedCleaner as any)?.username]);
 
   const fetchClientData = async () => {
     try {

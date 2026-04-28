@@ -143,6 +143,13 @@ export async function isAccountLocked(db: D1Database, email: string): Promise<bo
   return false;
 }
 
+export async function isAccountLockedByPhone(db: D1Database, phone: string): Promise<boolean> {
+  const user = await getUserByPhone(db, phone);
+  if (!user) return false;
+  if ((user as any).locked_until && new Date((user as any).locked_until) > new Date()) return true;
+  return false;
+}
+
 export async function validateSession(db: D1Database, token: string) {
   const session = await db.prepare(
     `SELECT s.*, u.email, u.role, u.name FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.token = ? AND s.expires_at > datetime('now')`

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
+import { withAuth } from '@/lib/middleware';
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,12 +20,12 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const authResult = await withAuth(request, ['admin']);
+  if (authResult instanceof NextResponse) return authResult;
+  const { db } = authResult;
+
   try {
-    const db = await getDb();
-    if (!db) {
-      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
-    }
-    const body = await request.json();
+    const body = await request.json() as { name?: string; description?: string; icon?: string; display_order?: number; active?: boolean };
     
     const { name, description, icon, display_order, active } = body;
     

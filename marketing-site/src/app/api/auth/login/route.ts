@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, getUserByEmail, createSession, deleteSession, validateLogin, validateLoginByPhone, isAccountLocked, sanitizeEmail, sanitizePhone } from "@/lib/db";
+import { getDb, getUserByEmail, createSession, deleteSession, validateLogin, validateLoginByPhone, isAccountLocked, isAccountLockedByPhone, sanitizeEmail, sanitizePhone } from "@/lib/db";
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { logger } from "@/lib/logger";
 import { getJWTSecret } from "@/lib/env";
-import { validateEmail, validatePassword } from "@/lib/validation";
+import { validateEmail } from "@/lib/validation";
 import { withRateLimit, rateLimits } from "@/lib/rateLimit";
 
 export async function POST(request: NextRequest) {
@@ -37,11 +37,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Please provide email or phone number and password' }, { status: 400 });
     }
 
-    const passwordValidation = validatePassword(password || '');
-    if (!passwordValidation.valid) {
-      return NextResponse.json({ error: passwordValidation.errors.join(', ') }, { status: 400 });
-    }
-
     let user;
 
     if (email) {
@@ -56,6 +51,9 @@ export async function POST(request: NextRequest) {
       user = await validateLogin(db, sanitizedEmail, password);
     } else if (phone) {
       const sanitizedPhone = sanitizePhone(phone);
+      if (await isAccountLockedByPhone(db, sanitizedPhone)) {
+        return NextResponse.json({ error: 'Account temporarily locked due to too many failed attempts. Please try again in 15 minutes.' }, { status: 423 });
+      }
       user = await validateLoginByPhone(db, sanitizedPhone, password);
     }
 
