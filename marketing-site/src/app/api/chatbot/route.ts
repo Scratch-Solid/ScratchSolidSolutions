@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withAuth, withTracing, withSecurityHeaders } from "@/lib/middleware";
+import { withTracing, withSecurityHeaders } from "@/lib/middleware";
 import { withRateLimit, rateLimits } from "@/lib/rateLimit";
 
 // Expanded in-memory knowledge base for practical Q&A
@@ -36,8 +36,6 @@ function searchContent(query: string) {
 
 export async function POST(req: NextRequest) {
   const traceId = withTracing(req);
-  const authResult = await withAuth(req);
-  if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
 
   // Rate limiting check
   const rateLimitResult = await withRateLimit(req, rateLimits.standard);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { getAIResponse } from "@/lib/aiResponses";
+import LogoWatermark from '@/components/LogoWatermark';
 
 export default function AIAssistant() {
   const [isOpen, setIsOpen] = useState(false);
@@ -20,17 +20,19 @@ export default function AIAssistant() {
     setIsLoading(true);
 
     try {
-      // Get smart AI response based on user input
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const aiResponse = { 
-        role: "assistant", 
-        content: getAIResponse(input)
+      const res = await fetch('/api/chatbot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: input }),
+      });
+      const data = await res.json() as { answer?: string; error?: string };
+      const aiResponse: { role: string; content: string } = {
+        role: 'assistant',
+        content: data.answer || "Sorry, I couldn't find an answer. Please contact us on WhatsApp.",
       };
-      
       setMessages(prev => [...prev, aiResponse]);
     } catch (error) {
-      console.error("AI Error:", error);
+      console.error('AI Error:', error);
     } finally {
       setIsLoading(false);
     }
@@ -51,7 +53,8 @@ export default function AIAssistant() {
 
       {/* AI Chat Window */}
       {isOpen && (
-        <div className="absolute bottom-16 right-0 w-80 h-96 bg-white rounded-2xl shadow-2xl border-2 border-purple-200 flex flex-col">
+        <div className="absolute bottom-16 right-0 w-80 h-96 bg-white rounded-2xl shadow-2xl border-2 border-purple-200 flex flex-col relative overflow-hidden">
+          <LogoWatermark size="md" />
           {/* Header */}
           <div className="bg-purple-600 text-white p-4 rounded-t-2xl">
             <div className="flex items-center justify-between">

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import LogoWatermark from '@/components/LogoWatermark';
 
 export default function BookingOptionsPage() {
   const [userType, setUserType] = useState<"individual" | "business">("individual");
@@ -22,7 +23,8 @@ export default function BookingOptionsPage() {
           Select Booking Type
         </h1>
 
-        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border-2 border-white/20 p-8">
+        <div className="relative bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border-2 border-white/20 p-8 overflow-hidden">
+          <LogoWatermark size="md" />
           <div className="space-y-6">
             <Link
               href="/booking"

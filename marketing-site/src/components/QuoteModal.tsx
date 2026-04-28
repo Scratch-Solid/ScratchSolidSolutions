@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
+import LogoWatermark from '@/components/LogoWatermark';
 
 interface Service {
   id: number;
@@ -290,6 +291,7 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
       <div className="print:hidden fixed inset-0 z-50 flex items-center justify-center p-4">
         <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
         <div className="relative w-full max-w-md bg-white/95 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/30 overflow-hidden">
+          <LogoWatermark size="lg" />
           {/* Header */}
           <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 flex items-center justify-between">
             <div className="flex items-center gap-3">

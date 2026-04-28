@@ -1,4 +1,5 @@
 import React from 'react';
+import LogoWatermark from '@/components/LogoWatermark';
 
 interface GlassOverlayProps {
   children: React.ReactNode;
@@ -16,7 +17,8 @@ export function GlassOverlay({ children, onClose, className = '' }: GlassOverlay
       />
       
       {/* Glassified content */}
-      <div className={`relative bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 ${className}`}>
+      <div className={`relative bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 overflow-hidden ${className}`}>
+        <LogoWatermark size="md" />
         {children}
       </div>
     </div>

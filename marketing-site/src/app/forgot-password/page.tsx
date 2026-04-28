@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import LogoWatermark from '@/components/LogoWatermark';
 
 export default function ForgotPasswordPage() {
   const [userType, setUserType] = useState<"individual" | "business">("individual");
@@ -28,10 +29,10 @@ export default function ForgotPasswordPage() {
         }),
       });
 
-      const data = await response.json();
+      const data = await response.json() as { message?: string; error?: string };
 
       if (response.ok) {
-        setMessage(data.message);
+        setMessage(data.message || 'Reset link sent.');
       } else {
         setError(data.error || "Failed to send reset code");
       }
@@ -52,7 +53,8 @@ export default function ForgotPasswordPage() {
           Recover your account password
         </p>
 
-        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 p-6 sm:p-8">
+        <div className="relative bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 p-6 sm:p-8 overflow-hidden">
+          <LogoWatermark size="md" />
           {error && (
             <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-red-600 text-sm">{error}</p>

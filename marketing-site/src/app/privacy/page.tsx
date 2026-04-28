@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import LogoWatermark from '@/components/LogoWatermark';
 
 export default function PrivacyPage() {
   const [content, setContent] = useState<string>("");
@@ -12,7 +13,7 @@ export default function PrivacyPage() {
       try {
         const res = await fetch("/api/content?type=privacy");
         if (res.ok) {
-          const page = await res.json();
+          const page = await res.json() as { content?: string };
           setContent(page.content || "");
         }
       } catch (error) {
@@ -56,17 +57,8 @@ export default function PrivacyPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white py-8 sm:py-16 px-2 sm:px-4 font-sans">
-      <div className="max-w-2xl mx-auto bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20 p-6 sm:p-10 relative">
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0">
-          <img
-            src="/scratchsolid-logo.jpg"
-            alt="Scratch Solid Logo Background"
-            width={300}
-            height={300}
-            className="opacity-10 w-72 h-72 sm:w-96 sm:h-96 object-contain"
-            aria-hidden="true"
-          />
-        </div>
+      <div className="max-w-2xl mx-auto bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20 p-6 sm:p-10 relative overflow-hidden">
+        <LogoWatermark size="lg" />
         <h1 className="text-3xl sm:text-4xl font-extrabold text-blue-700 mb-4 sm:mb-6 text-center drop-shadow-lg">Privacy Policy</h1>
         {content ? (
           <div className="text-base sm:text-lg text-zinc-800 mb-6 sm:mb-8 relative z-10 prose prose-blue max-w-none">
