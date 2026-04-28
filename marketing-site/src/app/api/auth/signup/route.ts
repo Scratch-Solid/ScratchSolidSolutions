@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
         business_name: businessName,
         business_registration: registration,
         password_hash: await bcrypt.hash(password, 10),
-        role: role || 'business'
+        role: 'business'
       });
 
       if (!user) {
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
       phone: sanitizedPhone,
       address: sanitizedAddress,
       password_hash: await bcrypt.hash(password, 10),
-      role: role || 'client'
+      role: 'client'
     });
 
     if (!user) {
