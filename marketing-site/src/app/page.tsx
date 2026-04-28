@@ -37,32 +37,52 @@ export default function Home() {
           </Link>
         </div>
       </nav>
-      <div className="max-w-xl sm:max-w-2xl w-full bg-white/90 backdrop-blur-md rounded-2xl sm:rounded-3xl shadow-xl sm:shadow-2xl border-2 border-white/20 p-4 sm:p-6 lg:p-10 relative mt-16 sm:mt-20 flex items-center justify-center">
+      <div className="max-w-2xl sm:max-w-3xl lg:max-w-4xl w-full bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl border border-white/30 p-8 sm:p-12 lg:p-16 relative mt-20 sm:mt-24 flex flex-col items-center text-center overflow-hidden">
+        {/* Background watermark */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0">
           <Image
             src="/scratchsolid-logo.jpg"
-            alt="Scratch Solid Logo Background"
-            width={300}
-            height={300}
-            className="opacity-10 w-72 h-72 sm:w-96 sm:h-96 object-contain"
+            alt=""
+            width={400}
+            height={400}
+            className="opacity-[0.07] w-72 h-72 sm:w-96 sm:h-96 lg:w-[28rem] lg:h-[28rem] object-contain"
             aria-hidden="true"
           />
         </div>
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-extrabold text-center text-blue-700 mb-2 sm:mb-4 lg:mb-6 tracking-tight">
+
+        {/* Title — top */}
+        <h1 className="relative z-10 text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-extrabold text-blue-700 mb-3 sm:mb-4 tracking-tight leading-tight">
           Scratch Solid Solutions
         </h1>
-        <div className="text-center text-black mb-4 sm:mb-6 lg:mb-8 text-xs sm:text-sm lg:text-base xl:text-lg">
-          <div className="mb-2 sm:mb-4">Professional, reliable, and affordable cleaning services for homes and businesses.</div>
-          <div className="text-black text-xs sm:text-sm">Experienced cleaners | Quality guaranteed | Fully insured</div>
+
+        {/* Tagline */}
+        <p className="relative z-10 text-blue-500 font-semibold text-sm sm:text-base lg:text-lg mb-6 sm:mb-8 tracking-widest uppercase">
+          Scratch-Free. Solidly Clean.
+        </p>
+
+        {/* Divider */}
+        <div className="relative z-10 w-16 h-1 bg-blue-200 rounded-full mb-6 sm:mb-8" />
+
+        {/* Description */}
+        <div className="relative z-10 mb-8 sm:mb-10 lg:mb-12 space-y-3 max-w-xl">
+          <p className="text-gray-700 text-base sm:text-lg lg:text-xl leading-relaxed">
+            Professional, reliable, and affordable cleaning services for homes and businesses.
+          </p>
+          <p className="text-gray-500 text-sm sm:text-base">
+            Experienced cleaners &nbsp;·&nbsp; Quality guaranteed &nbsp;·&nbsp; Fully insured
+          </p>
         </div>
-        <div className="flex justify-center mb-4 sm:mb-6 lg:mb-8">
+
+        {/* Book a Cleaner — bottom */}
+        <div className="relative z-10">
           <button
             onClick={handleBookCleaner}
-            className="rounded-full bg-blue-600 px-12 sm:px-16 lg:px-20 xl:px-24 py-3 sm:py-4 lg:py-5 xl:py-6 text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-extrabold text-white shadow-2xl hover:bg-blue-700 transition-all transform hover:scale-105 active:scale-95"
+            className="rounded-full bg-blue-600 px-10 sm:px-14 lg:px-20 py-4 sm:py-5 text-lg sm:text-xl lg:text-2xl font-bold text-white shadow-xl hover:bg-blue-700 active:scale-95 transition-all duration-200 transform hover:scale-105"
             aria-label="Book a cleaner now"
           >
             Book a Cleaner
           </button>
+          <p className="mt-3 text-xs sm:text-sm text-gray-400">No account needed to get a quote</p>
         </div>
       </div>
 
