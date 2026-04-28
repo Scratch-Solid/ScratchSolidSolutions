@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import QuoteModal from "@/components/QuoteModal";
+import SiteNav from "@/components/SiteNav";
 
 interface Service {
   id: number;
@@ -19,6 +20,11 @@ interface ServicePricing {
   max_quantity: number | null;
   price: number;
   unit: string;
+  client_type: string;
+  special_price: number | null;
+  special_label: string;
+  special_valid_from: string | null;
+  special_valid_until: string | null;
   service_name?: string;
 }
 
@@ -67,6 +73,7 @@ export default function ServicesPage() {
 
   return (
     <>
+      <SiteNav current="services" />
       <QuoteModal
         isOpen={showQuote}
         onClose={() => setShowQuote(false)}
@@ -75,7 +82,7 @@ export default function ServicesPage() {
         initialServiceId={quoteServiceId}
       />
 
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-white py-8 sm:py-16 px-2 sm:px-4 font-sans animate-fade-in">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-white py-8 sm:py-16 px-2 sm:px-4 font-sans animate-fade-in pt-20">
         <div className="max-w-2xl w-full bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20 p-6 sm:p-10 relative">
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0">
             <img
@@ -126,19 +133,13 @@ export default function ServicesPage() {
             </div>
           )}
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center relative z-10 mt-6">
+          <div className="flex justify-center relative z-10 mt-6">
             <button
               onClick={() => openQuote()}
               className="rounded-full bg-blue-600 px-6 sm:px-8 py-2.5 sm:py-3 text-base sm:text-lg font-semibold text-white shadow-lg hover:bg-blue-700 transition-colors"
             >
               Request a Quote
             </button>
-            <a
-              href="/"
-              className="rounded-full bg-zinc-200 px-6 sm:px-8 py-2.5 sm:py-3 text-base sm:text-lg font-semibold text-blue-700 shadow hover:bg-zinc-300 transition-colors text-center"
-            >
-              Back to Home
-            </a>
           </div>
         </div>
       </div>

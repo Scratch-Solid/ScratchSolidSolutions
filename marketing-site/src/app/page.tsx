@@ -149,10 +149,9 @@ export default function Home() {
           {/* Dropdown Menu - Glassified overlay */}
           <div id="overlay-menu-dropdown" className="absolute left-0 mb-3 w-56 bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 opacity-0 invisible transition-all duration-200 bottom-full" role="menu" aria-label="Quick access menu">
             <div className="py-3">
-              <Link href="/client-signup" className="block px-4 py-2.5 hover:bg-blue-50 text-gray-700 font-medium transition-colors" role="menuitem">Client Signup</Link>
-              <Link href="/business-signup" className="block px-4 py-2.5 hover:bg-blue-50 text-gray-700 font-medium transition-colors" role="menuitem">Business Signup</Link>
-              <Link href="/login" className="block px-4 py-2.5 hover:bg-blue-50 text-gray-700 font-medium transition-colors" role="menuitem">Login</Link>
-              <Link href="/book" className="block px-4 py-2.5 hover:bg-blue-50 text-gray-700 font-medium transition-colors" role="menuitem">Book Service</Link>
+              <Link href="/privacy" className="block px-4 py-2.5 hover:bg-blue-50 text-gray-700 font-medium transition-colors" role="menuitem">Privacy Policy</Link>
+              <Link href="/terms" className="block px-4 py-2.5 hover:bg-blue-50 text-gray-700 font-medium transition-colors" role="menuitem">Terms of Service</Link>
+              <Link href="/contact" className="block px-4 py-2.5 hover:bg-blue-50 text-gray-700 font-medium transition-colors" role="menuitem">Contact Us</Link>
             </div>
           </div>
         </div>

@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
+import SiteNav from "@/components/SiteNav";
 
 interface AboutContent {
   section: string;
@@ -28,6 +28,15 @@ export default function AboutPage() {
   const [leaders, setLeaders] = useState<Leader[]>([]);
   const [statistics, setStatistics] = useState<Statistics | null>(null);
   const [loading, setLoading] = useState(true);
+  const [flippedCards, setFlippedCards] = useState<Set<number>>(new Set());
+
+  const toggleFlip = (index: number) => {
+    setFlippedCards(prev => {
+      const next = new Set(prev);
+      next.has(index) ? next.delete(index) : next.add(index);
+      return next;
+    });
+  };
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -57,7 +66,9 @@ export default function AboutPage() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-white py-8 sm:py-16 px-2 sm:px-4 font-sans animate-fade-in">
+    <>
+    <SiteNav current="about" />
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-white py-8 sm:py-16 px-2 sm:px-4 font-sans animate-fade-in pt-20">
       <div className="max-w-2xl w-full bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20 p-6 sm:p-10 relative">
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0">
           <img
@@ -102,22 +113,66 @@ export default function AboutPage() {
             
             {leaders.length > 0 && (
               <div className="my-6 sm:my-8">
-                <h2 className="text-xl sm:text-2xl font-bold text-blue-700 mb-4 text-center">Our Leadership Team</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {leaders.map((leader) => (
-                    <div key={leader.name} className="bg-blue-50 rounded-xl p-4 text-center">
-                      {leader.image_url && (
-                        <img
-                          src={leader.image_url}
-                          alt={leader.name}
-                          className="w-24 h-24 rounded-full mx-auto mb-3 object-cover"
-                        />
-                      )}
-                      <h3 className="font-bold text-blue-700">{leader.name}</h3>
-                      <p className="text-sm text-gray-600">{leader.title}</p>
-                      {leader.description && (
-                        <p className="text-xs text-gray-500 mt-2">{leader.description}</p>
-                      )}
+                <h2 className="text-xl sm:text-2xl font-bold text-blue-700 mb-1 text-center">Our Leadership Team</h2>
+                <p className="text-xs text-gray-400 text-center mb-4">Tap a card to learn more</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {leaders.map((leader, index) => (
+                    <div
+                      key={leader.name + index}
+                      className="cursor-pointer"
+                      style={{ perspective: '1000px', height: '220px' }}
+                      onClick={() => toggleFlip(index)}
+                      role="button"
+                      aria-label={`Flip card for ${leader.name}`}
+                    >
+                      <div
+                        style={{
+                          transformStyle: 'preserve-3d',
+                          transform: flippedCards.has(index) ? 'rotateY(180deg)' : 'rotateY(0deg)',
+                          transition: 'transform 0.55s ease',
+                          position: 'relative',
+                          width: '100%',
+                          height: '100%',
+                        }}
+                      >
+                        {/* Front */}
+                        <div
+                          style={{ backfaceVisibility: 'hidden', position: 'absolute', inset: 0 }}
+                          className="bg-blue-50 rounded-xl p-4 text-center flex flex-col items-center justify-center border-2 border-blue-100"
+                        >
+                          {leader.image_url ? (
+                            <img
+                              src={leader.image_url}
+                              alt={leader.name}
+                              className="w-20 h-20 rounded-full mx-auto mb-3 object-cover border-2 border-blue-200 shadow"
+                            />
+                          ) : (
+                            <div className="w-20 h-20 rounded-full mx-auto mb-3 bg-blue-200 flex items-center justify-center text-3xl text-blue-600 font-bold">
+                              {leader.name.charAt(0)}
+                            </div>
+                          )}
+                          <h3 className="font-bold text-blue-700 text-base">{leader.name}</h3>
+                          <p className="text-sm text-gray-500 mt-1">{leader.title}</p>
+                          <p className="text-[10px] text-gray-400 mt-3">Tap to see bio</p>
+                        </div>
+                        {/* Back */}
+                        <div
+                          style={{
+                            backfaceVisibility: 'hidden',
+                            transform: 'rotateY(180deg)',
+                            position: 'absolute',
+                            inset: 0,
+                          }}
+                          className="bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl p-5 text-center flex flex-col items-center justify-center"
+                        >
+                          <h3 className="font-bold text-white text-base mb-1">{leader.name}</h3>
+                          <p className="text-blue-200 text-xs mb-3">{leader.title}</p>
+                          <p className="text-white text-xs leading-relaxed line-clamp-6">
+                            {leader.description || 'No bio available.'}
+                          </p>
+                          <p className="text-blue-300 text-[10px] mt-3">Tap to flip back</p>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -150,10 +205,8 @@ export default function AboutPage() {
           </div>
         )}
         
-        <div className="flex justify-center mt-6 sm:mt-8 relative z-10">
-          <Link href="/" className="rounded-full bg-blue-600 px-6 sm:px-8 py-2.5 sm:py-3 text-base sm:text-lg font-semibold text-white shadow-lg hover:bg-blue-700 transition-colors">Back to Home</Link>
-        </div>
       </div>
     </div>
+    </>
   );
 }

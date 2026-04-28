@@ -1,6 +1,6 @@
 "use client";
-import Link from "next/link";
 import { useEffect, useState } from "react";
+import SiteNav from "@/components/SiteNav";
 
 export default function GalleryClient() {
   const [reviews, setReviews] = useState<any[]>([]);
@@ -9,10 +9,13 @@ export default function GalleryClient() {
   const [direction, setDirection] = useState<'left' | 'right'>('left');
 
   useEffect(() => {
-    fetch('/api/reviews?status=approved&limit=10').then(res => res.ok ? res.json() : []).then((reviewsData) => {
-      setReviews(reviewsData.results || []);
-      setLoading(false);
-    });
+    fetch('/api/reviews?status=approved&limit=10')
+      .then(res => res.ok ? res.json() : Promise.resolve({ results: [] }))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .then((reviewsData: any) => {
+        setReviews(reviewsData?.results || []);
+        setLoading(false);
+      });
   }, []);
 
   useEffect(() => {
@@ -34,8 +37,9 @@ export default function GalleryClient() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-white">
+      <SiteNav current="gallery" />
       {/* Header */}
-      <div className="text-center pt-16 pb-12 px-4">
+      <div className="text-center pt-24 pb-12 px-4">
         <h1 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-4">
           Our Gallery
         </h1>
