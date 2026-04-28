@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['client', 'business']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
-  const { db } = authResult;
+  const { db, user } = authResult;
 
   // Rate limiting check
   const rateLimitResult = await withRateLimit(request, rateLimits.strict);
@@ -74,9 +74,9 @@ export async function POST(request: NextRequest) {
       booking_id?: number;
       payment_method?: string;
       amount?: number;
-      user_id?: number;
     };
-    const { booking_id, payment_method, amount, user_id } = body;
+    const { booking_id, payment_method, amount } = body;
+    const user_id: number = (user as any).id;
 
     // Validate required fields
     const bookingIdValidation = validateNumber(booking_id, 'booking_id');
@@ -94,12 +94,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: amountValidation.errors.join(', ') }, { status: 400 });
     }
 
-    const userIdValidation = validateNumber(user_id, 'user_id');
-    if (!userIdValidation.valid) {
-      return NextResponse.json({ error: userIdValidation.errors.join(', ') }, { status: 400 });
-    }
-
-    if (!booking_id || !payment_method || !amount || !user_id) {
+    if (!booking_id || !payment_method || !amount) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 

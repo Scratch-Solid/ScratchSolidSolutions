@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '../../../../../../lib/db';
+import { withAuth } from '@/lib/middleware';
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
-  const db = await getDb();
-  if (!db) return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+  const authResult = await withAuth(request, ['admin']);
+  if (authResult instanceof NextResponse) return authResult;
+  const { db } = authResult;
 
   try {
-    const body = await request.json();
+    const body = await request.json() as { permission_id?: number };
     const { permission_id } = body;
     const roleId = params.id;
 
@@ -26,8 +27,9 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 }
 
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
-  const db = await getDb();
-  if (!db) return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+  const authResult = await withAuth(request, ['admin']);
+  if (authResult instanceof NextResponse) return authResult;
+  const { db } = authResult;
 
   try {
     const { searchParams } = new URL(request.url);

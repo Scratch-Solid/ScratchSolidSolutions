@@ -163,11 +163,18 @@ export default function AuthContent() {
           <form onSubmit={handleAuthSubmit} className="space-y-4">
             {isLogin ? (
               <>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Cellphone Number *</label>
-                  <input type="tel" name="phone" value={formData.phone} onChange={handleInputChange} required pattern="[0-9]{10}" placeholder="0730000000" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                  <p className="text-xs text-gray-500 mt-1">Format: 10 digits, e.g. 0730000000</p>
-                </div>
+                {tab === "individual" ? (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Cellphone Number *</label>
+                    <input type="tel" name="phone" value={formData.phone} onChange={handleInputChange} required pattern="[0-9]{10}" placeholder="0730000000" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    <p className="text-xs text-gray-500 mt-1">Format: 10 digits, e.g. 0730000000</p>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
+                    <input type="email" name="email" value={formData.email} onChange={handleInputChange} required placeholder="business@example.com" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
+                )}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Password *</label>
                   <input type="password" name="password" value={formData.password} onChange={handleInputChange} required className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter your password" />
@@ -235,6 +242,11 @@ export default function AuthContent() {
               </>
             )}
 
+            {isLogin && (
+              <div className="text-right -mt-2">
+                <Link href="/forgot-password" className="text-sm text-blue-600 hover:underline">Forgot Password?</Link>
+              </div>
+            )}
             <button type="submit" disabled={loading} className="w-full rounded-full bg-blue-600 px-8 py-3 text-lg font-semibold text-white shadow-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
               {loading ? "Processing..." : isLogin ? "Sign In" : "Create Account"}
             </button>

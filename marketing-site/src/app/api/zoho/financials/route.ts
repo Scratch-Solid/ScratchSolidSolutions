@@ -50,6 +50,7 @@ export async function GET(request: NextRequest) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['client', 'business', 'admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
+  const { user } = authResult;
 
   // Rate limiting check
   const rateLimitResult = await withRateLimit(request, rateLimits.standard);
@@ -71,7 +72,10 @@ export async function GET(request: NextRequest) {
   }
 
   const { searchParams } = new URL(request.url);
-  const customerId = searchParams.get('customer_id');
+  const sessionRole: string = (user as any).role;
+  const sessionCustomerId = `CUST-${(user as any).id}`;
+  const requestedCustomerId = searchParams.get('customer_id');
+  const customerId = sessionRole === 'admin' ? (requestedCustomerId || sessionCustomerId) : sessionCustomerId;
 
   if (!ZOHO_REFRESH_TOKEN || !ZOHO_ORG_ID) {
     const response = NextResponse.json({ error: 'Zoho not configured' }, { status: 503 });

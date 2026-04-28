@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '../../../../../../lib/db';
+import { withAuth } from '@/lib/middleware';
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
-  const db = await getDb();
-  if (!db) return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+  const authResult = await withAuth(request, ['admin']);
+  if (authResult instanceof NextResponse) return authResult;
+  const { db } = authResult;
 
   try {
-    const body = await request.json();
+    const body = await request.json() as { weekend_rate_multiplier?: number; status?: string; end_date?: string };
     const contractId = params.id;
 
     // Check if contract is immutable

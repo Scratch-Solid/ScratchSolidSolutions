@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import bcrypt from 'bcryptjs';
 import { getDb } from '@/lib/db';
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { logger } from '@/lib/logger';
@@ -48,11 +49,8 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'User not found' }, { status: 404 });
       }
 
-      // Simple password verification (in production, use bcrypt compare)
-      // This is a simplified check - in production use proper password comparison
-      const crypto = require('crypto');
-      const hash = crypto.createHash('sha256').update(password).digest('hex');
-      if (hash !== (userRecord as any).password_hash) {
+      const isValid = await bcrypt.compare(password, (userRecord as any).password_hash);
+      if (!isValid) {
         return NextResponse.json({ error: 'Invalid password' }, { status: 401 });
       }
     }

@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['business', 'admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
-  const { db } = authResult;
+  const { db, user } = authResult;
 
   try {
     const body = await request.json() as {
@@ -41,7 +41,9 @@ export async function POST(request: NextRequest) {
       requested_date?: string;
       special_instructions?: string;
     };
-    const { business_id, requested_date, special_instructions } = body;
+    const { requested_date, special_instructions } = body;
+    const sessionRole: string = (user as any).role;
+    const business_id: number = sessionRole === 'admin' && body.business_id ? body.business_id : (user as any).id;
 
     // Validate required fields
     const businessIdValidation = validateNumber(business_id, 'business_id');

@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '../../../../lib/db';
+import { withAuth } from '@/lib/middleware';
 
 export async function GET(request: NextRequest) {
-  const db = await getDb();
-  if (!db) return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+  const authResult = await withAuth(request, ['admin']);
+  if (authResult instanceof NextResponse) return authResult;
+  const { db } = authResult;
 
   try {
     const roles = await db.prepare(`
@@ -23,11 +24,12 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const db = await getDb();
-  if (!db) return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+  const authResult = await withAuth(request, ['admin']);
+  if (authResult instanceof NextResponse) return authResult;
+  const { db } = authResult;
 
   try {
-    const body = await request.json();
+    const body = await request.json() as { name?: string; description?: string };
     const { name, description } = body;
 
     if (!name) {

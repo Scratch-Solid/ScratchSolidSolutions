@@ -47,9 +47,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const traceId = withTracing(request);
-  const authResult = await withAuth(request, ['admin', 'business']);
+  const authResult = await withAuth(request, ['admin', 'business', 'client']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
-  const { db } = authResult;
+  const { db, user } = authResult;
 
   // Rate limiting check
   const rateLimitResult = await withRateLimit(request, rateLimits.standard);
@@ -72,6 +72,12 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
   try {
     const { id } = await params;
+    const sessionRole: string = (user as any).role;
+    const sessionId: number = (user as any).id;
+    if (sessionRole !== 'admin' && sessionId !== parseInt(id)) {
+      const response = NextResponse.json({ error: 'Forbidden: you can only delete your own account' }, { status: 403 });
+      return withSecurityHeaders(response, traceId);
+    }
     await db.prepare('UPDATE users SET deleted = 1 WHERE id = ?').bind(id).run();
     const response = NextResponse.json({ success: true });
     return withSecurityHeaders(response, traceId);

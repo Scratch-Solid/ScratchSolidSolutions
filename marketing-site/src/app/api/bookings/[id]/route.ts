@@ -9,7 +9,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   const traceId = withTracing(request);
   const authResult = await withAuth(request);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
-  const { db } = authResult;
+  const { db, user } = authResult;
 
   // Rate limiting check
   const rateLimitResult = await withRateLimit(request, rateLimits.standard);
@@ -34,6 +34,12 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     const booking = await getBookingById(db, parseInt(params.id));
     if (!booking) {
       const response = NextResponse.json({ error: 'Booking not found' }, { status: 404 });
+      return withSecurityHeaders(response, traceId);
+    }
+    const sessionRole: string = (user as any).role;
+    const sessionId: number = (user as any).id;
+    if (sessionRole !== 'admin' && (booking as any).user_id !== sessionId && (booking as any).client_id !== sessionId) {
+      const response = NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       return withSecurityHeaders(response, traceId);
     }
     const response = NextResponse.json(booking);

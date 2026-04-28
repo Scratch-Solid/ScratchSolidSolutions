@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
+import { withAuth } from '@/lib/middleware';
 
 export async function GET(request: NextRequest) {
   try {
@@ -31,11 +32,11 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const authResult = await withAuth(request, ['admin']);
+  if (authResult instanceof NextResponse) return authResult;
+  const { db } = authResult;
+
   try {
-    const db = await getDb();
-    if (!db) {
-      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
-    }
     const body = await request.json() as { section?: string; title?: string; content?: string; display_order?: number; active?: boolean };
     
     const { section, title, content, display_order, active } = body;
@@ -65,11 +66,11 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+  const authResult = await withAuth(request, ['admin']);
+  if (authResult instanceof NextResponse) return authResult;
+  const { db } = authResult;
+
   try {
-    const db = await getDb();
-    if (!db) {
-      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
-    }
     const body = await request.json() as { id?: number; title?: string; content?: string; display_order?: number; active?: boolean };
     
     const { id, title, content, display_order, active } = body;
@@ -104,12 +105,11 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const authResult = await withAuth(request, ['admin']);
+  if (authResult instanceof NextResponse) return authResult;
+  const { db } = authResult;
+
   try {
-    const db = await getDb();
-    if (!db) {
-      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
-    }
-    
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     

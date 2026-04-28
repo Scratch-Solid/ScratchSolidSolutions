@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { withAuth } from '@/lib/middleware';
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
-  const db = await getDb();
-  if (!db) return NextResponse.json({ error: 'Database unavailable' }, { status: 500 });
+  const authResult = await withAuth(request, ['admin']);
+  if (authResult instanceof NextResponse) return authResult;
+  const { db } = authResult;
 
   try {
     const id = params.id;

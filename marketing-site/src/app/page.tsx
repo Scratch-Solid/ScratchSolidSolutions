@@ -2,18 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import AIAssistant from "@/components/AIAssistant";
 
 export default function Home() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [overlayOpen, setOverlayOpen] = useState(false);
-
-  useEffect(() => {
-    // Check if user is logged in to show dashboard button
-    const token = localStorage.getItem('authToken');
-    setIsLoggedIn(!!token);
-  }, []);
 
   const handleBookCleaner = () => {
     const token = localStorage.getItem('authToken');
@@ -26,34 +19,6 @@ export default function Home() {
     }
   };
 
-  const handleDashboard = () => {
-    const userRole = localStorage.getItem('userRole');
-    if (userRole === 'business') {
-      window.location.href = '/business-dashboard';
-    } else {
-      window.location.href = '/client-dashboard';
-    }
-  };
-
-  const handleLogout = async () => {
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      try {
-        await fetch('/api/auth/logout', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-      } catch (error) {
-        console.error('Logout error:', error);
-      }
-    }
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('userId');
-    window.location.reload();
-  };
 
 
   return (
@@ -70,16 +35,6 @@ export default function Home() {
           <Link href="/gallery" className="text-gray-700 hover:text-blue-600 active:text-blue-600 font-semibold text-sm sm:text-base lg:text-lg transition-colors" aria-label="Navigate to Gallery page">
             Gallery
           </Link>
-          {isLoggedIn && (
-            <button onClick={handleDashboard} className="text-blue-600 hover:text-blue-700 active:text-blue-700 font-semibold text-sm sm:text-base lg:text-lg transition-colors" aria-label="Go to your dashboard">
-              My Dashboard
-            </button>
-          )}
-          {isLoggedIn && (
-            <button onClick={handleLogout} className="text-red-600 hover:text-red-700 active:text-red-700 font-semibold text-sm sm:text-base lg:text-lg transition-colors" aria-label="Logout from your account">
-              Logout
-            </button>
-          )}
         </div>
       </nav>
       <div className="max-w-xl sm:max-w-2xl w-full bg-white/90 backdrop-blur-md rounded-2xl sm:rounded-3xl shadow-xl sm:shadow-2xl border-2 border-white/20 p-4 sm:p-6 lg:p-10 relative mt-16 sm:mt-20 flex items-center justify-center">

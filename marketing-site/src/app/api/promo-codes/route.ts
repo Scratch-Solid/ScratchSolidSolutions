@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
+import { withAuth } from '@/lib/middleware';
 
 // Public GET: validate a single code OR list all (admin)
 export async function GET(request: NextRequest) {
@@ -44,13 +45,12 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Admin: list all promo codes (requires Bearer token)
-    const authHeader = request.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // Admin: list all promo codes (requires admin session)
+    const authResult = await withAuth(request, ['admin']);
+    if (authResult instanceof NextResponse) return authResult;
+    const { db: adminDb } = authResult;
 
-    const promos = await db.prepare(
+    const promos = await adminDb.prepare(
       `SELECT * FROM promo_codes ORDER BY created_at DESC`
     ).all();
 
@@ -63,14 +63,11 @@ export async function GET(request: NextRequest) {
 
 // Admin POST: create a new promo code
 export async function POST(request: NextRequest) {
-  try {
-    const db = await getDb();
-    if (!db) return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+  const authResult = await withAuth(request, ['admin']);
+  if (authResult instanceof NextResponse) return authResult;
+  const { db } = authResult;
 
-    const authHeader = request.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+  try {
 
     const body = await request.json() as {
       code?: string;
@@ -120,14 +117,11 @@ export async function POST(request: NextRequest) {
 
 // Admin PUT: update a promo code
 export async function PUT(request: NextRequest) {
-  try {
-    const db = await getDb();
-    if (!db) return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+  const authResult = await withAuth(request, ['admin']);
+  if (authResult instanceof NextResponse) return authResult;
+  const { db } = authResult;
 
-    const authHeader = request.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+  try {
 
     const body = await request.json() as {
       id?: number;
@@ -172,14 +166,11 @@ export async function PUT(request: NextRequest) {
 
 // Admin DELETE: delete a promo code
 export async function DELETE(request: NextRequest) {
-  try {
-    const db = await getDb();
-    if (!db) return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+  const authResult = await withAuth(request, ['admin']);
+  if (authResult instanceof NextResponse) return authResult;
+  const { db } = authResult;
 
-    const authHeader = request.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+  try {
 
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');

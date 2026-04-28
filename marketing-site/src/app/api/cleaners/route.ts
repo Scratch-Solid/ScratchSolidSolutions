@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
-import { withTracing, withSecurityHeaders } from '@/lib/middleware';
+import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { logger } from '@/lib/logger';
 import { withRateLimit, rateLimits } from '@/lib/rateLimit';
 
 export async function GET(request: NextRequest) {
   const traceId = withTracing(request);
+  const authResult = await withAuth(request);
+  if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
+  const { db } = authResult;
 
   // Rate limiting check
   const rateLimitResult = await withRateLimit(request, rateLimits.standard);
@@ -26,20 +28,14 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const db = await getDb();
-  if (!db) {
-    return NextResponse.json({ error: "Service temporarily unavailable" }, { status: 503 });
-  }
-
   try {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status') || 'idle';
     const blocked = searchParams.get('blocked') || '0';
 
     const query = `
-      SELECT cp.user_id, cp.username, cp.paysheet_code, cp.first_name, cp.last_name,
-             cp.profile_picture, cp.specialties, cp.rating, cp.status, cp.blocked,
-             cp.weekday_rate, cp.weekend_rate
+      SELECT cp.user_id, cp.username, cp.first_name, cp.last_name,
+             cp.profile_picture, cp.specialties, cp.rating, cp.status
       FROM cleaner_profiles cp
       JOIN users u ON cp.user_id = u.id
       WHERE cp.status = ? AND cp.blocked = ? AND u.deleted = 0

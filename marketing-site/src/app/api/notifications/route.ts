@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
-  const { db } = authResult;
+  const { db, user } = authResult;
 
   // Rate limiting check
   const rateLimitResult = await withRateLimit(request, rateLimits.standard);
@@ -37,11 +37,13 @@ export async function POST(request: NextRequest) {
       booking_id?: number;
       type?: string;
       message?: string;
-      user_id?: number;
+      target_user_id?: number;
     };
-    const { booking_id, type, message, user_id } = body;
+    const { booking_id, type, message, target_user_id } = body;
+    const sessionRole: string = (user as any).role;
+    const user_id: number = sessionRole === 'admin' && target_user_id ? target_user_id : (user as any).id;
 
-    if (!booking_id || !type || !message || !user_id) {
+    if (!booking_id || !type || !message) {
       const response = NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
       return withSecurityHeaders(response, traceId);
     }

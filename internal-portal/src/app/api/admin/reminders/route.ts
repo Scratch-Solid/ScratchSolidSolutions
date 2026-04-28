@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { withAuth } from '@/lib/middleware';
 import { notifyPaymentReminder } from '@/lib/notifications';
 import { getInvoiceStatus } from '@/lib/zoho';
 
 export async function GET(request: NextRequest) {
-  const db = await getDb();
-  if (!db) return NextResponse.json({ error: 'Database unavailable' }, { status: 500 });
+  const authResult = await withAuth(request, ['admin']);
+  if (authResult instanceof NextResponse) return authResult;
+  const { db } = authResult;
 
   try {
     const now = new Date();

@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 
 export default function ClientDashboard() {
+  const router = useRouter();
   const [bookings, setBookings] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
   const [monthlyStatement, setMonthlyStatement] = useState<any>(null);
@@ -39,6 +41,12 @@ export default function ClientDashboard() {
   const [olderStatementsRequest, setOlderStatementsRequest] = useState(false);
 
   useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    const role = localStorage.getItem('userRole');
+    if (!token || role === 'business') {
+      router.replace('/auth');
+      return;
+    }
     fetchClientData();
     fetchZohoData();
     fetchCleanerStatus();

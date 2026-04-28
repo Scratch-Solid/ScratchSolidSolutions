@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { withAuth } from '@/lib/middleware';
 import { shouldPurge } from '@/lib/data-retention';
 
 export async function POST(request: NextRequest) {
-  const db = await getDb();
-  if (!db) return NextResponse.json({ error: 'Database unavailable' }, { status: 500 });
+  const authResult = await withAuth(request, ['admin']);
+  if (authResult instanceof NextResponse) return authResult;
+  const { db } = authResult;
 
   try {
     const { results: oldSessions } = await db.prepare('SELECT id, created_at FROM sessions WHERE created_at < datetime("now", "-30 days")').all() as any;

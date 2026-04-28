@@ -17,6 +17,12 @@ export default function BusinessDashboard() {
   const [viewingContract, setViewingContract] = useState<any>(null);
 
   useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    const role = localStorage.getItem('userRole');
+    if (!token || role !== 'business') {
+      router.replace('/auth');
+      return;
+    }
     fetchWeekendRequests();
     fetchContracts();
     fetchRecurringBookings();
