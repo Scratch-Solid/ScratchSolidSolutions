@@ -180,12 +180,12 @@ export default function GalleryClient() {
 
       {/* Back Button */}
       <div className="py-12 px-4 text-center">
-        <Link
+        <a
           href="/"
           className="inline-block bg-white text-blue-600 px-8 py-4 rounded-full font-semibold text-lg shadow-xl hover:shadow-2xl hover:bg-gray-50 transition-all duration-300"
         >
           Back to Home
-        </Link>
+        </a>
       </div>
 
       <style jsx>{`
