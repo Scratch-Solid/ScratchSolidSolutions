@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb, createBooking, getBookingsByDateRange, getBookingsByCleaner, getBookingsByClient, getUserById } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import { validateString, validateDate, validateNumber, validateRequired } from "@/lib/validation";
-import { withRateLimit, rateLimits } from "@/lib/rateLimit";
+import { withRateLimit, rateLimits } from "@/lib/middleware";
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { addHours, timeOverlap, generateAlternativeTimes } from '@/lib/bookingUtils';
 import { sendBookingConfirmationEmail, sendAdminAlertEmail } from '@/lib/email';

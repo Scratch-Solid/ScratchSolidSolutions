@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withTracing, withSecurityHeaders } from "@/lib/middleware";
-import { withRateLimit, rateLimits } from "@/lib/rateLimit";
+import { withRateLimit, rateLimits } from "@/lib/middleware";
 
 // Expanded in-memory knowledge base for practical Q&A
 const siteContent = [

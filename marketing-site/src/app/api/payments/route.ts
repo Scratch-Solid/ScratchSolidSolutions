@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb, getUserById } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import { validateString, validateNumber } from "@/lib/validation";
-import { withRateLimit, rateLimits } from "@/lib/rateLimit";
+import { withRateLimit, rateLimits } from "@/lib/middleware";
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { createInvoice, recordPayment } from '@/lib/zoho';
 import { sendPaymentReceiptEmail } from '@/lib/email';
