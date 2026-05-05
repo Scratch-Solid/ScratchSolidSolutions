@@ -31,9 +31,9 @@ export default function ConsentSubmittedPage() {
 
         <div className="glass-card text-center">
           <div className="text-6xl mb-4">✓</div>
-          <h2 className="text-2xl font-bold mb-4">Your consent has been submitted</h2>
+          <h2 className="text-2xl font-bold mb-4">Consent form submitted</h2>
           <p className="text-gray-600 mb-6">
-            Your consent form has been submitted successfully. Our team will review your application and you will be notified once approved.
+            You will be notified of the next steps.
           </p>
           <p className="text-sm text-gray-500 mb-6">
             Please check back later or contact admin if you have any questions.

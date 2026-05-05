@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 type Department = "Scratch" | "Solid" | "Trans";
@@ -21,7 +21,36 @@ export default function EmployeeConsentPage() {
     generatedUsername: "",
   });
   const [error, setError] = useState("");
+  const [existingStatus, setExistingStatus] = useState<string | null>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    // Check if user has an existing contract submission
+    const checkExistingContract = async () => {
+      try {
+        const storedConsent = localStorage.getItem("pendingConsent");
+        if (storedConsent) {
+          const consent = JSON.parse(storedConsent);
+          // Check status via API
+          const response = await fetch(`/api/pending-contracts/check?contactNumber=${consent.contactNumber}&idPassportNumber=${consent.idPassportNumber}`);
+          if (response.ok) {
+            const data = await response.json();
+            if (data.status === 'rejected') {
+              setExistingStatus('rejected');
+              setError('Your previous application was rejected. Please contact administration for more information.');
+            } else if (data.status === 'approved') {
+              setExistingStatus('approved');
+              // Redirect to profile creation
+              router.push('/auth/create-profile');
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error checking existing contract:', err);
+      }
+    };
+    checkExistingContract();
+  }, [router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;

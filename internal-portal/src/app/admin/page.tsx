@@ -41,6 +41,9 @@ export default function AdminDashboard() {
               <h1 className="text-2xl font-bold text-blue-700">Admin Dashboard</h1>
             </div>
             <div className="flex items-center space-x-4">
+              <a href="/admin/onboarding" className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md font-medium">
+                Onboarding
+              </a>
               <a href="/admin/content-upload" className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md font-medium">
                 Content Upload
               </a>
@@ -60,6 +63,14 @@ export default function AdminDashboard() {
           <h2 className="text-3xl font-bold text-gray-900 mb-6">Welcome to Admin Dashboard</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Onboarding</h3>
+              <p className="text-gray-600 mb-4">Review and approve employee consent forms</p>
+              <a href="/admin/onboarding" className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700">
+                Manage Onboarding
+              </a>
+            </div>
+
             <div className="bg-white rounded-lg shadow p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Content Upload</h3>
               <p className="text-gray-600 mb-4">Upload and manage site content</p>
