@@ -63,10 +63,25 @@ export function withSecurityHeaders(response: NextResponse, traceId: string): Ne
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-XSS-Protection', '1; mode=block');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  
+  // Stricter CSP: removed unsafe-eval, kept unsafe-inline for styles (Tailwind CSS requirement)
+  // Added report-uri for CSP violation monitoring
   response.headers.set(
     'Content-Security-Policy',
-    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self'; connect-src 'self' https://books.zoho.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self';"
+    "default-src 'self'; " +
+    "script-src 'self' 'unsafe-inline'; " + // unsafe-eval removed - no eval() allowed
+    "style-src 'self' 'unsafe-inline'; " + // Tailwind CSS requires unsafe-inline
+    "img-src 'self' data: blob: https: https://marketing-site-ai3.pages.dev; " +
+    "font-src 'self' data:; " +
+    "connect-src 'self' https://books.zoho.com https://api.resend.com; " +
+    "frame-ancestors 'none'; " +
+    "base-uri 'self'; " +
+    "form-action 'self'; " +
+    "object-src 'none'; " +
+    "media-src 'self'; " +
+    "manifest-src 'self';"
   );
+  
   response.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(self)');
   response.headers.set('X-Request-ID', traceId);
