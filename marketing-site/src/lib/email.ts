@@ -23,7 +23,7 @@ export async function sendEmail({ to, subject, html, from }: SendEmailOptions) {
   try {
     const client = getResendClient();
     const { data, error } = await client.emails.send({
-      from: from || 'Scratch Solid Solutions <onboarding@resend.dev>',
+      from: from || 'Scratch Solid Solutions <customerservice@scratchsolidsolutions.org>',
       to,
       subject,
       html,

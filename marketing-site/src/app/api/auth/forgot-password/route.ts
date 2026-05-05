@@ -30,6 +30,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json() as { type?: string; identifier?: string };
     const { type, identifier } = body;
 
+    logger.info('Password reset request', { type, identifier });
+
     if (!type || !identifier) {
       return NextResponse.json({ error: "Account type and identifier are required" }, { status: 400 });
     }
@@ -39,9 +41,11 @@ export async function POST(request: NextRequest) {
     if (type === "individual") {
       // For individuals, find by phone number
       const phone = sanitizePhone(identifier);
+      logger.info('Looking up individual by phone', { phone });
       user = await getUserByPhone(db, phone);
-      
+
       if (!user) {
+        logger.warn('Individual not found by phone', { phone });
         return NextResponse.json({ error: "No account found with this phone number" }, { status: 404 });
       }
 
@@ -53,22 +57,29 @@ export async function POST(request: NextRequest) {
       // For now, we'll use email as fallback if user has email
       if ((user as any).email) {
         const resetLink = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://scratchsolidsolutions.org'}/reset-password?token=${resetToken}&method=whatsapp&otp=${otp}`;
-        await sendPasswordResetEmail((user as any).email, resetLink);
-        return NextResponse.json({ 
+        logger.info('Sending password reset email to individual', { email: (user as any).email, resetLink });
+        const emailResult = await sendPasswordResetEmail((user as any).email, resetLink);
+        if (!emailResult.success) {
+          logger.error('Failed to send password reset email', { error: emailResult.error });
+          return NextResponse.json({ error: "Failed to send reset email. Please contact support." }, { status: 500 });
+        }
+        return NextResponse.json({
           message: "A password reset link has been sent to your email address."
         }, { status: 200 });
       }
-      
-      return NextResponse.json({ 
+
+      return NextResponse.json({
         message: "If a matching account was found, a reset link has been sent. Please contact support if you have no email on file."
       }, { status: 200 });
 
     } else if (type === "business") {
       // For business, find by email
       const email = sanitizeEmail(identifier);
+      logger.info('Looking up business by email', { email });
       user = await getUserByEmail(db, email);
-      
+
       if (!user) {
+        logger.warn('Business not found by email', { email });
         return NextResponse.json({ error: "No account found with this email address" }, { status: 404 });
       }
 
@@ -76,10 +87,14 @@ export async function POST(request: NextRequest) {
       const resetToken = await createPasswordResetToken(db, (user as any).id, null, "email");
       const resetLink = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://scratchsolidsolutions.org'}/reset-password?token=${resetToken}`;
 
-      // Send email using Resend (free tier: 3,000 emails/month)
-      await sendPasswordResetEmail(email, resetLink);
-      
-      return NextResponse.json({ 
+      logger.info('Sending password reset email to business', { email, resetLink });
+      const emailResult = await sendPasswordResetEmail(email, resetLink);
+      if (!emailResult.success) {
+        logger.error('Failed to send password reset email', { error: emailResult.error });
+        return NextResponse.json({ error: "Failed to send reset email. Please contact support." }, { status: 500 });
+      }
+
+      return NextResponse.json({
         message: "A password reset link has been sent to your email. Please check your inbox."
       }, { status: 200 });
     } else {
