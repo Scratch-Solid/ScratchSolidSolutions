@@ -35,11 +35,11 @@ export default function RootPage() {
       case "client":
       case "user":
         // Redirect to marketing site client dashboard
-        window.location.href = "https://scratchsolid.co.za/client-dashboard";
+        window.location.href = process.env.NEXT_PUBLIC_CLIENT_DASHBOARD_URL || "https://scratchsolid.co.za/client-dashboard";
         break;
       case "business":
         // Redirect to marketing site business dashboard
-        window.location.href = "https://scratchsolid.co.za/business-dashboard";
+        window.location.href = process.env.NEXT_PUBLIC_BUSINESS_DASHBOARD_URL || "https://scratchsolid.co.za/business-dashboard";
         break;
       default:
         // Unknown role, redirect to login

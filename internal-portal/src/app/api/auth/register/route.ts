@@ -91,16 +91,16 @@ export async function POST(request: NextRequest) {
 
     const response = NextResponse.json({
       token,
-      role: userRole,
-      username: email,
-      user_id: (user as any).id,
-      email,
-      name: userName,
+      user: {
+        id: (user as any).id,
+        email,
+        role,
+        name,
+      },
     }, { status: 201 });
     logRequest(request, response, Date.now() - start, traceId);
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    console.error('Error registering user:', error);
     const response = NextResponse.json({ error: 'Registration failed' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }

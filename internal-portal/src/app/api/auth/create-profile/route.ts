@@ -34,7 +34,6 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json({ success: true });
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    console.error('Error creating profile:', error);
     const response = NextResponse.json({ error: 'Failed to create profile' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }

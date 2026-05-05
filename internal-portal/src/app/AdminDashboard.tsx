@@ -343,14 +343,17 @@ export default function AdminDashboard() {
 
           {/* Management Buttons */}
           <div className="mb-6 flex space-x-4">
-            <button 
-              onClick={() => window.open('https://scratchsolidsolutions.org/client-dashboard', '_blank')}
+            <button
+              onClick={() => window.open(process.env.NEXT_PUBLIC_CLIENT_DASHBOARD_URL || 'https://scratchsolidsolutions.org/client-dashboard', '_blank')}
               className="primary-button"
             >
               View Client Dashboard
             </button>
-            <button 
-              onClick={() => window.open('https://portal.scratchsolidsolutions.org/cleaner-dashboard', '_blank')}
+            <button
+              onClick={() => {
+                const portalUrl = process.env.NEXT_PUBLIC_PORTAL_URL || 'https://portal.scratchsolidsolutions.org';
+                window.open(portalUrl + '/cleaner-dashboard', '_blank');
+              }}
               className="primary-button"
             >
               View Cleaner Dashboard
@@ -482,7 +485,8 @@ function ContentManagement() {
   const fetchContent = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`https://scratchsolidsolutions.org/api/content?type=${contentType}`);
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://scratchsolidsolutions.org';
+      const response = await fetch(`${apiUrl}/api/content?type=${contentType}`);
       if (response.ok) {
         const data = await response.json() as { content?: string };
         setContent(data.content || '');
@@ -497,7 +501,8 @@ function ContentManagement() {
   const handleSave = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`https://scratchsolidsolutions.org/api/content?type=${contentType}`, {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://scratchsolidsolutions.org';
+      const response = await fetch(`${apiUrl}/api/content?type=${contentType}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content })

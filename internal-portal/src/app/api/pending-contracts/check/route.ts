@@ -25,12 +25,11 @@ export async function GET(request: NextRequest) {
     ).bind(contactNumber, idPassportNumber).first();
 
     if (!contract) {
-      return NextResponse.json({ status: 'not_found' });
+      return NextResponse.json({ error: 'Contract not found' }, { status: 404 });
     }
 
     return NextResponse.json({ status: (contract as any).status });
   } catch (error) {
-    console.error('Error checking contract:', error);
-    return NextResponse.json({ error: 'Error checking contract' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to check contract' }, { status: 500 });
   }
 }

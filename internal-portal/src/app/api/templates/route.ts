@@ -37,8 +37,7 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json(result, { status: 201 });
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    console.error('Error creating template:', error);
-    const response = NextResponse.json({ error: 'Template creation failed' }, { status: 500 });
+    const response = NextResponse.json({ error: 'Failed to create template' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }
@@ -68,7 +67,6 @@ export async function GET(request: NextRequest) {
     const response = NextResponse.json(templates);
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    console.error('Error fetching templates:', error);
     const response = NextResponse.json({ error: 'Failed to fetch templates' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
@@ -105,8 +103,7 @@ export async function DELETE(request: NextRequest) {
     });
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    console.error('Error deleting template:', error);
-    const response = NextResponse.json({ error: 'Template deletion failed' }, { status: 500 });
+    const response = NextResponse.json({ error: 'Failed to delete template' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

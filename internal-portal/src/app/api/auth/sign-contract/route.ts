@@ -49,7 +49,6 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json({ success: true, signatureDate });
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    console.error('Error signing contract:', error);
     const response = NextResponse.json({ error: 'Failed to sign contract' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }

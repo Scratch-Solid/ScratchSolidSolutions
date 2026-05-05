@@ -9,6 +9,12 @@ export async function POST(request: NextRequest) {
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
 
+  const zohoAuthToken = process.env.ZOHO_AUTH_TOKEN;
+  if (!zohoAuthToken) {
+    const response = NextResponse.json({ error: 'Zoho integration not configured' }, { status: 503 });
+    return withSecurityHeaders(response, traceId);
+  }
+
   try {
     const { user_id, amount } = await request.json();
     if (!user_id || !amount) {
@@ -18,7 +24,7 @@ export async function POST(request: NextRequest) {
     const zohoResponse = await fetch('https://books.zoho.com/api/v3/invoices', {
       method: 'POST',
       headers: {
-        'Authorization': `Zoho-authtoken ${process.env.ZOHO_AUTH_TOKEN || ''}`,
+        'Authorization': `Zoho-authtoken ${zohoAuthToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -31,7 +37,6 @@ export async function POST(request: NextRequest) {
     logRequest(request, response, Date.now() - start, traceId);
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    console.error('Error creating invoice:', error);
     const response = NextResponse.json({ error: 'Failed to create invoice' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }

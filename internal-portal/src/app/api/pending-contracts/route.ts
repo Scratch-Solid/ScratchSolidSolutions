@@ -75,7 +75,11 @@ export async function PUT(request: NextRequest) {
       // Create user
       const bcrypt = require('bcryptjs');
       const consentData = JSON.parse((contract as any).consent_data || '{}');
-      const password = consentData.password || 'TempPassword123!';
+      const password = consentData.password;
+      if (!password) {
+        const response = NextResponse.json({ error: 'Password not found in consent data' }, { status: 400 });
+        return withSecurityHeaders(response, traceId);
+      }
       const password_hash = await bcrypt.hash(password, 10);
       const user = await db.prepare(
         `INSERT INTO users (email, password_hash, role, name, phone)
