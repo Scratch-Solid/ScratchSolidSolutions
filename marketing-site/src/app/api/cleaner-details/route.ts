@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { logger } from '@/lib/logger';
-import { withRateLimit, rateLimits } from '@/lib/middleware';
+import { withRateLimit, rateLimits } from "@/lib/middleware";
 
 export async function GET(request: NextRequest) {
   const traceId = withTracing(request);
