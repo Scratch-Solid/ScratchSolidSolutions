@@ -35,8 +35,7 @@ export async function POST(request: NextRequest) {
     status: 'pending',
     applicant_signature: data.applicantSignature || data.applicant_signature || '',
     witness_representative: data.witnessRepresentative || data.witness_representative || 'Xolani Jason Tshaka',
-    consent_data: data.consentData || data.consent_data || '{}',
-    password: data.password || ''
+    consent_data: data.consentData || data.consent_data || '{}'
   });
 
   const response = NextResponse.json(newContract, { status: 201 });
@@ -71,7 +70,8 @@ export async function PUT(request: NextRequest) {
 
       // Create user
       const bcrypt = require('bcryptjs');
-      const password_hash = await bcrypt.hash((contract as any).password || 'TempPassword123!', 10);
+      const defaultPassword = 'TempPassword123!'; // User should change on first login
+      const password_hash = await bcrypt.hash(defaultPassword, 10);
       const user = await db.prepare(
         `INSERT INTO users (email, password_hash, role, name, phone)
          VALUES (?, ?, ?, ?, ?) RETURNING *`
