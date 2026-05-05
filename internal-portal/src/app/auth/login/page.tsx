@@ -1,15 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get('onboarding') === 'complete') {
+      setSuccessMessage('Onboarding complete! Please log in with your phone number (as username) and the password you created.');
+    }
+  }, [searchParams]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,6 +77,11 @@ export default function LoginPage() {
         {error && (
           <div className="error-msg text-center font-semibold mb-6">
             {error}
+          </div>
+        )}
+        {successMessage && (
+          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6 text-center">
+            {successMessage}
           </div>
         )}
         <form onSubmit={handleLogin} className="space-y-5">

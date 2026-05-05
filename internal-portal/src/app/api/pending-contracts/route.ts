@@ -25,6 +25,10 @@ export async function POST(request: NextRequest) {
   }
 
   const data = await request.json() as any;
+  const consentData = {
+    ...JSON.parse(data.consentData || data.consent_data || '{}'),
+    password: data.password
+  };
   const newContract = await createPendingContract(db, {
     full_name: data.fullName || data.full_name || '',
     id_passport_number: data.idPassportNumber || data.id_passport_number || '',
@@ -35,7 +39,7 @@ export async function POST(request: NextRequest) {
     status: 'pending',
     applicant_signature: data.applicantSignature || data.applicant_signature || '',
     witness_representative: data.witnessRepresentative || data.witness_representative || 'Xolani Jason Tshaka',
-    consent_data: data.consentData || data.consent_data || '{}'
+    consent_data: JSON.stringify(consentData)
   });
 
   const response = NextResponse.json(newContract, { status: 201 });
@@ -70,8 +74,9 @@ export async function PUT(request: NextRequest) {
 
       // Create user
       const bcrypt = require('bcryptjs');
-      const defaultPassword = 'TempPassword123!'; // User should change on first login
-      const password_hash = await bcrypt.hash(defaultPassword, 10);
+      const consentData = JSON.parse((contract as any).consent_data || '{}');
+      const password = consentData.password || 'TempPassword123!';
+      const password_hash = await bcrypt.hash(password, 10);
       const user = await db.prepare(
         `INSERT INTO users (email, password_hash, role, name, phone)
          VALUES (?, ?, ?, ?, ?) RETURNING *`
