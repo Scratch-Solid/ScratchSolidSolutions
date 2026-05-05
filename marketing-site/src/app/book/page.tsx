@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { sanitizeHtml } from '@/lib/htmlSanitizer';
 
 export default function BookingPage() {
   const router = useRouter();
@@ -364,7 +365,7 @@ export default function BookingPage() {
               <h3 className="text-2xl font-bold mb-4 text-gray-800">Indemnity Form</h3>
               <div className="text-sm text-gray-700 space-y-2">
                 {indemnityContent ? (
-                  <div dangerouslySetInnerHTML={{ __html: indemnityContent }} />
+                  <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(indemnityContent) }} />
                 ) : (
                   <p>Loading indemnity form...</p>
                 )}

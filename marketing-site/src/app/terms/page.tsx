@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { sanitizeHtml } from '@/lib/htmlSanitizer';
 import LogoWatermark from '@/components/LogoWatermark';
 
 export default function TermsPage() {
@@ -45,7 +46,7 @@ export default function TermsPage() {
         <h1 className="text-3xl sm:text-4xl font-extrabold text-blue-700 mb-4 sm:mb-6 text-center drop-shadow-lg">Terms of Service</h1>
         {content ? (
           <div className="text-base sm:text-lg text-zinc-800 mb-6 sm:mb-8 relative z-10 prose prose-blue max-w-none">
-            <div dangerouslySetInnerHTML={{ __html: content }} />
+            <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(content) }} />
           </div>
         ) : (
           <div className="text-center text-zinc-500">No content available.</div>
