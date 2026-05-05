@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { logger } from "@/lib/logger";
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
-import { withRateLimit, rateLimits } from '@/lib/rateLimit';
+import { withRateLimit, rateLimits } from '@/lib/middleware';
 import { getDb } from '@/lib/db';
 
 export const runtime = "edge";

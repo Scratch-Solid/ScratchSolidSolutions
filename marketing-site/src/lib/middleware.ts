@@ -17,6 +17,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, validateSession } from './db';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 
 // ─── Internal helpers ────────────────────────────────────────────────────────
 
@@ -31,6 +32,61 @@ function generateTraceId(): string {
     ? crypto.randomUUID()
     : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
+
+/**
+ * Gets the KV namespace binding from the Cloudflare environment.
+ * Returns null if not available (falls back to in-memory rate limiting).
+ */
+async function getKVBinding(): Promise<KVNamespace | null> {
+  try {
+    const { env } = await getCloudflareContext({ async: true });
+    return (env as any)?.RATE_LIMIT_KV || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Unified rate limiter that uses KV when available, falls back to in-memory.
+ *
+ * This is the recommended function for all API routes. It automatically
+ * uses Cloudflare KV for persistent rate limiting in production, and
+ * falls back to in-memory limiting during development or if KV is unavailable.
+ *
+ * Returns null if within limit, or an object with success: false if exceeded.
+ * The caller should return a 429 response when success is false.
+ *
+ * @param request       Incoming request.
+ * @param options       Rate limit options (windowMs, maxRequests).
+ * @returns null if within limit, or { success: false, ... } if exceeded.
+ */
+export async function withRateLimit(
+  request: NextRequest,
+  options: { windowMs: number; maxRequests: number } = { windowMs: 60000, maxRequests: 30 }
+): Promise<{ success: boolean; limit: number; remaining: number; reset: number } | null> {
+  const kv = await getKVBinding();
+  if (kv) {
+    // Use KV-based rate limiting (production)
+    const kvResult = await withKVRateLimit(request, kv, options.maxRequests, Math.floor(options.windowMs / 1000));
+    if (kvResult) {
+      // Convert NextResponse to object structure for consistency
+      return {
+        success: false,
+        limit: options.maxRequests,
+        remaining: 0,
+        reset: Date.now() + options.windowMs
+      };
+    }
+    return null;
+  }
+  // Fallback to in-memory rate limiting (development)
+  const { withRateLimit: inMemoryRateLimit } = await import('./rateLimit');
+  return inMemoryRateLimit(request, options);
+}
+
+/** Re-export rateLimits for backward compatibility */
+export { rateLimits } from './rateLimit';
+export type { RateLimitOptions } from './rateLimit';
 
 // ─── Tracing ─────────────────────────────────────────────────────────────────
 

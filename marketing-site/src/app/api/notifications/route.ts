@@ -3,7 +3,7 @@ import { getDb } from '@/lib/db';
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { logger } from '@/lib/logger';
 import { validateString, validateNumber } from '@/lib/validation';
-import { withRateLimit, rateLimits } from '@/lib/rateLimit';
+import { withRateLimit, rateLimits } from '@/lib/middleware';
 
 export const dynamic = "force-dynamic";
 

@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken';
 import { logger } from "@/lib/logger";
 import { getJWTSecret } from "@/lib/env";
 import { validateEmail } from "@/lib/validation";
-import { withRateLimit, rateLimits } from "@/lib/rateLimit";
+import { withRateLimit, rateLimits } from "@/lib/middleware";
 
 export async function POST(request: NextRequest) {
   // Rate limiting check

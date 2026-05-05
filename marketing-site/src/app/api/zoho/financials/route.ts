@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { logger } from '@/lib/logger';
-import { withRateLimit, rateLimits } from '@/lib/rateLimit';
+import { withRateLimit, rateLimits } from '@/lib/middleware';
 
 const ZOHO_ORG_ID = process.env.ZOHO_ORG_ID!;
 const ZOHO_CLIENT_ID = process.env.ZOHO_CLIENT_ID!;

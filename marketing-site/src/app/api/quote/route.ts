@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, validateSession } from '@/lib/db';
 import { findOrCreateContact, createEstimate } from '@/lib/zoho';
-import { withRateLimit, rateLimits } from '@/lib/rateLimit';
+import { withRateLimit, rateLimits } from '@/lib/middleware';
 
 function generateRef(): string {
   const ts = Date.now().toString(36).toUpperCase();

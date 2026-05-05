@@ -3,7 +3,7 @@ import { getDb, validatePasswordResetToken, deletePasswordResetToken, getUserByI
 import bcrypt from 'bcryptjs';
 import { logger } from "@/lib/logger";
 import { validatePassword } from "@/lib/validation";
-import { withRateLimit, rateLimits } from "@/lib/rateLimit";
+import { withRateLimit, rateLimits } from "@/lib/middleware";
 
 export async function POST(request: NextRequest) {
   // Rate limiting check

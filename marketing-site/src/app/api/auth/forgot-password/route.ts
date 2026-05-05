@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb, getUserByEmail, getUserByPhone, createPasswordResetToken, sanitizeEmail, sanitizePhone } from "@/lib/db";
 import { sendPasswordResetEmail } from "@/lib/email";
 import { logger } from "@/lib/logger";
-import { withRateLimit, rateLimits } from "@/lib/rateLimit";
+import { withRateLimit, rateLimits } from "@/lib/middleware";
 
 export async function POST(request: NextRequest) {
   // Rate limiting check
