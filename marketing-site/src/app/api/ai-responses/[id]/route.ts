@@ -4,14 +4,15 @@ import { logger } from "@/lib/logger";
 import { withRateLimit, rateLimits } from "@/lib/middleware";
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
 
   try {
-    const response = await db.prepare('SELECT * FROM ai_responses WHERE id = ?').bind(parseInt(params.id)).first();
+    const { id } = await params;
+    const response = await db.prepare('SELECT * FROM ai_responses WHERE id = ?').bind(parseInt(id)).first();
     if (!response) {
       return NextResponse.json({ error: 'AI response not found' }, { status: 404 });
     }
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
@@ -37,6 +38,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 
   try {
+    const { id } = await params;
     const body = await request.json() as {
       question?: string;
       response?: string;
@@ -51,7 +53,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
     const result = await db.prepare(
       `UPDATE ai_responses SET question = ?, response = ?, category = ?, updated_at = datetime('now') WHERE id = ? RETURNING *`
-    ).bind(question, response, category || '', parseInt(params.id)).first();
+    ).bind(question, response, category || '', parseInt(id)).first();
 
     if (!result) {
       return NextResponse.json({ error: 'AI response not found' }, { status: 404 });
@@ -64,14 +66,15 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
 
   try {
-    await db.prepare('DELETE FROM ai_responses WHERE id = ?').bind(parseInt(params.id)).run();
+    const { id } = await params;
+    await db.prepare('DELETE FROM ai_responses WHERE id = ?').bind(parseInt(id)).run();
     return NextResponse.json({ message: 'AI response deleted' });
   } catch (error) {
     logger.error('Error deleting AI response', error as Error);
