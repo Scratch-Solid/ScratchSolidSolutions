@@ -96,7 +96,7 @@ export async function validateLogin(db: D1Database, email: string, password: str
 // Session operations
 export async function createSession(db: D1Database, userId: number, token: string) {
   await db.prepare(
-    `INSERT INTO sessions (user_id, token, expires_at) VALUES (?, ?, datetime('now', '+30 days'))`
+    `INSERT INTO sessions (user_id, token, expires_at) VALUES (?, ?, datetime('now', '+24 hours'))`
   ).bind(userId, token).run();
 }
 
@@ -115,8 +115,13 @@ export async function resetFailedAttempts(db: D1Database, email: string) {
   await db.prepare('UPDATE users SET failed_attempts = 0, locked_until = NULL WHERE email = ?').bind(email).run();
 }
 
-export async function isAccountLocked(db: D1Database, email: string): Promise<boolean> {
-  const user = await getUserByEmail(db, email);
+export async function isAccountLocked(db: D1Database, identifier: string): Promise<boolean> {
+  // Try email first
+  let user = await getUserByEmail(db, identifier);
+  // If not found, try phone
+  if (!user) {
+    user = await db.prepare('SELECT id, email, role, name, phone, address, business_name, failed_attempts, locked_until FROM users WHERE phone = ?').bind(identifier).first();
+  }
   if (!user) return false;
   if ((user as any).locked_until && new Date((user as any).locked_until) > new Date()) return true;
   return false;

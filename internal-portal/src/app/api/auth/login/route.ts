@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '../../../../lib/db';
-import { validateLogin, isAccountLocked, sanitizeEmail, sanitizeString, sanitizePhone } from '../../../../lib/db';
+import { getDb, validateLogin, isAccountLocked, sanitizeEmail, sanitizeString, sanitizePhone } from '../../../../lib/db';
+import { withRateLimit } from '../../../../lib/middleware';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
@@ -12,6 +12,9 @@ function getJWTSecret(): string {
 }
 
 export async function POST(request: NextRequest) {
+  const rateLimitResponse = await withRateLimit(request);
+  if (rateLimitResponse) return rateLimitResponse;
+
   const db = await getDb();
   if (!db) return NextResponse.json({ error: 'Database not available' }, { status: 500 });
 
@@ -46,12 +49,11 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         token,
-        user: {
-          id: (user as any).id,
-          email: (user as any).email,
-          role: (user as any).role,
-          name: (user as any).name
-        }
+        role: (user as any).role,
+        username: (user as any).email,
+        user_id: (user as any).id,
+        email: (user as any).email,
+        name: (user as any).name
       });
     } else {
       // Cleaner login using paysheet code
@@ -93,12 +95,10 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         token,
-        user: {
-          id: (user as any).id,
-          username: (cleanerProfile as any).username,
-          role: (user as any).role,
-          paysheetCode: (cleanerProfile as any).paysheet_code
-        }
+        role: (user as any).role,
+        username: (cleanerProfile as any).username,
+        user_id: (user as any).id,
+        paysheet_code: (cleanerProfile as any).paysheet_code
       });
     }
   } catch (error) {

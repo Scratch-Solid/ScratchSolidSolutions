@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, createUser } from '@/lib/db';
-import { withTracing, withSecurityHeaders, logRequest } from '@/lib/middleware';
+import { withTracing, withSecurityHeaders, logRequest, withRateLimit } from '@/lib/middleware';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
@@ -22,6 +22,9 @@ function validatePasswordPolicy(password: string): { valid: boolean; errors: str
 }
 
 export async function POST(request: NextRequest) {
+  const rateLimitResponse = await withRateLimit(request);
+  if (rateLimitResponse) return rateLimitResponse;
+
   const traceId = withTracing(request);
   const start = Date.now();
 
@@ -31,11 +34,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
     }
 
-    const { name, email, password, role, phone, department } = await request.json();
+    const { fullName, name, email, password, role, phone, department, paysheetCode } = await request.json();
 
-    if (!name || !email || !password || !role) {
+    // Map fullName to name for compatibility
+    const userName = name || fullName;
+
+    if (!userName || !email || !password) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
+
+    // Map department to role if not provided
+    const userRole = role || (department === 'Scratch' ? 'cleaner' : department === 'Solid' ? 'digital' : department === 'Trans' ? 'transport' : 'cleaner');
 
     const pwdCheck = validatePasswordPolicy(password);
     if (!pwdCheck.valid) {
@@ -55,8 +64,8 @@ export async function POST(request: NextRequest) {
     const user = await createUser(db, {
       email,
       password_hash,
-      role,
-      name,
+      role: userRole,
+      name: userName,
       phone: phone || '',
     });
 
@@ -64,21 +73,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to create user' }, { status: 500 });
     }
 
+    // Create cleaner profile for staff roles
+    if (['cleaner', 'digital', 'transport'].includes(userRole)) {
+      const username = paysheetCode || `${department || 'Scratch'}${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+      await db.prepare(
+        `INSERT INTO cleaner_profiles (user_id, username, paysheet_code, department, status)
+         VALUES (?, ?, ?, ?, 'idle')`
+      ).bind((user as any).id, username, paysheetCode || username, department || 'cleaning').run();
+    }
+
     // Generate JWT token
     const token = jwt.sign(
-      { userId: (user as any).id, role, email },
+      { userId: (user as any).id, role: userRole, email },
       getJWTSecret(),
       { expiresIn: '24h' }
     );
 
     const response = NextResponse.json({
       token,
-      user: {
-        id: (user as any).id,
-        email,
-        role,
-        name,
-      },
+      role: userRole,
+      username: email,
+      user_id: (user as any).id,
+      email,
+      name: userName,
     }, { status: 201 });
     logRequest(request, response, Date.now() - start, traceId);
     return withSecurityHeaders(response, traceId);
