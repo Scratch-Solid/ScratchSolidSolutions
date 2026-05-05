@@ -31,37 +31,50 @@ export async function POST(request: NextRequest) {
     const body = await request.json() as { token?: string; otp?: string; newPassword?: string };
     const { token, otp, newPassword } = body;
 
+    logger.info('Password reset attempt', { hasToken: !!token, hasPassword: !!newPassword, hasOTP: !!otp });
+
     if (!token || !newPassword) {
+      logger.warn('Password reset missing required fields', { hasToken: !!token, hasPassword: !!newPassword });
       return NextResponse.json({ error: "Token and new password are required" }, { status: 400 });
     }
 
     // Validate the reset token
     const resetToken = await validatePasswordResetToken(db, token);
     if (!resetToken) {
+      logger.warn('Password reset token invalid or expired', { token: token.substring(0, 8) + '...' });
       return NextResponse.json({ error: "Invalid or expired reset token. Please request a new password reset." }, { status: 400 });
     }
+
+    logger.info('Password reset token validated', { userId: (resetToken as any).user_id, method: (resetToken as any).method });
 
     // For WhatsApp method, verify OTP
     if ((resetToken as any).method === 'whatsapp') {
       if (!otp) {
+        logger.warn('Password reset missing OTP for WhatsApp method');
         return NextResponse.json({ error: "OTP is required for WhatsApp verification" }, { status: 400 });
       }
       if ((resetToken as any).otp !== otp) {
+        logger.warn('Password reset invalid OTP', { provided: otp, expected: (resetToken as any).otp });
         return NextResponse.json({ error: "Invalid OTP. Please check your WhatsApp messages." }, { status: 400 });
       }
+      logger.info('Password reset OTP verified');
     }
 
     // Validate password policy
     const pwdCheck = validatePassword(newPassword || '');
     if (!pwdCheck.valid) {
+      logger.warn('Password reset password validation failed', { errors: pwdCheck.errors });
       return NextResponse.json({ error: 'Password does not meet requirements', details: pwdCheck.errors }, { status: 400 });
     }
 
     // Get the user
     const user = await getUserById(db, (resetToken as any).user_id);
     if (!user) {
+      logger.error('Password reset user not found', { userId: (resetToken as any).user_id });
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
+
+    logger.info('Password reset updating password', { userId: (user as any).id, email: (user as any).email });
 
     // Update the password
     const passwordHash = await bcrypt.hash(newPassword, 10);
@@ -71,6 +84,8 @@ export async function POST(request: NextRequest) {
 
     // Delete the reset token
     await deletePasswordResetToken(db, token);
+
+    logger.info('Password reset successful', { userId: (user as any).id });
 
     return NextResponse.json({ 
       message: "Password reset successfully. You can now login with your new password." 
