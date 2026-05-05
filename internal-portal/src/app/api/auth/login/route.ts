@@ -56,13 +56,23 @@ export async function POST(request: NextRequest) {
         name: (user as any).name
       });
     } else {
-      // Cleaner login using paysheet code
+      // Cleaner login using paysheet code or phone number
       if (await isAccountLocked(db, username)) {
         return NextResponse.json({ error: 'Account temporarily locked. Try again later.' }, { status: 423 });
       }
-      const cleanerProfile = await db.prepare(
+
+      // Try paysheet code first
+      let cleanerProfile = await db.prepare(
         'SELECT * FROM cleaner_profiles WHERE paysheet_code = ?'
       ).bind(username).first();
+
+      // If not found, try phone number (for onboarding users)
+      if (!cleanerProfile) {
+        const userByPhone = await db.prepare('SELECT id, email, role, name, password_hash, failed_attempts, locked_until, phone FROM users WHERE phone = ?').bind(username).first();
+        if (userByPhone) {
+          cleanerProfile = await db.prepare('SELECT * FROM cleaner_profiles WHERE user_id = ?').bind((userByPhone as any).id).first();
+        }
+      }
 
       if (!cleanerProfile) {
         return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
