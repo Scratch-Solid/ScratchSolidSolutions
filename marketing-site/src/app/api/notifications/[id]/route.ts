@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
+import { withAuth, withTracing, withSecurityHeaders, withRateLimit, rateLimits } from '@/lib/middleware';
 import { logger } from '@/lib/logger';
-import { withRateLimit, rateLimits } from '@/lib/rateLimit';
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   const traceId = withTracing(request);
