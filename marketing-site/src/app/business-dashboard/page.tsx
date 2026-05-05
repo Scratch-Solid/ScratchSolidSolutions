@@ -3,9 +3,11 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 
 export default function BusinessDashboard() {
   const router = useRouter();
+  useSessionTimeout(true); // Enable 5-minute inactivity timeout
   const [weekendRequests, setWeekendRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [assignedCleaner, setAssignedCleaner] = useState<any>(null);

@@ -4,9 +4,11 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 
 export default function ClientDashboard() {
   const router = useRouter();
+  useSessionTimeout(true); // Enable 5-minute inactivity timeout
   const [bookings, setBookings] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
   const [monthlyStatement, setMonthlyStatement] = useState<any>(null);

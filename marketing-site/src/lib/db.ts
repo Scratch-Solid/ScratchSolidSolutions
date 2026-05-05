@@ -116,8 +116,9 @@ export async function validateLogin(db: D1Database, email: string, password: str
 
 // Session operations
 export async function createSession(db: D1Database, userId: number, token: string) {
+  // 5-minute session expiration for security (inactivity timeout)
   await db.prepare(
-    `INSERT INTO sessions (user_id, token, expires_at) VALUES (?, ?, datetime('now', '+30 days'))`
+    `INSERT INTO sessions (user_id, token, expires_at) VALUES (?, ?, datetime('now', '+5 minutes'))`
   ).bind(userId, token).run();
 }
 
