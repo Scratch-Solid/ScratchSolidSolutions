@@ -91,10 +91,10 @@ export async function validateLoginByPhone(db: D1Database, phone: string, passwo
   }
   const isValid = await bcrypt.compare(password, (user as any).password_hash);
   if (isValid) {
-    if ((user as any).email) await resetFailedAttempts(db, (user as any).email);
+    await resetFailedAttemptsByPhone(db, phone);
     return user;
   }
-  if ((user as any).email) await incrementFailedAttempts(db, (user as any).email);
+  await incrementFailedAttemptsByPhone(db, phone);
   return null;
 }
 
@@ -132,8 +132,23 @@ export async function incrementFailedAttempts(db: D1Database, email: string): Pr
   return attempts;
 }
 
+export async function incrementFailedAttemptsByPhone(db: D1Database, phone: string): Promise<number> {
+  const user = await getUserByPhone(db, phone);
+  if (!user) return 0;
+  const attempts = ((user as any).failed_attempts || 0) + 1;
+  const lockedUntil = attempts >= 5 ? `datetime('now', '+15 minutes')` : (user as any).locked_until;
+  // Update by phone since email may not exist
+  await db.prepare('UPDATE users SET failed_attempts = ?, locked_until = ? WHERE phone = ?')
+    .bind(attempts, lockedUntil || null, phone).run();
+  return attempts;
+}
+
 export async function resetFailedAttempts(db: D1Database, email: string) {
   await db.prepare('UPDATE users SET failed_attempts = 0, locked_until = NULL WHERE email = ?').bind(email).run();
+}
+
+export async function resetFailedAttemptsByPhone(db: D1Database, phone: string) {
+  await db.prepare('UPDATE users SET failed_attempts = 0, locked_until = NULL WHERE phone = ?').bind(phone).run();
 }
 
 export async function isAccountLocked(db: D1Database, email: string): Promise<boolean> {
@@ -211,7 +226,15 @@ export async function createCleanerProfile(db: D1Database, data: {
 }
 
 export async function updateCleanerProfile(db: D1Database, username: string, data: Record<string, any>) {
-  const fields = Object.keys(data).filter(k => k !== 'username' && k !== 'id');
+  // Whitelist of allowed fields to prevent SQL injection
+  const ALLOWED_FIELDS = [
+    'first_name', 'last_name', 'profile_picture', 'residential_address',
+    'cellphone', 'emergency_contact', 'emergency_phone', 'department',
+    'paysheet_code', 'id_number', 'bank_name', 'account_number',
+    'branch_code', 'account_holder'
+  ];
+  
+  const fields = Object.keys(data).filter(k => ALLOWED_FIELDS.includes(k) && k !== 'username' && k !== 'id');
   if (fields.length === 0) return null;
   
   const setClause = fields.map(f => `${f} = ?`).join(', ');
