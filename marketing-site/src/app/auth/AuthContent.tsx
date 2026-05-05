@@ -23,6 +23,7 @@ export default function AuthContent() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [quoteContext, setQuoteContext] = useState<{ ref: string; service: string } | null>(null);
+  const [consentAccepted, setConsentAccepted] = useState(false);
 
   useEffect(() => {
     const quoteRef = searchParams.get('quote_ref');
@@ -54,6 +55,13 @@ export default function AuthContent() {
     e.preventDefault();
     setError("");
     setLoading(true);
+
+    // Require consent for signup (POPIA compliance)
+    if (!isLogin && !consentAccepted) {
+      setError("You must accept the Privacy Policy and Terms of Service to create an account.");
+      setLoading(false);
+      return;
+    }
 
     try {
       const endpoint = isLogin ? "/api/auth/login" : "/api/auth/signup";
@@ -247,6 +255,22 @@ export default function AuthContent() {
             {isLogin && (
               <div className="text-right -mt-2">
                 <Link href="/forgot-password" className="text-sm text-blue-600 hover:underline">Forgot Password?</Link>
+              </div>
+            )}
+
+            {!isLogin && (
+              <div className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  id="consent"
+                  checked={consentAccepted}
+                  onChange={(e) => setConsentAccepted(e.target.checked)}
+                  required
+                  className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <label htmlFor="consent" className="text-sm text-gray-600 leading-tight">
+                  I accept the <Link href="/privacy" className="text-blue-600 hover:underline">Privacy Policy</Link> and <Link href="/terms" className="text-blue-600 hover:underline">Terms of Service</Link>. I consent to the collection and processing of my personal data in accordance with POPIA.
+                </label>
               </div>
             )}
             <button type="submit" disabled={loading} className="w-full rounded-full bg-blue-600 px-8 py-3 text-lg font-semibold text-white shadow-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
