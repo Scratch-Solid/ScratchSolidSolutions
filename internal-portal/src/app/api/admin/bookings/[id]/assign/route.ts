@@ -35,7 +35,6 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error assigning cleaner to booking:', error);
-    return NextResponse.json({ error: 'Failed to assign cleaner' }, { status: 500 });
+    const response = NextResponse.json({ error: 'Failed to assign cleaner to booking' }, { status: 500 });
   }
 }

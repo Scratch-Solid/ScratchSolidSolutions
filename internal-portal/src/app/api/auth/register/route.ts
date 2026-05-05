@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, createUser } from '@/lib/db';
 import { withTracing, withSecurityHeaders, logRequest, withRateLimit } from '@/lib/middleware';
+import { sanitizeRequestBody } from '@/lib/sanitization';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
@@ -34,7 +35,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
     }
 
-    const { fullName, name, email, password, role, phone, department, paysheetCode } = await request.json();
+    const body = await request.json();
+
+    // Sanitize input
+    const { sanitized, error } = sanitizeRequestBody(body, {
+      required: ['email', 'password'],
+      optional: ['fullName', 'name', 'role', 'phone', 'department', 'paysheetCode'],
+      emailFields: ['email'],
+      phoneFields: ['phone'],
+      idFields: ['paysheetCode']
+    });
+
+    if (error) {
+      return NextResponse.json({ error }, { status: 400 });
+    }
+
+    const { fullName, name, email, password, role, phone, department, paysheetCode } = sanitized;
 
     // Map fullName to name for compatibility
     const userName = name || fullName;

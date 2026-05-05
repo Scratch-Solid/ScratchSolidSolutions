@@ -22,7 +22,6 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       return NextResponse.json({ message: 'User soft deleted (30-day grace)' });
     }
   } catch (error) {
-    console.error('Delete error:', error);
-    return NextResponse.json({ error: 'Delete failed' }, { status: 500 });
+    const response = NextResponse.json({ error: 'Failed to delete user' }, { status: 500 });
   }
 }

@@ -29,8 +29,8 @@ export async function GET(request: NextRequest) {
     response.headers.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300, s-maxage=60');
     return response;
   } catch (error) {
-    console.error('Error fetching cleaners:', error);
-    return NextResponse.json({ error: 'Failed to fetch cleaners' }, { status: 500 });
+    const response = NextResponse.json({ error: 'Failed to fetch cleaners' }, { status: 500 });
+    return response;
   }
 }
 
@@ -72,7 +72,7 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error updating cleaner:', error);
-    return NextResponse.json({ error: 'Failed to update cleaner' }, { status: 500 });
+    const response = NextResponse.json({ error: 'Failed to update cleaner' }, { status: 500 });
+    return response;
   }
 }

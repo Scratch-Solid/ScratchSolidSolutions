@@ -10,8 +10,7 @@ export async function GET(request: NextRequest) {
     const permissions = await db.prepare('SELECT * FROM permissions ORDER BY resource, action').all();
     return NextResponse.json(permissions.results || []);
   } catch (error) {
-    console.error('Error fetching permissions:', error);
-    return NextResponse.json({ error: 'Failed to fetch permissions' }, { status: 500 });
+    const response = NextResponse.json({ error: 'Failed to fetch permissions' }, { status: 500 });
   }
 }
 
@@ -34,7 +33,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true }, { status: 201 });
   } catch (error) {
-    console.error('Error creating permission:', error);
-    return NextResponse.json({ error: 'Failed to create permission' }, { status: 500 });
+    const response = NextResponse.json({ error: 'Failed to create permission' }, { status: 500 });
   }
 }

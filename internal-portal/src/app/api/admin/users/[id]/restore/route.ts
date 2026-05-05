@@ -11,7 +11,6 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     await db.prepare('UPDATE users SET deleted = 0, soft_delete_at = NULL WHERE id = ?').bind(id).run();
     return NextResponse.json({ message: 'User restored' });
   } catch (error) {
-    console.error('Restore error:', error);
-    return NextResponse.json({ error: 'Restore failed' }, { status: 500 });
+    const response = NextResponse.json({ error: 'Failed to restore user' }, { status: 500 });
   }
 }

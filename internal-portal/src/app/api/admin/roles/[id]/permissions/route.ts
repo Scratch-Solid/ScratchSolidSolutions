@@ -21,8 +21,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
     return NextResponse.json({ success: true }, { status: 201 });
   } catch (error) {
-    console.error('Error assigning permission to role:', error);
-    return NextResponse.json({ error: 'Failed to assign permission' }, { status: 500 });
+    const response = NextResponse.json({ error: 'Failed to assign permission to role' }, { status: 500 });
   }
 }
 
@@ -46,7 +45,6 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error removing permission from role:', error);
-    return NextResponse.json({ error: 'Failed to remove permission' }, { status: 500 });
+    const response = NextResponse.json({ error: 'Failed to remove permission from role' }, { status: 500 });
   }
 }

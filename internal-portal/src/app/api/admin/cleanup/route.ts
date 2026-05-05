@@ -30,7 +30,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ purged_sessions: purged, hard_deleted_users: hardDeleted });
   } catch (error) {
-    console.error('Cleanup error:', error);
-    return NextResponse.json({ error: 'Cleanup failed' }, { status: 500 });
+    const response = NextResponse.json({ error: 'Failed to cleanup' }, { status: 500 });
   }
 }

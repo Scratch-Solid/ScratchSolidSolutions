@@ -52,7 +52,6 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error updating contract:', error);
-    return NextResponse.json({ error: 'Failed to update contract' }, { status: 500 });
+    const response = NextResponse.json({ error: 'Failed to update contract' }, { status: 500 });
   }
 }

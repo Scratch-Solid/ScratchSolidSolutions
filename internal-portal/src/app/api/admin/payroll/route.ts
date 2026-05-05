@@ -36,7 +36,6 @@ export async function GET(request: NextRequest) {
     const payments = await db.prepare(query).bind(...params).all();
     return NextResponse.json(payments.results || []);
   } catch (error) {
-    console.error('Error fetching payroll:', error);
-    return NextResponse.json({ error: 'Failed to fetch payroll' }, { status: 500 });
+    const response = NextResponse.json({ error: 'Failed to fetch payroll' }, { status: 500 });
   }
 }

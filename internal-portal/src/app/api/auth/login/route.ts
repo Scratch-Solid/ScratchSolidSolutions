@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, validateLogin, isAccountLocked, sanitizeEmail, sanitizeString, sanitizePhone } from '../../../../lib/db';
-import { withRateLimit } from '../../../../lib/middleware';
+import { withRateLimit, withTracing, withSecurityHeaders, logRequest } from '../../../../lib/middleware';
+import { sanitizeRequestBody } from '../../../../lib/sanitization';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 

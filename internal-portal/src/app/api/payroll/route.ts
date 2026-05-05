@@ -103,7 +103,6 @@ export async function GET(request: NextRequest) {
     response.headers.set('Cache-Control', 'private, max-age=60');
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    console.error('Error fetching payroll:', error);
     const response = NextResponse.json({ error: 'Failed to fetch payroll' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
@@ -154,7 +153,6 @@ export async function PUT(request: NextRequest) {
     const response = NextResponse.json({ success: true });
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    console.error('Error updating payroll settings:', error);
     const response = NextResponse.json({ error: 'Failed to update payroll settings' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }

@@ -64,8 +64,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
     return NextResponse.json(scoredCleaners.slice(0, 5)); // Return top 5 suggestions
   } catch (error) {
-    console.error('Error suggesting cleaners:', error);
-    return NextResponse.json({ error: 'Failed to suggest cleaners' }, { status: 500 });
+    const response = NextResponse.json({ error: 'Failed to suggest cleaner' }, { status: 500 });
   }
 }
 

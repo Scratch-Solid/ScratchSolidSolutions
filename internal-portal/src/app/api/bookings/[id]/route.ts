@@ -25,7 +25,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     logRequest(request, response, Date.now() - start, traceId);
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    console.error('Error updating booking:', error);
     const response = NextResponse.json({ error: 'Failed to update booking' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { withSecurityHeaders, withTracing, withRateLimit } from '@/lib/middleware';
+import { sanitizeRequestBody } from '@/lib/sanitization';
 
 export async function POST(request: NextRequest) {
   const rateLimitResponse = await withRateLimit(request);
@@ -12,8 +13,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
   }
 
-  const data = await request.json() as any;
-  const { consentData, signatureDate } = data;
+  const body = await request.json();
+
+  // Sanitize input
+  const { sanitized, error } = sanitizeRequestBody(body, {
+    required: ['consentData'],
+    optional: ['signatureDate']
+  });
+
+  if (error) {
+    return NextResponse.json({ error }, { status: 400 });
+  }
+
+  const { consentData, signatureDate } = sanitized;
 
   try {
     // Find the contract

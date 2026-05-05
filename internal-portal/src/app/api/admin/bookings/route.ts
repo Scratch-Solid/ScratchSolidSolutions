@@ -40,7 +40,6 @@ export async function GET(request: NextRequest) {
     const bookings = await db.prepare(query).bind(...params).all();
     return NextResponse.json(bookings.results || []);
   } catch (error) {
-    console.error('Error fetching bookings:', error);
-    return NextResponse.json({ error: 'Failed to fetch bookings' }, { status: 500 });
+    const response = NextResponse.json({ error: 'Failed to fetch bookings' }, { status: 500 });
   }
 }

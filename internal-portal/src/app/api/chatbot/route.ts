@@ -38,8 +38,7 @@ export async function POST(request: NextRequest) {
     logRequest(request, response, Date.now() - start, traceId);
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    console.error('Error processing chatbot request:', error);
-    const response = NextResponse.json({ error: 'Failed to process request' }, { status: 500 });
+    const response = NextResponse.json({ error: 'Failed to process chatbot request' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

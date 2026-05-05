@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { withRateLimit } from "@/lib/middleware";
+import { sanitizeRequestBody } from "@/lib/sanitization";
 
 export async function GET(request: NextRequest) {
   const rateLimitResponse = await withRateLimit(request);
@@ -19,10 +20,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Missing parameters' }, { status: 400 });
   }
 
+  // Sanitize input
+  const sanitizedContact = contactNumber.replace(/[^\d]/g, '');
+  const sanitizedId = idPassportNumber.replace(/[^a-zA-Z0-9]/g, '');
+
   try {
     const contract = await db.prepare(
       'SELECT * FROM pending_contracts WHERE contact_number = ? AND id_passport_number = ? ORDER BY submitted_at DESC LIMIT 1'
-    ).bind(contactNumber, idPassportNumber).first();
+    ).bind(sanitizedContact, sanitizedId).first();
 
     if (!contract) {
       return NextResponse.json({ error: 'Contract not found' }, { status: 404 });

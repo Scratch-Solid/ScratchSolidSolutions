@@ -28,7 +28,6 @@ export async function GET(request: NextRequest) {
     logRequest(request, response, Date.now() - start, traceId);
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    console.error('Error fetching bookings:', error);
     const response = NextResponse.json({ error: 'Failed to fetch bookings' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }

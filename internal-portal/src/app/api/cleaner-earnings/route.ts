@@ -24,8 +24,7 @@ export async function GET(request: NextRequest) {
     response.headers.set('Cache-Control', 'private, max-age=30');
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    console.error('Error fetching cleaner earnings:', error);
-    const response = NextResponse.json({ error: 'Failed to fetch earnings' }, { status: 500 });
+    const response = NextResponse.json({ error: 'Failed to fetch cleaner earnings' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

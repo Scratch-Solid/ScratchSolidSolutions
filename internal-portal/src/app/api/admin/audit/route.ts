@@ -34,8 +34,7 @@ export async function GET(request: NextRequest) {
     const logs = await db.prepare(query).bind(...params).all();
     return NextResponse.json(logs.results || []);
   } catch (error) {
-    console.error('Error fetching audit logs:', error);
-    return NextResponse.json({ error: 'Failed to fetch audit logs' }, { status: 500 });
+    const response = NextResponse.json({ error: 'Failed to fetch audit logs' }, { status: 500 });
   }
 }
 
@@ -60,7 +59,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error creating audit log:', error);
-    return NextResponse.json({ error: 'Failed to create audit log' }, { status: 500 });
+    const response = NextResponse.json({ error: 'Failed to create audit log' }, { status: 500 });
   }
 }
