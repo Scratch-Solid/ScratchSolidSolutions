@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb, getPendingContracts, createPendingContract, updatePendingContractStatus, deletePendingContract } from "../../../lib/db";
 import { withAuth, withSecurityHeaders, withTracing, withRateLimit } from "../../../lib/middleware";
-import { validatePhone, validateSaIdNumber, validateSaPassport } from "../../../lib/validation";
 
 export async function GET(request: NextRequest) {
   const traceId = withTracing(request);
@@ -27,27 +26,18 @@ export async function POST(request: NextRequest) {
 
   const data = await request.json() as any;
 
-  // Validate phone number
+  // Basic validation - ensure required fields are present
   const contactNumber = data.contactNumber || data.contact_number || '';
-  const phoneValidation = validatePhone(contactNumber);
-  if (!phoneValidation.valid) {
-    const response = NextResponse.json({ error: phoneValidation.errors.join(', ') }, { status: 400 });
+  const idPassportNumber = data.idPassportNumber || data.id_passport_number || '';
+
+  if (!contactNumber) {
+    const response = NextResponse.json({ error: 'Contact number is required' }, { status: 400 });
     return withSecurityHeaders(response, traceId);
   }
 
-  // Validate ID/Passport number
-  const idPassportNumber = data.idPassportNumber || data.id_passport_number || '';
   if (!idPassportNumber) {
     const response = NextResponse.json({ error: 'ID or passport number is required' }, { status: 400 });
     return withSecurityHeaders(response, traceId);
-  } else {
-    const idPassportValidation = idPassportNumber.replace(/\D/g, '').length === 13
-      ? validateSaIdNumber(idPassportNumber)
-      : validateSaPassport(idPassportNumber);
-    if (!idPassportValidation.valid) {
-      const response = NextResponse.json({ error: idPassportValidation.errors.join(', ') }, { status: 400 });
-      return withSecurityHeaders(response, traceId);
-    }
   }
 
   const consentData = {
