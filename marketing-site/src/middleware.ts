@@ -5,17 +5,17 @@ const PUBLIC_PATHS = ['/api/health', '/api/status', '/api/auth/login', '/api/aut
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Skip public paths
+  // Skip public paths - allow access without auth
   if (PUBLIC_PATHS.some(p => pathname.startsWith(p))) {
     return NextResponse.next();
   }
 
-  // Only enforce auth on API routes
+  // Only enforce auth on API routes that aren't public
   if (!pathname.startsWith('/api/')) {
     return NextResponse.next();
   }
 
-  // Check for auth token
+  // For API routes that require auth, check for token
   const token = request.headers.get('Authorization')?.replace('Bearer ', '') ||
                 request.cookies.get('authToken')?.value;
 
