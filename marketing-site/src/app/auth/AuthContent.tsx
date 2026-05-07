@@ -82,9 +82,9 @@ export default function AuthContent() {
           }
         : {
             type: "business",
-            business_name: formData.businessName,
-            registration_number: formData.registrationNumber,
-            contact_person: formData.contactPerson,
+            businessName: formData.businessName,
+            registration: formData.registrationNumber,
+            name: formData.contactPerson,
             phone: formData.phone,
             email: formData.email,
             address: formData.address,
