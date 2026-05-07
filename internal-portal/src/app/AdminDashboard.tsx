@@ -20,6 +20,10 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedJoiner, setSelectedJoiner] = useState<any>(null);
+  const [services, setServices] = useState<any[]>([]);
+  const [bankingDetails, setBankingDetails] = useState<any>(null);
+  const [serviceForm, setServiceForm] = useState({ name: '', description: '', base_price: '', duration_hours: '', category: 'standard' });
+  const [bankingForm, setBankingForm] = useState({ bank_name: '', account_number: '', account_holder: '', branch_code: '', account_type: 'current' });
 
   useEffect(() => {
     async function fetchAdminData() {
@@ -31,7 +35,7 @@ export default function AdminDashboard() {
           Authorization: `Bearer ${token}`
         };
 
-        const [employeesRes, pendingContractsRes, usersRes, bookingsRes, contractsRes, paymentsRes, notificationsRes] = await Promise.allSettled([
+        const [employeesRes, pendingContractsRes, usersRes, bookingsRes, contractsRes, paymentsRes, notificationsRes, servicesRes, bankingRes] = await Promise.allSettled([
           fetch("/api/employees", { headers }),
           fetch("/api/pending-contracts", { headers }),
           fetch("/api/admin/users", { headers }),
@@ -39,6 +43,8 @@ export default function AdminDashboard() {
           fetch("/api/admin/contracts", { headers }),
           fetch("/api/admin/payroll", { headers }),
           fetch("/api/notifications", { headers }),
+          fetch("/api/admin/services", { headers }),
+          fetch("/api/admin/banking-details", { headers }),
         ]);
 
         if (pendingContractsRes.status === 'fulfilled' && pendingContractsRes.value.ok) {
@@ -62,6 +68,22 @@ export default function AdminDashboard() {
         }
         if (notificationsRes.status === 'fulfilled' && notificationsRes.value.ok) {
           setNotifications(await notificationsRes.value.json());
+        }
+        if (servicesRes.status === 'fulfilled' && servicesRes.value.ok) {
+          setServices(await servicesRes.value.json());
+        }
+        if (bankingRes.status === 'fulfilled' && bankingRes.value.ok) {
+          const bankingData = await bankingRes.value.json() as any;
+          setBankingDetails(bankingData);
+          if (bankingData) {
+            setBankingForm({
+              bank_name: bankingData.bank_name || '',
+              account_number: bankingData.account_number || '',
+              account_holder: bankingData.account_holder || '',
+              branch_code: bankingData.branch_code || '',
+              account_type: bankingData.account_type || 'current'
+            });
+          }
         }
         if (employeesRes.status === 'fulfilled' && employeesRes.value.ok) {
           resolvedEmployees = await employeesRes.value.json();
@@ -188,6 +210,107 @@ export default function AdminDashboard() {
     window.location.href = '/auth/login';
   };
 
+  const handleAddService = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const res = await fetch('/api/admin/services', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: serviceForm.name,
+          description: serviceForm.description,
+          base_price: parseFloat(serviceForm.base_price),
+          duration_hours: parseInt(serviceForm.duration_hours),
+          category: serviceForm.category
+        })
+      });
+      if (res.ok) {
+        const servicesRes = await fetch('/api/admin/services', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (servicesRes.ok) setServices(await servicesRes.json());
+        setServiceForm({ name: '', description: '', base_price: '', duration_hours: '', category: 'standard' });
+      }
+    } catch (err) {
+      console.error('Failed to add service:', err);
+    }
+  };
+
+  const handleUpdateService = async (id: number) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const res = await fetch('/api/admin/services', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          id,
+          name: serviceForm.name,
+          description: serviceForm.description,
+          base_price: parseFloat(serviceForm.base_price),
+          duration_hours: parseInt(serviceForm.duration_hours),
+          category: serviceForm.category,
+          is_active: true
+        })
+      });
+      if (res.ok) {
+        const servicesRes = await fetch('/api/admin/services', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (servicesRes.ok) setServices(await servicesRes.json());
+        setServiceForm({ name: '', description: '', base_price: '', duration_hours: '', category: 'standard' });
+      }
+    } catch (err) {
+      console.error('Failed to update service:', err);
+    }
+  };
+
+  const handleDeleteService = async (id: number) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const res = await fetch(`/api/admin/services?id=${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setServices(prev => prev.filter((s: any) => s.id !== id));
+      }
+    } catch (err) {
+      console.error('Failed to delete service:', err);
+    }
+  };
+
+  const handleUpdateBankingDetails = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const res = await fetch('/api/admin/banking-details', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(bankingForm)
+      });
+      if (res.ok) {
+        const bankingRes = await fetch('/api/admin/banking-details', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (bankingRes.ok) {
+          const data = await bankingRes.json();
+          setBankingDetails(data);
+        }
+        alert('Banking details updated successfully');
+      }
+    } catch (err) {
+      console.error('Failed to update banking details:', err);
+    }
+  };
+
   if (loading) return <div className="dashboard-container glass-panel"><div className="animate-pulse space-y-6"><div className="grid grid-cols-4 gap-4">{[1,2,3,4].map(i=><div key={i} className="border rounded-lg p-6 bg-white"><div className="h-4 bg-gray-200 rounded w-1/2 mb-3"/><div className="h-8 bg-gray-200 rounded w-3/4"/></div>)}</div><div className="border rounded-lg p-6 bg-white"><div className="h-5 bg-gray-200 rounded w-1/3 mb-4"/><div className="space-y-3">{[1,2,3].map(i=><div key={i} className="flex gap-4"><div className="h-4 bg-gray-200 rounded w-1/4"/><div className="h-4 bg-gray-200 rounded w-1/3"/></div>)}</div></div></div></div>;
   if (error) return <div className="error-msg">{error}</div>;
 
@@ -219,6 +342,12 @@ export default function AdminDashboard() {
           className={`px-4 py-2 rounded ${activeTab === "employees" ? "primary-button" : "secondary-button"}`}
         >
           Employees
+        </button>
+        <button
+          onClick={() => setActiveTab("services-banking")}
+          className={`px-4 py-2 rounded ${activeTab === "services-banking" ? "primary-button" : "secondary-button"}`}
+        >
+          Services & Banking
         </button>
         <button
           onClick={() => setActiveTab("content")}
@@ -467,6 +596,154 @@ export default function AdminDashboard() {
               </ul>
             )}
           </div>
+      ) : activeTab === "services-banking" ? (
+        <div className="space-y-6">
+          {/* Services Management */}
+          <div className="glass-card">
+            <h3 className="font-bold text-lg mb-4">Services Management</h3>
+            
+            {/* Add New Service Form */}
+            <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+              <h4 className="font-semibold mb-3">Add New Service</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <input
+                  type="text"
+                  placeholder="Service Name"
+                  value={serviceForm.name}
+                  onChange={(e) => setServiceForm({...serviceForm, name: e.target.value})}
+                  className="px-3 py-2 border rounded"
+                />
+                <input
+                  type="number"
+                  placeholder="Base Price (R)"
+                  value={serviceForm.base_price}
+                  onChange={(e) => setServiceForm({...serviceForm, base_price: e.target.value})}
+                  className="px-3 py-2 border rounded"
+                />
+                <input
+                  type="number"
+                  placeholder="Duration (hours)"
+                  value={serviceForm.duration_hours}
+                  onChange={(e) => setServiceForm({...serviceForm, duration_hours: e.target.value})}
+                  className="px-3 py-2 border rounded"
+                />
+                <select
+                  value={serviceForm.category}
+                  onChange={(e) => setServiceForm({...serviceForm, category: e.target.value})}
+                  className="px-3 py-2 border rounded"
+                >
+                  <option value="standard">Standard</option>
+                  <option value="deep">Deep Clean</option>
+                  <option value="commercial">Commercial</option>
+                  <option value="specialized">Specialized</option>
+                </select>
+              </div>
+              <textarea
+                placeholder="Description"
+                value={serviceForm.description}
+                onChange={(e) => setServiceForm({...serviceForm, description: e.target.value})}
+                rows={2}
+                className="w-full mt-3 px-3 py-2 border rounded"
+              />
+              <button
+                onClick={handleAddService}
+                className="mt-3 primary-button px-4 py-2"
+              >
+                Add Service
+              </button>
+            </div>
+
+            {/* Services List */}
+            <div>
+              <h4 className="font-semibold mb-3">Existing Services</h4>
+              {services.length === 0 ? (
+                <p className="text-gray-500">No services available</p>
+              ) : (
+                <div className="space-y-2">
+                  {services.map((service: any) => (
+                    <div key={service.id} className="flex items-center justify-between p-3 bg-white border rounded">
+                      <div>
+                        <p className="font-semibold">{service.name}</p>
+                        <p className="text-sm text-gray-600">{service.description}</p>
+                        <p className="text-sm">R{service.base_price} | {service.duration_hours}h | {service.category}</p>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteService(service.id)}
+                        className="text-red-600 hover:text-red-700 px-3 py-1 border rounded"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Banking Details Management */}
+          <div className="glass-card">
+            <h3 className="font-bold text-lg mb-4">Banking Details</h3>
+            
+            <div className="p-4 bg-green-50 rounded-lg">
+              <h4 className="font-semibold mb-3">Update Banking Details</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <input
+                  type="text"
+                  placeholder="Bank Name"
+                  value={bankingForm.bank_name}
+                  onChange={(e) => setBankingForm({...bankingForm, bank_name: e.target.value})}
+                  className="px-3 py-2 border rounded"
+                />
+                <input
+                  type="text"
+                  placeholder="Account Number"
+                  value={bankingForm.account_number}
+                  onChange={(e) => setBankingForm({...bankingForm, account_number: e.target.value})}
+                  className="px-3 py-2 border rounded"
+                />
+                <input
+                  type="text"
+                  placeholder="Account Holder"
+                  value={bankingForm.account_holder}
+                  onChange={(e) => setBankingForm({...bankingForm, account_holder: e.target.value})}
+                  className="px-3 py-2 border rounded"
+                />
+                <input
+                  type="text"
+                  placeholder="Branch Code"
+                  value={bankingForm.branch_code}
+                  onChange={(e) => setBankingForm({...bankingForm, branch_code: e.target.value})}
+                  className="px-3 py-2 border rounded"
+                />
+                <select
+                  value={bankingForm.account_type}
+                  onChange={(e) => setBankingForm({...bankingForm, account_type: e.target.value})}
+                  className="px-3 py-2 border rounded"
+                >
+                  <option value="current">Current</option>
+                  <option value="savings">Savings</option>
+                </select>
+              </div>
+              <button
+                onClick={handleUpdateBankingDetails}
+                className="mt-3 primary-button px-4 py-2"
+              >
+                Update Banking Details
+              </button>
+            </div>
+
+            {bankingDetails && (
+              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                <h4 className="font-semibold mb-2">Current Banking Details</h4>
+                <p><span className="font-medium">Bank:</span> {bankingDetails.bank_name}</p>
+                <p><span className="font-medium">Account:</span> {bankingDetails.account_number}</p>
+                <p><span className="font-medium">Holder:</span> {bankingDetails.account_holder}</p>
+                <p><span className="font-medium">Branch:</span> {bankingDetails.branch_code}</p>
+                <p><span className="font-medium">Type:</span> {bankingDetails.account_type}</p>
+              </div>
+            )}
+          </div>
+        </div>
       ) : activeTab === "content" ? (
         <ContentManagement />
       ) : null}
