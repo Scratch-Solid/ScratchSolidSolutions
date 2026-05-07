@@ -91,6 +91,30 @@ export default function ConsentSubmittedPage() {
               <p className="text-gray-600 mb-6">
                 You will be notified of the next steps.
               </p>
+
+              {/* Display login credentials */}
+              {consentData?.generatedUsername && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                  <p className="text-sm text-gray-700 mb-2">
+                    <strong>Your Login Credentials:</strong>
+                  </p>
+                  <div className="space-y-2 text-left">
+                    <div>
+                      <p className="text-xs text-gray-500">Paysheet Code / Username:</p>
+                      <p className="font-mono font-bold text-lg">{consentData.generatedUsername}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Login with:</p>
+                      <p className="text-sm">Paysheet Code OR Phone Number</p>
+                      <p className="text-sm font-mono">{consentData.contactNumber}</p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-blue-600 mt-3">
+                    Please save these credentials. You will need them to login after approval.
+                  </p>
+                </div>
+              )}
+
               {checking && (
                 <div className="flex items-center justify-center gap-2 mb-6">
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
