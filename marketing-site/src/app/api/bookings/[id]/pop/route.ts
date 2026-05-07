@@ -11,7 +11,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   try {
     const bookingId = parseInt(id);
-    const body = await request.json();
+    const body = await request.json() as { pop_url?: string; pop_reference?: string };
     const { pop_url, pop_reference } = body;
 
     if (!pop_url) {
