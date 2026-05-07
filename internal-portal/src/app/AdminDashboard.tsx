@@ -473,10 +473,11 @@ export default function AdminDashboard() {
 }
 
 function ContentManagement() {
-  const [contentType, setContentType] = useState<'contact' | 'privacy' | 'terms' | 'services' | 'about' | 'indemnity'>('contact');
+  const [contentType, setContentType] = useState<'contact' | 'privacy' | 'terms' | 'services' | 'about' | 'indemnity' | 'consent-form' | 'contract'>('contact');
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [formData, setFormData] = useState<any>({});
 
   useEffect(() => {
     fetchContent();
@@ -485,11 +486,31 @@ function ContentManagement() {
   const fetchContent = async () => {
     setLoading(true);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://scratchsolidsolutions.org';
-      const response = await fetch(`${apiUrl}/api/content?type=${contentType}`);
-      if (response.ok) {
-        const data = await response.json() as { content?: string };
-        setContent(data.content || '');
+      if (contentType === 'consent-form') {
+        const token = localStorage.getItem('authToken');
+        const response = await fetch('/api/admin/consent-form', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setFormData(data || {});
+        }
+      } else if (contentType === 'contract') {
+        const token = localStorage.getItem('authToken');
+        const response = await fetch('/api/admin/contract-content', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setFormData(data || {});
+        }
+      } else {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://scratchsolidsolutions.org';
+        const response = await fetch(`${apiUrl}/api/content?type=${contentType}`);
+        if (response.ok) {
+          const data = await response.json() as { content?: string };
+          setContent(data.content || '');
+        }
       }
     } catch (error) {
       setMessage('Failed to load content');
@@ -501,17 +522,64 @@ function ContentManagement() {
   const handleSave = async () => {
     setLoading(true);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://scratchsolidsolutions.org';
-      const response = await fetch(`${apiUrl}/api/content?type=${contentType}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content })
-      });
-      if (response.ok) {
-        setMessage('Content updated successfully');
-        setTimeout(() => setMessage(''), 3000);
+      if (contentType === 'consent-form') {
+        const token = localStorage.getItem('authToken');
+        const response = await fetch('/api/admin/consent-form', {
+          method: formData.id ? 'PUT' : 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            id: formData.id,
+            title: formData.title,
+            consent_text: formData.consent_text,
+            background_checks: formData.background_checks,
+            acknowledgments: formData.acknowledgments,
+            witness_name: formData.witness_name
+          })
+        });
+        if (response.ok) {
+          setMessage('Consent form updated successfully');
+          setTimeout(() => setMessage(''), 3000);
+        } else {
+          setMessage('Failed to update consent form');
+        }
+      } else if (contentType === 'contract') {
+        const token = localStorage.getItem('authToken');
+        const response = await fetch('/api/admin/contract-content', {
+          method: formData.id ? 'PUT' : 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            id: formData.id,
+            title: formData.title,
+            contract_text: formData.contract_text,
+            terms: formData.terms,
+            company_name: formData.company_name
+          })
+        });
+        if (response.ok) {
+          setMessage('Contract updated successfully');
+          setTimeout(() => setMessage(''), 3000);
+        } else {
+          setMessage('Failed to update contract');
+        }
       } else {
-        setMessage('Failed to update content');
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://scratchsolidsolutions.org';
+        const response = await fetch(`${apiUrl}/api/content?type=${contentType}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content })
+        });
+        if (response.ok) {
+          setMessage('Content updated successfully');
+          setTimeout(() => setMessage(''), 3000);
+        } else {
+          setMessage('Failed to update content');
+        }
       }
     } catch (error) {
       setMessage('Failed to update content');
@@ -537,19 +605,110 @@ function ContentManagement() {
           <option value="services">Services</option>
           <option value="about">About Us</option>
           <option value="indemnity">Indemnity Form</option>
+          <option value="consent-form">Employee Consent Form</option>
+          <option value="contract">Employment Contract</option>
         </select>
       </div>
 
-      <div className="mb-4">
-        <label className="block text-sm font-medium mb-2">Content (Markdown supported)</label>
-        <textarea
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          rows={15}
-          className="w-full px-3 py-2 border rounded font-mono text-sm"
-          placeholder="Enter content here..."
-        />
-      </div>
+      {contentType === 'consent-form' ? (
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-2">Form Title</label>
+            <input
+              type="text"
+              value={formData.title || ''}
+              onChange={(e) => setFormData({...formData, title: e.target.value})}
+              className="w-full px-3 py-2 border rounded"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">Consent Text</label>
+            <textarea
+              value={formData.consent_text || ''}
+              onChange={(e) => setFormData({...formData, consent_text: e.target.value})}
+              rows={3}
+              className="w-full px-3 py-2 border rounded"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">Background Checks (one per line)</label>
+            <textarea
+              value={formData.background_checks || ''}
+              onChange={(e) => setFormData({...formData, background_checks: e.target.value})}
+              rows={3}
+              className="w-full px-3 py-2 border rounded"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">Acknowledgments (one per line)</label>
+            <textarea
+              value={formData.acknowledgments || ''}
+              onChange={(e) => setFormData({...formData, acknowledgments: e.target.value})}
+              rows={4}
+              className="w-full px-3 py-2 border rounded"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">Witness Name</label>
+            <input
+              type="text"
+              value={formData.witness_name || ''}
+              onChange={(e) => setFormData({...formData, witness_name: e.target.value})}
+              className="w-full px-3 py-2 border rounded"
+            />
+          </div>
+        </div>
+      ) : contentType === 'contract' ? (
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-2">Contract Title</label>
+            <input
+              type="text"
+              value={formData.title || ''}
+              onChange={(e) => setFormData({...formData, title: e.target.value})}
+              className="w-full px-3 py-2 border rounded"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">Company Name</label>
+            <input
+              type="text"
+              value={formData.company_name || ''}
+              onChange={(e) => setFormData({...formData, company_name: e.target.value})}
+              className="w-full px-3 py-2 border rounded"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">Contract Text</label>
+            <textarea
+              value={formData.contract_text || ''}
+              onChange={(e) => setFormData({...formData, contract_text: e.target.value})}
+              rows={3}
+              className="w-full px-3 py-2 border rounded"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">Terms (use \n for line breaks)</label>
+            <textarea
+              value={formData.terms || ''}
+              onChange={(e) => setFormData({...formData, terms: e.target.value})}
+              rows={15}
+              className="w-full px-3 py-2 border rounded font-mono text-sm"
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="mb-4">
+          <label className="block text-sm font-medium mb-2">Content (Markdown supported)</label>
+          <textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            rows={15}
+            className="w-full px-3 py-2 border rounded font-mono text-sm"
+            placeholder="Enter content here..."
+          />
+        </div>
+      )}
 
       {message && (
         <div className={`mb-4 p-3 rounded ${message.includes('success') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>

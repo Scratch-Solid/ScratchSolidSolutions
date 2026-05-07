@@ -18,9 +18,27 @@ export default function ContractPage() {
   const [approved, setApproved] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
+  const [contractContent, setContractContent] = useState<any>(null);
+  const [loadingContent, setLoadingContent] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
+    // Fetch contract content from database
+    const fetchContractContent = async () => {
+      try {
+        const response = await fetch('/api/admin/contract-content');
+        if (response.ok) {
+          const data = await response.json();
+          setContractContent(data);
+        }
+      } catch (err) {
+        console.error('Error fetching contract content:', err);
+      } finally {
+        setLoadingContent(false);
+      }
+    };
+    fetchContractContent();
+
     async function checkApprovalStatus() {
       // Get consent data from localStorage
       const storedConsent = localStorage.getItem("pendingConsent");
@@ -37,7 +55,7 @@ export default function ContractPage() {
         try {
           const response = await fetch("/api/pending-contracts");
           if (response.ok) {
-            const contracts = await response.json();
+            const contracts = await response.json() as any[];
             const userContract = contracts.find((c: any) => c.generatedUsername === consent.generatedUsername);
             if (userContract && userContract.status === "approved") {
               setApproved(true);
@@ -170,7 +188,9 @@ export default function ContractPage() {
       <div className="glass-panel max-w-4xl w-full">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--text-h)' }}>Scratch Solid Solutions</h1>
-          <p className="text-lg font-medium" style={{ color: 'var(--text)' }}>Employment Agreement</p>
+          <p className="text-lg font-medium" style={{ color: 'var(--text)' }}>
+            {loadingContent ? 'Loading...' : (contractContent?.title || 'Employment Agreement')}
+          </p>
         </div>
 
         <div className="glass-card" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
@@ -182,9 +202,9 @@ export default function ContractPage() {
             <div className="space-y-4">
               <div>
                 <p className="font-bold mb-2">Employer:</p>
-                <p>Company Name: Scratch Solid Solutions</p>
+                <p>Company Name: {loadingContent ? 'Loading...' : (contractContent?.company_name || 'Scratch Solid Solutions')}</p>
               </div>
-              
+
               <div>
                 <p className="font-bold mb-2">Employee:</p>
                 <div className="space-y-2">
@@ -208,6 +228,7 @@ export default function ContractPage() {
                       onChange={handleChange}
                       className="w-full"
                       required
+                      readOnly
                     />
                   </div>
                   <div>
@@ -227,128 +248,11 @@ export default function ContractPage() {
             </div>
 
             <div className="space-y-4">
-              <div>
-                <p className="font-bold">1. POSITION</p>
-                <p>The Employee is appointed as a CLEANER.</p>
-              </div>
-
-              <div>
-                <p className="font-bold">2. COMMENCEMENT</p>
-                <p>Start Date: {startDate}</p>
-              </div>
-
-              <div>
-                <p className="font-bold">3. WORKING HOURS</p>
-                <ul className="list-disc list-inside space-y-1 ml-4">
-                  <li>Working days: Monday to Saturday</li>
-                  <li>Minimum of 2 tasks per day</li>
-                  <li>Overtime will be paid according to BCEA requirements.</li>
-                </ul>
-              </div>
-
-              <div>
-                <p className="font-bold">4. DUTIES</p>
-                <p className="mb-2">The Employee agrees to perform cleaning duties including but not limited to:</p>
-                <ul className="list-disc list-inside space-y-1 ml-4">
-                  <li>General cleaning (floors, toilets, kitchens, offices)</li>
-                  <li>Safe use of chemicals and equipment</li>
-                  <li>Following client and company rules</li>
-                  <li>Maintaining confidentiality of clients' premises and information</li>
-                </ul>
-              </div>
-
-              <div>
-                <p className="font-bold">5. PLACE OF WORK</p>
-                <p>The Employee may be required to work at various client sites as assigned.</p>
-              </div>
-
-              <div>
-                <p className="font-bold">6. REMUNERATION</p>
-                <ul className="list-disc list-inside space-y-1 ml-4">
-                  <li>Rate: R 150,00 per task</li>
-                  <li>Payment frequency: Monthly</li>
-                  <li>Payment method: EFT</li>
-                </ul>
-                <div className="mt-3 space-y-2">
-                  <div>
-                    <label className="block font-semibold mb-1">Bank:</label>
-                    <input
-                      type="text"
-                      name="bank"
-                      value={formData.bank}
-                      onChange={handleChange}
-                      className="w-full"
-                      required
-                      placeholder="Enter bank name"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-semibold mb-1">Account Number:</label>
-                    <input
-                      type="text"
-                      name="accountNumber"
-                      value={formData.accountNumber}
-                      onChange={handleChange}
-                      className="w-full"
-                      required
-                      placeholder="Enter account number"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-semibold mb-1">Cardholder Name:</label>
-                    <input
-                      type="text"
-                      name="cardholderName"
-                      value={formData.cardholderName}
-                      onChange={handleChange}
-                      className="w-full"
-                      required
-                      placeholder="Enter cardholder name"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <p className="font-bold">7. LEAVE</p>
-                <p>Leave is granted in accordance with the Basic Conditions of Employment Act.</p>
-              </div>
-
-              <div>
-                <p className="font-bold">8. DISCIPLINARY RULES</p>
-                <ul className="list-disc list-inside space-y-1 ml-4">
-                  <li>Theft, dishonesty, intoxication, or serious misconduct may lead to dismissal</li>
-                  <li>Failure to follow safety procedures is a disciplinary offence</li>
-                </ul>
-              </div>
-
-              <div>
-                <p className="font-bold">9. HEALTH & SAFETY</p>
-                <p className="mb-2">The Employee agrees to:</p>
-                <ul className="list-disc list-inside space-y-1 ml-4">
-                  <li>Wear issued PPE</li>
-                  <li>Use chemicals and equipment safely</li>
-                  <li>Report injuries immediately</li>
-                </ul>
-              </div>
-
-              <div>
-                <p className="font-bold">10. CONFIDENTIALITY</p>
-                <p>The Employee may not disclose any client information or company data.</p>
-              </div>
-
-              <div>
-                <p className="font-bold">11. TERMINATION</p>
-                <ul className="list-disc list-inside space-y-1 ml-4">
-                  <li>One (1) week notice during probation</li>
-                  <li>Thereafter in line with labour law</li>
-                </ul>
-              </div>
-
-              <div>
-                <p className="font-bold">12. PROBATION</p>
-                <p>Probation period: 6 months</p>
-              </div>
+              {loadingContent ? (
+                <p>Loading contract terms...</p>
+              ) : (
+                <div dangerouslySetInnerHTML={{ __html: (contractContent?.terms || '').replace(/\n/g, '<br/>') }} />
+              )}
             </div>
 
             <div className="mt-8 pt-4 border-t">
