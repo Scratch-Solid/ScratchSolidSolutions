@@ -11,16 +11,6 @@ export default function BookingSelectionPage() {
   useEffect(() => {
     const role = localStorage.getItem("userRole");
     setUserRole(role);
-    
-    // Redirect to appropriate dashboard if already logged in
-    const token = localStorage.getItem("authToken");
-    if (token && role) {
-      if (role === 'business') {
-        router.push("/business-dashboard");
-      } else {
-        router.push("/client-dashboard");
-      }
-    }
   }, [router]);
 
   const handleIndividualBooking = () => {
