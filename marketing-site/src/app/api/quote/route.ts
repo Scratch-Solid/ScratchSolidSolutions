@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, validateSession } from '@/lib/db';
+import { getDb, validateSession, sanitizeString, sanitizeEmail, sanitizePhone } from '@/lib/db';
+import { validateEmail } from '@/lib/validation';
 import { findOrCreateContact, createEstimate } from '@/lib/zoho';
 import { withRateLimit, rateLimits } from '@/lib/middleware';
 
@@ -42,19 +43,52 @@ export async function POST(request: NextRequest) {
 
     const {
       name, email, phone, service_id, service_name, client_type, quantity, unit,
-      baseline_price, promo_code, discount_type, discount_value, discount_amount, final_price
+      baseline_price, special_price, special_label, special_discount,
+      promo_code, discount_type, discount_value, discount_amount, final_price
     } = body;
 
+    // Validate required fields
     if (!name || !service_id || baseline_price === undefined || final_price === undefined) {
       return NextResponse.json({ error: 'name, service_id, baseline_price, and final_price are required' }, { status: 400 });
     }
 
-    // If a promo code was submitted, increment its used_count atomically
-    if (promo_code) {
-      await db.prepare(
-        `UPDATE promo_codes SET used_count = used_count + 1, updated_at = datetime('now')
+    // Sanitize inputs
+    const sanitizedName = sanitizeString(name.trim());
+    const sanitizedEmail = email ? sanitizeEmail(email.trim()) : '';
+    const sanitizedPhone = phone ? sanitizePhone(phone.trim()) : '';
+    const sanitizedServiceName = service_name ? sanitizeString(service_name) : '';
+    const sanitizedPromoCode = promo_code ? promo_code.trim().toUpperCase() : '';
+
+    // Validate email format if provided
+    if (sanitizedEmail) {
+      const emailValidation = validateEmail(sanitizedEmail);
+      if (!emailValidation.valid) {
+        return NextResponse.json({ error: emailValidation.errors.join(', ') }, { status: 400 });
+      }
+    }
+
+    // Validate service_id exists
+    const service = await db.prepare('SELECT id FROM services WHERE id = ? AND active = 1').bind(service_id).first();
+    if (!service) {
+      return NextResponse.json({ error: 'Invalid service' }, { status: 400 });
+    }
+
+    // Validate promo code if provided
+    if (sanitizedPromoCode) {
+      const promo = await db.prepare(
+        `SELECT id, discount_type, discount_value, active, valid_until 
+         FROM promo_codes 
          WHERE UPPER(code) = UPPER(?) AND active = 1`
-      ).bind(promo_code.trim()).run();
+      ).bind(sanitizedPromoCode).first();
+
+      if (!promo) {
+        return NextResponse.json({ error: 'Invalid promo code' }, { status: 400 });
+      }
+
+      // Check if promo is expired
+      if ((promo as any).valid_until && new Date((promo as any).valid_until) < new Date()) {
+        return NextResponse.json({ error: 'Promo code has expired' }, { status: 400 });
+      }
     }
 
     const refNumber = generateRef();
@@ -63,34 +97,44 @@ export async function POST(request: NextRequest) {
     const result = await db.prepare(
       `INSERT INTO quote_requests
         (ref_number, name, email, phone, service_id, service_name, client_type, quantity, unit,
-         baseline_price, promo_code, discount_type, discount_value, discount_amount,
+         baseline_price, special_price, special_label, special_discount,
+         promo_code, discount_type, discount_value, discount_amount,
          final_price, status, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', datetime('now'), datetime('now'))`
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', datetime('now'), datetime('now'))`
     ).bind(
       refNumber,
-      name.trim(), email?.trim() || '', phone?.trim() || '',
-      service_id, service_name || '', client_type || 'individual', quantity || 1, unit || '',
-      baseline_price, promo_code || '', discount_type || '', discount_value || 0,
+      sanitizedName, sanitizedEmail, sanitizedPhone,
+      service_id, sanitizedServiceName, client_type || 'individual', quantity || 1, unit || '',
+      baseline_price, special_price || null, special_label || '', special_discount || 0,
+      sanitizedPromoCode, discount_type || '', discount_value || 0,
       discount_amount || 0, final_price
     ).run();
 
     const quoteId = result.meta.last_row_id;
 
+    // Only increment promo code usage after successful quote creation
+    if (sanitizedPromoCode) {
+      await db.prepare(
+        `UPDATE promo_codes SET used_count = used_count + 1, updated_at = datetime('now')
+         WHERE UPPER(code) = UPPER(?) AND active = 1`
+      ).bind(sanitizedPromoCode).run();
+    }
+
     // Attempt Zoho estimate creation (best-effort, non-blocking)
     let zohoEstimateId = '';
     let zohoEstimateNumber = '';
 
-    if (email || name) {
+    if (sanitizedEmail || sanitizedName) {
       try {
-        const contactId = await findOrCreateContact(name.trim(), email?.trim() || '', phone?.trim() || '');
+        const contactId = await findOrCreateContact(sanitizedName, sanitizedEmail, sanitizedPhone);
         if (contactId) {
           const estimateResp = await createEstimate({
             contactId,
-            serviceName: service_name || `Service #${service_id}`,
+            serviceName: sanitizedServiceName || `Service #${service_id}`,
             baselinePrice: baseline_price,
             discountAmount: discount_amount || 0,
             finalPrice: final_price,
-            promoCode: promo_code,
+            promoCode: sanitizedPromoCode,
             refNumber,
           });
           zohoEstimateId = estimateResp.estimate?.estimate_id || '';
@@ -112,11 +156,13 @@ export async function POST(request: NextRequest) {
       id: quoteId,
       ref_number: refNumber,
       zoho_estimate_number: zohoEstimateNumber,
-      name, email, phone,
-      service_name: service_name || '',
+      name: sanitizedName,
+      email: sanitizedEmail,
+      phone: sanitizedPhone,
+      service_name: sanitizedServiceName,
       client_type: client_type || 'individual',
       baseline_price,
-      promo_code: promo_code || '',
+      promo_code: sanitizedPromoCode,
       discount_type: discount_type || '',
       discount_value: discount_value || 0,
       discount_amount: discount_amount || 0,
