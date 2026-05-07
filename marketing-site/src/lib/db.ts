@@ -10,7 +10,7 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 export async function getDb(): Promise<D1Database | null> {
   try {
     // OpenNext on Workers: use getCloudflareContext
-    const { env } = await getCloudflareContext({ async: true }) as unknown as { env: Env };
+    const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
     if (env?.scratchsolid_db) {
       return env.scratchsolid_db as D1Database;
     }
@@ -89,9 +89,9 @@ export async function validateLogin(db: D1Database, email: string, password: str
 
 // Session operations
 export async function createSession(db: D1Database, userId: number, token: string) {
-  // 5-minute session expiration for security (inactivity timeout)
+  // 7-day session expiration for better UX
   await db.prepare(
-    `INSERT INTO sessions (user_id, token, expires_at) VALUES (?, ?, datetime('now', '+5 minutes'))`
+    `INSERT INTO sessions (user_id, token, expires_at) VALUES (?, ?, datetime('now', '+7 days'))`
   ).bind(userId, token).run();
 }
 
