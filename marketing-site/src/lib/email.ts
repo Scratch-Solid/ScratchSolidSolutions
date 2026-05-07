@@ -8,15 +8,22 @@ let resend: Resend | null = null;
 async function getResendClient(): Promise<Resend> {
   if (!resend) {
     try {
+      logger.info('Initializing Resend client...');
+      
       // Get API key from Cloudflare environment using same pattern as db.ts
       const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
       const apiKey = env?.RESEND_API_KEY;
       
+      logger.info('Cloudflare context accessed', { hasApiKey: !!apiKey });
+      
       if (!apiKey) {
+        logger.error('RESEND_API_KEY not found in Cloudflare environment');
         throw new Error('RESEND_API_KEY not found in Cloudflare environment');
       }
       
+      logger.info('Creating Resend client with API key');
       resend = new Resend(apiKey);
+      logger.info('Resend client created successfully');
     } catch (error) {
       logger.error('Error initializing Resend client', error as Error);
       throw new Error('Failed to initialize email service');
@@ -34,19 +41,30 @@ interface SendEmailOptions {
 
 export async function sendEmail({ to, subject, html, from }: SendEmailOptions) {
   try {
+    logger.info('Attempting to send email', { to, subject });
+    
     const client = await getResendClient();
-    const { data, error } = await client.emails.send({
+    logger.info('Resend client initialized successfully');
+    
+    const emailData = {
       from: from || 'Scratch Solid Solutions <customerservice@scratchsolidsolutions.org>',
       to,
       subject,
       html,
-    });
+    };
+    
+    logger.info('Sending email via Resend', { emailData });
+    
+    const { data, error } = await client.emails.send(emailData);
+    
+    logger.info('Resend API response', { data, error });
 
     if (error) {
       logger.error('Error sending email', error as Error);
       return { success: false, message: 'Failed to send email', error };
     }
 
+    logger.info('Email sent successfully', { data });
     return { success: true, data };
   } catch (error) {
     logger.error('Error sending email', error as Error);
