@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json({ 
       error: "An unexpected error occurred. Please try again.",
-      debug: errorMessage 
+      ...(process.env.NODE_ENV === 'development' ? { debug: errorMessage } : {})
     }, { status: 500 });
   }
 }
