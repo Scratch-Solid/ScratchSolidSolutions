@@ -1,13 +1,26 @@
 // Email service using Resend API
 import { Resend } from 'resend';
 import { logger } from './logger';
-import { getResendApiKey } from './env';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 
 let resend: Resend | null = null;
 
-function getResendClient(): Resend {
+async function getResendClient(): Promise<Resend> {
   if (!resend) {
-    resend = new Resend(getResendApiKey());
+    try {
+      // Get API key from Cloudflare environment
+      const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
+      const apiKey = env?.RESEND_API_KEY;
+      
+      if (!apiKey) {
+        throw new Error('RESEND_API_KEY not found in Cloudflare environment');
+      }
+      
+      resend = new Resend(apiKey);
+    } catch (error) {
+      logger.error('Error initializing Resend client', error as Error);
+      throw new Error('Failed to initialize email service');
+    }
   }
   return resend;
 }
@@ -21,7 +34,7 @@ interface SendEmailOptions {
 
 export async function sendEmail({ to, subject, html, from }: SendEmailOptions) {
   try {
-    const client = getResendClient();
+    const client = await getResendClient();
     const { data, error } = await client.emails.send({
       from: from || 'Scratch Solid Solutions <customerservice@scratchsolidsolutions.org>',
       to,
