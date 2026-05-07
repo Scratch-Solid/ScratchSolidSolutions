@@ -9,8 +9,14 @@ interface Service {
   id: number;
   name: string;
   description: string;
+  detailed_description: string;
+  base_price: number;
+  room_multiplier: number;
+  is_active: number;
   icon: string;
-  active: boolean;
+  display_order: number;
+  created_at: string;
+  updated_at: string;
 }
 
 interface ServicePricing {
@@ -122,7 +128,7 @@ export default function ServicesContent() {
             <div className="text-center text-gray-500 relative z-10">Loading...</div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6 relative z-10">
-              {services.filter(s => s.active).map((service) => {
+              {services.filter(s => s.is_active).map((service) => {
                 const isFlipped = flippedCards.has(service.id);
                 const priceLabel = getPriceLabel(service.id);
                 return (

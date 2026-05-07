@@ -6,8 +6,14 @@ interface Service {
   id: number;
   name: string;
   description: string;
+  detailed_description: string;
+  base_price: number;
+  room_multiplier: number;
+  is_active: number;
   icon: string;
-  active: boolean;
+  display_order: number;
+  created_at: string;
+  updated_at: string;
 }
 
 interface ServicePricing {
@@ -350,7 +356,7 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Select Service <span className="text-red-500">*</span></label>
                   <div className="space-y-2">
-                    {services.filter(s => s.active).map(service => (
+                    {services.filter(s => s.is_active).map(service => (
                       <button
                         key={service.id}
                         onClick={() => setSelectedServiceId(service.id)}
