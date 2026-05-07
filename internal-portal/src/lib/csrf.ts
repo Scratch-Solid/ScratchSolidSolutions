@@ -4,13 +4,13 @@ const CSRF_SECRET = process.env.CSRF_SECRET;
 
 function getCsrfSecret(): string {
   if (!CSRF_SECRET) {
-    throw new Error('CSRF_SECRET environment variable is required');
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('CSRF_SECRET environment variable is required in production');
+    }
+    // Use a fallback for development/build time
+    return 'dev-secret-fallback-do-not-use-in-production';
   }
   return CSRF_SECRET;
-}
-
-if (process.env.NODE_ENV === 'production' && !CSRF_SECRET) {
-  throw new Error('CRITICAL SECURITY WARNING: CSRF_SECRET environment variable is not set in production');
 }
 
 export function generateCsrfToken(): string {
