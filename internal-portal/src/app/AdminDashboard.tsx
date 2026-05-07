@@ -4,8 +4,10 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 
 export default function AdminDashboard() {
+  useSessionTimeout(true);
   const [users, setUsers] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [contracts, setContracts] = useState([]);

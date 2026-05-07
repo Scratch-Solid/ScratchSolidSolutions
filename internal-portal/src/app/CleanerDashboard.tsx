@@ -4,8 +4,10 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 
 export default function CleanerDashboard() {
+  useSessionTimeout(true);
   const [cleaner, setCleaner] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [ratings, setRatings] = useState([]);

@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { SkeletonDashboard } from "@/components/Skeleton";
+import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 
 export default function DigitalDashboard() {
+  useSessionTimeout(true);
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
 

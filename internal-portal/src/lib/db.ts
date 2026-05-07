@@ -24,29 +24,6 @@ export async function getDb(): Promise<D1Database | null> {
   return null;
 }
 
-// Input sanitization utilities
-export function sanitizeString(input: string): string {
-  if (typeof input !== 'string') return '';
-  return input
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#x27;')
-    .replace(/\//g, '&#x2F;')
-    .trim();
-}
-
-export function sanitizeEmail(email: string): string {
-  if (typeof email !== 'string') return '';
-  return email.toLowerCase().replace(/[^a-z0-9@._+-]/g, '').trim();
-}
-
-export function sanitizePhone(phone: string): string {
-  if (typeof phone !== 'string') return '';
-  return phone.replace(/[^0-9+\-() ]/g, '').trim();
-}
-
 // User operations
 export async function getUserByEmail(db: D1Database, email: string) {
   const result = await db.prepare('SELECT id, email, role, name, phone, address, business_name, failed_attempts, locked_until FROM users WHERE email = ?').bind(email).first();
