@@ -956,6 +956,136 @@ router.put('/weekend-requests/:id/assign', async (request, env) => {
   }
 });
 
+// Reset password endpoint
+router.post('/auth/reset-password', async (request, env) => {
+  try {
+    const { token } = await request.json();
+    
+    if (!token) {
+      return new Response(JSON.stringify({ 
+        error: "Reset token is required" 
+      }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
+      });
+    }
+    
+    // Find valid token
+    const resetToken = await env.DB.prepare(`
+      SELECT * FROM password_reset_tokens 
+      WHERE token = ? AND expires_at > datetime('now') 
+      ORDER BY created_at DESC 
+      LIMIT 1
+    `).bind(token).first();
+    
+    if (!resetToken) {
+      return new Response(JSON.stringify({ 
+        error: "Invalid or expired reset token" 
+      }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
+      });
+    }
+    
+    // Get user
+    const user = await env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(resetToken.user_id).first();
+    
+    if (!user) {
+      return new Response(JSON.stringify({ 
+        error: "User not found" 
+      }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
+      });
+    }
+    
+    // Generate new password
+    const newPassword = generateRandomPassword();
+    const passwordHash = await hashPassword(newPassword);
+    
+    // Update user password
+    await env.DB.prepare('UPDATE users SET password_hash = ? WHERE id = ?').bind(passwordHash, user.id).run();
+    
+    // Delete used token
+    await env.DB.prepare('DELETE FROM password_reset_tokens WHERE id = ?').bind(resetToken.id).run();
+    
+    // Send confirmation email
+    await sendEmail(env, {
+      to: user.email,
+      subject: 'Password Reset Successful - Scratch Solid Solutions',
+      html: `
+        <!DOCTYPE html>
+          <html>
+          <head>
+            <style>
+              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+              .header { background: #10b981; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+              .content { background: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }
+              .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <h1>Password Reset Successful</h1>
+              </div>
+              <div class="content">
+                <p>Hi ${user.name || 'there'},</p>
+                <p>Your password has been successfully reset. Your new password is:</p>
+                <p style="background: #e5e7eb; padding: 10px; border-radius: 4px; font-family: monospace;">${newPassword}</p>
+                <p>Please save this password securely and consider changing it after your first login.</p>
+              </div>
+              <div class="footer">
+                <p>&copy; 2024 Scratch Solid Solutions. All rights reserved.</p>
+              </div>
+            </div>
+          </body>
+        </html>
+      `
+    });
+    
+    return new Response(JSON.stringify({
+      message: "Password has been reset successfully"
+    }), {
+      headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
+    });
+    
+  } catch (error) {
+    return new Response(JSON.stringify({ 
+      error: "An unexpected error occurred. Please try again." 
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
+    });
+  }
+});
+
+// Helper functions
+function generateToken() {
+  const array = new Uint8Array(32);
+  crypto.getRandomValues(array);
+  return Array.from(array).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function generateRandomPassword() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let password = '';
+  for (let i = 0; i < 12; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return password;
+}
+
+async function hashPassword(password) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hashBuffer))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
 // Business events endpoints
 router.post('/business-events', async (request, env) => {
   const payload = await verifyToken(request);
