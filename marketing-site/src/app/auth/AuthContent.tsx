@@ -4,8 +4,10 @@ import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import LogoWatermark from '@/components/LogoWatermark';
+import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 
 export default function AuthContent() {
+  useSessionTimeout(false); // Disable timeout on auth page
   const router = useRouter();
   const searchParams = useSearchParams();
   const [tab, setTab] = useState<"individual" | "business">("individual");

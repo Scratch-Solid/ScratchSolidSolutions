@@ -3,10 +3,12 @@
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 
 export default function BookingSelectionPage() {
   const router = useRouter();
   const [userRole, setUserRole] = useState<string | null>(null);
+  useSessionTimeout(true); // Enable 5-minute inactivity timeout
 
   useEffect(() => {
     const role = localStorage.getItem("userRole");
@@ -34,10 +36,10 @@ export default function BookingSelectionPage() {
             className="w-full p-8 rounded-2xl border-2 border-blue-200 bg-white hover:bg-blue-50 transition-all shadow-lg"
           >
             <h2 className="text-2xl font-semibold text-blue-700 mb-2">
-              Home / Individual Booking
+              Once-off / Individual Booking
             </h2>
             <p className="text-gray-600">
-              Book a one-time or recurring cleaning service for your home
+              Book a one-time cleaning service for your home
             </p>
           </button>
 
@@ -46,7 +48,7 @@ export default function BookingSelectionPage() {
             className="w-full p-8 rounded-2xl border-2 border-blue-200 bg-white hover:bg-blue-50 transition-all shadow-lg"
           >
             <h2 className="text-2xl font-semibold text-blue-700 mb-2">
-              Business Booking
+              Contract / Business Booking
             </h2>
             <p className="text-gray-600">
               Book commercial cleaning services or sign a contract

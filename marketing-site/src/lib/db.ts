@@ -6,10 +6,6 @@ import bcrypt from 'bcryptjs';
 import { logger } from './logger';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 
-export interface Env {
-  scratchsolid_db: D1Database;
-}
-
 // Helper to get the D1 database from the OpenNext Cloudflare context
 export async function getDb(): Promise<D1Database | null> {
   try {
@@ -22,29 +18,6 @@ export async function getDb(): Promise<D1Database | null> {
     logger.error('Error getting database from OpenNext context', error as Error);
   }
   return null;
-}
-
-// Input sanitization utilities
-export function sanitizeString(input: string): string {
-  if (typeof input !== 'string') return '';
-  return input
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#x27;')
-    .replace(/\//g, '&#x2F;')
-    .trim();
-}
-
-export function sanitizeEmail(email: string): string {
-  if (typeof email !== 'string') return '';
-  return email.toLowerCase().replace(/[^a-z0-9@._+-]/g, '').trim();
-}
-
-export function sanitizePhone(phone: string): string {
-  if (typeof phone !== 'string') return '';
-  return phone.replace(/[^0-9+\-() ]/g, '').trim();
 }
 
 // User operations

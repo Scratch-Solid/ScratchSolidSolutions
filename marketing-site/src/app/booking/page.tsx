@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 
 export default function BookingPage() {
+  useSessionTimeout(true); // Enable 5-minute inactivity timeout
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "eft">("cash");
@@ -17,18 +19,41 @@ export default function BookingPage() {
   const [error, setError] = useState("");
   const [cleanerId, setCleanerId] = useState("");
   const [weekendWorkRequired, setWeekendWorkRequired] = useState(false);
+  const [services, setServices] = useState<any[]>([]);
+  const [bankingDetails, setBankingDetails] = useState<any>(null);
+  const [popFile, setPopFile] = useState<File | null>(null);
 
   const timeSlots = [
     { value: "08:00-12:00", label: "Morning (08:00-12:00)" },
     { value: "13:00-17:00", label: "Afternoon (13:00-17:00)" },
   ];
 
-  const serviceTypes = [
-    "Standard Cleaning",
-    "Deep Clean",
-    "Move-in/Move-out Cleaning",
-    "Commercial Cleaning"
-  ];
+  // Fetch dynamic services and banking details on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch services
+        const servicesRes = await fetch('/api/services');
+        if (servicesRes.ok) {
+          const servicesData = await servicesRes.json() as any[];
+          setServices(servicesData || []);
+          if (servicesData && servicesData.length > 0) {
+            setServiceType(servicesData[0].name);
+          }
+        }
+
+        // Fetch banking details
+        const bankingRes = await fetch('/api/banking-details');
+        if (bankingRes.ok) {
+          const bankingData = await bankingRes.json();
+          setBankingDetails(bankingData);
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    };
+    fetchData();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,6 +64,19 @@ export default function BookingPage() {
     }
 
     setShowIndemnity(true);
+  };
+
+  const promptForPOP = async (): Promise<File | null> => {
+    return new Promise((resolve) => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*,.pdf';
+      input.onchange = (e) => {
+        const file = (e.target as HTMLInputElement).files?.[0];
+        resolve(file || null);
+      };
+      input.click();
+    });
   };
 
   const confirmBooking = async () => {
@@ -53,22 +91,19 @@ export default function BookingPage() {
 
       // Build booking payload with proper typing
       const bookingPayload: any = {
-        user_id: userId || "",
-        cleaner_id: cleanerId || "",
-        type: bookingType,
-        start_time: `${selectedDate}T${startTime}:00`,
-        end_time: `${selectedDate}T${endTime}:00`,
-        payment_method: paymentMethod,
+        client_id: parseInt(userId || "0"),
+        client_name: userName,
         location: location || "Johannesburg",
         service_type: serviceType,
+        booking_date: selectedDate,
+        booking_time: selectedTime,
         special_instructions: specialInstructions,
-        weekend_work_required: weekendWorkRequired
+        booking_type: bookingType === "once_off" ? "standard" : "recurring",
+        cleaning_type: "standard",
+        payment_method: paymentMethod,
+        loyalty_discount: 0,
+        cleaner_id: cleanerId || null
       };
-
-      // Attach recurring rule if recurring booking
-      if (bookingType === "recurring" && recurringRule) {
-        bookingPayload.recurring_rule = recurringRule;
-      }
 
       // POST /bookings
       const bookingResponse = await fetch("/api/bookings", {
@@ -97,38 +132,32 @@ export default function BookingPage() {
 
       const bookingData = await bookingResponse.json() as { id: number };
 
-      // Trigger admin notification if weekend work is required
-      if (weekendWorkRequired) {
-        await triggerAdminNotification({
-          booking_id: bookingData.id,
-          type: 'weekend_assignment',
-          message: 'Weekend work required for this booking'
-        });
+      // If EFT payment, show POP submission modal
+      if (paymentMethod === "eft") {
+        setShowIndemnity(false);
+        // Show POP submission modal
+        const popFile = await promptForPOP();
+        if (popFile) {
+          const formData = new FormData();
+          formData.append('file', popFile);
+          
+          const popResponse = await fetch(`/api/bookings/${bookingData.id}/pop`, {
+            method: 'POST',
+            body: JSON.stringify({
+              pop_url: popFile.name, // In production, this would be the uploaded file URL
+              pop_reference: prompt("Enter payment reference number:")
+            })
+          });
+          
+          if (!popResponse.ok) {
+            setError("Failed to submit proof of payment. Please try again or contact admin.");
+            setLoading(false);
+            return;
+          }
+        }
       }
 
-      // POST /payments
-      const paymentPayload = {
-        booking_id: bookingData.id,
-        payment_method: paymentMethod,
-        amount: calculatePaymentAmount(serviceType)
-      };
-
-      const paymentResponse = await fetch("/api/payments", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(paymentPayload)
-      });
-
-      if (!paymentResponse.ok) {
-        setError("Payment not confirmed, retry or contact admin.");
-        setLoading(false);
-        return;
-      }
-
-      // Zoho Books integration fires automatically based on payment method
-      // (This would be handled server-side in the /api/payments endpoint)
-
-      alert("Booking confirmed successfully!");
+      alert("Booking confirmed successfully! Cleaner will be assigned after payment verification.");
       window.location.href = "/client-dashboard";
     } catch (error: any) {
       setError(error.message || "Network error. Please try again.");
@@ -226,11 +255,13 @@ export default function BookingPage() {
                 required
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black"
               >
-                {serviceTypes.map((type) => (
-                  <option key={type} value={type}>
-                    {type}
+                {services.length > 0 ? services.map((service: any) => (
+                  <option key={service.id} value={service.name}>
+                    {service.name}
                   </option>
-                ))}
+                )) : (
+                  <option value="">Loading services...</option>
+                )}
               </select>
             </div>
 
@@ -357,6 +388,21 @@ export default function BookingPage() {
                   <span className="text-black">EFT Payment</span>
                 </label>
               </div>
+
+              {/* Banking Details Display for EFT */}
+              {paymentMethod === "eft" && bankingDetails && (
+                <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <h4 className="font-semibold text-blue-700 mb-2">Banking Details</h4>
+                  <div className="space-y-1 text-sm">
+                    <p><span className="font-medium">Bank:</span> {bankingDetails.bank_name}</p>
+                    <p><span className="font-medium">Account Number:</span> {bankingDetails.account_number}</p>
+                    <p><span className="font-medium">Account Holder:</span> {bankingDetails.account_holder}</p>
+                    <p><span className="font-medium">Branch Code:</span> {bankingDetails.branch_code}</p>
+                    <p><span className="font-medium">Account Type:</span> {bankingDetails.account_type}</p>
+                  </div>
+                  <p className="text-xs text-gray-600 mt-2">Please use these banking details for your EFT payment. You will need to submit proof of payment after booking confirmation.</p>
+                </div>
+              )}
             </div>
 
             <button
@@ -406,7 +452,14 @@ export default function BookingPage() {
                 <h3 className="font-semibold mb-2">3. Payment Terms</h3>
                 <p className="text-sm">
                   Payment is due upon completion of service. For EFT payments, proof of payment 
-                  must be provided within 24 hours.
+                  must be provided within 24 hours. Cleaner will only be assigned after payment confirmation.
+                </p>
+              </div>
+
+              <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                <h3 className="font-semibold mb-2">5. Cleaner Assignment</h3>
+                <p className="text-sm">
+                  <strong>Important:</strong> A cleaner will only be assigned to your booking after payment has been confirmed and proof of payment has been submitted and verified. This ensures efficient resource allocation and quality service delivery.
                 </p>
               </div>
 

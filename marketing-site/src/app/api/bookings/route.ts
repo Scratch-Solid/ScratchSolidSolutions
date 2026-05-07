@@ -102,68 +102,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Cleaner fallback logic
-    let assignedCleanerId = cleaner_id;
-    
-    if (cleaner_id) {
-      // Check if preferred cleaner is available
-      const cleanerBookings = (await db.prepare(
-        `SELECT * FROM bookings WHERE cleaner_id = ? AND booking_date = ? AND status != 'cancelled'`
-      ).bind(cleaner_id, booking_date).all()) as unknown as any[];
-      
-      const isCleanerAvailable = !cleanerBookings || cleanerBookings.length === 0 || cleanerBookings.every((b: any) => {
-        const requestedStart = booking_time;
-        const requestedEnd = addHours(requestedStart, 4);
-        const existingStart = b.booking_time;
-        const existingEnd = addHours(existingStart, 4);
-        return !timeOverlap(requestedStart, requestedEnd, existingStart, existingEnd);
-      });
-      
-      if (!isCleanerAvailable) {
-        // Fallback to general pool - assign next available cleaner
-        const availableCleaners = (await db.prepare(
-          `SELECT id FROM users WHERE role = 'cleaner' AND status = 'active'`
-        ).all()) as unknown as any[];
-        
-        if (availableCleaners && availableCleaners.length > 0) {
-          // Find first available cleaner
-          for (const cleaner of availableCleaners) {
-            const cleanerSchedule = (await db.prepare(
-              `SELECT * FROM bookings WHERE cleaner_id = ? AND booking_date = ? AND status != 'cancelled'`
-            ).bind(cleaner.id, booking_date).all()) as unknown as any[];
-            
-            const isAvailable = !cleanerSchedule || cleanerSchedule.length === 0 || cleanerSchedule.every((b: any) => {
-              const requestedStart = booking_time;
-              const requestedEnd = addHours(requestedStart, 4);
-              const existingStart = b.booking_time;
-              const existingEnd = addHours(existingStart, 4);
-              return !timeOverlap(requestedStart, requestedEnd, existingStart, existingEnd);
-            });
-            
-            if (isAvailable) {
-              assignedCleanerId = cleaner.id;
-              break;
-            }
-          }
-        }
-        
-        // If no cleaner available, assign first one (admin will need to reassign)
-        if (!assignedCleanerId && availableCleaners && availableCleaners.length > 0) {
-          assignedCleanerId = availableCleaners[0].id;
-        }
-      }
-    } else {
-      // No cleaner specified, assign first available
-      const availableCleaners = (await db.prepare(
-        `SELECT id FROM users WHERE role = 'cleaner' AND status = 'active'`
-      ).all()) as unknown as any[];
-      
-      if (availableCleaners && availableCleaners.length > 0) {
-        assignedCleanerId = availableCleaners[0].id;
-      }
-    }
+    // Cleaner assignment is now done AFTER payment confirmation
+    // Do not assign cleaner during booking creation
+    let assignedCleanerId = null;
 
-    // Check for booking conflicts
+    // Check for booking conflicts (only check against existing bookings with assigned cleaners)
     const conflictingBookings = await getBookingsByDateRange(db, booking_date, booking_date);
     const timeConflicts = conflictingBookings?.filter((b: any) => {
       const requestedStart = booking_time;
@@ -194,8 +137,8 @@ export async function POST(request: NextRequest) {
       cleaning_type,
       payment_method,
       loyalty_discount,
-      cleaner_id: assignedCleanerId,
-      status: 'pending'
+      cleaner_id: undefined, // No cleaner assigned yet - will be assigned after payment confirmation
+      status: 'pending_payment' // New status to indicate waiting for payment
     });
 
     // Send booking confirmation email to client
