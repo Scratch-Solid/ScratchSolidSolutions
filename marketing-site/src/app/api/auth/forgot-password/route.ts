@@ -6,28 +6,28 @@ import { logger } from "@/lib/logger";
 import { withRateLimit, rateLimits } from "@/lib/middleware";
 
 export async function POST(request: NextRequest) {
-  // Rate limiting check
-  const rateLimitResult = await withRateLimit(request, rateLimits.auth);
-  if (rateLimitResult && !rateLimitResult.success) {
-    return NextResponse.json(
-      { error: 'Too many password reset attempts. Please try again later.' },
-      { 
-        status: 429,
-        headers: {
-          'X-RateLimit-Limit': rateLimitResult.limit.toString(),
-          'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
-          'X-RateLimit-Reset': rateLimitResult.reset.toString()
-        }
-      }
-    );
-  }
-
-  const db = await getDb();
-  if (!db) {
-    return NextResponse.json({ error: "Service temporarily unavailable. Please try again later." }, { status: 503 });
-  }
-
   try {
+    const db = await getDb();
+    if (!db) {
+      return NextResponse.json({ error: "Service temporarily unavailable. Please try again later." }, { status: 503 });
+    }
+
+    // Rate limiting check
+    const rateLimitResult = await withRateLimit(request, rateLimits.auth);
+    if (rateLimitResult && !rateLimitResult.success) {
+      return NextResponse.json(
+        { error: 'Too many password reset attempts. Please try again later.' },
+        { 
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+            'X-RateLimit-Reset': rateLimitResult.reset.toString()
+          }
+        }
+      );
+    }
+
     const body = await request.json() as { type?: string; identifier?: string };
     const { type, identifier } = body;
 
