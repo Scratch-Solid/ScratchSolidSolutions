@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 
 export default function BusinessBookingPage() {
+  useSessionTimeout(true); // Enable 5-minute inactivity timeout
   const [bookingType, setBookingType] = useState<"once-off" | "contract" | null>(null);
   const [showContractForm, setShowContractForm] = useState(false);
   const [weekendRequired, setWeekendRequired] = useState(false);

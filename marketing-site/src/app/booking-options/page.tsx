@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import LogoWatermark from '@/components/LogoWatermark';
+import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 
 export default function BookingOptionsPage() {
+  useSessionTimeout(true); // Enable 5-minute inactivity timeout
   const [userType, setUserType] = useState<"individual" | "business">("individual");
 
   useEffect(() => {

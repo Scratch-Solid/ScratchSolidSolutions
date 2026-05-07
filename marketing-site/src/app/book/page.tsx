@@ -3,9 +3,11 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { sanitizeHtml } from '@/lib/htmlSanitizer';
+import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 
 export default function BookingPage() {
   const router = useRouter();
+  useSessionTimeout(true); // Enable 5-minute inactivity timeout
   const [step, setStep] = useState(1);
   const [bookingType, setBookingType] = useState<"individual" | "business">("individual");
   const [formData, setFormData] = useState({
