@@ -7,19 +7,13 @@ import { validatePhone, validateSaIdNumber, validateSaPassport } from "@/lib/val
 type Department = "Scratch" | "Solid" | "Trans";
 
 export default function EmployeeConsentPage() {
-  const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     positionAppliedFor: "",
     fullName: "",
     idPassportNumber: "",
     contactNumber: "",
     applicantSignature: false,
-  });
-  const [credentials, setCredentials] = useState({
     department: "Scratch" as Department,
-    password: "",
-    confirmPassword: "",
-    generatedUsername: "",
   });
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -72,8 +66,9 @@ export default function EmployeeConsentPage() {
     checkExistingContract();
   }, [router]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    const { type, checked } = e.target as HTMLInputElement;
     setFormData(prev => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value
@@ -89,7 +84,7 @@ export default function EmployeeConsentPage() {
     return department + suffix;
   };
 
-  const handleConsent = (e: React.FormEvent) => {
+  const handleConsent = async (e: React.FormEvent) => {
     e.preventDefault();
     const newFieldErrors: Record<string, string> = {};
     setError("");
@@ -137,37 +132,17 @@ export default function EmployeeConsentPage() {
 
     setFieldErrors({});
 
-    // Generate username and move to step 2
-    const username = generateUsername(credentials.department);
-    setCredentials(prev => ({
-      ...prev,
-      generatedUsername: username
-    }));
-    setStep(2);
-  };
+    // Generate username for later use
+    const generatedUsername = generateUsername(formData.department);
 
-  const handleDepartmentChange = (department: Department) => {
-    const username = generateUsername(department);
-    setCredentials(prev => ({
-      ...prev,
-      department,
-      generatedUsername: username
-    }));
-  };
-
-  const handleFinalSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
     // Store consent data for admin review
     const consentData = {
       ...formData,
-      department: credentials.department,
-      generatedUsername: credentials.generatedUsername,
-      password: credentials.password,
+      generatedUsername,
       submittedAt: new Date().toISOString(),
       status: "pending_approval",
     };
-    
+
     try {
       // Submit to pending contracts API
       const response = await fetch("/api/pending-contracts", {
@@ -179,11 +154,12 @@ export default function EmployeeConsentPage() {
       if (response.ok) {
         // Store in localStorage for later
         localStorage.setItem("pendingConsent", JSON.stringify(consentData));
-        
+
         // Redirect to Consent Submitted page
         router.push("/auth/consent-submitted");
       } else {
-        setError("Failed to submit consent. Please try again.");
+        const data = await response.json() as { error?: string };
+        setError(data.error || "Failed to submit consent. Please try again.");
       }
     } catch (err) {
       setError("An error occurred. Please try again.");
@@ -198,291 +174,197 @@ export default function EmployeeConsentPage() {
     <div className="min-h-screen flex items-center justify-center px-4">
       {/* Glassified consent form */}
       <div className="glass-panel max-w-2xl w-full">
-        {step === 1 ? (
-          <>
-            <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--text-h)' }}>Scratch Solid Solutions</h1>
-              <p className="text-lg font-medium" style={{ color: 'var(--text)' }}>
-                {loadingContent ? 'Loading...' : (consentContent?.title || 'Employee Background Check Consent Form')}
-              </p>
-            </div>
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--text-h)' }}>Scratch Solid Solutions</h1>
+          <p className="text-lg font-medium" style={{ color: 'var(--text)' }}>
+            {loadingContent ? 'Loading...' : (consentContent?.title || 'Employee Background Check Consent Form')}
+          </p>
+        </div>
 
-            {error && (
-              <div className="error-msg text-center font-semibold mb-4">
-                {error}
-              </div>
-            )}
+        {error && (
+          <div className="error-msg text-center font-semibold mb-4">
+            {error}
+          </div>
+        )}
 
-            <form onSubmit={handleConsent} className="space-y-6">
-              {/* Position Applied For */}
+        <form onSubmit={handleConsent} className="space-y-6">
+          {/* Position Applied For */}
+          <div>
+            <label className="block text-sm font-bold mb-2">
+              Position Applied For: __________________________
+            </label>
+            <input
+              type="text"
+              name="positionAppliedFor"
+              value={formData.positionAppliedFor}
+              onChange={handleChange}
+              className="w-full"
+              required
+              placeholder="Enter position applied for"
+            />
+            {fieldErrors.positionAppliedFor && <p className="text-red-500 text-xs mt-1">{fieldErrors.positionAppliedFor}</p>}
+          </div>
+
+          {/* Department Selection */}
+          <div>
+            <label className="block text-sm font-bold mb-2">
+              Department
+            </label>
+            <select
+              name="department"
+              value={formData.department}
+              onChange={handleChange}
+              className="w-full"
+              required
+            >
+              <option value="Scratch">Cleaning Team (Scratch)</option>
+              <option value="Solid">Digital Team (Solid)</option>
+              <option value="Trans">Transport Team (Trans)</option>
+            </select>
+          </div>
+
+          {/* Applicant Details Section */}
+          <div className="border-t pt-6">
+            <h2 className="text-xl font-bold mb-4">Applicant Details</h2>
+
+            <div className="space-y-4">
               <div>
                 <label className="block text-sm font-bold mb-2">
-                  Position Applied For: __________________________
+                  Full Name: __________________________
                 </label>
                 <input
                   type="text"
-                  name="positionAppliedFor"
-                  value={formData.positionAppliedFor}
+                  name="fullName"
+                  value={formData.fullName}
                   onChange={handleChange}
                   className="w-full"
                   required
-                  placeholder="Enter position applied for"
+                  placeholder="Enter full name"
                 />
-                {fieldErrors.positionAppliedFor && <p className="text-red-500 text-xs mt-1">{fieldErrors.positionAppliedFor}</p>}
+                {fieldErrors.fullName && <p className="text-red-500 text-xs mt-1">{fieldErrors.fullName}</p>}
               </div>
 
-              {/* Applicant Details Section */}
-              <div className="border-t pt-6">
-                <h2 className="text-xl font-bold mb-4">Applicant Details</h2>
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-bold mb-2">
-                      Full Name: __________________________
-                    </label>
-                    <input
-                      type="text"
-                      name="fullName"
-                      value={formData.fullName}
-                      onChange={handleChange}
-                      className="w-full"
-                      required
-                      placeholder="Enter full name"
-                    />
-                    {fieldErrors.fullName && <p className="text-red-500 text-xs mt-1">{fieldErrors.fullName}</p>}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-bold mb-2">
-                      (ID / Passport Number: __________________________
-                    </label>
-                    <input
-                      type="text"
-                      name="idPassportNumber"
-                      value={formData.idPassportNumber}
-                      onChange={handleChange}
-                      className="w-full"
-                      required
-                      placeholder="Enter ID (13 digits) or passport number"
-                    />
-                    {fieldErrors.idPassportNumber && <p className="text-red-500 text-xs mt-1">{fieldErrors.idPassportNumber}</p>}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-bold mb-2">
-                      Contact Number: __________________________
-                    </label>
-                    <input
-                      type="tel"
-                      name="contactNumber"
-                      value={formData.contactNumber}
-                      onChange={handleChange}
-                      className="w-full"
-                      required
-                      placeholder="+27 XX XXX XXXX or 0XX XXX XXXX"
-                    />
-                    {fieldErrors.contactNumber && <p className="text-red-500 text-xs mt-1">{fieldErrors.contactNumber}</p>}
-                  </div>
-                </div>
+              <div>
+                <label className="block text-sm font-bold mb-2">
+                  ID / Passport Number: __________________________
+                </label>
+                <input
+                  type="text"
+                  name="idPassportNumber"
+                  value={formData.idPassportNumber}
+                  onChange={handleChange}
+                  className="w-full"
+                  required
+                  placeholder="Enter ID (13 digits) or passport number"
+                />
+                {fieldErrors.idPassportNumber && <p className="text-red-500 text-xs mt-1">{fieldErrors.idPassportNumber}</p>}
               </div>
 
-              {/* Consent & Authorization Section */}
-              <div className="border-t pt-6">
-                <h2 className="text-xl font-bold mb-4">Consent & Authorisation</h2>
-                <div className="text-sm leading-relaxed space-y-2">
-                  <p>
-                    {loadingContent ? 'Loading...' : (consentContent?.consent_text || 'I, the undersigned, hereby give written, informed consent to Scratch Solid Solutions to conduct background checks relevant to my application for employment.')}
-                  </p>
-                  <p>
-                    I understand that these checks may include:
-                  </p>
-                  <ul className="list-disc list-inside ml-4 space-y-1">
-                    {loadingContent ? (
-                      <li>Loading...</li>
-                    ) : (
-                      (consentContent?.background_checks || 'Identity verification\nCriminal record check (where relevant to the position)\nReference and employment history checks').split('\n').map((item: string, idx: number) => (
-                        <li key={idx}>{item}</li>
-                      ))
-                    )}
-                  </ul>
-                  <p>
-                    I acknowledge that:
-                  </p>
-                  <ul className="list-disc list-inside ml-4 space-y-1">
-                    {loadingContent ? (
-                      <li>Loading...</li>
-                    ) : (
-                      (consentContent?.acknowledgments || 'All information will be processed in accordance with the Protection of Personal Information Act (POPIA)\nInformation collected will only be used for employment-related purposes\nMy personal information will be stored securely and confidentially\nI may request access to my information or withdraw consent in writing').split('\n').map((item: string, idx: number) => (
-                        <li key={idx}>{item}</li>
-                      ))
-                    )}
-                  </ul>
-                  <p className="font-semibold">
-                    I confirm that the information I have provided is true and correct.
-                  </p>
-                </div>
+              <div>
+                <label className="block text-sm font-bold mb-2">
+                  Contact Number: __________________________
+                </label>
+                <input
+                  type="tel"
+                  name="contactNumber"
+                  value={formData.contactNumber}
+                  onChange={handleChange}
+                  className="w-full"
+                  required
+                  placeholder="+27 XX XXX XXXX or 0XX XXX XXXX"
+                />
+                {fieldErrors.contactNumber && <p className="text-red-500 text-xs mt-1">{fieldErrors.contactNumber}</p>}
               </div>
+            </div>
+          </div>
 
-              {/* Signature Section */}
-              <div className="border-t pt-6 space-y-4">
-                <div className="flex items-start">
-                  <input
-                    type="checkbox"
-                    name="applicantSignature"
-                    id="applicantSignature"
-                    checked={formData.applicantSignature}
-                    onChange={handleChange}
-                    className="mt-1 mr-3 w-5 h-5"
-                  />
-                  <div>
-                    <label htmlFor="applicantSignature" className="block text-sm font-bold">
-                      Applicant Signature (Tick to confirm signature)
-                    </label>
-                    <p className="text-xs text-gray-600">By ticking this box, I confirm my electronic signature</p>
-                  </div>
-                </div>
+          {/* Consent & Authorization Section */}
+          <div className="border-t pt-6">
+            <h2 className="text-xl font-bold mb-4">Consent & Authorisation</h2>
+            <div className="text-sm leading-relaxed space-y-2">
+              <p>
+                {loadingContent ? 'Loading...' : (consentContent?.consent_text || 'I, the undersigned, hereby give written, informed consent to Scratch Solid Solutions to conduct background checks relevant to my application for employment.')}
+              </p>
+              <p>
+                I understand that these checks may include:
+              </p>
+              <ul className="list-disc list-inside ml-4 space-y-1">
+                {loadingContent ? (
+                  <li>Loading...</li>
+                ) : (
+                  (consentContent?.background_checks || 'Identity verification\nCriminal record check (where relevant to the position)\nReference and employment history checks').split('\n').map((item: string, idx: number) => (
+                    <li key={idx}>{item}</li>
+                  ))
+                )}
+              </ul>
+              <p>
+                I acknowledge that:
+              </p>
+              <ul className="list-disc list-inside ml-4 space-y-1">
+                {loadingContent ? (
+                  <li>Loading...</li>
+                ) : (
+                  (consentContent?.acknowledgments || 'All information will be processed in accordance with the Protection of Personal Information Act (POPIA)\nInformation collected will only be used for employment-related purposes\nMy personal information will be stored securely and confidentially\nI may request access to my information or withdraw consent in writing').split('\n').map((item: string, idx: number) => (
+                    <li key={idx}>{item}</li>
+                  ))
+                )}
+              </ul>
+              <p className="font-semibold">
+                I confirm that the information I have provided is true and correct.
+              </p>
+            </div>
+          </div>
 
-                <div>
-                  <label className="block text-sm font-bold mb-2">
-                    Date: {new Date().toLocaleString()}
-                  </label>
-                  <p className="text-xs text-gray-600">Date and time captured by the system</p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold mb-2">
-                    Witness / Company Representative: {loadingContent ? 'Loading...' : (consentContent?.witness_name || 'Xolani Jason Tshaka')}
-                  </label>
-                </div>
+          {/* Signature Section */}
+          <div className="border-t pt-6 space-y-4">
+            <div className="flex items-start">
+              <input
+                type="checkbox"
+                name="applicantSignature"
+                id="applicantSignature"
+                checked={formData.applicantSignature}
+                onChange={handleChange}
+                className="mt-1 mr-3 w-5 h-5"
+              />
+              <div>
+                <label htmlFor="applicantSignature" className="block text-sm font-bold">
+                  Applicant Signature (Tick to confirm signature)
+                </label>
+                <p className="text-xs text-gray-600">By ticking this box, I confirm my electronic signature</p>
               </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-4 pt-6 border-t">
-                <button
-                  type="submit"
-                  className="flex-1 primary-button"
-                >
-                  I Consent
-                </button>
-                <button
-                  type="button"
-                  onClick={handleDecline}
-                  className="flex-1 secondary-button"
-                >
-                  Decline
-                </button>
-              </div>
-            </form>
-          </>
-        ) : (
-          <>
-            <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--text-h)' }}>Create Your Account</h1>
-              <p className="text-lg font-medium" style={{ color: 'var(--text)' }}>Select your department and create your password</p>
             </div>
 
-            {error && (
-              <div className="error-msg text-center font-semibold mb-4">
-                {error}
-              </div>
-            )}
+            <div>
+              <label className="block text-sm font-bold mb-2">
+                Date: {new Date().toLocaleString()}
+              </label>
+              <p className="text-xs text-gray-600">Date and time captured by the system</p>
+            </div>
 
-            <form onSubmit={handleFinalSubmit} className="space-y-6">
-              {/* Department Selection */}
-              <div className="border-t pt-6">
-                <h2 className="text-xl font-bold mb-4">Select Department</h2>
-                <div className="space-y-3">
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="department"
-                      value="Scratch"
-                      checked={credentials.department === "Scratch"}
-                      onChange={() => handleDepartmentChange("Scratch")}
-                      className="w-5 h-5"
-                    />
-                    <span className="text-lg">Cleaner</span>
-                  </label>
+            <div>
+              <label className="block text-sm font-bold mb-2">
+                Witness / Company Representative: {loadingContent ? 'Loading...' : (consentContent?.witness_name || 'Xolani Jason Tshaka')}
+              </label>
+            </div>
+          </div>
 
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="department"
-                      value="Solid"
-                      checked={credentials.department === "Solid"}
-                      onChange={() => handleDepartmentChange("Solid")}
-                      className="w-5 h-5"
-                    />
-                    <span className="text-lg">Digital</span>
-                  </label>
-
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="department"
-                      value="Trans"
-                      checked={credentials.department === "Trans"}
-                      onChange={() => handleDepartmentChange("Trans")}
-                      className="w-5 h-5"
-                    />
-                    <span className="text-lg">Transport</span>
-                  </label>
-                </div>
-              </div>
-
-              {/* Password Creation */}
-              <div className="border-t pt-6">
-                <h2 className="text-xl font-bold mb-4">Create Password</h2>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-bold mb-2">
-                      Password (min 6 characters)
-                    </label>
-                    <input
-                      type="password"
-                      value={credentials.password}
-                      onChange={(e) => setCredentials(prev => ({ ...prev, password: e.target.value }))}
-                      className="w-full"
-                      required
-                      placeholder="Create password"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-bold mb-2">
-                      Confirm Password
-                    </label>
-                    <input
-                      type="password"
-                      value={credentials.confirmPassword}
-                      onChange={(e) => setCredentials(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                      className="w-full"
-                      required
-                      placeholder="Confirm password"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-4 pt-6 border-t">
-                <button
-                  type="button"
-                  onClick={() => setStep(1)}
-                  className="flex-1 secondary-button"
-                >
-                  Back
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 primary-button"
-                >
-                  Complete Signup
-                </button>
-              </div>
-            </form>
-          </>
-        )}
+          {/* Action Buttons */}
+          <div className="flex gap-4 pt-6 border-t">
+            <button
+              type="submit"
+              className="flex-1 primary-button"
+            >
+              Submit Consent
+            </button>
+            <button
+              type="button"
+              onClick={handleDecline}
+              className="flex-1 secondary-button"
+            >
+              Decline
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

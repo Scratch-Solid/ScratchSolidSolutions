@@ -33,7 +33,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Contract not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ status: (contract as any).status });
+    return NextResponse.json({ 
+      status: (contract as any).status,
+      rejection_reason: (contract as any).rejection_reason || null
+    });
   } catch (error) {
     return NextResponse.json({ error: 'Failed to check contract' }, { status: 500 });
   }

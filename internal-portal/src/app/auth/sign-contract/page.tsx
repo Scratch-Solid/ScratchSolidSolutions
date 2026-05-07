@@ -10,32 +10,67 @@ export default function SignContractPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [signatureDate, setSignatureDate] = useState("");
+  const [contractContent, setContractContent] = useState<any>(null);
+  const [loadingContent, setLoadingContent] = useState(true);
 
   useEffect(() => {
-    if (!localStorage.getItem("pendingConsent")) router.push("/auth/employee-consent");
+    // Check if user is authenticated
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      router.push("/auth/login");
+      return;
+    }
+
+    // Fetch contract content from database
+    const fetchContractContent = async () => {
+      try {
+        const response = await fetch('/api/admin/contract-content');
+        if (response.ok) {
+          const data = await response.json();
+          setContractContent(data);
+        }
+      } catch (err) {
+        console.error('Error fetching contract content:', err);
+      } finally {
+        setLoadingContent(false);
+      }
+    };
+    fetchContractContent();
   }, [router]);
 
   const handleSign = async () => {
     setLoading(true);
     try {
-      const consent = JSON.parse(localStorage.getItem("pendingConsent") || "{}");
+      const token = localStorage.getItem("authToken");
       const signatureDate = new Date().toISOString();
       setSignatureDate(signatureDate);
 
       const res = await fetch("/api/auth/sign-contract", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ consentData: consent, signatureDate }),
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ signatureDate }),
       });
       if (res.ok) {
         setSigned(true);
         setTimeout(() => {
-          localStorage.removeItem("pendingConsent");
-          // Redirect to login with instructions
-          router.push("/auth/login?onboarding=complete");
+          // Redirect to dashboard
+          const userRole = localStorage.getItem("userRole");
+          if (userRole === 'cleaner') {
+            router.push("/cleaner-dashboard");
+          } else if (userRole === 'digital') {
+            router.push("/digital-dashboard");
+          } else if (userRole === 'transport') {
+            router.push("/transport-dashboard");
+          } else {
+            router.push("/admin-dashboard");
+          }
         }, 2000);
       } else {
-        setError("Failed to sign contract");
+        const data = await res.json() as { error?: string };
+        setError(data.error || "Failed to sign contract");
       }
     } catch (err) {
       setError("An error occurred");
@@ -45,24 +80,36 @@ export default function SignContractPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
-      <div className="glass-panel max-w-2xl w-full p-6">
-        <h1 className="text-2xl font-bold mb-4">Employment Contract</h1>
+    <div className="min-h-screen flex items-center justify-center px-4 py-8">
+      <div className="glass-panel max-w-2xl w-full p-8">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--text-h)' }}>Scratch Solid Solutions</h1>
+          <p className="text-lg font-medium" style={{ color: 'var(--text)' }}>Employment Contract</p>
+        </div>
 
-        <div className="bg-gray-50 p-4 rounded mb-6 text-sm">
-          <h2 className="font-bold mb-2">EMPLOYMENT AGREEMENT</h2>
-          <p className="mb-2">This Employment Agreement is entered into between Scratch Solid Solutions and the Employee.</p>
-          <p className="mb-2">By signing this contract, you agree to the terms and conditions of employment.</p>
-          <p className="mb-2">Terms include but are not limited to: work hours, compensation, confidentiality, and termination policies.</p>
-          <p className="text-xs text-gray-500">Full contract details available from HR department.</p>
+        <div className="bg-gray-50 p-6 rounded-lg mb-6 text-sm leading-relaxed">
+          <h2 className="font-bold text-lg mb-4">EMPLOYMENT AGREEMENT</h2>
+          {loadingContent ? (
+            <p>Loading contract content...</p>
+          ) : (
+            <div 
+              className="prose prose-sm max-w-none"
+              dangerouslySetInnerHTML={{ __html: contractContent?.contract_text || `
+                <p>This Employment Agreement is entered into between Scratch Solid Solutions and the Employee.</p>
+                <p>By signing this contract, you agree to the terms and conditions of employment.</p>
+                <p>Terms include but are not limited to: work hours, compensation, confidentiality, and termination policies.</p>
+                <p class="text-xs text-gray-500">Full contract details available from HR department.</p>
+              `}}
+            />
+          )}
         </div>
 
         {error && <p className="text-red-500 mb-4">{error}</p>}
 
         {signed ? (
           <div className="text-center">
-            <div className="text-4xl mb-2">✓</div>
-            <p className="text-green-600 font-bold">Contract signed successfully!</p>
+            <div className="text-6xl mb-4">✓</div>
+            <p className="text-green-600 font-bold text-xl">Contract signed successfully!</p>
             <p className="text-sm text-gray-500 mb-2">Signature Date: {new Date(signatureDate).toLocaleString()}</p>
             <p className="text-sm text-gray-500">Redirecting to your dashboard...</p>
           </div>
@@ -98,7 +145,7 @@ export default function SignContractPage() {
             <button
               onClick={handleSign}
               disabled={!signed || loading}
-              className="w-full bg-blue-600 text-white p-3 rounded disabled:bg-gray-400"
+              className="w-full primary-button disabled:opacity-50"
             >
               {loading ? "Signing..." : "Sign Contract Electronically"}
             </button>

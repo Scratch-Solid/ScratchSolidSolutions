@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb, getPendingContracts, createPendingContract, updatePendingContractStatus, deletePendingContract } from "../../../lib/db";
 import { withAuth, withSecurityHeaders, withTracing, withRateLimit } from "../../../lib/middleware";
+import { validatePhone, validateSaIdNumber, validateSaPassport } from "../../../lib/validation";
 
 export async function GET(request: NextRequest) {
   const traceId = withTracing(request);
@@ -26,23 +27,32 @@ export async function POST(request: NextRequest) {
 
   const data = await request.json() as any;
 
-  // Basic validation - ensure required fields are present
+  // Validate phone number
   const contactNumber = data.contactNumber || data.contact_number || '';
-  const idPassportNumber = data.idPassportNumber || data.id_passport_number || '';
-
-  if (!contactNumber) {
-    const response = NextResponse.json({ error: 'Contact number is required' }, { status: 400 });
+  const phoneValidation = validatePhone(contactNumber);
+  if (!phoneValidation.valid) {
+    const response = NextResponse.json({ error: phoneValidation.errors.join(', ') }, { status: 400 });
     return withSecurityHeaders(response, traceId);
   }
 
+  // Validate ID/Passport number
+  const idPassportNumber = data.idPassportNumber || data.id_passport_number || '';
   if (!idPassportNumber) {
     const response = NextResponse.json({ error: 'ID or passport number is required' }, { status: 400 });
     return withSecurityHeaders(response, traceId);
+  } else {
+    const idPassportValidation = idPassportNumber.replace(/\D/g, '').length === 13
+      ? validateSaIdNumber(idPassportNumber)
+      : validateSaPassport(idPassportNumber);
+    if (!idPassportValidation.valid) {
+      const response = NextResponse.json({ error: idPassportValidation.errors.join(', ') }, { status: 400 });
+      return withSecurityHeaders(response, traceId);
+    }
   }
 
   const consentData = {
     ...JSON.parse(data.consentData || data.consent_data || '{}'),
-    password: data.password
+    password: data.password || null // Password will be set during profile creation
   };
   const newContract = await createPendingContract(db, {
     full_name: data.fullName || data.full_name || '',
@@ -72,60 +82,27 @@ export async function PUT(request: NextRequest) {
   const body = await request.json() as any;
 
   if (id && body.status) {
-    // If approving, create user and cleaner profile
+    // If approving, just update status - user will be created during profile creation
     if (body.status === 'approved') {
+      const updated = await updatePendingContractStatus(db, parseInt(id), 'approved');
+      return NextResponse.json(updated);
+    }
+
+    // If rejecting, add rejection reason if provided
+    if (body.status === 'rejected') {
       const contract = await db.prepare('SELECT * FROM pending_contracts WHERE id = ?').bind(parseInt(id)).first();
       if (!contract) {
         const response = NextResponse.json({ error: "Contract not found" }, { status: 404 });
         return withSecurityHeaders(response, traceId);
       }
 
-      // Check if user already exists
-      const existing = await db.prepare('SELECT id FROM users WHERE email = ?').bind((contract as any).contact_number + '@scratchsolid.co.za').first();
-      if (existing) {
-        const response = NextResponse.json({ error: "User already exists" }, { status: 409 });
-        return withSecurityHeaders(response, traceId);
-      }
-
-      // Create user
-      const bcrypt = require('bcryptjs');
-      const consentData = JSON.parse((contract as any).consent_data || '{}');
-      const password = consentData.password;
-      if (!password) {
-        const response = NextResponse.json({ error: 'Password not found in consent data' }, { status: 400 });
-        return withSecurityHeaders(response, traceId);
-      }
-      const password_hash = await bcrypt.hash(password, 10);
-      const user = await db.prepare(
-        `INSERT INTO users (email, password_hash, role, name, phone)
-         VALUES (?, ?, ?, ?, ?) RETURNING *`
-      ).bind(
-        (contract as any).contact_number + '@scratchsolid.co.za',
-        password_hash,
-        (contract as any).department === 'Scratch' ? 'cleaner' : (contract as any).department === 'Solid' ? 'digital' : 'transport',
-        (contract as any).full_name,
-        (contract as any).contact_number
-      ).first();
-
-      if (!user) {
-        const response = NextResponse.json({ error: "Failed to create user" }, { status: 500 });
-        return withSecurityHeaders(response, traceId);
-      }
-
-      // Create cleaner profile
+      // Update with rejection reason
       await db.prepare(
-        `INSERT INTO cleaner_profiles (user_id, username, paysheet_code, department, status)
-         VALUES (?, ?, ?, ?, 'idle')`
-      ).bind(
-        (user as any).id,
-        (contract as any).generated_username,
-        (contract as any).generated_username,
-        (contract as any).department === 'Scratch' ? 'cleaning' : (contract as any).department === 'Solid' ? 'digital' : 'transport'
-      ).run();
+        `UPDATE pending_contracts SET status = ?, rejection_reason = ?, updated_at = datetime('now') WHERE id = ?`
+      ).bind('rejected', body.rejection_reason || 'Application rejected', parseInt(id)).run();
 
-      // Update contract status
-      const updated = await updatePendingContractStatus(db, parseInt(id), 'approved');
-      return NextResponse.json({ ...updated, user_id: (user as any).id });
+      const updated = await db.prepare('SELECT * FROM pending_contracts WHERE id = ?').bind(parseInt(id)).first();
+      return NextResponse.json(updated);
     }
 
     const updated = await updatePendingContractStatus(db, parseInt(id), body.status);
