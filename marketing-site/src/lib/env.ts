@@ -47,8 +47,8 @@ export function validateEnv(): EnvConfig {
   return {
     JWT_SECRET: process.env.JWT_SECRET!,
     RESEND_API_KEY: process.env.RESEND_API_KEY!,
-    NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL!,
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL!,
+    NEXT_PUBLIC_BASE_URL: "https://scratchsolidsolutions.org",
+    NEXT_PUBLIC_API_URL: "https://api.scratchsolidsolutions.org/api",
     ZOHO_ORG_ID: process.env.ZOHO_ORG_ID,
     ZOHO_CLIENT_ID: process.env.ZOHO_CLIENT_ID,
     ZOHO_CLIENT_SECRET: process.env.ZOHO_CLIENT_SECRET,

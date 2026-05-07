@@ -5,8 +5,7 @@
   "compatibility_date": "2026-04-23",
   "compatibility_flags": ["nodejs_compat"],
   "assets": {
-    "directory": ".open-next/assets",
-    "binding": "ASSETS"
+    "directory": ".open-next/assets"
   },
   "d1_databases": [
     {
@@ -23,7 +22,13 @@
   ],
   "vars": {
     "NEXT_PUBLIC_BASE_URL": "https://scratchsolidsolutions.org",
-    "NEXT_PUBLIC_API_URL": "https://api.scratchsolidsolutions.org/api"
+    "NEXT_PUBLIC_API_URL": "https://api.scratchsolidsolutions.org/api",
+    "JWT_SECRET": "JWT_SECRET",
+    "RESEND_API_KEY": "RESEND_API_KEY",
+    "ZOHO_ORG_ID": "ZOHO_ORG_ID",
+    "ZOHO_CLIENT_ID": "ZOHO_CLIENT_ID",
+    "ZOHO_CLIENT_SECRET": "ZOHO_CLIENT_SECRET",
+    "ZOHO_REFRESH_TOKEN": "ZOHO_REFRESH_TOKEN"
   },
   "observability": {
     "enabled": true
