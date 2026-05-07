@@ -1,7 +1,7 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "main": ".open-next/worker.js",
   "name": "scratchsolidsolutions",
+  "main": ".open-next/worker.js",
   "compatibility_date": "2026-04-23",
   "compatibility_flags": ["nodejs_compat"],
   "assets": {
@@ -15,10 +15,15 @@
       "database_id": "0b0b6006-1b2d-4ab1-8909-dc684666e6d3"
     }
   ],
-  // NOTE: Sensitive values should be set using wrangler secrets, not in vars
+  "routes": [
+    {
+      "pattern": "api.scratchsolidsolutions.org/*",
+      "zone_name": "scratchsolidsolutions.org"
+    }
+  ],
   "vars": {
     "NEXT_PUBLIC_BASE_URL": "https://scratchsolidsolutions.org",
-    "NEXT_PUBLIC_API_URL": "https://scratchsolidsolutions.org/api"
+    "NEXT_PUBLIC_API_URL": "https://api.scratchsolidsolutions.org/api"
   },
   "observability": {
     "enabled": true
