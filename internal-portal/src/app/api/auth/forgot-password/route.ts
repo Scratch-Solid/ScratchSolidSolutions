@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = await request.json();
+    const body = await request.json() as { email?: string };
     const { email } = body;
 
     if (!email) {
@@ -45,14 +45,13 @@ export async function POST(request: NextRequest) {
         `INSERT INTO password_reset_tokens (user_id, token, method, expires_at) VALUES (?, ?, 'email', ?)`
       ).bind((user as any).id, resetToken, resetTokenExpiry.toISOString()).run();
 
-      // In production, send email with reset link
-      // For now, return the token in response (for testing only)
-      console.log(`Password reset token for ${sanitizedEmail}: ${resetToken}`);
+      // Send email with reset link
+      // TODO: Implement email sending service
+      // const resetLink = `${process.env.NEXT_PUBLIC_BASE_URL}/auth/reset-password?token=${resetToken}`;
+      // await sendPasswordResetEmail(sanitizedEmail, resetLink);
       
       const response = NextResponse.json({ 
-        message: 'If an account exists with this email, a password reset link has been sent.',
-        // For testing only - remove in production
-        resetToken: process.env.NODE_ENV === 'development' ? resetToken : undefined
+        message: 'If an account exists with this email, a password reset link has been sent.'
       });
       logRequest(request, response, Date.now() - startTime, traceId);
       return withSecurityHeaders(response, traceId);
