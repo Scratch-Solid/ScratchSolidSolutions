@@ -1,11 +1,271 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, validateSession } from './db';
-import { validateCsrfToken } from './csrf';
+import { validateCsrfToken, generateCsrfToken } from './csrf';
 
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
 const RATE_LIMIT_MAX = 100; // requests per window per IP
 
 const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
+
+// API Versioning
+export const API_VERSION = 'v1';
+export const API_VERSION_HEADER = 'X-API-Version';
+export const API_VERSION_SUPPORTED = ['v1'];
+
+/**
+ * API versioning middleware
+ * Checks if the requested API version is supported
+ */
+export function withApiVersioning(request: NextRequest): NextResponse | null {
+  const requestedVersion = request.headers.get(API_VERSION_HEADER) || 
+                           request.nextUrl.pathname.split('/')[2] || 
+                           API_VERSION;
+  
+  if (!API_VERSION_SUPPORTED.includes(requestedVersion)) {
+    return NextResponse.json({
+      error: 'Unsupported API version',
+      requestedVersion,
+      supportedVersions: API_VERSION_SUPPORTED
+    }, { status: 400 });
+  }
+  
+  return null;
+}
+
+// Distributed Tracing
+export interface TraceContext {
+  traceId: string;
+  spanId: string;
+  parentSpanId?: string;
+  sampled: boolean;
+}
+
+const TRACE_ID_HEADER = 'X-Trace-ID';
+const SPAN_ID_HEADER = 'X-Span-ID';
+const PARENT_SPAN_ID_HEADER = 'X-Parent-Span-ID';
+
+/**
+ * Generate a random span ID
+ */
+function generateSpanId(): string {
+  return crypto.randomUUID();
+}
+
+/**
+ * Extract or create trace context from request
+ */
+export function getTraceContext(request: NextRequest): TraceContext {
+  const traceId = request.headers.get(TRACE_ID_HEADER) || generateTraceId();
+  const spanId = request.headers.get(SPAN_ID_HEADER) || generateSpanId();
+  const parentSpanId = request.headers.get(PARENT_SPAN_ID_HEADER) || undefined;
+  
+  return {
+    traceId,
+    spanId,
+    parentSpanId,
+    sampled: Math.random() < 0.1 // Sample 10% of requests
+  };
+}
+
+/**
+ * Distributed tracing middleware
+ * Adds trace context to request and response headers
+ */
+export function withDistributedTracing(request: NextRequest): TraceContext {
+  const traceContext = getTraceContext(request);
+  
+  return traceContext;
+}
+
+/**
+ * Log trace information for debugging
+ */
+export function logTrace(traceContext: TraceContext, operation: string, duration?: number): void {
+  if (!traceContext.sampled) return;
+  
+  const logEntry = {
+    timestamp: new Date().toISOString(),
+    traceId: traceContext.traceId,
+    spanId: traceContext.spanId,
+    parentSpanId: traceContext.parentSpanId,
+    operation,
+    duration
+  };
+  
+  console.log(JSON.stringify(logEntry));
+}
+
+// Error classification for better error handling
+export enum ErrorCategory {
+  AUTHENTICATION = 'AUTHENTICATION',
+  AUTHORIZATION = 'AUTHORIZATION',
+  VALIDATION = 'VALIDATION',
+  DATABASE = 'DATABASE',
+  RATE_LIMIT = 'RATE_LIMIT',
+  CSRF = 'CSRF',
+  NOT_FOUND = 'NOT_FOUND',
+  SERVER_ERROR = 'SERVER_ERROR',
+  NETWORK = 'NETWORK'
+}
+
+export enum ErrorSeverity {
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high',
+  CRITICAL = 'critical'
+}
+
+export interface ClassifiedError {
+  category: ErrorCategory;
+  severity: ErrorSeverity;
+  userMessage: string;
+  technicalMessage: string;
+  statusCode: number;
+  shouldLog: boolean;
+  shouldAlert: boolean;
+}
+
+function classifyError(error: unknown, context: string = 'Operation'): ClassifiedError {
+  // Handle known error types
+  if (error instanceof Error) {
+    const message = error.message.toLowerCase();
+    
+    // Authentication errors
+    if (message.includes('unauthorized') || message.includes('invalid token') || message.includes('session expired')) {
+      return {
+        category: ErrorCategory.AUTHENTICATION,
+        severity: ErrorSeverity.MEDIUM,
+        userMessage: 'Authentication required. Please log in again.',
+        technicalMessage: error.message,
+        statusCode: 401,
+        shouldLog: true,
+        shouldAlert: false
+      };
+    }
+    
+    // Authorization errors
+    if (message.includes('forbidden') || message.includes('permission') || message.includes('insufficient')) {
+      return {
+        category: ErrorCategory.AUTHORIZATION,
+        severity: ErrorSeverity.MEDIUM,
+        userMessage: 'You do not have permission to perform this action.',
+        technicalMessage: error.message,
+        statusCode: 403,
+        shouldLog: true,
+        shouldAlert: false
+      };
+    }
+    
+    // Validation errors
+    if (message.includes('invalid') || message.includes('required') || message.includes('validation')) {
+      return {
+        category: ErrorCategory.VALIDATION,
+        severity: ErrorSeverity.LOW,
+        userMessage: 'Invalid input. Please check your request.',
+        technicalMessage: error.message,
+        statusCode: 400,
+        shouldLog: false,
+        shouldAlert: false
+      };
+    }
+    
+    // Not found errors
+    if (message.includes('not found')) {
+      return {
+        category: ErrorCategory.NOT_FOUND,
+        severity: ErrorSeverity.LOW,
+        userMessage: 'The requested resource was not found.',
+        technicalMessage: error.message,
+        statusCode: 404,
+        shouldLog: false,
+        shouldAlert: false
+      };
+    }
+    
+    // Rate limit errors
+    if (message.includes('too many requests') || message.includes('rate limit')) {
+      return {
+        category: ErrorCategory.RATE_LIMIT,
+        severity: ErrorSeverity.MEDIUM,
+        userMessage: 'Too many requests. Please try again later.',
+        technicalMessage: error.message,
+        statusCode: 429,
+        shouldLog: true,
+        shouldAlert: false
+      };
+    }
+    
+    // CSRF errors
+    if (message.includes('csrf')) {
+      return {
+        category: ErrorCategory.CSRF,
+        severity: ErrorSeverity.HIGH,
+        userMessage: 'Security verification failed. Please refresh the page and try again.',
+        technicalMessage: error.message,
+        statusCode: 403,
+        shouldLog: true,
+        shouldAlert: true
+      };
+    }
+    
+    // Database errors
+    if (message.includes('database') || message.includes('sql') || message.includes('db')) {
+      return {
+        category: ErrorCategory.DATABASE,
+        severity: ErrorSeverity.HIGH,
+        userMessage: 'A database error occurred. Please try again.',
+        technicalMessage: error.message,
+        statusCode: 500,
+        shouldLog: true,
+        shouldAlert: true
+      };
+    }
+  }
+  
+  // Default server error
+  return {
+    category: ErrorCategory.SERVER_ERROR,
+    severity: ErrorSeverity.HIGH,
+    userMessage: `${context} failed. Please try again later.`,
+    technicalMessage: error instanceof Error ? error.message : 'Unknown error',
+    statusCode: 500,
+    shouldLog: true,
+    shouldAlert: true
+  };
+}
+
+export function handleClassifiedError(classifiedError: ClassifiedError, traceId?: string): NextResponse {
+  const response = NextResponse.json({
+    error: classifiedError.userMessage,
+    category: classifiedError.category,
+    severity: classifiedError.severity,
+    ...(process.env.NODE_ENV !== 'production' && { technical: classifiedError.technicalMessage })
+  }, { status: classifiedError.statusCode });
+  
+  if (traceId) {
+    response.headers.set('X-Request-ID', traceId);
+  }
+  
+  // Log the error if needed
+  if (classifiedError.shouldLog) {
+    const logEntry = {
+      timestamp: new Date().toISOString(),
+      traceId: traceId || 'unknown',
+      category: classifiedError.category,
+      severity: classifiedError.severity,
+      technicalMessage: classifiedError.technicalMessage,
+      shouldAlert: classifiedError.shouldAlert
+    };
+    
+    if (classifiedError.severity === ErrorSeverity.CRITICAL || classifiedError.shouldAlert) {
+      console.error(JSON.stringify(logEntry));
+    } else {
+      console.warn(JSON.stringify(logEntry));
+    }
+  }
+  
+  return response;
+}
 
 function isRateLimited(ip: string): boolean {
   const now = Date.now();
@@ -46,9 +306,41 @@ export async function withSecurityHeaders(response: NextResponse, traceId: strin
   response.headers.set('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self'; connect-src 'self' https://books.zoho.com https://graph.facebook.com https://api.sendgrid.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self';");
   response.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(self)');
+  response.headers.set('Access-Control-Allow-Origin', process.env.ALLOWED_ORIGINS || '*');
+  response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-CSRF-Token, X-Request-ID');
+  response.headers.set('Access-Control-Max-Age', '86400');
+  response.headers.set('Access-Control-Allow-Credentials', 'true');
   response.headers.set('X-Request-ID', traceId);
   response.headers.set('X-Trace-ID', traceId);
+  
+  // Add compression header for clients that support it
+  response.headers.set('Accept-Encoding', 'gzip, deflate, br');
+  
   return response;
+}
+
+export async function withCsrf(request: NextRequest): Promise<NextResponse | null> {
+  const method = request.method;
+  // Only validate CSRF for state-changing methods
+  if (method !== 'POST' && method !== 'PUT' && method !== 'DELETE' && method !== 'PATCH') {
+    return null;
+  }
+
+  const csrfToken = request.headers.get('X-CSRF-Token') || request.headers.get('x-csrf-token');
+  if (!csrfToken) {
+    return NextResponse.json({ error: 'CSRF token required' }, { status: 403 });
+  }
+
+  if (!validateCsrfToken(csrfToken)) {
+    return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 });
+  }
+
+  return null;
+}
+
+export function generateCsrfTokenForClient(): string {
+  return generateCsrfToken();
 }
 
 export async function withRateLimit(request: NextRequest): Promise<NextResponse | null> {

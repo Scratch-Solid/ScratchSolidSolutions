@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
+import { withRateLimit } from '@/lib/middleware';
 
 export async function GET(request: Request) {
+  const rateLimitResponse = await withRateLimit(request as any);
+  if (rateLimitResponse) return rateLimitResponse;
+
   const start = Date.now();
   const checks: Record<string, boolean | string> = {};
 

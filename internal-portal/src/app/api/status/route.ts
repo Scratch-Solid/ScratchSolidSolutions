@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '../../../lib/db';
+import { withRateLimit } from '@/lib/middleware';
 
 const P95_THRESHOLD_MS = 200;
 const DB_SLA_MS = 50;
@@ -8,6 +9,9 @@ const VERSION = process.env.npm_package_version || '1.0.0';
 const STARTED_AT = new Date().toISOString();
 
 export async function GET(request: NextRequest) {
+  const rateLimitResponse = await withRateLimit(request);
+  if (rateLimitResponse) return rateLimitResponse;
+
   const checks: Record<string, { status: 'ok' | 'fail' | 'degraded'; latencyMs?: number; error?: string; slaMs?: number }> = {};
   const alerts: string[] = [];
   const start = Date.now();

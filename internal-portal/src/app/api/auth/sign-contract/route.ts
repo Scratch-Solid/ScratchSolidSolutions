@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import { withSecurityHeaders, withTracing, withRateLimit, withAuth } from '@/lib/middleware';
+import { withSecurityHeaders, withTracing, withRateLimit, withAuth, withCsrf } from '@/lib/middleware';
 import { sanitizeRequestBody } from '@/lib/sanitization';
 
 export async function POST(request: NextRequest) {
   const rateLimitResponse = await withRateLimit(request);
   if (rateLimitResponse) return rateLimitResponse;
+
+  const csrfResponse = await withCsrf(request);
+  if (csrfResponse) return csrfResponse;
 
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['cleaner', 'digital', 'transport']);

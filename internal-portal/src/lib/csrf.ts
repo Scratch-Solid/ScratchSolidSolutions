@@ -1,21 +1,27 @@
 import { randomBytes, createHmac } from 'crypto';
 
-const CSRF_SECRET = process.env.CSRF_SECRET || 'default-csrf-secret-change-me';
+const CSRF_SECRET = process.env.CSRF_SECRET;
 
-// Warn if using default CSRF_SECRET in production
-if (process.env.NODE_ENV === 'production' && CSRF_SECRET === 'default-csrf-secret-change-me') {
-  console.error('SECURITY WARNING: Using default CSRF_SECRET in production. Set CSRF_SECRET environment variable.');
+function getCsrfSecret(): string {
+  if (!CSRF_SECRET) {
+    throw new Error('CSRF_SECRET environment variable is required');
+  }
+  return CSRF_SECRET;
+}
+
+if (process.env.NODE_ENV === 'production' && !CSRF_SECRET) {
+  throw new Error('CRITICAL SECURITY WARNING: CSRF_SECRET environment variable is not set in production');
 }
 
 export function generateCsrfToken(): string {
   const token = randomBytes(32).toString('hex');
-  const hash = createHmac('sha256', CSRF_SECRET).update(token).digest('hex');
+  const hash = createHmac('sha256', getCsrfSecret()).update(token).digest('hex');
   return `${token}.${hash}`;
 }
 
 export function validateCsrfToken(token: string): boolean {
   const [payload, hash] = token.split('.');
   if (!payload || !hash) return false;
-  const expected = createHmac('sha256', CSRF_SECRET).update(payload).digest('hex');
+  const expected = createHmac('sha256', getCsrfSecret()).update(payload).digest('hex');
   return hash === expected;
 }

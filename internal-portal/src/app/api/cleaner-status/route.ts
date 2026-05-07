@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '../../../lib/db';
-import { withAuth, withTracing, withSecurityHeaders } from '../../../lib/middleware';
+import { withAuth, withTracing, withSecurityHeaders, withCsrf } from '../../../lib/middleware';
+import { sanitizeRequestBody } from '@/lib/sanitization';
 
 const VALID_STATUSES = ['idle', 'on_way', 'arrived', 'completed'];
 
@@ -10,9 +11,22 @@ export async function PUT(request: NextRequest) {
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
 
+  const csrfResponse = await withCsrf(request);
+  if (csrfResponse) return withSecurityHeaders(csrfResponse, traceId);
+
   try {
     const body = await request.json();
-    const { cleaner_id, status, gps_lat, gps_long } = body;
+    const { sanitized, error } = sanitizeRequestBody(body, {
+      required: ['cleaner_id', 'status'],
+      optional: ['gps_lat', 'gps_long']
+    });
+
+    if (error) {
+      const response = NextResponse.json({ error }, { status: 400 });
+      return withSecurityHeaders(response, traceId);
+    }
+
+    const { cleaner_id, status, gps_lat, gps_long } = sanitized as any;
 
     if (!cleaner_id || !status) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });

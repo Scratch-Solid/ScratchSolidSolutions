@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, validateLogin, isAccountLocked, sanitizeEmail, sanitizeString, sanitizePhone } from '../../../../lib/db';
+import { getDb, validateLogin, isAccountLocked, sanitizeEmail, sanitizeString, sanitizePhone, createRefreshToken, createSession } from '../../../../lib/db';
 import { withRateLimit, withTracing, withSecurityHeaders, logRequest, getClientIP } from '../../../../lib/middleware';
 import { sanitizeRequestBody } from '../../../../lib/sanitization';
 import { logAuthFailure } from '../../../../lib/security-logger';
@@ -57,13 +57,14 @@ export async function POST(request: NextRequest) {
       const token = jwt.sign(
         { userId: (user as any).id, role: (user as any).role, email: (user as any).email },
         getJWTSecret(),
-        { expiresIn: '24h' }
+        { expiresIn: '1h' }
       );
 
+      // Generate refresh token
+      const refreshToken = await createRefreshToken(db, (user as any).id);
+
       // Create session in database
-      await db.prepare(
-        `INSERT INTO sessions (user_id, token, expires_at) VALUES (?, ?, datetime('now', '+24 hours'))`
-      ).bind((user as any).id, token).run();
+      await createSession(db, (user as any).id, token, refreshToken);
 
       // Log successful admin login
       console.log(JSON.stringify({
@@ -76,6 +77,8 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         token,
+        refreshToken,
+        expiresIn: 3600,
         role: (user as any).role,
         username: (user as any).email,
         user_id: (user as any).id,
@@ -133,16 +136,19 @@ export async function POST(request: NextRequest) {
       const token = jwt.sign(
         { userId: (user as any).id, role: (user as any).role, username: (cleanerProfile as any).username },
         getJWTSecret(),
-        { expiresIn: '24h' }
+        { expiresIn: '1h' }
       );
 
+      // Generate refresh token
+      const refreshToken = await createRefreshToken(db, (user as any).id);
+
       // Create session in database
-      await db.prepare(
-        `INSERT INTO sessions (user_id, token, expires_at) VALUES (?, ?, datetime('now', '+24 hours'))`
-      ).bind((user as any).id, token).run();
+      await createSession(db, (user as any).id, token, refreshToken);
 
       return NextResponse.json({
         token,
+        refreshToken,
+        expiresIn: 3600,
         role: (user as any).role,
         username: (cleanerProfile as any).username,
         user_id: (user as any).id,

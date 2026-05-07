@@ -7,7 +7,14 @@ const JWT_SECRET = process.env.JWT_SECRET || '';
 
 // This endpoint should only be used in development or with a special seed key
 // In production, users should be created through proper admin interfaces
-const SEED_KEY = process.env.SEED_KEY || 'dev-seed-key-123';
+const SEED_KEY = process.env.SEED_KEY;
+
+function getSeedKey(): string {
+  if (!SEED_KEY) {
+    throw new Error('SEED_KEY environment variable is required for seed-users endpoint');
+  }
+  return SEED_KEY;
+}
 
 function getJWTSecret(): string {
   if (!JWT_SECRET) throw new Error('JWT_SECRET environment variable is required');
@@ -20,7 +27,7 @@ export async function POST(request: NextRequest) {
     const { seedKey, userType, email, password, name, phone, department, paysheetCode } = body;
 
     // Verify seed key for security
-    if (seedKey !== SEED_KEY) {
+    if (seedKey !== getSeedKey()) {
       return NextResponse.json({ error: 'Invalid seed key' }, { status: 403 });
     }
 

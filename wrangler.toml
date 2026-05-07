@@ -1,0 +1,30 @@
+# Cloudflare Workers Configuration
+# Infrastructure as Code for Scratch Solid Solutions Internal Portal
+
+name = "scratchsolid-internal-portal"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+# Environment variables (use wrangler secret for sensitive values)
+[vars]
+ENVIRONMENT = "production"
+API_VERSION = "v1"
+
+# KV Namespaces
+[[kv_namespaces]]
+binding = "CACHE"
+id = "your-kv-namespace-id"
+
+[[kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "your-rate-limit-kv-id"
+
+# D1 Database
+[[d1_databases]]
+binding = "DB"
+database_name = "scratchsolid-db"
+database_id = "your-database-id"
+
+# Cron Triggers for scheduled tasks
+[[triggers]]
+crons = ["0 0 * * *"] # Daily at midnight

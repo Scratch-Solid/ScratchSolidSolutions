@@ -16,10 +16,16 @@ export function validatePassword(password: string): ValidationResult {
     errors.push('Password is required');
   } else {
     if (password.length < 8) errors.push('Password must be at least 8 characters');
+    if (password.length > 128) errors.push('Password must be no more than 128 characters');
     if (!/[A-Z]/.test(password)) errors.push('Password must contain at least one uppercase letter');
     if (!/[a-z]/.test(password)) errors.push('Password must contain at least one lowercase letter');
     if (!/[0-9]/.test(password)) errors.push('Password must contain at least one number');
     if (!/[^A-Za-z0-9]/.test(password)) errors.push('Password must contain at least one special character');
+    // Prevent common passwords
+    const commonPasswords = ['password', '123456', 'qwerty', 'admin', 'letmein', 'welcome'];
+    if (commonPasswords.some(cp => password.toLowerCase().includes(cp))) {
+      errors.push('Password cannot contain common words');
+    }
   }
   return { valid: errors.length === 0, errors };
 }
@@ -152,5 +158,79 @@ export function validateRequired(data: Record<string, any>, fields: string[]): {
       errors.push(`${field} is required`);
     }
   }
+  return { valid: errors.length === 0, errors };
+}
+
+// Input length validation to prevent buffer overflow attacks
+export interface LengthLimits {
+  max: number;
+  min?: number;
+}
+
+export const FIELD_LENGTH_LIMITS: Record<string, LengthLimits> = {
+  email: { max: 320, min: 5 },
+  password: { max: 128, min: 8 },
+  username: { max: 100, min: 3 },
+  name: { max: 100, min: 1 },
+  phone: { max: 20, min: 10 },
+  address: { max: 500 },
+  bio: { max: 1000 },
+  special_instructions: { max: 1000 },
+  rejection_reason: { max: 500 },
+  department: { max: 50 },
+  paysheet_code: { max: 20 },
+  residential_address: { max: 500 },
+  cellphone: { max: 20 },
+  tax_number: { max: 20 },
+  profile_picture: { max: 5000000 }, // 5MB base64
+  emergency_contact1_name: { max: 100 },
+  emergency_contact1_phone: { max: 20 },
+  emergency_contact2_name: { max: 100 },
+  emergency_contact2_phone: { max: 20 },
+  id_passport_number: { max: 20 },
+  business_name: { max: 200 },
+  business_registration: { max: 50 },
+};
+
+export function validateLength(value: string, fieldName: string, customLimits?: LengthLimits): ValidationResult {
+  const errors: string[] = [];
+  const limits = customLimits || FIELD_LENGTH_LIMITS[fieldName];
+  
+  if (!limits) {
+    // No defined limits for this field, skip validation
+    return { valid: true, errors: [] };
+  }
+
+  if (typeof value !== 'string') {
+    errors.push(`${fieldName} must be a string`);
+    return { valid: false, errors };
+  }
+
+  const length = value.length;
+
+  if (limits.min !== undefined && length < limits.min) {
+    errors.push(`${fieldName} must be at least ${limits.min} characters`);
+  }
+
+  if (length > limits.max) {
+    errors.push(`${fieldName} must be no more than ${limits.max} characters`);
+  }
+
+  return { valid: errors.length === 0, errors };
+}
+
+export function validateRequestBodyLengths(data: Record<string, any>, fieldMap: Record<string, string>): ValidationResult {
+  const errors: string[] = [];
+  
+  for (const [dataField, validationField] of Object.entries(fieldMap)) {
+    const value = data[dataField];
+    if (value !== undefined && value !== null) {
+      const result = validateLength(String(value), validationField);
+      if (!result.valid) {
+        errors.push(...result.errors);
+      }
+    }
+  }
+  
   return { valid: errors.length === 0, errors };
 }

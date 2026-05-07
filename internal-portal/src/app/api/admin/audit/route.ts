@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuth } from '@/lib/middleware';
+import { withAuth, withSecurityHeaders, withTracing } from '@/lib/middleware';
 
 export async function GET(request: NextRequest) {
+  const traceId = withTracing(request);
   const authResult = await withAuth(request, ['admin']);
-  if (authResult instanceof NextResponse) return authResult;
+  if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
 
   try {
     const { searchParams } = new URL(request.url);
     const admin_id = searchParams.get('admin_id');
-    const limit = parseInt(searchParams.get('limit') || '100');
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const limit = parseInt(searchParams.get('limit') || '50', 10);
+    const offset = (page - 1) * limit;
 
     let query = `
       SELECT al.*, u.name as admin_name, u.email as admin_email
@@ -28,13 +31,35 @@ export async function GET(request: NextRequest) {
       query += ' WHERE ' + conditions.join(' AND ');
     }
 
-    query += ' ORDER BY al.created_at DESC LIMIT ?';
-    params.push(limit);
+    query += ' ORDER BY al.created_at DESC LIMIT ? OFFSET ?';
+    params.push(limit, offset);
 
     const logs = await db.prepare(query).bind(...params).all();
-    return NextResponse.json(logs.results || []);
+
+    // Get total count
+    let countQuery = 'SELECT COUNT(*) as total FROM audit_logs al';
+    const countParams: any[] = [];
+    if (admin_id) {
+      countQuery += ' WHERE al.admin_id = ?';
+      countParams.push(admin_id);
+    }
+    const countResult = await db.prepare(countQuery).bind(...countParams).first();
+    const total = (countResult as any)?.total || 0;
+
+    const response = NextResponse.json({
+      data: logs.results || [],
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
+    return withSecurityHeaders(response, traceId);
   } catch (error) {
+    console.error('Audit log fetch error:', error);
     const response = NextResponse.json({ error: 'Failed to fetch audit logs' }, { status: 500 });
+    return withSecurityHeaders(response, traceId);
   }
 }
 

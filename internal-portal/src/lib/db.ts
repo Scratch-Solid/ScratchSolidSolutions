@@ -1,8 +1,9 @@
 // Shared D1 Database Helper for Cloudflare Pages
 // Both marketing-site and internal-portal use this same pattern
 
-import type { D1Database } from '@cloudflare/workers-types';
+import { D1Database } from '@cloudflare/workers-types';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 
 export interface Env {
@@ -94,18 +95,75 @@ export async function validateLogin(db: D1Database, email: string, password: str
 }
 
 // Session operations
-export async function createSession(db: D1Database, userId: number, token: string) {
+const MAX_CONCURRENT_SESSIONS = 3; // Maximum allowed concurrent sessions per user
+
+export async function createSession(db: D1Database, userId: number, token: string, refreshToken?: string) {
+  // Enforce concurrent session limit
+  const existingSessions = await db.prepare(
+    'SELECT COUNT(*) as count FROM sessions WHERE user_id = ? AND expires_at > datetime("now")'
+  ).bind(userId).first();
+  
+  const sessionCount = (existingSessions as any)?.count || 0;
+  if (sessionCount >= MAX_CONCURRENT_SESSIONS) {
+    // Delete oldest session(s) to make room
+    await db.prepare(
+      `DELETE FROM sessions WHERE user_id = ? AND expires_at > datetime("now") 
+       ORDER BY created_at ASC LIMIT ?`
+    ).bind(userId, sessionCount - MAX_CONCURRENT_SESSIONS + 1).run();
+  }
+
   await db.prepare(
-    `INSERT INTO sessions (user_id, token, expires_at) VALUES (?, ?, datetime('now', '+24 hours'))`
+    `INSERT INTO sessions (user_id, token, refresh_token, expires_at) VALUES (?, ?, ?, datetime('now', '+24 hours'))`
+  ).bind(userId, token, refreshToken || null).run();
+}
+
+export async function getUserSessions(db: D1Database, userId: number) {
+  const result = await db.prepare(
+    'SELECT * FROM sessions WHERE user_id = ? AND expires_at > datetime("now") ORDER BY created_at DESC'
+  ).bind(userId).all();
+  return result.results;
+}
+
+export async function revokeAllUserSessions(db: D1Database, userId: number, exceptToken?: string) {
+  if (exceptToken) {
+    await db.prepare(
+      'DELETE FROM sessions WHERE user_id = ? AND token != ?'
+    ).bind(userId, exceptToken).run();
+  } else {
+    await db.prepare(
+      'DELETE FROM sessions WHERE user_id = ?'
+    ).bind(userId).run();
+  }
+}
+
+export async function createRefreshToken(db: D1Database, userId: number): Promise<string> {
+  const token = crypto.randomBytes(32).toString('hex');
+  await db.prepare(
+    `INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES (?, ?, datetime('now', '+30 days'))`
   ).bind(userId, token).run();
+  return token;
+}
+
+export async function validateRefreshToken(db: D1Database, token: string) {
+  const session = await db.prepare(
+    `SELECT rt.*, u.email, u.role, u.name FROM refresh_tokens rt JOIN users u ON rt.user_id = u.id WHERE rt.token = ? AND rt.expires_at > datetime('now') AND rt.revoked = 0`
+  ).bind(token).first();
+  return session;
+}
+
+export async function revokeRefreshToken(db: D1Database, token: string) {
+  await db.prepare('UPDATE refresh_tokens SET revoked = 1, revoked_at = datetime("now") WHERE token = ?').bind(token).run();
 }
 
 // Account lockout operations
+const MAX_FAILED_ATTEMPTS = 5;
+const LOCKOUT_DURATION_MINUTES = 15;
+
 export async function incrementFailedAttempts(db: D1Database, email: string): Promise<number> {
   const user = await getUserByEmail(db, email);
   if (!user) return 0;
   const attempts = ((user as any).failed_attempts || 0) + 1;
-  const lockedUntil = attempts >= 5 ? `datetime('now', '+15 minutes')` : (user as any).locked_until;
+  const lockedUntil = attempts >= MAX_FAILED_ATTEMPTS ? `datetime('now', '+${LOCKOUT_DURATION_MINUTES} minutes')` : (user as any).locked_until;
   await db.prepare('UPDATE users SET failed_attempts = ?, locked_until = ? WHERE email = ?')
     .bind(attempts, lockedUntil || null, email).run();
   return attempts;
@@ -125,6 +183,20 @@ export async function isAccountLocked(db: D1Database, identifier: string): Promi
   if (!user) return false;
   if ((user as any).locked_until && new Date((user as any).locked_until) > new Date()) return true;
   return false;
+}
+
+export async function getRemainingLockoutTime(db: D1Database, identifier: string): Promise<number | null> {
+  let user = await getUserByEmail(db, identifier);
+  if (!user) {
+    user = await db.prepare('SELECT id, email, role, name, phone, address, business_name, failed_attempts, locked_until FROM users WHERE phone = ?').bind(identifier).first();
+  }
+  if (!user || !(user as any).locked_until) return null;
+  
+  const lockoutUntil = new Date((user as any).locked_until);
+  const now = new Date();
+  if (lockoutUntil <= now) return null;
+  
+  return Math.ceil((lockoutUntil.getTime() - now.getTime()) / 1000 / 60); // Return minutes remaining
 }
 
 export async function validateSession(db: D1Database, token: string) {
@@ -235,6 +307,13 @@ export async function createEmployee(db: D1Database, data: Record<string, any>) 
     `INSERT INTO employees (${fields.join(', ')}) VALUES (${placeholders}) RETURNING *`
   ).bind(...values).first();
   return result;
+}
+
+// Audit logging
+export async function logAuditEvent(db: D1Database, adminId: number, action: string, resourceType: string, resourceId: number | null = null, details: string = '{}', ipAddress: string = ''): Promise<void> {
+  await db.prepare(
+    'INSERT INTO audit_logs (admin_id, action, resource_type, resource_id, details, ip_address) VALUES (?, ?, ?, ?, ?, ?)'
+  ).bind(adminId, action, resourceType, resourceId, details, ipAddress).run();
 }
 
 // Booking operations

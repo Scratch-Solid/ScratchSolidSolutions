@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import { withSecurityHeaders, withTracing, withRateLimit } from '@/lib/middleware';
+import { withSecurityHeaders, withTracing, withRateLimit, withCsrf } from '@/lib/middleware';
 import { sanitizeRequestBody } from '@/lib/sanitization';
 import bcrypt from 'bcryptjs';
 
@@ -8,26 +8,66 @@ export async function POST(request: NextRequest) {
   const rateLimitResponse = await withRateLimit(request);
   if (rateLimitResponse) return rateLimitResponse;
 
+  const csrfResponse = await withCsrf(request);
+  if (csrfResponse) return csrfResponse;
+
   const traceId = withTracing(request);
   const db = await getDb();
   if (!db) {
-    return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
+    const response = NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
+    return withSecurityHeaders(response, traceId);
   }
 
   const body = await request.json();
 
   // Sanitize input
   const { sanitized, error } = sanitizeRequestBody(body, {
-    required: ['firstName', 'lastName', 'residentialAddress', 'cellphone', 'password'],
-    optional: ['profilePicture', 'consentData'],
+    required: ['firstName', 'lastName', 'residentialAddress', 'cellphone', 'password', 'profilePicture', 'consentData'],
+    optional: [],
     phoneFields: ['cellphone']
   });
 
   if (error) {
-    return NextResponse.json({ error }, { status: 400 });
+    const response = NextResponse.json({ error }, { status: 400 });
+    return withSecurityHeaders(response, traceId);
   }
 
   const { firstName, lastName, residentialAddress, cellphone, password, profilePicture, consentData } = sanitized as any;
+
+  // Validate profile picture
+  if (!profilePicture) {
+    const response = NextResponse.json({ error: 'Profile picture is required' }, { status: 400 });
+    return withSecurityHeaders(response, traceId);
+  }
+
+  // Check if profile picture is base64
+  if (!profilePicture.startsWith('data:image/')) {
+    const response = NextResponse.json({ error: 'Profile picture must be an image' }, { status: 400 });
+    return withSecurityHeaders(response, traceId);
+  }
+
+  // Extract MIME type and validate
+  const matches = profilePicture.match(/^data:image\/([a-zA-Z+]+);base64,/);
+  if (!matches) {
+    const response = NextResponse.json({ error: 'Invalid image format' }, { status: 400 });
+    return withSecurityHeaders(response, traceId);
+  }
+
+  const mimeType = matches[1].toLowerCase();
+  const allowedMimeTypes = ['jpeg', 'jpg', 'png', 'webp'];
+  if (!allowedMimeTypes.includes(mimeType)) {
+    const response = NextResponse.json({ error: `Image type ${mimeType} not allowed. Allowed: ${allowedMimeTypes.join(', ')}` }, { status: 400 });
+    return withSecurityHeaders(response, traceId);
+  }
+
+  // Calculate base64 size (approx 33% larger than original)
+  const base64Size = Math.ceil((profilePicture.length * 3) / 4);
+  const maxSizeBytes = 5 * 1024 * 1024; // 5MB
+
+  if (base64Size > maxSizeBytes) {
+    const response = NextResponse.json({ error: 'Profile picture too large. Maximum size is 5MB' }, { status: 400 });
+    return withSecurityHeaders(response, traceId);
+  }
 
   try {
     // Check if contract exists and is approved

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDb, getCleanerProfileByUsername, updateCleanerProfile } from "../../../lib/db";
-import { withAuth, withTracing, withSecurityHeaders } from "../../../lib/middleware";
+import { getDb, getCleanerProfileByUsername, updateCleanerProfile, logAuditEvent } from "../../../lib/db";
+import { withAuth, withTracing, withSecurityHeaders, withCsrf } from "../../../lib/middleware";
 
 export async function GET(request: NextRequest) {
   const traceId = withTracing(request);
@@ -22,9 +22,27 @@ export async function GET(request: NextRequest) {
     return withSecurityHeaders(response, traceId);
   }
   
-  // Get all profiles
-  const result = await db.prepare('SELECT * FROM cleaner_profiles ORDER BY created_at DESC').all();
-  const response = NextResponse.json(result.results);
+  // Get all profiles with pagination
+  const page = parseInt(searchParams.get('page') || '1', 10);
+  const limit = parseInt(searchParams.get('limit') || '50', 10);
+  const offset = (page - 1) * limit;
+
+  const profiles = await db.prepare(
+    'SELECT * FROM cleaner_profiles ORDER BY created_at DESC LIMIT ? OFFSET ?'
+  ).bind(limit, offset).all();
+
+  const countResult = await db.prepare('SELECT COUNT(*) as total FROM cleaner_profiles').first();
+  const total = (countResult as any)?.total || 0;
+
+  const response = NextResponse.json({
+    data: profiles.results,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit)
+    }
+  });
   response.headers.set('Cache-Control', 'private, max-age=30');
   return withSecurityHeaders(response, traceId);
 }
@@ -33,7 +51,10 @@ export async function POST(request: NextRequest) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
-  const { db } = authResult;
+  const { db, user } = authResult;
+
+  const csrfResponse = await withCsrf(request);
+  if (csrfResponse) return withSecurityHeaders(csrfResponse, traceId);
 
   const data = await request.json();
   
@@ -44,51 +65,24 @@ export async function POST(request: NextRequest) {
     // Update existing profile
     const updated = await updateCleanerProfile(db, data.username, data);
     if (updated) {
-      const response = NextResponse.json(updated);
+      await logAuditEvent(db, (user as any).id, 'update_cleaner_profile', 'cleaner_profile', (updated as any).id, JSON.stringify({ username: data.username }), request.headers.get('x-forwarded-for') || '');
+      const response = NextResponse.json(updated, { status: 200 });
       return withSecurityHeaders(response, traceId);
     }
-    const response = NextResponse.json({ error: "Failed to update profile" }, { status: 500 });
-    return withSecurityHeaders(response, traceId);
+  } else {
+    // Create new profile
+    const result = await db.prepare(
+      `INSERT INTO cleaner_profiles (username, paysheet_code, department, first_name, last_name, status)
+       VALUES (?, ?, ?, ?, ?, 'idle') RETURNING *`
+    ).bind(data.username, data.username, data.department || 'cleaning', data.first_name || '', data.last_name || '').first();
+    
+    if (result) {
+      await logAuditEvent(db, (user as any).id, 'create_cleaner_profile', 'cleaner_profile', (result as any).id, JSON.stringify({ username: data.username }), request.headers.get('x-forwarded-for') || '');
+      const response = NextResponse.json(result, { status: 201 });
+      return withSecurityHeaders(response, traceId);
+    }
   }
-  
-  // Create new profile - need user_id first
-  // For now, we'll allow creating without user_id and update later
-  const newProfile = {
-    user_id: data.user_id || null,
-    username: data.username,
-    paysheet_code: data.paysheet_code || '',
-    first_name: data.first_name || '',
-    last_name: data.last_name || '',
-    residential_address: data.residential_address || '',
-    cellphone: data.cellphone || '',
-    tax_number: data.tax_number || '',
-    profile_picture: data.profile_picture || '',
-    emergency_contact1_name: data.emergency_contact1_name || '',
-    emergency_contact1_phone: data.emergency_contact1_phone || '',
-    emergency_contact2_name: data.emergency_contact2_name || '',
-    emergency_contact2_phone: data.emergency_contact2_phone || '',
-    department: data.department || 'cleaning',
-    status: 'active'
-  };
-  
-  const result = await db.prepare(
-    `INSERT INTO cleaner_profiles (
-      user_id, username, paysheet_code, first_name, last_name, residential_address, 
-      cellphone, tax_number, profile_picture, emergency_contact1_name, emergency_contact1_phone,
-      emergency_contact2_name, emergency_contact2_phone, department, status, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now')) RETURNING *`
-  ).bind(
-    newProfile.user_id, newProfile.username, newProfile.paysheet_code, newProfile.first_name, newProfile.last_name,
-    newProfile.residential_address, newProfile.cellphone, newProfile.tax_number, newProfile.profile_picture,
-    newProfile.emergency_contact1_name, newProfile.emergency_contact1_phone, newProfile.emergency_contact2_name,
-    newProfile.emergency_contact2_phone, newProfile.department, newProfile.status
-  ).first();
-  
-  if (result) {
-    const response = NextResponse.json(result, { status: 201 });
-    return withSecurityHeaders(response, traceId);
-  }
-  const response = NextResponse.json({ error: "Failed to create profile" }, { status: 500 });
+  const response = NextResponse.json({ error: "Failed to create/update profile" }, { status: 500 });
   return withSecurityHeaders(response, traceId);
 }
 
@@ -96,7 +90,10 @@ export async function PUT(request: NextRequest) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['cleaner', 'admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
-  const { db } = authResult;
+  const { db, user } = authResult;
+
+  const csrfResponse = await withCsrf(request);
+  if (csrfResponse) return withSecurityHeaders(csrfResponse, traceId);
 
   const data = await request.json();
   const { username } = data;
@@ -107,6 +104,9 @@ export async function PUT(request: NextRequest) {
   
   const updated = await updateCleanerProfile(db, username, data);
   if (updated) {
+    if ((user as any).role === 'admin') {
+      await logAuditEvent(db, (user as any).id, 'update_cleaner_profile', 'cleaner_profile', (updated as any).id, JSON.stringify({ username }), request.headers.get('x-forwarded-for') || '');
+    }
     const response = NextResponse.json(updated);
     return withSecurityHeaders(response, traceId);
   }
