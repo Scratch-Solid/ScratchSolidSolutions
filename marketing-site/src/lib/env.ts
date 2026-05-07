@@ -74,11 +74,24 @@ export function getJWTSecret(): string {
 }
 
 export function getResendApiKey(): string {
-  const key = process.env.RESEND_API_KEY;
-  if (!key) {
-    throw new Error('RESEND_API_KEY environment variable is required');
+  // Try to get API key from Cloudflare environment first
+  try {
+    const { env } = require('@opennextjs/cloudflare').getCloudflareContext({ async: true }) as unknown as { env: any };
+    const apiKey = env?.RESEND_API_KEY;
+    
+    if (apiKey) {
+      return apiKey;
+    }
+  } catch (error) {
+    console.error('Error getting RESEND_API_KEY from Cloudflare context:', error);
   }
-  return key;
+  
+  // Fallback to process.env for local development
+  if (typeof process !== 'undefined' && process.env?.RESEND_API_KEY) {
+    return process.env.RESEND_API_KEY;
+  }
+  
+  throw new Error('RESEND_API_KEY environment variable is required');
 }
 
 export function getZohoCredentials(): { orgId: string; clientId: string; clientSecret: string; refreshToken: string } {
