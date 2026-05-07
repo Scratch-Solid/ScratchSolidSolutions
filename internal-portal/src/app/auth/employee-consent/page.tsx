@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { validatePhone, validateSaIdNumber, validateSaPassport } from "@/lib/validation";
 
 type Department = "Scratch" | "Solid" | "Trans";
 
@@ -21,6 +22,7 @@ export default function EmployeeConsentPage() {
     generatedUsername: "",
   });
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [existingStatus, setExistingStatus] = useState<string | null>(null);
   const router = useRouter();
 
@@ -34,7 +36,7 @@ export default function EmployeeConsentPage() {
           // Check status via API
           const response = await fetch(`/api/pending-contracts/check?contactNumber=${consent.contactNumber}&idPassportNumber=${consent.idPassportNumber}`);
           if (response.ok) {
-            const data = await response.json();
+            const data = await response.json() as { status?: string };
             if (data.status === 'rejected') {
               setExistingStatus('rejected');
               setError('Your previous application was rejected. Please contact administration for more information.');
@@ -71,17 +73,51 @@ export default function EmployeeConsentPage() {
 
   const handleConsent = (e: React.FormEvent) => {
     e.preventDefault();
+    const newFieldErrors: Record<string, string> = {};
+    setError("");
 
     // Validate required fields
-    if (!formData.positionAppliedFor || !formData.fullName || !formData.idPassportNumber || !formData.contactNumber) {
-      setError("Please fill in all required fields");
-      return;
+    if (!formData.positionAppliedFor) {
+      newFieldErrors.positionAppliedFor = "Position applied for is required";
+    }
+    if (!formData.fullName) {
+      newFieldErrors.fullName = "Full name is required";
+    }
+
+    // Validate ID/Passport number
+    if (!formData.idPassportNumber) {
+      newFieldErrors.idPassportNumber = "ID or passport number is required";
+    } else {
+      const idPassportResult = formData.idPassportNumber.replace(/\D/g, '').length === 13
+        ? validateSaIdNumber(formData.idPassportNumber)
+        : validateSaPassport(formData.idPassportNumber);
+      if (!idPassportResult.valid) {
+        newFieldErrors.idPassportNumber = idPassportResult.errors.join(", ");
+      }
+    }
+
+    // Validate phone number
+    if (!formData.contactNumber) {
+      newFieldErrors.contactNumber = "Contact number is required";
+    } else {
+      const phoneResult = validatePhone(formData.contactNumber);
+      if (!phoneResult.valid) {
+        newFieldErrors.contactNumber = phoneResult.errors.join(", ");
+      }
     }
 
     if (!formData.applicantSignature) {
       setError("Please confirm your signature by ticking the checkbox");
       return;
     }
+
+    if (Object.keys(newFieldErrors).length > 0) {
+      setFieldErrors(newFieldErrors);
+      setError("Please fix the errors above");
+      return;
+    }
+
+    setFieldErrors({});
 
     // Generate username and move to step 2
     const username = generateUsername(credentials.department);
@@ -172,12 +208,13 @@ export default function EmployeeConsentPage() {
                   required
                   placeholder="Enter position applied for"
                 />
+                {fieldErrors.positionAppliedFor && <p className="text-red-500 text-xs mt-1">{fieldErrors.positionAppliedFor}</p>}
               </div>
 
               {/* Applicant Details Section */}
               <div className="border-t pt-6">
                 <h2 className="text-xl font-bold mb-4">Applicant Details</h2>
-                
+
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-bold mb-2">
@@ -192,6 +229,7 @@ export default function EmployeeConsentPage() {
                       required
                       placeholder="Enter full name"
                     />
+                    {fieldErrors.fullName && <p className="text-red-500 text-xs mt-1">{fieldErrors.fullName}</p>}
                   </div>
 
                   <div>
@@ -205,8 +243,9 @@ export default function EmployeeConsentPage() {
                       onChange={handleChange}
                       className="w-full"
                       required
-                      placeholder="Enter ID or passport number"
+                      placeholder="Enter ID (13 digits) or passport number"
                     />
+                    {fieldErrors.idPassportNumber && <p className="text-red-500 text-xs mt-1">{fieldErrors.idPassportNumber}</p>}
                   </div>
 
                   <div>
@@ -220,8 +259,9 @@ export default function EmployeeConsentPage() {
                       onChange={handleChange}
                       className="w-full"
                       required
-                      placeholder="Enter contact number"
+                      placeholder="+27 XX XXX XXXX or 0XX XXX XXXX"
                     />
+                    {fieldErrors.contactNumber && <p className="text-red-500 text-xs mt-1">{fieldErrors.contactNumber}</p>}
                   </div>
                 </div>
               </div>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb, getPendingContracts, createPendingContract, updatePendingContractStatus, deletePendingContract } from "../../../lib/db";
 import { withAuth, withSecurityHeaders, withTracing, withRateLimit } from "../../../lib/middleware";
+import { validatePhone, validateSaIdNumber, validateSaPassport } from "../../../lib/validation";
 
 export async function GET(request: NextRequest) {
   const traceId = withTracing(request);
@@ -25,14 +26,38 @@ export async function POST(request: NextRequest) {
   }
 
   const data = await request.json() as any;
+
+  // Validate phone number
+  const contactNumber = data.contactNumber || data.contact_number || '';
+  const phoneValidation = validatePhone(contactNumber);
+  if (!phoneValidation.valid) {
+    const response = NextResponse.json({ error: phoneValidation.errors.join(', ') }, { status: 400 });
+    return withSecurityHeaders(response, traceId);
+  }
+
+  // Validate ID/Passport number
+  const idPassportNumber = data.idPassportNumber || data.id_passport_number || '';
+  if (!idPassportNumber) {
+    const response = NextResponse.json({ error: 'ID or passport number is required' }, { status: 400 });
+    return withSecurityHeaders(response, traceId);
+  } else {
+    const idPassportValidation = idPassportNumber.replace(/\D/g, '').length === 13
+      ? validateSaIdNumber(idPassportNumber)
+      : validateSaPassport(idPassportNumber);
+    if (!idPassportValidation.valid) {
+      const response = NextResponse.json({ error: idPassportValidation.errors.join(', ') }, { status: 400 });
+      return withSecurityHeaders(response, traceId);
+    }
+  }
+
   const consentData = {
     ...JSON.parse(data.consentData || data.consent_data || '{}'),
     password: data.password
   };
   const newContract = await createPendingContract(db, {
     full_name: data.fullName || data.full_name || '',
-    id_passport_number: data.idPassportNumber || data.id_passport_number || '',
-    contact_number: data.contactNumber || data.contact_number || '',
+    id_passport_number: idPassportNumber,
+    contact_number: contactNumber,
     position_applied_for: data.positionAppliedFor || data.position_applied_for || '',
     department: data.department || 'cleaning',
     generated_username: data.generatedUsername || data.generated_username || '',
