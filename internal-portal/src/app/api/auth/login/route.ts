@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, validateLogin, isAccountLocked, sanitizeEmail, sanitizeString, sanitizePhone, createRefreshToken, createSession } from '../../../../lib/db';
+import { getDb, validateLogin, isAccountLocked, createRefreshToken, createSession } from '../../../../lib/db';
+import { sanitizeEmail, sanitizeString, sanitizePhone } from '../../../../lib/sanitization';
 import { withRateLimit, withTracing, withSecurityHeaders, logRequest, getClientIP } from '../../../../lib/middleware';
 import { sanitizeRequestBody } from '../../../../lib/sanitization';
 import { logAuthFailure } from '../../../../lib/security-logger';

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, getUserByEmail, sanitizeEmail } from '@/lib/db';
+import { getDb, getUserByEmail } from '@/lib/db';
+import { sanitizeEmail } from '@/lib/sanitization';
 import { withRateLimit, withSecurityHeaders, withTracing, logRequest } from '@/lib/middleware';
 import crypto from 'crypto';
 
