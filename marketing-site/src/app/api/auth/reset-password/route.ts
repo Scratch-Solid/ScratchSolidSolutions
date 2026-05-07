@@ -47,19 +47,6 @@ export async function POST(request: NextRequest) {
 
     logger.info('Password reset token validated', { userId: (resetToken as any).user_id, method: (resetToken as any).method });
 
-    // For WhatsApp method, verify OTP
-    if ((resetToken as any).method === 'whatsapp') {
-      if (!otp) {
-        logger.warn('Password reset missing OTP for WhatsApp method');
-        return NextResponse.json({ error: "OTP is required for WhatsApp verification" }, { status: 400 });
-      }
-      if ((resetToken as any).otp !== otp) {
-        logger.warn('Password reset invalid OTP', { provided: otp, expected: (resetToken as any).otp });
-        return NextResponse.json({ error: "Invalid OTP. Please check your WhatsApp messages." }, { status: 400 });
-      }
-      logger.info('Password reset OTP verified');
-    }
-
     // Validate password policy
     const pwdCheck = validatePassword(newPassword || '');
     if (!pwdCheck.valid) {

@@ -49,27 +49,23 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "No account found with this phone number" }, { status: 404 });
       }
 
-      // Generate and send WhatsApp OTP
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
-      const resetToken = await createPasswordResetToken(db, (user as any).id, otp, "whatsapp");
-
-      // WhatsApp API requires paid service - no free option available
-      // For now, we'll use email as fallback if user has email
-      if ((user as any).email) {
-        const resetLink = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://scratchsolidsolutions.org'}/reset-password?token=${resetToken}&method=whatsapp&otp=${otp}`;
-        logger.info('Sending password reset email to individual', { email: (user as any).email, resetLink });
-        const emailResult = await sendPasswordResetEmail((user as any).email, resetLink);
-        if (!emailResult.success) {
-          logger.error('Failed to send password reset email', { error: emailResult.error });
-          return NextResponse.json({ error: "Failed to send reset email. Please contact support." }, { status: 500 });
-        }
-        return NextResponse.json({
-          message: "A password reset link has been sent to your email address."
-        }, { status: 200 });
+      // Check if user has email for password reset
+      if (!(user as any).email) {
+        logger.warn('Individual has no email on file', { phone });
+        return NextResponse.json({ error: "Your account does not have an email address. Please contact support to reset your password." }, { status: 400 });
       }
 
+      // Generate and send email reset link (WhatsApp not available)
+      const resetToken = await createPasswordResetToken(db, (user as any).id, null, "email");
+      const resetLink = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://scratchsolidsolutions.org'}/reset-password?token=${resetToken}`;
+      logger.info('Sending password reset email to individual', { email: (user as any).email, resetLink });
+      const emailResult = await sendPasswordResetEmail((user as any).email, resetLink);
+      if (!emailResult.success) {
+        logger.error('Failed to send password reset email', { error: emailResult.error });
+        return NextResponse.json({ error: "Failed to send reset email. Please contact support." }, { status: 500 });
+      }
       return NextResponse.json({
-        message: "If a matching account was found, a reset link has been sent. Please contact support if you have no email on file."
+        message: "A password reset link has been sent to your email address."
       }, { status: 200 });
 
     } else if (type === "business") {
