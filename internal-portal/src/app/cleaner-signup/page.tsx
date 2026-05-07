@@ -38,7 +38,7 @@ export default function CleanerSignup() {
 
     try {
       // Create user account
-      const userResponse = await fetch('/api/auth/signup', {
+      const userResponse = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -47,23 +47,30 @@ export default function CleanerSignup() {
           password: formData.password,
           role: 'cleaner',
           phone: formData.phone,
-          address: formData.address,
+          paysheetCode: formData.paysheet_code,
+          department: 'Scratch',
         }),
       });
 
       if (!userResponse.ok) {
-        const userData = await userResponse.json() as { error?: string };
-        throw new Error(userData.error || 'Failed to create account');
+        const userData = await userResponse.json() as { error?: string; details?: string[] };
+        const errorMsg = userData.details ? `${userData.error}: ${userData.details.join(', ')}` : userData.error;
+        throw new Error(errorMsg || 'Failed to create account');
       }
 
-      const userData = await userResponse.json() as { id: number };
+      const userData = await userResponse.json() as { id: number; token: string };
+      
+      // Store token
+      localStorage.setItem('authToken', userData.token);
+      localStorage.setItem('userId', userData.id.toString());
+      localStorage.setItem('userRole', 'cleaner');
 
-      // Create cleaner profile
+      // Create cleaner profile with additional details
       const profileResponse = await fetch('/api/cleaner-profiles', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+          'Authorization': `Bearer ${userData.token}`,
         },
         body: JSON.stringify({
           user_id: userData.id,
@@ -73,14 +80,18 @@ export default function CleanerSignup() {
           last_name: formData.last_name,
           residential_address: formData.residential_address,
           cellphone: formData.cellphone,
+          emergency_contact1_name: formData.emergency_contact1_name,
+          emergency_contact1_phone: formData.emergency_contact1_phone,
+          emergency_contact2_name: formData.emergency_contact2_name,
+          emergency_contact2_phone: formData.emergency_contact2_phone,
         }),
       });
 
       if (!profileResponse.ok) {
-        throw new Error('Failed to create cleaner profile');
+        console.error('Failed to create cleaner profile, but user account was created');
       }
 
-      router.push('/login');
+      router.push('/cleaner-dashboard');
     } catch (err: any) {
       setError(err.message || 'Signup failed');
     } finally {
