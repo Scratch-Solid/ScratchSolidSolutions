@@ -1,18 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sendPasswordResetEmail } from "@/lib/email";
+import { getResendApiKey } from "@/lib/env";
 import { logger } from "@/lib/logger";
 
 export async function POST(request: NextRequest) {
   try {
     logger.info('=== Testing email service directly ===');
     
-    const result = await sendPasswordResetEmail('test@example.com', 'https://scratchsolidsolutions.org/reset-password?token=test-123');
+    // Test API key access
+    const apiKey = getResendApiKey();
+    logger.info('API key result', { hasApiKey: !!apiKey, keyLength: apiKey?.length });
     
-    logger.info('Email service result', { result });
+    if (!apiKey) {
+      return NextResponse.json({ 
+        error: "API key not accessible",
+        debug: "getResendApiKey() returned null/undefined"
+      }, { status: 500 });
+    }
+    
+    // Test simple email send
+    const { Resend } = require('resend');
+    const resend = new Resend(apiKey);
+    
+    logger.info('Testing direct Resend API call');
+    const result = await resend.emails.send({
+      from: 'Scratch Solid Solutions <customerservice@scratchsolidsolutions.org>',
+      to: 'test@example.com',
+      subject: 'Test Email from Worker',
+      html: '<h1>Test Email</h1><p>This is a test email from the Worker.</p>'
+    });
+    
+    logger.info('Resend API result', { result });
     
     return NextResponse.json({ 
       success: true,
-      result 
+      apiKeyAccessible: !!apiKey,
+      resendResult: result
     });
     
   } catch (error) {
