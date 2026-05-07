@@ -5,6 +5,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
+import DashboardLayout from "@/components/DashboardLayout";
 
 export default function AdminDashboard() {
   useSessionTimeout(true);
@@ -311,47 +312,40 @@ export default function AdminDashboard() {
     }
   };
 
-  if (loading) return <div className="dashboard-container glass-panel"><div className="animate-pulse space-y-6"><div className="grid grid-cols-4 gap-4">{[1,2,3,4].map(i=><div key={i} className="border rounded-lg p-6 bg-white"><div className="h-4 bg-gray-200 rounded w-1/2 mb-3"/><div className="h-8 bg-gray-200 rounded w-3/4"/></div>)}</div><div className="border rounded-lg p-6 bg-white"><div className="h-5 bg-gray-200 rounded w-1/3 mb-4"/><div className="space-y-3">{[1,2,3].map(i=><div key={i} className="flex gap-4"><div className="h-4 bg-gray-200 rounded w-1/4"/><div className="h-4 bg-gray-200 rounded w-1/3"/></div>)}</div></div></div></div>;
-  if (error) return <div className="error-msg">{error}</div>;
+  if (loading) return <DashboardLayout title="Admin Dashboard" role="admin"><div className="animate-pulse space-y-6"><div className="grid grid-cols-4 gap-4">{[1,2,3,4].map(i=><div key={i} className="border rounded-lg p-6 bg-white/20"><div className="h-4 bg-white/30 rounded w-1/2 mb-3"/><div className="h-8 bg-white/30 rounded w-3/4"/></div>)}</div></div></DashboardLayout>;
+  if (error) return <DashboardLayout title="Admin Dashboard" role="admin"><div className="error-msg">{error}</div></DashboardLayout>;
 
   return (
-    <div className="dashboard-container glass-panel">
-      <div className="flex justify-between items-center mb-6">
-        <h2>Admin Dashboard</h2>
-        <button onClick={handleLogout} className="secondary-button text-red-600 hover:text-red-700">
-          Logout
-        </button>
-      </div>
-      
+    <DashboardLayout title="Admin Dashboard" role="admin">
       {/* Tab Navigation */}
-      <div className="mb-6 flex space-x-2 border-b pb-2">
+      <div className="mb-6 flex space-x-2 border-b border-white/20 pb-2">
         <button
           onClick={() => setActiveTab("overview")}
-          className={`px-4 py-2 rounded ${activeTab === "overview" ? "primary-button" : "secondary-button"}`}
+          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTab === "overview" ? "bg-white/20 text-white" : "bg-white/10 text-white/70 hover:bg-white/15"}`}
         >
           Overview
         </button>
         <button
           onClick={() => setActiveTab("new-joiners")}
-          className={`px-4 py-2 rounded ${activeTab === "new-joiners" ? "primary-button" : "secondary-button"}`}
+          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTab === "new-joiners" ? "bg-white/20 text-white" : "bg-white/10 text-white/70 hover:bg-white/15"}`}
         >
           New Joiners
         </button>
         <button
           onClick={() => setActiveTab("employees")}
-          className={`px-4 py-2 rounded ${activeTab === "employees" ? "primary-button" : "secondary-button"}`}
+          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTab === "employees" ? "bg-white/20 text-white" : "bg-white/10 text-white/70 hover:bg-white/15"}`}
         >
           Employees
         </button>
         <button
           onClick={() => setActiveTab("services-banking")}
-          className={`px-4 py-2 rounded ${activeTab === "services-banking" ? "primary-button" : "secondary-button"}`}
+          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTab === "services-banking" ? "bg-white/20 text-white" : "bg-white/10 text-white/70 hover:bg-white/15"}`}
         >
           Services & Banking
         </button>
         <button
           onClick={() => setActiveTab("content")}
-          className={`px-4 py-2 rounded ${activeTab === "content" ? "primary-button" : "secondary-button"}`}
+          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTab === "content" ? "bg-white/20 text-white" : "bg-white/10 text-white/70 hover:bg-white/15"}`}
         >
           Content
         </button>
@@ -361,35 +355,35 @@ export default function AdminDashboard() {
         <>
           {/* Stats Widget */}
           <div className="mb-6 grid grid-cols-4 gap-4">
-            <div className="glass-card">
-              <h3 className="font-bold">Total Bookings</h3>
-              <p className="text-2xl">{stats.totalBookings}</p>
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
+              <h3 className="font-bold text-white">Total Bookings</h3>
+              <p className="text-2xl text-white">{stats.totalBookings}</p>
             </div>
-            <div className="glass-card">
-              <h3 className="font-bold">Total Revenue</h3>
-              <p className="text-2xl">R{stats.totalRevenue?.toFixed(2) ?? "0.00"}</p>
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
+              <h3 className="font-bold text-white">Total Revenue</h3>
+              <p className="text-2xl text-white">R{stats.totalRevenue?.toFixed(2) ?? "0.00"}</p>
             </div>
-            <div className="glass-card">
-              <h3 className="font-bold">Active Cleaners</h3>
-              <p className="text-2xl">{stats.activeCleaners}</p>
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
+              <h3 className="font-bold text-white">Active Cleaners</h3>
+              <p className="text-2xl text-white">{stats.activeCleaners}</p>
             </div>
-            <div className="glass-card">
-              <h3 className="font-bold">Weekend Assignments</h3>
-              <p className="text-2xl">{stats.pendingWeekendAssignments}</p>
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
+              <h3 className="font-bold text-white">Weekend Assignments</h3>
+              <p className="text-2xl text-white">{stats.pendingWeekendAssignments}</p>
             </div>
           </div>
 
           {/* Weekend Assignment Notifications */}
           {notifications.length > 0 && (
-            <div className="glass-card">
-              <h3 className="font-bold text-lg mb-2">Pending Weekend Assignments</h3>
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6 mb-6">
+              <h3 className="font-bold text-lg text-white mb-2">Pending Weekend Assignments</h3>
               <ul className="space-y-2">
                 {notifications.map((notif: any) => (
-                  <li key={notif.id} className="border rounded p-2 bg-white">
-                    <div><b>Booking #{notif.booking_id}</b> - {notif.message}</div>
+                  <li key={notif.id} className="border border-white/10 rounded p-2 bg-white/5">
+                    <div className="text-white"><b className="text-white">Booking #{notif.booking_id}</b> - {notif.message}</div>
                     <button
                       onClick={() => assignCleaner(notif.booking_id, "")}
-                      className="mt-2 primary-button px-2 py-1 text-sm"
+                      className="mt-2 bg-white/20 hover:bg-white/30 text-white px-2 py-1 text-sm rounded border border-white/30 transition-all"
                     >
                       Assign Cleaner
                     </button>
@@ -400,11 +394,11 @@ export default function AdminDashboard() {
           )}
 
           {/* Users Widget */}
-          <div className="glass-card">
-            <h3 className="font-bold text-lg mb-2">Users</h3>
+          <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6 mb-6">
+            <h3 className="font-bold text-lg text-white mb-2">Users</h3>
             <ul className="space-y-1">
               {users.map((u: any) => (
-                <li key={u.id} className="border rounded p-2 bg-white">
+                <li key={u.id} className="border border-white/10 rounded p-2 bg-white/5 text-white">
                   <b>{u.name}</b> ({u.role}) - {u.email}
                 </li>
               ))}
@@ -412,109 +406,41 @@ export default function AdminDashboard() {
           </div>
 
           {/* Bookings Widget */}
-          <div className="glass-card">
-            <h3 className="font-bold text-lg mb-2">Bookings</h3>
+          <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6 mb-6">
+            <h3 className="font-bold text-lg text-white mb-2">Bookings</h3>
             <ul className="space-y-1">
               {bookings.map((b: any) => (
-                <li key={b.id} className="border rounded p-2 bg-white">
-                  <div><b>Booking #{b.id}</b> - Status: {b.status}</div>
-                  <div>User: {b.user_id} | Cleaner: {b.cleaner_id ?? "-"}</div>
-                  {!b.cleaner_id && (
-                    <button
-                      onClick={() => assignCleaner(b.id, "")}
-                      className="mt-2 primary-button px-2 py-1 text-sm"
-                    >
-                      Assign Cleaner
-                    </button>
-                  )}
+                <li key={b.id} className="border border-white/10 rounded p-2 bg-white/5 text-white">
+                  <b>{b.client_name}</b> - {b.booking_date} {b.booking_time} - {b.status}
                 </li>
               ))}
             </ul>
-          </div>
-
-          {/* Contracts Widget */}
-          <div className="glass-card">
-            <h3 className="font-bold text-lg mb-2">Contracts</h3>
-            <ul className="space-y-1">
-              {contracts.map((c: any) => (
-                <li key={c.id} className="border rounded p-2 bg-white">
-                  <div><b>Contract #{c.id}</b> - {c.duration}</div>
-                  <div>Rate: R{c.rate} | Status: {c.status}</div>
-                  <button
-                    onClick={() => updateRate(c.id, c.rate)}
-                    className="mt-2 primary-button px-2 py-1 text-sm"
-                  >
-                    Update Rate
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Payments Widget */}
-          <div className="glass-card">
-            <h3 className="font-bold text-lg mb-2">Payments</h3>
-            <ul className="space-y-1">
-              {payments.map((p: any) => (
-                <li key={p.id} className="border rounded p-2 bg-white">
-                  <div><b>Payment #{p.id}</b> - R{p.amount}</div>
-                  <div>Method: {p.payment_method} | Status: {p.status}</div>
-                  {p.status === "pending" && (
-                    <button
-                      onClick={() => confirmPayment(p.id)}
-                      className="mt-2 primary-button px-2 py-1 text-sm"
-                    >
-                      Confirm Payment
-                    </button>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Management Buttons */}
-          <div className="mb-6 flex space-x-4">
-            <button
-              onClick={() => window.open(process.env.NEXT_PUBLIC_CLIENT_DASHBOARD_URL || 'https://scratchsolidsolutions.org/client-dashboard', '_blank')}
-              className="primary-button"
-            >
-              View Client Dashboard
-            </button>
-            <button
-              onClick={() => {
-                const portalUrl = process.env.NEXT_PUBLIC_PORTAL_URL || 'https://portal.scratchsolidsolutions.org';
-                window.open(portalUrl + '/cleaner-dashboard', '_blank');
-              }}
-              className="primary-button"
-            >
-              View Cleaner Dashboard
-            </button>
           </div>
         </>
       ) : activeTab === "new-joiners" ? (
         <>
-          <div className="glass-card">
-            <h3 className="font-bold text-lg mb-4">New Joiners - Pending Approval</h3>
+          <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
+            <h3 className="font-bold text-lg text-white mb-4">New Joiners - Pending Approval</h3>
             {newJoiners.length === 0 ? (
-              <p className="text-gray-600">No pending new joiners.</p>
+              <p className="text-white/60">No pending new joiners.</p>
             ) : (
               <div className="space-y-3">
                 {newJoiners.map((joiner: any) => (
-                  <div key={joiner.id} className="border rounded p-4 bg-white">
+                  <div key={joiner.id} className="border border-white/10 rounded p-4 bg-white/5">
                     <div className="flex justify-between items-start mb-2">
                       <div>
-                        <p className="font-bold text-lg">{joiner.fullName}</p>
-                        <p className="text-sm text-gray-600">ID/Passport: {joiner.idPassportNumber}</p>
-                        <p className="text-sm text-gray-600">Contact: {joiner.contactNumber}</p>
-                        <p className="text-sm text-gray-600">Position: {joiner.positionAppliedFor}</p>
-                        <p className="text-sm text-gray-600">Department: {joiner.department}</p>
-                        <p className="text-sm text-gray-600">Username: {joiner.generatedUsername}</p>
-                        <p className="text-sm text-gray-600">Submitted: {new Date(joiner.submittedAt).toLocaleString()}</p>
+                        <p className="font-bold text-lg text-white">{joiner.fullName}</p>
+                        <p className="text-sm text-white/60">ID/Passport: {joiner.idPassportNumber}</p>
+                        <p className="text-sm text-white/60">Contact: {joiner.contactNumber}</p>
+                        <p className="text-sm text-white/60">Position: {joiner.positionAppliedFor}</p>
+                        <p className="text-sm text-white/60">Department: {joiner.department}</p>
+                        <p className="text-sm text-white/60">Username: {joiner.generatedUsername}</p>
+                        <p className="text-sm text-white/60">Submitted: {new Date(joiner.submittedAt).toLocaleString()}</p>
                       </div>
                       <div className="flex gap-2">
                         <button
                           onClick={() => setSelectedJoiner(joiner)}
-                          className="primary-button px-3 py-1 text-sm"
+                          className="bg-white/20 hover:bg-white/30 text-white px-3 py-1 text-sm rounded border border-white/30 transition-all"
                         >
                           View Consent
                         </button>
@@ -529,33 +455,33 @@ export default function AdminDashboard() {
           {/* Consent Form Modal */}
           {selectedJoiner && (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-              <div className="glass-panel max-w-2xl w-full max-h-[80vh] overflow-y-auto p-6">
-                <h3 className="font-bold text-xl mb-4">Consent Form Details</h3>
-                <div className="space-y-3 text-sm">
-                  <p><b>Full Name:</b> {selectedJoiner.fullName}</p>
-                  <p><b>ID/Passport:</b> {selectedJoiner.idPassportNumber}</p>
-                  <p><b>Contact:</b> {selectedJoiner.contactNumber}</p>
-                  <p><b>Position:</b> {selectedJoiner.positionAppliedFor}</p>
-                  <p><b>Department:</b> {selectedJoiner.department}</p>
-                  <p><b>Username:</b> {selectedJoiner.generatedUsername}</p>
-                  <p><b>Submitted:</b> {new Date(selectedJoiner.submittedAt).toLocaleString()}</p>
+              <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 max-w-2xl w-full max-h-[80vh] overflow-y-auto p-6">
+                <h3 className="font-bold text-xl text-white mb-4">Consent Form Details</h3>
+                <div className="space-y-3 text-sm text-white/80">
+                  <p><b className="text-white">Full Name:</b> {selectedJoiner.fullName}</p>
+                  <p><b className="text-white">ID/Passport:</b> {selectedJoiner.idPassportNumber}</p>
+                  <p><b className="text-white">Contact:</b> {selectedJoiner.contactNumber}</p>
+                  <p><b className="text-white">Position:</b> {selectedJoiner.positionAppliedFor}</p>
+                  <p><b className="text-white">Department:</b> {selectedJoiner.department}</p>
+                  <p><b className="text-white">Username:</b> {selectedJoiner.generatedUsername}</p>
+                  <p><b className="text-white">Submitted:</b> {new Date(selectedJoiner.submittedAt).toLocaleString()}</p>
                 </div>
                 <div className="flex gap-4 mt-6">
                   <button
                     onClick={() => handleApproveJoiner(selectedJoiner)}
-                    className="flex-1 primary-button"
+                    className="flex-1 bg-green-500/20 hover:bg-green-500/30 text-green-200 px-4 py-2 rounded-lg border border-green-500/30 transition-all"
                   >
                     Approve
                   </button>
                   <button
                     onClick={() => handleRejectJoiner(selectedJoiner)}
-                    className="flex-1 secondary-button"
+                    className="flex-1 bg-red-500/20 hover:bg-red-500/30 text-red-200 px-4 py-2 rounded-lg border border-red-500/30 transition-all"
                   >
                     Reject
                   </button>
                   <button
                     onClick={() => setSelectedJoiner(null)}
-                    className="flex-1 secondary-button"
+                    className="flex-1 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg border border-white/30 transition-all"
                   >
                     Close
                   </button>
@@ -565,31 +491,31 @@ export default function AdminDashboard() {
           )}
         </>
       ) : activeTab === "employees" ? (
-        <div className="glass-card">
-          <h3 className="font-bold text-lg mb-2">Employees</h3>
+        <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
+          <h3 className="font-bold text-lg text-white mb-2">Employees</h3>
           {employees.length === 0 ? (
-            <div>No employees found.</div>
+            <div className="text-white/60">No employees found.</div>
           ) : (
             <ul className="space-y-4">
               {employees.map((emp: any) => (
-                <li key={emp.id} className="border rounded p-4 bg-white">
+                <li key={emp.id} className="border border-white/10 rounded p-4 bg-white/5">
                   <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <p><b>Full Name:</b> {emp.fullName}</p>
-                        <p><b>Position Applied For:</b> {emp.positionAppliedFor}</p>
-                        <p><b>ID/Passport:</b> {emp.idPassportNumber}</p>
-                        <p><b>Username:</b> {emp.username}</p>
-                        <p><b>Department:</b> {emp.department}</p>
+                        <p className="text-white"><b className="text-white">Full Name:</b> {emp.fullName}</p>
+                        <p className="text-white"><b className="text-white">Position Applied For:</b> {emp.positionAppliedFor}</p>
+                        <p className="text-white"><b className="text-white">ID/Passport:</b> {emp.idPassportNumber}</p>
+                        <p className="text-white"><b className="text-white">Username:</b> {emp.username}</p>
+                        <p className="text-white"><b className="text-white">Department:</b> {emp.department}</p>
                       </div>
                       <div>
-                        <p><b>Contact Number:</b> {emp.contactNumber}</p>
-                        <p><b>Status:</b> {emp.status}</p>
-                        <p><b>Consent Date:</b> {new Date(emp.consentDate).toLocaleString()}</p>
+                        <p className="text-white"><b className="text-white">Contact Number:</b> {emp.contactNumber}</p>
+                        <p className="text-white"><b className="text-white">Status:</b> {emp.status}</p>
+                        <p className="text-white"><b className="text-white">Consent Date:</b> {new Date(emp.consentDate).toLocaleString()}</p>
                       </div>
                     </div>
-                    <div className="mt-2 pt-2 border-t">
-                      <p className="text-sm"><b>Signature Confirmed:</b> {emp.applicantSignature ? "Yes" : "No"}</p>
-                      <p className="text-sm"><b>Witness:</b> {emp.witnessRepresentative}</p>
+                    <div className="mt-2 pt-2 border-t border-white/10">
+                      <p className="text-sm text-white/60"><b className="text-white">Signature Confirmed:</b> {emp.applicantSignature ? "Yes" : "No"}</p>
+                      <p className="text-sm text-white/60"><b className="text-white">Witness:</b> {emp.witnessRepresentative}</p>
                     </div>
                   </li>
                 ))}
@@ -599,43 +525,43 @@ export default function AdminDashboard() {
       ) : activeTab === "services-banking" ? (
         <div className="space-y-6">
           {/* Services Management */}
-          <div className="glass-card">
-            <h3 className="font-bold text-lg mb-4">Services Management</h3>
+          <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
+            <h3 className="font-bold text-lg text-white mb-4">Services Management</h3>
             
             {/* Add New Service Form */}
-            <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-              <h4 className="font-semibold mb-3">Add New Service</h4>
+            <div className="mb-6 p-4 bg-white/5 rounded-lg border border-white/10">
+              <h4 className="font-semibold mb-3 text-white">Add New Service</h4>
               <div className="grid grid-cols-2 gap-4">
                 <input
                   type="text"
                   placeholder="Service Name"
                   value={serviceForm.name}
                   onChange={(e) => setServiceForm({...serviceForm, name: e.target.value})}
-                  className="px-3 py-2 border rounded"
+                  className="px-3 py-2 border border-white/20 rounded bg-white/10 text-white placeholder-white/50"
                 />
                 <input
                   type="number"
                   placeholder="Base Price (R)"
                   value={serviceForm.base_price}
                   onChange={(e) => setServiceForm({...serviceForm, base_price: e.target.value})}
-                  className="px-3 py-2 border rounded"
+                  className="px-3 py-2 border border-white/20 rounded bg-white/10 text-white placeholder-white/50"
                 />
                 <input
                   type="number"
                   placeholder="Duration (hours)"
                   value={serviceForm.duration_hours}
                   onChange={(e) => setServiceForm({...serviceForm, duration_hours: e.target.value})}
-                  className="px-3 py-2 border rounded"
+                  className="px-3 py-2 border border-white/20 rounded bg-white/10 text-white placeholder-white/50"
                 />
                 <select
                   value={serviceForm.category}
                   onChange={(e) => setServiceForm({...serviceForm, category: e.target.value})}
-                  className="px-3 py-2 border rounded"
+                  className="px-3 py-2 border border-white/20 rounded bg-white/10 text-white"
                 >
-                  <option value="standard">Standard</option>
-                  <option value="deep">Deep Clean</option>
-                  <option value="commercial">Commercial</option>
-                  <option value="specialized">Specialized</option>
+                  <option value="standard" className="text-black">Standard</option>
+                  <option value="deep" className="text-black">Deep Clean</option>
+                  <option value="commercial" className="text-black">Commercial</option>
+                  <option value="specialized" className="text-black">Specialized</option>
                 </select>
               </div>
               <textarea
@@ -643,11 +569,11 @@ export default function AdminDashboard() {
                 value={serviceForm.description}
                 onChange={(e) => setServiceForm({...serviceForm, description: e.target.value})}
                 rows={2}
-                className="w-full mt-3 px-3 py-2 border rounded"
+                className="w-full mt-3 px-3 py-2 border border-white/20 rounded bg-white/10 text-white placeholder-white/50"
               />
               <button
                 onClick={handleAddService}
-                className="mt-3 primary-button px-4 py-2"
+                className="mt-3 bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg border border-white/30 transition-all"
               >
                 Add Service
               </button>
@@ -655,21 +581,21 @@ export default function AdminDashboard() {
 
             {/* Services List */}
             <div>
-              <h4 className="font-semibold mb-3">Existing Services</h4>
+              <h4 className="font-semibold mb-3 text-white">Existing Services</h4>
               {services.length === 0 ? (
-                <p className="text-gray-500">No services available</p>
+                <p className="text-white/60">No services available</p>
               ) : (
                 <div className="space-y-2">
                   {services.map((service: any) => (
-                    <div key={service.id} className="flex items-center justify-between p-3 bg-white border rounded">
+                    <div key={service.id} className="flex items-center justify-between p-3 bg-white/5 border border-white/10 rounded">
                       <div>
-                        <p className="font-semibold">{service.name}</p>
-                        <p className="text-sm text-gray-600">{service.description}</p>
-                        <p className="text-sm">R{service.base_price} | {service.duration_hours}h | {service.category}</p>
+                        <p className="font-semibold text-white">{service.name}</p>
+                        <p className="text-sm text-white/60">{service.description}</p>
+                        <p className="text-sm text-white/60">R{service.base_price} | {service.duration_hours}h | {service.category}</p>
                       </div>
                       <button
                         onClick={() => handleDeleteService(service.id)}
-                        className="text-red-600 hover:text-red-700 px-3 py-1 border rounded"
+                        className="text-red-300 hover:text-red-200 px-3 py-1 border border-red-500/30 rounded transition-all"
                       >
                         Delete
                       </button>
@@ -681,65 +607,65 @@ export default function AdminDashboard() {
           </div>
 
           {/* Banking Details Management */}
-          <div className="glass-card">
-            <h3 className="font-bold text-lg mb-4">Banking Details</h3>
+          <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
+            <h3 className="font-bold text-lg text-white mb-4">Banking Details</h3>
             
-            <div className="p-4 bg-green-50 rounded-lg">
-              <h4 className="font-semibold mb-3">Update Banking Details</h4>
+            <div className="p-4 bg-white/5 rounded-lg border border-white/10">
+              <h4 className="font-semibold mb-3 text-white">Update Banking Details</h4>
               <div className="grid grid-cols-2 gap-4">
                 <input
                   type="text"
                   placeholder="Bank Name"
                   value={bankingForm.bank_name}
                   onChange={(e) => setBankingForm({...bankingForm, bank_name: e.target.value})}
-                  className="px-3 py-2 border rounded"
+                  className="px-3 py-2 border border-white/20 rounded bg-white/10 text-white placeholder-white/50"
                 />
                 <input
                   type="text"
                   placeholder="Account Number"
                   value={bankingForm.account_number}
                   onChange={(e) => setBankingForm({...bankingForm, account_number: e.target.value})}
-                  className="px-3 py-2 border rounded"
+                  className="px-3 py-2 border border-white/20 rounded bg-white/10 text-white placeholder-white/50"
                 />
                 <input
                   type="text"
                   placeholder="Account Holder"
                   value={bankingForm.account_holder}
                   onChange={(e) => setBankingForm({...bankingForm, account_holder: e.target.value})}
-                  className="px-3 py-2 border rounded"
+                  className="px-3 py-2 border border-white/20 rounded bg-white/10 text-white placeholder-white/50"
                 />
                 <input
                   type="text"
                   placeholder="Branch Code"
                   value={bankingForm.branch_code}
                   onChange={(e) => setBankingForm({...bankingForm, branch_code: e.target.value})}
-                  className="px-3 py-2 border rounded"
+                  className="px-3 py-2 border border-white/20 rounded bg-white/10 text-white placeholder-white/50"
                 />
                 <select
                   value={bankingForm.account_type}
                   onChange={(e) => setBankingForm({...bankingForm, account_type: e.target.value})}
-                  className="px-3 py-2 border rounded"
+                  className="px-3 py-2 border border-white/20 rounded bg-white/10 text-white"
                 >
-                  <option value="current">Current</option>
-                  <option value="savings">Savings</option>
+                  <option value="current" className="text-black">Current</option>
+                  <option value="savings" className="text-black">Savings</option>
                 </select>
               </div>
               <button
                 onClick={handleUpdateBankingDetails}
-                className="mt-3 primary-button px-4 py-2"
+                className="mt-3 bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg border border-white/30 transition-all"
               >
                 Update Banking Details
               </button>
             </div>
 
             {bankingDetails && (
-              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                <h4 className="font-semibold mb-2">Current Banking Details</h4>
-                <p><span className="font-medium">Bank:</span> {bankingDetails.bank_name}</p>
-                <p><span className="font-medium">Account:</span> {bankingDetails.account_number}</p>
-                <p><span className="font-medium">Holder:</span> {bankingDetails.account_holder}</p>
-                <p><span className="font-medium">Branch:</span> {bankingDetails.branch_code}</p>
-                <p><span className="font-medium">Type:</span> {bankingDetails.account_type}</p>
+              <div className="mt-4 p-4 bg-white/5 rounded-lg border border-white/10">
+                <h4 className="font-semibold mb-2 text-white">Current Banking Details</h4>
+                <p className="text-white/80"><span className="font-medium text-white">Bank:</span> {bankingDetails.bank_name}</p>
+                <p className="text-white/80"><span className="font-medium text-white">Account:</span> {bankingDetails.account_number}</p>
+                <p className="text-white/80"><span className="font-medium text-white">Holder:</span> {bankingDetails.account_holder}</p>
+                <p className="text-white/80"><span className="font-medium text-white">Branch:</span> {bankingDetails.branch_code}</p>
+                <p className="text-white/80"><span className="font-medium text-white">Type:</span> {bankingDetails.account_type}</p>
               </div>
             )}
           </div>
@@ -747,7 +673,7 @@ export default function AdminDashboard() {
       ) : activeTab === "content" ? (
         <ContentManagement />
       ) : null}
-    </div>
+    </DashboardLayout>
   );
 }
 

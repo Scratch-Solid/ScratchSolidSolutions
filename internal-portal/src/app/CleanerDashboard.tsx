@@ -5,6 +5,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
+import DashboardLayout from "@/components/DashboardLayout";
 
 export default function CleanerDashboard() {
   useSessionTimeout(true);
@@ -219,54 +220,47 @@ export default function CleanerDashboard() {
     window.location.href = '/auth/login';
   };
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div className="error-msg">{error}</div>;
-  if (!cleaner) return <div>No data found.</div>;
+  if (loading) return <DashboardLayout title="Cleaner Dashboard" role="cleaner"><div className="text-white">Loading...</div></DashboardLayout>;
+  if (error) return <DashboardLayout title="Cleaner Dashboard" role="cleaner"><div className="error-msg text-white">{error}</div></DashboardLayout>;
+  if (!cleaner) return <DashboardLayout title="Cleaner Dashboard" role="cleaner"><div className="text-white">No data found.</div></DashboardLayout>;
 
   return (
-    <div className="dashboard-container glass-panel">
-      <div className="flex justify-between items-center mb-6">
-        <h2>Cleaner Dashboard</h2>
-        <button onClick={handleLogout} className="secondary-button text-red-600 hover:text-red-700">
-          Logout
-        </button>
-      </div>
-      
+    <DashboardLayout title="Cleaner Dashboard" role="cleaner">
       {/* Tile Navigation */}
-      <div className="mb-6 flex space-x-2 border-b pb-2">
+      <div className="mb-6 flex space-x-2 border-b border-white/20 pb-2">
         <button
           onClick={() => setActiveTile("profile")}
-          className={`px-4 py-2 rounded ${activeTile === "profile" ? "primary-button" : "secondary-button"}`}
+          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTile === "profile" ? "bg-white/20 text-white" : "bg-white/10 text-white/70 hover:bg-white/15"}`}
         >
           Personal Details
         </button>
         <button
           onClick={() => setActiveTile("status")}
-          className={`px-4 py-2 rounded ${activeTile === "status" ? "primary-button" : "secondary-button"}`}
+          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTile === "status" ? "bg-white/20 text-white" : "bg-white/10 text-white/70 hover:bg-white/15"}`}
         >
           Status
         </button>
         <button
           onClick={() => setActiveTile("tasks")}
-          className={`px-4 py-2 rounded ${activeTile === "tasks" ? "primary-button" : "secondary-button"}`}
+          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTile === "tasks" ? "bg-white/20 text-white" : "bg-white/10 text-white/70 hover:bg-white/15"}`}
         >
           Tasks
         </button>
         <button
           onClick={() => setActiveTile("earnings")}
-          className={`px-4 py-2 rounded ${activeTile === "earnings" ? "primary-button" : "secondary-button"}`}
+          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTile === "earnings" ? "bg-white/20 text-white" : "bg-white/10 text-white/70 hover:bg-white/15"}`}
         >
           Earnings
         </button>
       </div>
 
       {activeTile === "profile" && (
-        <div className="glass-card">
+        <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="font-bold text-lg">Personal Details</h3>
+            <h3 className="font-bold text-lg text-white">Personal Details</h3>
             <button
               onClick={() => setEditingProfile(!editingProfile)}
-              className="secondary-button px-3 py-1 text-sm"
+              className="bg-white/20 hover:bg-white/30 text-white px-3 py-1 text-sm rounded border border-white/30 transition-all"
             >
               {editingProfile ? "Cancel" : "Edit Profile"}
             </button>
@@ -428,8 +422,8 @@ export default function CleanerDashboard() {
       )}
 
       {activeTile === "status" && (
-        <div className="glass-card">
-          <h3 className="font-bold text-lg mb-4">Current Status</h3>
+        <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
+          <h3 className="font-bold text-lg text-white mb-4">Current Status</h3>
           <div className="mb-4">
             <span className={`px-4 py-2 rounded-full text-lg font-semibold ${
               cleanerStatus === 'idle' ? 'bg-gray-100 text-gray-800' :
@@ -444,7 +438,7 @@ export default function CleanerDashboard() {
                cleanerStatus === 'completed' ? 'Completed' : 'Unknown'}
             </span>
           </div>
-          <h4 className="font-semibold mb-2">Update Status</h4>
+          <h4 className="font-semibold mb-2 text-white">Update Status</h4>
           <div className="space-y-2">
             <button
               onClick={() => updateCleanerStatus('idle')}
@@ -475,99 +469,48 @@ export default function CleanerDashboard() {
               Completed
             </button>
           </div>
-          <p className="text-sm text-gray-500 mt-4">GPS location will be captured when status changes</p>
         </div>
       )}
 
       {activeTile === "tasks" && (
-        <>
-          {/* Upcoming Shifts Widget */}
-          <div className="glass-card mb-4">
-            <h3 className="font-bold text-lg mb-2">Upcoming Shifts</h3>
-            {upcomingShifts.length === 0 ? (
-              <div>No upcoming shifts.</div>
-            ) : (
-              <ul className="mt-2 space-y-2">
-                {upcomingShifts.map((shift: any) => (
-                  <li key={shift.id} className="border rounded p-2 bg-white">
-                    <div><b>{shift.date}</b></div>
-                    <div>Time: {shift.time_slot === "morning" ? "08:00–12:00" : "13:00–17:00"}</div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          {/* Assignments (Tasks) Widget */}
-          <div className="glass-card">
-            <h3 className="font-bold text-lg mb-2">Assignments</h3>
-            {tasks.length === 0 ? (
-              <div>No tasks assigned.</div>
-            ) : (
-              <ul className="mt-2 space-y-2">
-                {tasks.map((task: any) => (
-                  <li key={task.id} className="border rounded p-2 bg-white">
-                    <div><b>Booking #{task.id}</b> - {task.status}</div>
-                    <div>Start: {task.start_time}</div>
-                    <div>End: {task.end_time || "-"}</div>
-                    <div>Type: {task.booking_type}</div>
-                    <div>Client: {task.user_id}</div>
-                    <div className="mt-2 space-x-2">
-                      <button
-                        onClick={() => updateBookingStatus(task.id, "on_the_way")}
-                        className="primary-button px-2 py-1 text-sm"
-                      >
-                        On the Way
-                      </button>
-                      <button
-                        onClick={() => updateBookingStatus(task.id, "arrived")}
-                        className="primary-button px-2 py-1 text-sm"
-                      >
-                        Arrived
-                      </button>
-                      <button
-                        onClick={() => updateBookingStatus(task.id, "completed")}
-                        className="primary-button px-2 py-1 text-sm"
-                      >
-                        Completed
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </>
+        <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
+          <h3 className="font-bold text-lg text-white mb-4">Tasks</h3>
+          {tasks.length === 0 ? (
+            <p className="text-white/60">No tasks assigned.</p>
+          ) : (
+            <ul className="space-y-2">
+              {tasks.map((task: any) => (
+                <li key={task.id} className="border border-white/10 rounded p-3 bg-white/5 text-white">
+                  <div><b className="text-white">Customer:</b> {task.customer}</div>
+                  <div><b className="text-white">Date:</b> {task.date}</div>
+                  <div><b className="text-white">Time:</b> {task.time}</div>
+                  <div><b className="text-white">Address:</b> {task.address}</div>
+                  <div><b className="text-white">Status:</b> {task.status}</div>
+                  {task.status !== 'completed' && (
+                    <button
+                      onClick={() => updateBookingStatus(task.id.toString(), 'completed')}
+                      className="mt-2 bg-green-500/20 hover:bg-green-500/30 text-green-200 px-3 py-1 rounded border border-green-500/30 transition-all"
+                    >
+                      Mark Complete
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       )}
 
       {activeTile === "earnings" && (
-        <>
-          {/* Profile Section - Earnings */}
-          <div className="glass-card mb-4">
-            <h3 className="font-bold text-lg mb-2">Earnings Summary</h3>
-            <div className="mb-2">Total Earnings: <b>R{cleaner.totalEarnings?.toFixed(2) ?? "0.00"}</b></div>
-            <div className="mb-2">Completed Jobs: <b>{cleaner.completedJobs}</b></div>
-            <div className="mb-2">Rating: <b>{cleaner.rating}/5</b></div>
+        <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
+          <h3 className="font-bold text-lg text-white mb-4">Earnings</h3>
+          <div className="text-white">
+            <p className="text-2xl font-bold">R{cleaner?.totalEarnings || 0}</p>
+            <p className="text-white/60">Total Earnings</p>
+            <p className="mt-2 text-white/60">{cleaner?.completedJobs || 0} jobs completed</p>
           </div>
-
-          {/* Ratings Widget */}
-          <div className="glass-card">
-            <h3 className="font-bold text-lg mb-2">Ratings</h3>
-            {ratings.length === 0 ? (
-              <div>No ratings yet.</div>
-            ) : (
-              <ul className="mt-2 space-y-2">
-                {ratings.map((rating: any) => (
-                  <li key={rating.id} className="border rounded p-2 bg-white">
-                    <div><b>{rating.rating}/5</b> - {rating.comment}</div>
-                    <div className="text-sm">{rating.date}</div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </>
+        </div>
       )}
-    </div>
+    </DashboardLayout>
   );
 }
