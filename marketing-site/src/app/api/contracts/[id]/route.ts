@@ -4,11 +4,12 @@ import { withAuth, withTracing, withSecurityHeaders, withRateLimit, rateLimits }
 import { logger } from '@/lib/logger';
 import { validateNumber, validateString, validateDate } from '@/lib/validation';
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['business', 'admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
+  const { id } = await params;
 
   // Rate limiting check
   const rateLimitResult = await withRateLimit(request, rateLimits.standard);
@@ -30,7 +31,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 
   try {
-    const contract = await db.prepare('SELECT * FROM contracts WHERE id = ?').bind(params.id).first();
+    const contract = await db.prepare('SELECT * FROM contracts WHERE id = ?').bind(id).first();
     if (!contract) {
       const response = NextResponse.json({ error: 'Contract not found' }, { status: 404 });
       return withSecurityHeaders(response, traceId);
@@ -45,11 +46,12 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
+  const { id } = await params;
 
   // Rate limiting check
   const rateLimitResult = await withRateLimit(request, rateLimits.standard);
@@ -71,7 +73,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 
   try {
-    const existingContract = await db.prepare('SELECT * FROM contracts WHERE id = ?').bind(params.id).first();
+    const existingContract = await db.prepare('SELECT * FROM contracts WHERE id = ?').bind(parseInt(id)).first();
     
     if (!existingContract) {
       return NextResponse.json({ error: 'Contract not found' }, { status: 404 });
@@ -151,7 +153,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     }
 
     updates.push('updated_at = datetime(\'now\')');
-    values.push(params.id);
+    values.push(id);
 
     const result = await db.prepare(
       `UPDATE contracts SET ${updates.join(', ')} WHERE id = ? RETURNING *`
@@ -166,11 +168,12 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
+  const { id } = await params;
 
   // Rate limiting check
   const rateLimitResult = await withRateLimit(request, rateLimits.standard);
@@ -192,7 +195,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
   }
 
   try {
-    const existingContract = await db.prepare('SELECT * FROM contracts WHERE id = ?').bind(params.id).first();
+    const existingContract = await db.prepare('SELECT * FROM contracts WHERE id = ?').bind(parseInt(id)).first();
     
     if (!existingContract) {
       return NextResponse.json({ error: 'Contract not found' }, { status: 404 });
@@ -202,7 +205,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       return NextResponse.json({ error: 'Contract is immutable and cannot be deleted' }, { status: 403 });
     }
 
-    await db.prepare('DELETE FROM contracts WHERE id = ?').bind(params.id).run();
+    await db.prepare('DELETE FROM contracts WHERE id = ?').bind(id).run();
 
     const response = NextResponse.json({ success: true });
     return withSecurityHeaders(response, traceId);

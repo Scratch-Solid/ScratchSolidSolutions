@@ -78,7 +78,7 @@ export default function BookingPage() {
       });
 
       if (!bookingResponse.ok) {
-        const errorData = await bookingResponse.json();
+        const errorData = await bookingResponse.json() as { error?: string };
         if (errorData.error === "cleaner_unavailable") {
           // Fallback to general pool, next cleaner assigned
           bookingPayload.cleaner_id = "";
@@ -95,7 +95,7 @@ export default function BookingPage() {
         }
       }
 
-      const bookingData = await bookingResponse.json();
+      const bookingData = await bookingResponse.json() as { id: number };
 
       // Trigger admin notification if weekend work is required
       if (weekendWorkRequired) {

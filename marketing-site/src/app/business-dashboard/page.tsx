@@ -48,7 +48,7 @@ export default function BusinessDashboard() {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.ok) {
-        const data = await response.json();
+        const data = await response.json() as any[];
         setWeekendRequests(data);
         // Derive assigned cleaner from most recent assigned request
         const assigned = data.find((r: any) => r.status === 'assigned' && r.assigned_cleaner_name);
@@ -122,7 +122,7 @@ export default function BusinessDashboard() {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.ok) {
-        const data = await response.json();
+        const data = await response.json() as any[];
         setContracts(data);
       }
     } catch (error) {
@@ -138,7 +138,7 @@ export default function BusinessDashboard() {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.ok) {
-        const data = await response.json();
+        const data = await response.json() as any[];
         setRecurringBookings(data);
       }
     } catch (error) {
@@ -154,7 +154,7 @@ export default function BusinessDashboard() {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.ok) {
-        const data = await response.json();
+        const data = await response.json() as any[];
         setUserProfile(data);
       }
     } catch (error) {

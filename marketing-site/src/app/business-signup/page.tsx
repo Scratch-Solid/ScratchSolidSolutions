@@ -41,7 +41,7 @@ export default function BusinessSignupPage() {
       });
 
       if (response.ok) {
-        const result = await response.json();
+        const result = await response.json() as { token: string; role: string; id: string };
         // Store auth token and user role in localStorage
         localStorage.setItem("authToken", result.token);
         localStorage.setItem("userRole", result.role);
@@ -49,7 +49,7 @@ export default function BusinessSignupPage() {
         alert("Business account created successfully!");
         window.location.href = "/business-dashboard";
       } else {
-        const error = await response.json();
+        const error = await response.json() as { error?: string };
         alert(error.error || "Signup failed");
       }
     } catch (error) {

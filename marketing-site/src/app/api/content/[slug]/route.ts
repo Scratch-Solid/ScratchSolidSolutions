@@ -6,10 +6,11 @@ import { getDb } from '@/lib/db';
 
 export const runtime = "edge";
 
-export async function GET(request: NextRequest, { params }: { params: { slug: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
+  const { slug } = await params;
 
   // Rate limiting check
   const rateLimitResult = await withRateLimit(request, rateLimits.standard);
@@ -36,7 +37,6 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
   }
 
   try {
-    const slug = params.slug;
     const slugValidation = validateString(slug, 'slug', 1, 100);
     if (!slugValidation.valid) {
       return NextResponse.json({ error: slugValidation.errors.join(', ') }, { status: 400 });
@@ -57,10 +57,11 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { slug: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
+  const { slug } = await params;
 
   const rateLimitResult = await withRateLimit(request, rateLimits.standard);
   if (rateLimitResult && !rateLimitResult.success) {
@@ -86,7 +87,6 @@ export async function PUT(request: NextRequest, { params }: { params: { slug: st
   }
 
   try {
-    const slug = params.slug;
     const slugValidation = validateString(slug, 'slug', 1, 100);
     if (!slugValidation.valid) {
       return NextResponse.json({ error: slugValidation.errors.join(', ') }, { status: 400 });
@@ -129,10 +129,11 @@ export async function PUT(request: NextRequest, { params }: { params: { slug: st
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { slug: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
+  const { slug } = await params;
 
   const rateLimitResult = await withRateLimit(request, rateLimits.standard);
   if (rateLimitResult && !rateLimitResult.success) {
@@ -158,7 +159,6 @@ export async function DELETE(request: NextRequest, { params }: { params: { slug:
   }
 
   try {
-    const slug = params.slug;
     const slugValidation = validateString(slug, 'slug', 1, 100);
     if (!slugValidation.valid) {
       return NextResponse.json({ error: slugValidation.errors.join(', ') }, { status: 400 });

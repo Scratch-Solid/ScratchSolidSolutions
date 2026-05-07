@@ -4,14 +4,15 @@ import { logger } from "@/lib/logger";
 import { withRateLimit, rateLimits } from "@/lib/middleware";
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['admin', 'cleaner']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
+  const { id } = await params;
 
   try {
-    const completion = await db.prepare('SELECT * FROM task_completions WHERE id = ?').bind(parseInt(params.id)).first();
+    const completion = await db.prepare('SELECT * FROM task_completions WHERE id = ?').bind(parseInt(id)).first();
     if (!completion) {
       return NextResponse.json({ error: 'Task completion not found' }, { status: 404 });
     }
@@ -22,11 +23,12 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
+  const { id } = await params;
 
   const rateLimitResult = await withRateLimit(request, rateLimits.standard);
   if (rateLimitResult && !rateLimitResult.success) {
@@ -43,7 +45,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
     const result = await db.prepare(
       `UPDATE task_completions SET earnings = ? WHERE id = ? RETURNING *`
-    ).bind(body.earnings || 150, parseInt(params.id)).first();
+    ).bind(body.earnings || 150, parseInt(id)).first();
 
     if (!result) {
       return NextResponse.json({ error: 'Task completion not found' }, { status: 404 });
@@ -56,14 +58,15 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
+  const { id } = await params;
 
   try {
-    await db.prepare('DELETE FROM task_completions WHERE id = ?').bind(parseInt(params.id)).run();
+    await db.prepare('DELETE FROM task_completions WHERE id = ?').bind(parseInt(id)).run();
     return NextResponse.json({ message: 'Task completion deleted' });
   } catch (error) {
     logger.error('Error deleting task completion', error as Error);

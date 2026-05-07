@@ -15,7 +15,7 @@ export default function BusinessEventsPage() {
     try {
       const response = await fetch("/api/business-events");
       if (response.ok) {
-        const data = await response.json();
+        const data = await response.json() as any[];
         setEvents(data);
       }
     } catch (error) {

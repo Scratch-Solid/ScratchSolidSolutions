@@ -68,7 +68,7 @@ export default function BusinessBookingPage() {
       });
 
       if (!res.ok) {
-        const data = await res.json();
+        const data = await res.json() as { error?: string };
         alert(data.error || 'Contract creation failed');
         return;
       }
@@ -123,7 +123,7 @@ export default function BusinessBookingPage() {
       });
 
       if (!res.ok) {
-        const data = await res.json();
+        const data = await res.json() as { error?: string };
         alert(data.error || 'Booking failed');
         return;
       }

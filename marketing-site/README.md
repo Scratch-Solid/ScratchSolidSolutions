@@ -9,6 +9,10 @@ Public-facing website for client and business signups, booking services, and inf
 - **Project Name**: scratchsolidsolutions (Cloudflare Pages)
 - **Environment Variables**: JWT_SECRET, CSRF_SECRET, RESEND_API_KEY, NEXT_PUBLIC_BASE_URL, NEXT_PUBLIC_API_URL, ZOHO_ORG_ID, ZOHO_CLIENT_ID, ZOHO_CLIENT_SECRET, ZOHO_REFRESH_TOKEN
 
+## Security Notice
+
+**CRITICAL**: Never commit `.env.local` files to version control. These contain sensitive credentials including R2 access keys. Use Cloudflare secrets manager or environment variables for production secrets.
+
 ## Getting Started
 
 First, run the development server:

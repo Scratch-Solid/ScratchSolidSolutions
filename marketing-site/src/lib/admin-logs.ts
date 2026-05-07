@@ -20,6 +20,10 @@ interface AdminFailureLog {
 export async function logAdminFailure(log: AdminFailureLog): Promise<void> {
   try {
     const db = await getDb();
+    if (!db) {
+      console.error('[Admin Failure Log] Database not available');
+      return;
+    }
     
     await db.prepare(`
       INSERT INTO admin_failure_logs (
@@ -45,6 +49,10 @@ export async function logAdminFailure(log: AdminFailureLog): Promise<void> {
 export async function getAdminFailureLogs(adminId: string, limit: number = 100): Promise<any[]> {
   try {
     const db = await getDb();
+    if (!db) {
+      console.error('[Admin Failure Log] Database not available');
+      return [];
+    }
     
     const result = await db.prepare(`
       SELECT * FROM admin_failure_logs
@@ -63,6 +71,10 @@ export async function getAdminFailureLogs(adminId: string, limit: number = 100):
 export async function getAllAdminFailureLogs(limit: number = 100, offset: number = 0): Promise<any[]> {
   try {
     const db = await getDb();
+    if (!db) {
+      console.error('[Admin Failure Log] Database not available');
+      return [];
+    }
     
     const result = await db.prepare(`
       SELECT afl.*, u.username, u.email
@@ -82,6 +94,10 @@ export async function getAllAdminFailureLogs(limit: number = 100, offset: number
 export async function getAdminFailureStats(adminId?: string): Promise<any> {
   try {
     const db = await getDb();
+    if (!db) {
+      console.error('[Admin Failure Log] Database not available');
+      return { total_failures: 0, by_action: [] };
+    }
     
     let query = `
       SELECT 

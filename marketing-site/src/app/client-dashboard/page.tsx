@@ -89,7 +89,7 @@ export default function ClientDashboard() {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (cleanersRes.ok) {
-          const cleanersData = await cleanersRes.json();
+          const cleanersData = await cleanersRes.json() as any[];
           setAvailableCleaners(cleanersData.map((c: any) => ({
             id: c.user_id,
             name: `${c.first_name || ''} ${c.last_name || ''}`.trim() || c.username,
@@ -108,7 +108,7 @@ export default function ClientDashboard() {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (bookingsRes.ok) {
-          const bookingsData = await bookingsRes.json();
+          const bookingsData = await bookingsRes.json() as any[];
           setBookings(bookingsData);
         }
       } catch (e) {
@@ -282,7 +282,7 @@ export default function ClientDashboard() {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (zohoRes.ok) {
-        const zohoData = await zohoRes.json();
+        const zohoData = await zohoRes.json() as { statements?: any[]; invoices?: any[] };
         setZohoStatements(zohoData.statements || []);
         setZohoInvoices(zohoData.invoices || []);
       }

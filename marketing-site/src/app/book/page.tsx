@@ -70,10 +70,10 @@ export default function BookingPage() {
       });
 
       if (response.ok) {
-        const result = await response.json();
+        const result = await response.json() as { id: number };
         router.push(`/bookings/${result.id}`);
       } else {
-        const errorData = await response.json();
+        const errorData = await response.json() as { error?: string; alternatives?: string[] };
         if (errorData.error === "Booking conflict" && errorData.alternatives) {
           setError(`Time slot conflict. Available alternatives: ${errorData.alternatives.join(", ")}`);
         } else {

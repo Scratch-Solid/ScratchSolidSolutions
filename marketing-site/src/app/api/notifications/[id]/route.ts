@@ -3,11 +3,12 @@ import { getDb } from '@/lib/db';
 import { withAuth, withTracing, withSecurityHeaders, withRateLimit, rateLimits } from '@/lib/middleware';
 import { logger } from '@/lib/logger';
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db, user } = authResult;
+  const { id } = await params;
 
   const rateLimitResult = await withRateLimit(request, rateLimits.standard);
   if (rateLimitResult && !rateLimitResult.success) {
@@ -18,14 +19,14 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 
   try {
-    const notification = await db.prepare('SELECT * FROM notifications WHERE id = ? AND user_id = ?').bind(parseInt(params.id), (user as any).id).first();
+    const notification = await db.prepare('SELECT * FROM notifications WHERE id = ? AND user_id = ?').bind(parseInt(id), (user as any).id).first();
     if (!notification) {
       return NextResponse.json({ error: 'Notification not found' }, { status: 404 });
     }
 
     const result = await db.prepare(
       'UPDATE notifications SET read = 1 WHERE id = ? RETURNING *'
-    ).bind(parseInt(params.id)).first();
+    ).bind(parseInt(id)).first();
 
     return NextResponse.json(result);
   } catch (error) {
@@ -34,19 +35,20 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db, user } = authResult;
+  const { id } = await params;
 
   try {
-    const notification = await db.prepare('SELECT * FROM notifications WHERE id = ? AND user_id = ?').bind(parseInt(params.id), (user as any).id).first();
+    const notification = await db.prepare('SELECT * FROM notifications WHERE id = ? AND user_id = ?').bind(parseInt(id), (user as any).id).first();
     if (!notification) {
       return NextResponse.json({ error: 'Notification not found' }, { status: 404 });
     }
 
-    await db.prepare('DELETE FROM notifications WHERE id = ?').bind(parseInt(params.id)).run();
+    await db.prepare('DELETE FROM notifications WHERE id = ?').bind(parseInt(id)).run();
     return NextResponse.json({ message: 'Notification deleted' });
   } catch (error) {
     logger.error('Error deleting notification', error as Error);

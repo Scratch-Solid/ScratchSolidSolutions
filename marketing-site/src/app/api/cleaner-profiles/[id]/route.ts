@@ -5,14 +5,15 @@ import { validateString, validateNumber } from "@/lib/validation";
 import { withRateLimit, rateLimits } from "@/lib/middleware";
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['admin', 'cleaner']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
+  const { id } = await params;
 
   try {
-    const profile = await getCleanerProfileByUserId(db, parseInt(params.id));
+    const profile = await getCleanerProfileByUserId(db, parseInt(id));
     if (!profile) {
       return NextResponse.json({ error: 'Cleaner profile not found' }, { status: 404 });
     }
@@ -23,11 +24,12 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['admin', 'cleaner']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
+  const { id } = await params;
 
   const rateLimitResult = await withRateLimit(request, rateLimits.standard);
   if (rateLimitResult && !rateLimitResult.success) {
@@ -38,8 +40,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 
   try {
-    const body = await request.json();
-    const profile = await getCleanerProfileByUserId(db, parseInt(params.id));
+    const body = await request.json() as Record<string, any>;
+    const profile = await getCleanerProfileByUserId(db, parseInt(id));
     if (!profile) {
       return NextResponse.json({ error: 'Cleaner profile not found' }, { status: 404 });
     }
@@ -52,14 +54,15 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
+  const { id } = await params;
 
   try {
-    await db.prepare('DELETE FROM cleaner_profiles WHERE user_id = ?').bind(parseInt(params.id)).run();
+    await db.prepare('DELETE FROM cleaner_profiles WHERE user_id = ?').bind(parseInt(id)).run();
     return NextResponse.json({ message: 'Cleaner profile deleted' });
   } catch (error) {
     logger.error('Error deleting cleaner profile', error as Error);

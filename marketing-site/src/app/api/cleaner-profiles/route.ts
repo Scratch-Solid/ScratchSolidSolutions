@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
       profile = await getCleanerProfileByUsername(db, username);
     } else {
       // Get all cleaner profiles (admin only)
-      if (authResult.payload?.role !== 'admin') {
+      if ((authResult.user as any)?.role !== 'admin') {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
       }
       const result = await db.prepare('SELECT * FROM cleaner_profiles ORDER BY created_at DESC').all();

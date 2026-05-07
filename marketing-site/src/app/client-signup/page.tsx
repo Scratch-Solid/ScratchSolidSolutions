@@ -43,13 +43,13 @@ export default function ClientSignupPage() {
       });
 
       if (response.ok) {
-        const result = await response.json();
+        const result = await response.json() as { token: string; role: string; id: string };
         localStorage.setItem("authToken", result.token);
         localStorage.setItem("userRole", result.role);
         localStorage.setItem("userId", result.id);
         window.location.href = "/client-dashboard";
       } else {
-        const errorData = await response.json();
+        const errorData = await response.json() as { error?: string };
         setError(errorData.error || "Signup failed");
       }
     } catch (error) {

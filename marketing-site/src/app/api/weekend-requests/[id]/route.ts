@@ -3,11 +3,12 @@ import { getDb } from '@/lib/db';
 import { withAuth, withTracing, withSecurityHeaders, withRateLimit, rateLimits } from '@/lib/middleware';
 import { logger } from '@/lib/logger';
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
+  const { id } = await params;
 
   const rateLimitResult = await withRateLimit(request, rateLimits.standard);
   if (rateLimitResult && !rateLimitResult.success) {
@@ -30,7 +31,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     }
 
     const setClause = fields.map(f => `${f} = ?`).join(', ');
-    const values = [...fields.map(f => body[f as keyof typeof body]), parseInt(params.id)];
+    const values = [...fields.map(f => body[f as keyof typeof body]), parseInt(id)];
 
     const result = await db.prepare(
       `UPDATE weekend_requests SET ${setClause}, updated_at = datetime('now') WHERE id = ? RETURNING *`
@@ -43,11 +44,12 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['business', 'admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
+  const { id } = await params;
 
   // Rate limiting check
   const rateLimitResult = await withRateLimit(request, rateLimits.standard);
@@ -69,7 +71,6 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
   }
 
   try {
-    const id = params.id;
     await db.prepare(
       'UPDATE weekend_requests SET status = ?, updated_at = datetime("now") WHERE id = ?'
     ).bind('cancelled', id).run();

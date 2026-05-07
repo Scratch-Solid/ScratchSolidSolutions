@@ -4,15 +4,16 @@ import { logger } from "@/lib/logger";
 import { withRateLimit, rateLimits } from "@/lib/middleware";
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const traceId = withTracing(request);
   const db = await getDb();
   if (!db) {
     return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 });
   }
+  const { id } = await params;
 
   try {
-    const pricing = await db.prepare('SELECT * FROM pricing WHERE id = ?').bind(parseInt(params.id)).first();
+    const pricing = await db.prepare('SELECT * FROM pricing WHERE id = ?').bind(parseInt(id)).first();
     if (!pricing) {
       return NextResponse.json({ error: 'Pricing not found' }, { status: 404 });
     }
@@ -25,11 +26,12 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
+  const { id } = await params;
 
   const rateLimitResult = await withRateLimit(request, rateLimits.standard);
   if (rateLimitResult && !rateLimitResult.success) {
@@ -46,7 +48,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       duration?: string;
     };
 
-    const pricing = await db.prepare('SELECT * FROM pricing WHERE id = ?').bind(parseInt(params.id)).first();
+    const pricing = await db.prepare('SELECT * FROM pricing WHERE id = ?').bind(parseInt(id)).first();
     if (!pricing) {
       return NextResponse.json({ error: 'Pricing not found' }, { status: 404 });
     }
@@ -57,7 +59,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     }
 
     const setClause = fields.map(f => `${f} = ?`).join(', ');
-    const values = [...fields.map(f => body[f as keyof typeof body]), parseInt(params.id)];
+    const values = [...fields.map(f => body[f as keyof typeof body]), parseInt(id)];
 
     const result = await db.prepare(
       `UPDATE pricing SET ${setClause} WHERE id = ? RETURNING *`
@@ -70,14 +72,15 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
+  const { id } = await params;
 
   try {
-    await db.prepare('DELETE FROM pricing WHERE id = ?').bind(parseInt(params.id)).run();
+    await db.prepare('DELETE FROM pricing WHERE id = ?').bind(parseInt(id)).run();
     return NextResponse.json({ message: 'Pricing deleted' });
   } catch (error) {
     logger.error('Error deleting pricing', error as Error);

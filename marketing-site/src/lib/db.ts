@@ -14,7 +14,7 @@ export interface Env {
 export async function getDb(): Promise<D1Database | null> {
   try {
     // OpenNext on Workers: use getCloudflareContext
-    const { env } = await getCloudflareContext({ async: true });
+    const { env } = await getCloudflareContext({ async: true }) as unknown as { env: Env };
     if (env?.scratchsolid_db) {
       return env.scratchsolid_db as D1Database;
     }

@@ -4,11 +4,12 @@ import { withAuth, withTracing, withSecurityHeaders, withRateLimit, rateLimits }
 import { logger } from '@/lib/logger';
 import { validateNumber, validateString } from '@/lib/validation';
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db, user } = authResult;
+  const { id } = await params;
 
   // Rate limiting check
   const rateLimitResult = await withRateLimit(request, rateLimits.standard);
@@ -30,7 +31,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 
   try {
-    const booking = await getBookingById(db, parseInt(params.id));
+    const booking = await getBookingById(db, parseInt(id));
     if (!booking) {
       const response = NextResponse.json({ error: 'Booking not found' }, { status: 404 });
       return withSecurityHeaders(response, traceId);
@@ -51,11 +52,12 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
+  const { id } = await params;
 
   // Rate limiting check
   const rateLimitResult = await withRateLimit(request, rateLimits.standard);
@@ -91,7 +93,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       }
 
       // POP verification check - cleaner cannot be assigned unless POP is verified
-      const existingBooking = await db.prepare('SELECT pop_status FROM bookings WHERE id = ?').bind(parseInt(params.id)).first();
+      const existingBooking = await db.prepare('SELECT pop_status FROM bookings WHERE id = ?').bind(parseInt(id)).first();
       if (existingBooking && (existingBooking as any).pop_status !== 'verified' && (existingBooking as any).pop_status !== 'not_uploaded') {
         return NextResponse.json({ 
           error: 'POP verification required before cleaner can be assigned. Admin must verify proof of payment first.',
@@ -107,7 +109,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       }
     }
 
-    const booking = await updateBooking(db, parseInt(params.id), body);
+    const booking = await updateBooking(db, parseInt(id), body);
     
     if (!booking) {
       const response = NextResponse.json({ error: 'Booking not found' }, { status: 404 });
@@ -118,7 +120,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     if (body.weekend_assigned !== undefined && body.cleaner_id) {
       await db.prepare(
         `UPDATE weekend_assignments SET status = 'assigned', assigned_cleaner_id = ?, assigned_cleaner_name = (SELECT name FROM users WHERE id = ?), updated_at = datetime('now') WHERE contract_id IN (SELECT id FROM contracts WHERE business_id = (SELECT client_id FROM bookings WHERE id = ?)) AND status = 'pending'`
-      ).bind(body.cleaner_id, body.cleaner_id, parseInt(params.id)).run();
+      ).bind(body.cleaner_id, body.cleaner_id, parseInt(id)).run();
     }
 
     const response = NextResponse.json(booking);
@@ -130,20 +132,21 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
+  const { id } = await params;
 
   try {
-    const booking = await getBookingById(db, parseInt(params.id));
+    const booking = await getBookingById(db, parseInt(id));
     if (!booking) {
       const response = NextResponse.json({ error: 'Booking not found' }, { status: 404 });
       return withSecurityHeaders(response, traceId);
     }
 
-    await db.prepare('DELETE FROM bookings WHERE id = ?').bind(parseInt(params.id)).run();
+    await db.prepare('DELETE FROM bookings WHERE id = ?').bind(parseInt(id)).run();
 
     const response = NextResponse.json({ message: 'Booking deleted successfully' });
     return withSecurityHeaders(response, traceId);

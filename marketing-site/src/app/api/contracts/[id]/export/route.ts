@@ -7,12 +7,13 @@ export const dynamic = "force-dynamic";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['business', 'admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
+  const { id } = await params;
 
   // Rate limiting check
   const rateLimitResult = await withRateLimit(request, rateLimits.standard);
@@ -34,7 +35,7 @@ export async function GET(
   }
 
   try {
-    const contractId = parseInt(params.id);
+    const contractId = parseInt(id);
 
     // Fetch contract from database
     const contract = await db.prepare(

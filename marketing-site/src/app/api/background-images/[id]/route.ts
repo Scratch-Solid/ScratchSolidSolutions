@@ -4,14 +4,15 @@ import { logger } from "@/lib/logger";
 import { withRateLimit, rateLimits } from "@/lib/middleware";
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
+  const { id } = await params;
 
   try {
-    const image = await db.prepare('SELECT * FROM background_images WHERE id = ?').bind(parseInt(params.id)).first();
+    const image = await db.prepare('SELECT * FROM background_images WHERE id = ?').bind(parseInt(id)).first();
     if (!image) {
       return NextResponse.json({ error: 'Background image not found' }, { status: 404 });
     }
@@ -22,11 +23,12 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
+  const { id } = await params;
 
   const rateLimitResult = await withRateLimit(request, rateLimits.standard);
   if (rateLimitResult && !rateLimitResult.success) {
@@ -43,7 +45,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       is_active?: number;
     };
 
-    const image = await db.prepare('SELECT * FROM background_images WHERE id = ?').bind(parseInt(params.id)).first();
+    const image = await db.prepare('SELECT * FROM background_images WHERE id = ?').bind(parseInt(id)).first();
     if (!image) {
       return NextResponse.json({ error: 'Background image not found' }, { status: 404 });
     }
@@ -54,7 +56,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     }
 
     const setClause = fields.map(f => `${f} = ?`).join(', ');
-    const values = [...fields.map(f => body[f as keyof typeof body]), parseInt(params.id)];
+    const values = [...fields.map(f => body[f as keyof typeof body]), parseInt(id)];
 
     const result = await db.prepare(
       `UPDATE background_images SET ${setClause} WHERE id = ? RETURNING *`
@@ -67,14 +69,15 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
+  const { id } = await params;
 
   try {
-    await db.prepare('DELETE FROM background_images WHERE id = ?').bind(parseInt(params.id)).run();
+    await db.prepare('DELETE FROM background_images WHERE id = ?').bind(parseInt(id)).run();
     return NextResponse.json({ message: 'Background image deleted' });
   } catch (error) {
     logger.error('Error deleting background image', error as Error);
