@@ -74,9 +74,9 @@ export function getJWTSecret(): string {
 }
 
 export function getResendApiKey(): string {
-  // Try to get API key from Cloudflare environment first
+  // Use exact same pattern as getDb() for consistency
   try {
-    const { env } = require('@opennextjs/cloudflare').getCloudflareContext({ async: true }) as any;
+    const { env } = await getCloudflareContext({ async: true });
     const apiKey = env?.RESEND_API_KEY;
     
     if (apiKey) {
