@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const PUBLIC_PATHS = ['/api/health', '/api/status', '/api/auth/login', '/api/auth/register', '/api/content/'];
+const PUBLIC_PATHS = ['/api/health', '/api/status', '/api/auth/login', '/api/auth/register', '/api/auth/forgot-password', '/api/auth/reset-password', '/api/content/', '/auth/login', '/auth/signup', '/auth/employee-consent', '/auth/contract', '/auth/sign-contract', '/auth/create-profile', '/auth/consent-submitted'];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -10,16 +10,16 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Only enforce auth on API routes
-  if (!pathname.startsWith('/api/')) {
-    return NextResponse.next();
-  }
-
   // Check for auth token
   const token = request.headers.get('Authorization')?.replace('Bearer ', '') ||
                 request.cookies.get('authToken')?.value;
 
   if (!token) {
+    // For page routes, redirect to login
+    if (!pathname.startsWith('/api/')) {
+      return NextResponse.redirect(new URL('/auth/login', request.url));
+    }
+    // For API routes, return 401
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -32,5 +32,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/api/:path*'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 };

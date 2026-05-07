@@ -196,13 +196,39 @@ export default function CleanerDashboard() {
     }
   };
 
+  const handleLogout = async () => {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      try {
+        await fetch('/api/auth/logout', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+      } catch (error) {
+        console.error('Logout error:', error);
+      }
+    }
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('username');
+    localStorage.removeItem('user_id');
+    window.location.href = '/auth/login';
+  };
+
   if (loading) return <div>Loading...</div>;
   if (error) return <div className="error-msg">{error}</div>;
   if (!cleaner) return <div>No data found.</div>;
 
   return (
     <div className="dashboard-container glass-panel">
-      <h2>Cleaner Dashboard</h2>
+      <div className="flex justify-between items-center mb-6">
+        <h2>Cleaner Dashboard</h2>
+        <button onClick={handleLogout} className="secondary-button text-red-600 hover:text-red-700">
+          Logout
+        </button>
+      </div>
       
       {/* Tile Navigation */}
       <div className="mb-6 flex space-x-2 border-b pb-2">

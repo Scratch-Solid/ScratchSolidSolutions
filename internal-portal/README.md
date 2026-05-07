@@ -1,6 +1,6 @@
 # Scratch Solid Solutions - Internal Portal
 
-Internal admin and cleaner portal for managing operations, bookings, payroll, and administrative tasks.
+Admin dashboard for managing staff, bookings, contracts, payroll, and content.
 
 ## Deployment
 
@@ -8,6 +8,10 @@ Internal admin and cleaner portal for managing operations, bookings, payroll, an
 - **Preview URL**: https://ee3685da.scratchsolid-portal.pages.dev
 - **Project Name**: scratchsolid-portal (Cloudflare Pages)
 - **Environment Variables**: JWT_SECRET, CSRF_SECRET, RESEND_API_KEY, NEXT_PUBLIC_BASE_URL, NEXT_PUBLIC_API_URL, ZOHO_ORG_ID, ZOHO_CLIENT_ID, ZOHO_CLIENT_SECRET, ZOHO_REFRESH_TOKEN, WHATSAPP_*
+
+## Security Notice
+
+**CRITICAL**: Never commit `.env.local` files to version control. These contain sensitive credentials. Use Cloudflare secrets manager or environment variables for production secrets. Ensure CSRF_SECRET and JWT_SECRET are set to strong random values in production (min 32 characters).
 
 ## Getting Started
 

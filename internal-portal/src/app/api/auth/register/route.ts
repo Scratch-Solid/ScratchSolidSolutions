@@ -7,6 +7,15 @@ import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || '';
 
+// Warn if JWT_SECRET is not set or is too weak
+if (process.env.NODE_ENV === 'production') {
+  if (!JWT_SECRET) {
+    console.error('CRITICAL SECURITY WARNING: JWT_SECRET environment variable is not set in production');
+  } else if (JWT_SECRET.length < 32) {
+    console.error('CRITICAL SECURITY WARNING: JWT_SECRET is too short (min 32 characters recommended)');
+  }
+}
+
 function getJWTSecret(): string {
   if (!JWT_SECRET) throw new Error('JWT_SECRET environment variable is required');
   return JWT_SECRET;
@@ -14,11 +23,17 @@ function getJWTSecret(): string {
 
 function validatePasswordPolicy(password: string): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
-  if (password.length < 8) errors.push('Password must be at least 8 characters');
-  if (!/[A-Z]/.test(password)) errors.push('Password must contain at least one uppercase letter');
-  if (!/[a-z]/.test(password)) errors.push('Password must contain at least one lowercase letter');
-  if (!/[0-9]/.test(password)) errors.push('Password must contain at least one number');
-  if (!/[^A-Za-z0-9]/.test(password)) errors.push('Password must contain at least one special character');
+  
+  if (!password) {
+    errors.push('Password is required');
+  } else {
+    if (password.length < 8) errors.push('Password must be at least 8 characters');
+    if (!/[A-Z]/.test(password)) errors.push('Password must contain at least one uppercase letter');
+    if (!/[a-z]/.test(password)) errors.push('Password must contain at least one lowercase letter');
+    if (!/[0-9]/.test(password)) errors.push('Password must contain at least one number');
+    if (!/[^A-Za-z0-9]/.test(password)) errors.push('Password must contain at least one special character');
+  }
+  
   return { valid: errors.length === 0, errors };
 }
 
@@ -50,7 +65,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error }, { status: 400 });
     }
 
-    const { fullName, name, email, password, role, phone, department, paysheetCode } = sanitized;
+    const { fullName, name, email, password, role, phone, department, paysheetCode } = sanitized as any;
 
     // Map fullName to name for compatibility
     const userName = name || fullName;

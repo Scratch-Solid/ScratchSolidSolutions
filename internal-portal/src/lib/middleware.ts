@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, validateSession } from './db';
+import { validateCsrfToken } from './csrf';
 
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
 const RATE_LIMIT_MAX = 100; // requests per window per IP
@@ -20,7 +21,7 @@ function isRateLimited(ip: string): boolean {
   return false;
 }
 
-function getClientIP(request: NextRequest): string {
+export function getClientIP(request: NextRequest): string {
   const forwarded = request.headers.get('x-forwarded-for');
   if (forwarded) return forwarded.split(',')[0].trim();
   const realIP = request.headers.get('x-real-ip');
@@ -84,6 +85,24 @@ export async function withAuth(request: NextRequest, allowedRoles?: string[]): P
   return { user: session, db };
 }
 
+export async function withCSRF(request: NextRequest): Promise<NextResponse | null> {
+  // Skip CSRF for GET, HEAD, OPTIONS
+  if (['GET', 'HEAD', 'OPTIONS'].includes(request.method)) {
+    return null;
+  }
+
+  const csrfToken = request.headers.get('X-CSRF-Token');
+  if (!csrfToken) {
+    return NextResponse.json({ error: 'CSRF token missing' }, { status: 403 });
+  }
+
+  if (!validateCsrfToken(csrfToken)) {
+    return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 });
+  }
+
+  return null;
+}
+
 export function logRequest(request: NextRequest, response: NextResponse, durationMs: number, traceId: string) {
   const timestamp = new Date().toISOString();
   const method = request.method;
@@ -92,6 +111,16 @@ export function logRequest(request: NextRequest, response: NextResponse, duratio
   const ip = getClientIP(request);
   const log = { timestamp, traceId, method, path, status, durationMs, ip, userAgent: request.headers.get('user-agent')?.slice(0, 100) };
   console.log(JSON.stringify(log));
+}
+
+export function logSecurityEvent(event: string, details: Record<string, any>) {
+  const log = {
+    timestamp: new Date().toISOString(),
+    event,
+    severity: 'SECURITY',
+    ...details
+  };
+  console.error(JSON.stringify(log));
 }
 
 // KV-backed rate limiter for stricter distributed enforcement
@@ -122,6 +151,29 @@ export async function withKVCache<T>(
   const data = await fetchFn();
   await kv.put(key, JSON.stringify(data), { expirationTtl: ttlSeconds });
   return data;
+}
+
+export function standardizeError(error: unknown, context: string = 'Operation'): NextResponse {
+  console.error(`[${context}] Error:`, error);
+  
+  if (error instanceof Error) {
+    // Don't expose internal error details in production
+    if (process.env.NODE_ENV === 'production') {
+      return NextResponse.json(
+        { error: `${context} failed. Please try again later.` },
+        { status: 500 }
+      );
+    }
+    return NextResponse.json(
+      { error: error.message, context },
+      { status: 500 }
+    );
+  }
+  
+  return NextResponse.json(
+    { error: `${context} failed. Please try again later.` },
+    { status: 500 }
+  );
 }
 
 export async function invalidateKVCache(kv: KVNamespace, keyPrefix: string): Promise<void> {

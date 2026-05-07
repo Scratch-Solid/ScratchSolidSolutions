@@ -26,13 +26,39 @@ export default function DigitalDashboard() {
     fetchTasks();
   }, []);
 
+  const handleLogout = async () => {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      try {
+        await fetch('/api/auth/logout', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+      } catch (error) {
+        console.error('Logout error:', error);
+      }
+    }
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('username');
+    localStorage.removeItem('user_id');
+    window.location.href = '/auth/login';
+  };
+
   if (loading) {
     return <div className="dashboard-container glass-panel"><SkeletonDashboard /></div>;
   }
 
   return (
     <div className="dashboard-container glass-panel">
-      <h2>Digital Marketing Dashboard</h2>
+      <div className="flex justify-between items-center mb-6">
+        <h2>Digital Marketing Dashboard</h2>
+        <button onClick={handleLogout} className="secondary-button text-red-600 hover:text-red-700">
+          Logout
+        </button>
+      </div>
       <div className="glass-card">
         <h3 className="font-bold text-lg mb-4">Tasks</h3>
         <ul className="space-y-2">

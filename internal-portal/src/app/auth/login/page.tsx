@@ -32,16 +32,16 @@ function LoginContent() {
         body: JSON.stringify({ username, password })
       });
 
-      const data = await res.json();
+      const data = await res.json() as { token?: string; role?: string; username?: string; user_id?: string; paysheet_code?: string; error?: string };
       if (!res.ok) {
         setError(data.error || 'Login failed');
         return;
       }
 
-      localStorage.setItem("authToken", data.token);
-      localStorage.setItem("userRole", data.role);
+      localStorage.setItem("authToken", data.token || '');
+      localStorage.setItem("userRole", data.role || '');
       localStorage.setItem("username", data.username || username);
-      localStorage.setItem("user_id", data.user_id);
+      localStorage.setItem("user_id", data.user_id || '');
 
       if (data.role === 'admin') {
         localStorage.setItem("userEmail", username);
@@ -56,7 +56,8 @@ function LoginContent() {
         localStorage.setItem("paysheetCode", data.paysheet_code || username);
         router.push("/transport-dashboard");
       } else if (data.role === 'business') {
-        router.push("/business-dashboard");
+        // Business dashboard is external, redirect to marketing site
+        window.location.href = process.env.NEXT_PUBLIC_BUSINESS_DASHBOARD_URL || 'https://scratchsolid.co.za/business-dashboard';
       } else {
         router.push("/admin-dashboard");
       }
@@ -120,6 +121,15 @@ function LoginContent() {
             Login
           </button>
         </form>
+        <div className="mt-4 text-center">
+          <button
+            type="button"
+            onClick={() => router.push("/auth/forgot-password")}
+            className="text-sm underline hover:text-blue-600"
+          >
+            Forgot Password?
+          </button>
+        </div>
         <button
           type="button"
           onClick={() => router.push("/auth/employee-consent")}
