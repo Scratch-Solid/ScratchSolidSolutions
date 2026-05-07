@@ -157,3 +157,28 @@ export async function PUT(request: NextRequest) {
     return withSecurityHeaders(response, traceId);
   }
 }
+
+export async function POST(request: NextRequest) {
+  const traceId = withTracing(request);
+  const authResult = await withAuth(request, ['admin']);
+  if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
+  const { db } = authResult;
+
+  try {
+    const { cleaner_id, paysheet_code, period_start, period_end, hours_worked, hourly_rate, gross_pay, deductions, net_pay } = await request.json();
+    
+    if (!cleaner_id || !period_start || !period_end || !gross_pay || !net_pay) {
+      return NextResponse.json({ error: 'Missing required fields: cleaner_id, period_start, period_end, gross_pay, net_pay' }, { status: 400 });
+    }
+    
+    const result = await db.prepare(
+      'INSERT INTO payroll (cleaner_id, paysheet_code, period_start, period_end, hours_worked, hourly_rate, gross_pay, deductions, net_pay, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, "pending", datetime("now")) RETURNING *'
+    ).bind(cleaner_id, paysheet_code || null, period_start, period_end, hours_worked || 0, hourly_rate || 0, gross_pay, deductions || 0, net_pay).first();
+    
+    const response = NextResponse.json(result, { status: 201 });
+    return withSecurityHeaders(response, traceId);
+  } catch (error) {
+    const response = NextResponse.json({ error: 'Failed to create payroll record' }, { status: 500 });
+    return withSecurityHeaders(response, traceId);
+  }
+}

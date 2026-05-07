@@ -32,3 +32,30 @@ export async function GET(request: NextRequest) {
     return withSecurityHeaders(response, traceId);
   }
 }
+
+export async function POST(request: NextRequest) {
+  const traceId = withTracing(request);
+  const start = Date.now();
+  const authResult = await withAuth(request, ['admin', 'cleaner']);
+  if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
+  const { db, user } = authResult;
+
+  try {
+    const { service_id, user_id, cleaner_id, booking_date, booking_time, notes } = await request.json();
+    
+    if (!service_id || !booking_date || !booking_time) {
+      return NextResponse.json({ error: 'Missing required fields: service_id, booking_date, booking_time' }, { status: 400 });
+    }
+    
+    const result = await db.prepare(
+      'INSERT INTO bookings (service_id, user_id, cleaner_id, booking_date, booking_time, status, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, "pending", ?, datetime("now"), datetime("now")) RETURNING *'
+    ).bind(service_id, user_id || null, cleaner_id || null, booking_date, booking_time, notes || null).first();
+    
+    const response = NextResponse.json(result, { status: 201 });
+    logRequest(request, response, Date.now() - start, traceId);
+    return withSecurityHeaders(response, traceId);
+  } catch (error) {
+    const response = NextResponse.json({ error: 'Failed to create booking' }, { status: 500 });
+    return withSecurityHeaders(response, traceId);
+  }
+}
