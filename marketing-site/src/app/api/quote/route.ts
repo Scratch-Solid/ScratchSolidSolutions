@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, validateSession, sanitizeString, sanitizeEmail, sanitizePhone } from '@/lib/db';
+import { getDb, validateSession } from '@/lib/db';
+import { sanitizeText, sanitizeEmail, sanitizePhone } from '@/lib/sanitization';
 import { validateEmail } from '@/lib/validation';
 import { findOrCreateContact, createEstimate } from '@/lib/zoho';
 import { withRateLimit, rateLimits } from '@/lib/middleware';
@@ -53,10 +54,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Sanitize inputs
-    const sanitizedName = sanitizeString(name.trim());
+    const sanitizedName = sanitizeText(name.trim());
     const sanitizedEmail = email ? sanitizeEmail(email.trim()) : '';
     const sanitizedPhone = phone ? sanitizePhone(phone.trim()) : '';
-    const sanitizedServiceName = service_name ? sanitizeString(service_name) : '';
+    const sanitizedServiceName = service_name ? sanitizeText(service_name) : '';
     const sanitizedPromoCode = promo_code ? promo_code.trim().toUpperCase() : '';
 
     // Validate email format if provided

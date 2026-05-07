@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, getUserByEmail, createSession, deleteSession, validateLogin, validateLoginByPhone, isAccountLocked, isAccountLockedByPhone, sanitizeEmail, sanitizePhone } from "@/lib/db";
+import { getDb, getUserByEmail, createSession, deleteSession, validateLogin, validateLoginByPhone, isAccountLocked, isAccountLockedByPhone } from "@/lib/db";
+import { sanitizeEmail, sanitizePhone } from "@/lib/sanitization";
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { logger } from "@/lib/logger";

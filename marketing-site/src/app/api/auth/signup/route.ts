@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, getUserByEmail, createUser, createSession, sanitizeEmail, sanitizeString, sanitizePhone } from "@/lib/db";
+import { getDb, getUserByEmail, createUser, createSession } from "@/lib/db";
+import { sanitizeEmail, sanitizeText, sanitizePhone } from "@/lib/sanitization";
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { logger } from "@/lib/logger";
@@ -49,10 +50,10 @@ export async function POST(request: NextRequest) {
     const rawPhone = phone;
     const rawAddress = address;
 
-    const sanitizedName = sanitizeString(rawName || '');
+    const sanitizedName = sanitizeText(rawName || '');
     const sanitizedEmail = sanitizeEmail(rawEmail || '');
     const sanitizedPhone = sanitizePhone(rawPhone || '');
-    const sanitizedAddress = sanitizeString(rawAddress || '');
+    const sanitizedAddress = sanitizeText(rawAddress || '');
 
     // Validate required fields
     if (!type || !sanitizedName || !sanitizedEmail || !password) {

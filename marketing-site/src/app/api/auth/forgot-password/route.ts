@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, getUserByEmail, getUserByPhone, createPasswordResetToken, sanitizeEmail, sanitizePhone } from "@/lib/db";
+import { getDb, getUserByEmail, getUserByPhone, createPasswordResetToken } from "@/lib/db";
+import { sanitizeEmail, sanitizePhone } from "@/lib/sanitization";
 import { sendPasswordResetEmail } from "@/lib/email";
 import { logger } from "@/lib/logger";
 import { withRateLimit, rateLimits } from "@/lib/middleware";
