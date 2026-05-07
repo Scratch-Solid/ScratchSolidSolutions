@@ -100,6 +100,21 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     logger.error('Error in forgot password', error as Error);
-    return NextResponse.json({ error: "An unexpected error occurred. Please try again." }, { status: 500 });
+    
+    // Log more specific error details
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    const errorStack = error instanceof Error ? error.stack : 'No stack trace available';
+    
+    logger.error('Detailed error information', {
+      message: errorMessage,
+      stack: errorStack,
+      type: typeof error,
+      constructor: error?.constructor?.name
+    });
+    
+    return NextResponse.json({ 
+      error: "An unexpected error occurred. Please try again.",
+      debug: errorMessage 
+    }, { status: 500 });
   }
 }

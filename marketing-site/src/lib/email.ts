@@ -10,14 +10,34 @@ async function getResendClient(): Promise<Resend> {
     try {
       logger.info('Initializing Resend client...');
       
-      // Get API key from Cloudflare environment using same pattern as db.ts
-      const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
-      const apiKey = env?.RESEND_API_KEY;
+      // Try multiple approaches to get API key in Workers runtime
+      let apiKey: string | undefined;
       
-      logger.info('Cloudflare context accessed', { hasApiKey: !!apiKey });
+      // Method 1: Try global context (some Workers setups)
+      if (typeof globalThis !== 'undefined' && (globalThis as any).RESEND_API_KEY) {
+        apiKey = (globalThis as any).RESEND_API_KEY;
+        logger.info('Found API key via globalThis');
+      }
+      
+      // Method 2: Try getCloudflareContext (current approach)
+      if (!apiKey) {
+        try {
+          const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
+          apiKey = env?.RESEND_API_KEY;
+          logger.info('Found API key via getCloudflareContext', { hasApiKey: !!apiKey });
+        } catch (contextError) {
+          logger.error('getCloudflareContext failed', contextError as Error);
+        }
+      }
+      
+      // Method 3: Try direct environment access (fallback)
+      if (!apiKey && typeof process !== 'undefined' && process.env?.RESEND_API_KEY) {
+        apiKey = process.env.RESEND_API_KEY;
+        logger.info('Found API key via process.env');
+      }
       
       if (!apiKey) {
-        logger.error('RESEND_API_KEY not found in Cloudflare environment');
+        logger.error('RESEND_API_KEY not found in any environment');
         throw new Error('RESEND_API_KEY not found in Cloudflare environment');
       }
       
