@@ -8,11 +8,13 @@ name = "cleaning-service-backend-prod"
 # D1 Database binding
 [[d1_databases]]
 binding = "DB"
-database_name = "scratchsolid_business-db"
-database_id = "903066df-d4e2-4d3f-9510-b86df0a1c22c"
+database_name = "scratchsolid-db"
+database_id = "0b0b6006-1b2d-4ab1-8909-dc684666e6d3"
 
 # Environment variables
 [vars]
 ENVIRONMENT = "production"
+NEXT_PUBLIC_BASE_URL = "https://scratchsolidsolutions.org"
+NEXT_PUBLIC_API_URL = "https://api.scratchsolidsolutions.org/api"
 # JWT_SECRET must be set via: wrangler secret put JWT_SECRET
 

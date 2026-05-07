@@ -817,6 +817,109 @@ router.delete('/weekend-requests/:id', async (request, env) => {
   }
 });
 
+// Forgot password endpoint
+router.post('/auth/forgot-password', async (request, env) => {
+  try {
+    const { type, identifier } = await request.json();
+    
+    if (!type || !identifier) {
+      return new Response(JSON.stringify({ 
+        error: "Missing required fields: type and identifier are required" 
+      }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
+      });
+    }
+    
+    let user;
+    
+    if (type === "business") {
+      // For businesses, find by email
+      user = await findUserByEmail(env.DB, identifier);
+      
+      if (!user) {
+        return new Response(JSON.stringify({ error: "No account found with this email address" }), {
+          status: 404,
+          headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
+        });
+      }
+      
+      // Generate reset token
+      const resetToken = generateToken();
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+      
+      // Store token in database
+      await env.DB.prepare(`
+        INSERT INTO password_reset_tokens (user_id, token, expires_at, created_at)
+        VALUES (?, ?, ?, ?)
+      `).bind(user.id, resetToken, expiresAt.toISOString()).run();
+      
+      // Send reset email
+      const resetLink = `https://scratchsolidsolutions.org/reset-password?token=${resetToken}`;
+      await sendEmail(env, {
+        to: identifier,
+        subject: 'Password Reset - Scratch Solid Solutions',
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <style>
+              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+              .header { background: #2563eb; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+              .content { background: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }
+              .button { background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; }
+              .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <h1>Password Reset</h1>
+              </div>
+              <div class="content">
+                <p>Hi ${user.name || 'there'},</p>
+                <p>You requested to reset your password. Click the button below to reset it:</p>
+                <p style="text-align: center; margin: 20px 0;">
+                  <a href="${resetLink}" class="button">Reset Password</a>
+                </p>
+                <p>This link will expire in 24 hours.</p>
+                <p>If you didn't request this reset, please ignore this email.</p>
+              </div>
+              <div class="footer">
+                <p>&copy; 2024 Scratch Solid Solutions. All rights reserved.</p>
+              </div>
+            </div>
+          </body>
+          </html>
+        `
+      });
+      
+      return new Response(JSON.stringify({
+        message: "A password reset link has been sent to your email address."
+      }), {
+        headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
+      });
+      
+    } else {
+      return new Response(JSON.stringify({ 
+        error: "Invalid account type. Must be 'business'" 
+      }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
+      });
+    }
+    
+  } catch (error) {
+    return new Response(JSON.stringify({ 
+      error: "An unexpected error occurred. Please try again." 
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
+    });
+  }
+});
+
 // Admin endpoints for weekend requests
 router.put('/weekend-requests/:id/assign', async (request, env) => {
   const payload = await verifyToken(request);
