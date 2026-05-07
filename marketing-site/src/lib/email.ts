@@ -8,7 +8,7 @@ let resend: Resend | null = null;
 async function getResendClient(): Promise<Resend> {
   if (!resend) {
     try {
-      // Get API key from Cloudflare environment
+      // Get API key from Cloudflare environment using same pattern as db.ts
       const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
       const apiKey = env?.RESEND_API_KEY;
       
