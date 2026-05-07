@@ -76,7 +76,7 @@ export function getJWTSecret(): string {
 export function getResendApiKey(): string {
   // Try to get API key from Cloudflare environment first
   try {
-    const { env } = require('@opennextjs/cloudflare').getCloudflareContext({ async: true }) as unknown as { env: any };
+    const { env } = require('@opennextjs/cloudflare').getCloudflareContext({ async: true }) as any;
     const apiKey = env?.RESEND_API_KEY;
     
     if (apiKey) {
