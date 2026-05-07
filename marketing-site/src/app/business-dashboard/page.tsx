@@ -226,12 +226,31 @@ export default function BusinessDashboard() {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('userName');
+    localStorage.removeItem('userEmail');
+    localStorage.removeItem('userPhone');
+    localStorage.removeItem('userAddress');
+    router.push('/auth');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-16 px-4 font-sans">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold text-center text-blue-700 mb-8">
-          Business Dashboard
-        </h1>
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-4xl font-bold text-blue-700">
+            Business Dashboard
+          </h1>
+          <button
+            onClick={handleLogout}
+            className="text-red-600 hover:text-red-700 font-medium"
+          >
+            Logout
+          </button>
+        </div>
         
         <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border-2 border-white/20 p-8">
           <div className="space-y-6">

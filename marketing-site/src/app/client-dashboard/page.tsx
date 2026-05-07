@@ -411,6 +411,17 @@ export default function ClientDashboard() {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('userName');
+    localStorage.removeItem('userEmail');
+    localStorage.removeItem('userPhone');
+    localStorage.removeItem('userAddress');
+    router.push('/auth');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4 font-sans relative">
       {/* Background Image */}
@@ -434,14 +445,22 @@ export default function ClientDashboard() {
               {bookingStep === 'dashboard' ? 'Client Dashboard' : 
                bookingStep === 'calendar' ? 'Select Date & Time' : 'Complete Booking'}
             </h1>
-            {bookingStep !== 'dashboard' && (
+            <div className="flex items-center gap-4">
+              {bookingStep !== 'dashboard' && (
+                <button
+                  onClick={cancelBooking}
+                  className="text-gray-500 hover:text-gray-700 font-medium"
+                >
+                  Cancel
+                </button>
+              )}
               <button
-                onClick={cancelBooking}
-                className="text-gray-500 hover:text-gray-700 font-medium"
+                onClick={handleLogout}
+                className="text-red-600 hover:text-red-700 font-medium"
               >
-                Cancel
+                Logout
               </button>
-            )}
+            </div>
           </div>
 
           {/* Error and Success Messages */}
