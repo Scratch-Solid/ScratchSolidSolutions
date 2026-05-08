@@ -1,9 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, getUserByEmail, validateLogin } from '../../../../lib/db';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key-123456789012345678901234567890';
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,14 +11,8 @@ export async function POST(request: NextRequest) {
 
     // Hardcoded admin credentials for immediate testing
     if (username === 'it@scratchsolidsolutions.org' && password === '0736417176') {
-      const token = jwt.sign(
-        { userId: 1, role: 'admin', email: 'it@scratchsolidsolutions.org' },
-        JWT_SECRET,
-        { expiresIn: '1h' }
-      );
-
       return NextResponse.json({
-        token,
+        token: 'mock-token-jason',
         expiresIn: 3600,
         role: 'admin',
         username: 'it@scratchsolidsolutions.org',
@@ -34,14 +23,8 @@ export async function POST(request: NextRequest) {
     }
 
     if (username === 'customerservice@scratchsolidsolutions.org' && password === '0746998097') {
-      const token = jwt.sign(
-        { userId: 2, role: 'admin', email: 'customerservice@scratchsolidsolutions.org' },
-        JWT_SECRET,
-        { expiresIn: '1h' }
-      );
-
       return NextResponse.json({
-        token,
+        token: 'mock-token-arnica',
         expiresIn: 3600,
         role: 'admin',
         username: 'customerservice@scratchsolidsolutions.org',
@@ -51,32 +34,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Try database authentication as fallback
-    const db = await getDb();
-    if (!db) {
-      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
-    }
-
-    const user = await validateLogin(db, username, password);
-    if (!user) {
-      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
-    }
-
-    const token = jwt.sign(
-      { userId: (user as any).id, role: (user as any).role, email: (user as any).email },
-      JWT_SECRET,
-      { expiresIn: '1h' }
-    );
-
-    return NextResponse.json({
-      token,
-      expiresIn: 3600,
-      role: (user as any).role,
-      username: (user as any).email,
-      user_id: (user as any).id,
-      email: (user as any).email,
-      name: (user as any).name
-    });
+    return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
 
   } catch (error) {
     return NextResponse.json({ error: 'Login failed' }, { status: 500 });
