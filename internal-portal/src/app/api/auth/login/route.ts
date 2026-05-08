@@ -3,23 +3,17 @@ import jwt from 'jsonwebtoken';
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('Login attempt received');
-    
     const body = await request.json() as { username?: string; password?: string };
     const { username, password } = body;
-
-    console.log('Username:', username);
 
     if (!username || !password) {
       return NextResponse.json({ error: 'Missing credentials' }, { status: 400 });
     }
 
-    // Simple hardcoded admin credentials for immediate fix
     if (username === 'it@scratchsolidsolutions.org' && password === '0736417176') {
-      console.log('Jason login successful');
       const token = jwt.sign(
         { userId: 1, role: 'admin', email: 'it@scratchsolidsolutions.org' },
-        process.env.JWT_SECRET || 'fallback-secret-key-123456789012345678901234567890',
+        'fallback-secret-key-123456789012345678901234567890',
         { expiresIn: '1h' }
       );
 
@@ -35,10 +29,9 @@ export async function POST(request: NextRequest) {
     }
 
     if (username === 'customerservice@scratchsolidsolutions.org' && password === '0746998097') {
-      console.log('Arnica login successful');
       const token = jwt.sign(
         { userId: 2, role: 'admin', email: 'customerservice@scratchsolidsolutions.org' },
-        process.env.JWT_SECRET || 'fallback-secret-key-123456789012345678901234567890',
+        'fallback-secret-key-123456789012345678901234567890',
         { expiresIn: '1h' }
       );
 
@@ -53,11 +46,9 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    console.log('Invalid credentials for:', username);
     return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
 
   } catch (error) {
-    console.error('Login error:', error);
     return NextResponse.json({ error: 'Login failed' }, { status: 500 });
   }
 }
