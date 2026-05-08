@@ -1,6 +1,8 @@
 // Environment Variable Validation
 // Ensures all required environment variables are set before the application starts
 
+import { getCloudflareContext } from '@opennextjs/aws/cloudflare';
+
 interface EnvConfig {
   JWT_SECRET: string;
   RESEND_API_KEY: string;
@@ -73,7 +75,7 @@ export function getJWTSecret(): string {
   return secret;
 }
 
-export function getResendApiKey(): string {
+export async function getResendApiKey(): Promise<string> {
   // Use exact same pattern as getDb() for consistency
   try {
     const { env } = await getCloudflareContext({ async: true });

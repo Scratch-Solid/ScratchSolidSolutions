@@ -11,7 +11,7 @@ async function getResendClient(): Promise<Resend> {
       logger.info('Initializing Resend client...');
       
       // Use the existing getResendApiKey function from env.ts
-      const apiKey = getResendApiKey();
+      const apiKey = await getResendApiKey();
       
       logger.info('Got API key from env.ts', { hasApiKey: !!apiKey });
       
