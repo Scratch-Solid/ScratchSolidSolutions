@@ -14,6 +14,44 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing credentials' }, { status: 400 });
     }
 
+    // Hardcoded admin credentials for immediate testing
+    if (username === 'it@scratchsolidsolutions.org' && password === '0736417176') {
+      const token = jwt.sign(
+        { userId: 1, role: 'admin', email: 'it@scratchsolidsolutions.org' },
+        JWT_SECRET,
+        { expiresIn: '1h' }
+      );
+
+      return NextResponse.json({
+        token,
+        expiresIn: 3600,
+        role: 'admin',
+        username: 'it@scratchsolidsolutions.org',
+        user_id: 1,
+        email: 'it@scratchsolidsolutions.org',
+        name: 'Jason Tshaka'
+      });
+    }
+
+    if (username === 'customerservice@scratchsolidsolutions.org' && password === '0746998097') {
+      const token = jwt.sign(
+        { userId: 2, role: 'admin', email: 'customerservice@scratchsolidsolutions.org' },
+        JWT_SECRET,
+        { expiresIn: '1h' }
+      );
+
+      return NextResponse.json({
+        token,
+        expiresIn: 3600,
+        role: 'admin',
+        username: 'customerservice@scratchsolidsolutions.org',
+        user_id: 2,
+        email: 'customerservice@scratchsolidsolutions.org',
+        name: 'Arnica Nqayi'
+      });
+    }
+
+    // Try database authentication as fallback
     const db = await getDb();
     if (!db) {
       return NextResponse.json({ error: 'Database not available' }, { status: 500 });
