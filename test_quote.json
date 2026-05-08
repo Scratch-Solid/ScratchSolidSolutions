@@ -1,0 +1,12 @@
+{
+  "name": "Test User",
+  "email": "test@example.com",
+  "phone": "0721234567",
+  "service_id": 1,
+  "service_name": "Residential Cleaning",
+  "client_type": "individual",
+  "quantity": 1,
+  "baseline_price": 450,
+  "final_price": 405,
+  "promo_code": "WELCOME10"
+}
