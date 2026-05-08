@@ -1,8 +1,6 @@
 // Environment Variable Validation
 // Ensures all required environment variables are set before the application starts
 
-import { getCloudflareContext } from '@opennextjs/aws/cloudflare';
-
 interface EnvConfig {
   JWT_SECRET: string;
   RESEND_API_KEY: string;
@@ -75,25 +73,12 @@ export function getJWTSecret(): string {
   return secret;
 }
 
-export async function getResendApiKey(): Promise<string> {
-  // Use exact same pattern as getDb() for consistency
-  try {
-    const { env } = await getCloudflareContext({ async: true });
-    const apiKey = env?.RESEND_API_KEY;
-    
-    if (apiKey) {
-      return apiKey;
-    }
-  } catch (error) {
-    console.error('Error getting RESEND_API_KEY from Cloudflare context:', error);
+export function getResendApiKey(): string {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    throw new Error('RESEND_API_KEY environment variable is required');
   }
-  
-  // Fallback to process.env for local development
-  if (typeof process !== 'undefined' && process.env?.RESEND_API_KEY) {
-    return process.env.RESEND_API_KEY;
-  }
-  
-  throw new Error('RESEND_API_KEY environment variable is required');
+  return apiKey;
 }
 
 export function getZohoCredentials(): { orgId: string; clientId: string; clientSecret: string; refreshToken: string } {
