@@ -1,20 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import { withAuth } from '@/lib/middleware';
 
-// Public GET: validate a single code OR list all (admin)
 export async function GET(request: NextRequest) {
   try {
     const db = await getDb();
-    if (!db) return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+    if (!db) {
+      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+    }
 
     const { searchParams } = new URL(request.url);
     const code = searchParams.get('code');
 
     if (code) {
-      // Public: validate a specific promo code
+      // Validate a specific promo code
       const promo = await db.prepare(
-        `SELECT * FROM promo_codes WHERE UPPER(code) = UPPER(?) AND active = 1`
+        `SELECT * FROM promo_codes WHERE UPPER(code) = UPPER(?) AND is_active = 1`
       ).bind(code.trim()).first();
 
       if (!promo) {
@@ -45,12 +45,8 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Admin: list all promo codes (requires admin session)
-    const authResult = await withAuth(request, ['admin']);
-    if (authResult instanceof NextResponse) return authResult;
-    const { db: adminDb } = authResult;
-
-    const promos = await adminDb.prepare(
+    // List all promo codes (for admin use)
+    const promos = await db.prepare(
       `SELECT * FROM promo_codes ORDER BY created_at DESC`
     ).all();
 
@@ -61,26 +57,26 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Admin POST: create a new promo code
 export async function POST(request: NextRequest) {
-  const authResult = await withAuth(request, ['admin']);
-  if (authResult instanceof NextResponse) return authResult;
-  const { db } = authResult;
-
   try {
+    const db = await getDb();
+    if (!db) {
+      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+    }
 
     const body = await request.json() as {
       code?: string;
       description?: string;
       discount_type?: 'percentage' | 'fixed';
       discount_value?: number;
+      min_amount?: number | null;
       valid_from?: string;
       valid_until?: string;
       max_uses?: number | null;
-      active?: boolean;
+      is_active?: boolean;
     };
 
-    const { code, description, discount_type, discount_value, valid_from, valid_until, max_uses, active } = body;
+    const { code, description, discount_type, discount_value, min_amount, valid_from, valid_until, max_uses, is_active } = body;
 
     if (!code || !discount_type || discount_value === undefined) {
       return NextResponse.json({ error: 'code, discount_type, and discount_value are required' }, { status: 400 });
@@ -96,12 +92,12 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await db.prepare(
-      `INSERT INTO promo_codes (code, description, discount_type, discount_value, valid_from, valid_until, max_uses, active, created_at, updated_at)
-       VALUES (UPPER(?), ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
+      `INSERT INTO promo_codes (code, description, discount_type, discount_value, min_amount, valid_from, valid_until, max_uses, used_count, is_active, created_at, updated_at)
+       VALUES (UPPER(?), ?, ?, ?, ?, ?, ?, ?, 0, ?, datetime('now'), datetime('now'))`
     ).bind(
       code.trim(), description || '', discount_type, discount_value,
-      valid_from || null, valid_until || null,
-      max_uses ?? null, active !== false ? 1 : 0
+      min_amount ?? null, valid_from || null, valid_until || null,
+      max_uses ?? null, is_active !== false ? 1 : 0
     ).run();
 
     return NextResponse.json({ id: result.meta.last_row_id, success: true }, { status: 201 });
@@ -115,26 +111,26 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Admin PUT: update a promo code
 export async function PUT(request: NextRequest) {
-  const authResult = await withAuth(request, ['admin']);
-  if (authResult instanceof NextResponse) return authResult;
-  const { db } = authResult;
-
   try {
+    const db = await getDb();
+    if (!db) {
+      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+    }
 
     const body = await request.json() as {
       id?: number;
       description?: string;
       discount_type?: string;
       discount_value?: number;
+      min_amount?: number | null;
       valid_from?: string | null;
       valid_until?: string | null;
       max_uses?: number | null;
-      active?: boolean;
+      is_active?: boolean;
     };
 
-    const { id, description, discount_type, discount_value, valid_from, valid_until, max_uses, active } = body;
+    const { id, description, discount_type, discount_value, min_amount, valid_from, valid_until, max_uses, is_active } = body;
     if (!id) return NextResponse.json({ error: 'id is required' }, { status: 400 });
 
     const result = await db.prepare(
@@ -142,19 +138,20 @@ export async function PUT(request: NextRequest) {
         description = COALESCE(?, description),
         discount_type = COALESCE(?, discount_type),
         discount_value = COALESCE(?, discount_value),
+        min_amount = ?,
         valid_from = ?,
         valid_until = ?,
         max_uses = ?,
-        active = COALESCE(?, active),
+        is_active = COALESCE(?, is_active),
         updated_at = datetime('now')
        WHERE id = ?`
     ).bind(
       description ?? null, discount_type ?? null, discount_value ?? null,
-      valid_from ?? null, valid_until ?? null, max_uses ?? null,
-      active !== undefined ? (active ? 1 : 0) : null, id
+      min_amount ?? null, valid_from ?? null, valid_until ?? null, max_uses ?? null,
+      is_active !== undefined ? (is_active ? 1 : 0) : null, id
     ).run();
 
-    if (result.meta.rows_written === 0) {
+    if (result.meta.changes === 0) {
       return NextResponse.json({ error: 'Promo code not found' }, { status: 404 });
     }
     return NextResponse.json({ success: true });
@@ -164,20 +161,19 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// Admin DELETE: delete a promo code
 export async function DELETE(request: NextRequest) {
-  const authResult = await withAuth(request, ['admin']);
-  if (authResult instanceof NextResponse) return authResult;
-  const { db } = authResult;
-
   try {
+    const db = await getDb();
+    if (!db) {
+      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+    }
 
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     if (!id) return NextResponse.json({ error: 'id is required' }, { status: 400 });
 
     const result = await db.prepare(`DELETE FROM promo_codes WHERE id = ?`).bind(id).run();
-    if (result.meta.rows_written === 0) {
+    if (result.meta.changes === 0) {
       return NextResponse.json({ error: 'Promo code not found' }, { status: 404 });
     }
     return NextResponse.json({ success: true });

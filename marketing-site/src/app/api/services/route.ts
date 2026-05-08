@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import { withAuth } from '@/lib/middleware';
 
 export async function GET(request: NextRequest) {
   try {
@@ -8,8 +7,9 @@ export async function GET(request: NextRequest) {
     if (!db) {
       return NextResponse.json({ error: 'Database not available' }, { status: 500 });
     }
+    
     const services = await db.prepare(
-      `SELECT * FROM services ORDER BY display_order ASC`
+      `SELECT * FROM services WHERE is_active = 1 ORDER BY display_order ASC`
     ).all();
     
     return NextResponse.json(services.results || []);
@@ -20,12 +20,19 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const authResult = await withAuth(request, ['admin']);
-  if (authResult instanceof NextResponse) return authResult;
-  const { db } = authResult;
-
   try {
-    const body = await request.json() as { name?: string; description?: string; icon?: string; display_order?: number; active?: boolean };
+    const db = await getDb();
+    if (!db) {
+      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+    }
+
+    const body = await request.json() as { 
+      name?: string; 
+      description?: string; 
+      icon?: string; 
+      display_order?: number; 
+      active?: boolean 
+    };
     
     const { name, description, icon, display_order, active } = body;
     
@@ -34,9 +41,15 @@ export async function POST(request: NextRequest) {
     }
     
     const result = await db.prepare(
-      `INSERT INTO services (name, description, icon, display_order, active, created_at)
-       VALUES (?, ?, ?, ?, ?, datetime('now'))`
-    ).bind(name, description || null, icon || null, display_order || 0, active !== false ? 1 : 0).run();
+      `INSERT INTO services (name, description, icon, display_order, is_active, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
+    ).bind(
+      name, 
+      description || null, 
+      icon || null, 
+      display_order || 0, 
+      active !== false ? 1 : 0
+    ).run();
     
     return NextResponse.json({ id: result.meta.last_row_id, success: true });
   } catch (error) {

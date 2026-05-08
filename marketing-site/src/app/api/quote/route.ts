@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate service_id exists
-    const service = await db.prepare('SELECT id FROM services WHERE id = ? AND active = 1').bind(service_id).first();
+    const service = await db.prepare('SELECT id FROM services WHERE id = ? AND is_active = 1').bind(service_id).first();
     if (!service) {
       return NextResponse.json({ error: 'Invalid service' }, { status: 400 });
     }
@@ -77,9 +77,9 @@ export async function POST(request: NextRequest) {
     // Validate promo code if provided
     if (sanitizedPromoCode) {
       const promo = await db.prepare(
-        `SELECT id, discount_type, discount_value, active, valid_until 
+        `SELECT id, discount_type, discount_value, is_active, valid_until 
          FROM promo_codes 
-         WHERE UPPER(code) = UPPER(?) AND active = 1`
+         WHERE UPPER(code) = UPPER(?) AND is_active = 1`
       ).bind(sanitizedPromoCode).first();
 
       if (!promo) {
@@ -96,16 +96,16 @@ export async function POST(request: NextRequest) {
 
     // Save quote request to DB
     const result = await db.prepare(
-      `INSERT INTO quote_requests
-        (ref_number, name, email, phone, service_id, service_name, client_type, quantity, unit,
+      `INSERT INTO quotes
+        (ref_number, name, email, phone, service_id, service_name, client_type, quantity,
          baseline_price, special_price, special_label, special_discount,
          promo_code, discount_type, discount_value, discount_amount,
          final_price, status, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', datetime('now'), datetime('now'))`
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', datetime('now'), datetime('now'))`
     ).bind(
       refNumber,
       sanitizedName, sanitizedEmail, sanitizedPhone,
-      service_id, sanitizedServiceName, client_type || 'individual', quantity || 1, unit || '',
+      service_id, sanitizedServiceName, client_type || 'individual', quantity || 1,
       baseline_price, special_price || null, special_label || '', special_discount || 0,
       sanitizedPromoCode, discount_type || '', discount_value || 0,
       discount_amount || 0, final_price
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
     if (sanitizedPromoCode) {
       await db.prepare(
         `UPDATE promo_codes SET used_count = used_count + 1, updated_at = datetime('now')
-         WHERE UPPER(code) = UPPER(?) AND active = 1`
+         WHERE UPPER(code) = UPPER(?) AND is_active = 1`
       ).bind(sanitizedPromoCode).run();
     }
 
@@ -143,8 +143,8 @@ export async function POST(request: NextRequest) {
 
           if (zohoEstimateId) {
             await db.prepare(
-              `UPDATE quote_requests SET zoho_estimate_id = ?, zoho_estimate_number = ?, updated_at = datetime('now') WHERE id = ?`
-            ).bind(zohoEstimateId, zohoEstimateNumber, quoteId).run();
+              `UPDATE quotes SET zoho_estimate_number = ?, updated_at = datetime('now') WHERE id = ?`
+            ).bind(zohoEstimateNumber, quoteId).run();
           }
         }
       } catch (zohoErr) {
@@ -193,7 +193,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = parseInt(searchParams.get('offset') || '0');
 
-    let query = `SELECT * FROM quote_requests`;
+    let query = `SELECT * FROM quotes`;
     const params: unknown[] = [];
 
     if (status) {
