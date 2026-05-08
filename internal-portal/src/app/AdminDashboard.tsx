@@ -6,7 +6,7 @@
 import React, { useEffect, useState } from "react";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import DashboardLayout from "@/components/DashboardLayout";
-import ServicesManagement from "./services-management";
+import ServicesManagement from "./AdminDashboard/services-management";
 
 export default function AdminDashboard() {
   useSessionTimeout(true);
