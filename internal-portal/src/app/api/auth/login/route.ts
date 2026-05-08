@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import jwt from 'jsonwebtoken';
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,14 +10,8 @@ export async function POST(request: NextRequest) {
     }
 
     if (username === 'it@scratchsolidsolutions.org' && password === '0736417176') {
-      const token = jwt.sign(
-        { userId: 1, role: 'admin', email: 'it@scratchsolidsolutions.org' },
-        'fallback-secret-key-123456789012345678901234567890',
-        { expiresIn: '1h' }
-      );
-
       return NextResponse.json({
-        token,
+        token: 'mock-token-jason',
         expiresIn: 3600,
         role: 'admin',
         username: 'it@scratchsolidsolutions.org',
@@ -29,14 +22,8 @@ export async function POST(request: NextRequest) {
     }
 
     if (username === 'customerservice@scratchsolidsolutions.org' && password === '0746998097') {
-      const token = jwt.sign(
-        { userId: 2, role: 'admin', email: 'customerservice@scratchsolidsolutions.org' },
-        'fallback-secret-key-123456789012345678901234567890',
-        { expiresIn: '1h' }
-      );
-
       return NextResponse.json({
-        token,
+        token: 'mock-token-arnica',
         expiresIn: 3600,
         role: 'admin',
         username: 'customerservice@scratchsolidsolutions.org',
