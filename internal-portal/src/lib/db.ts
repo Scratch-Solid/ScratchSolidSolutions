@@ -26,7 +26,7 @@ export async function getDb(): Promise<D1Database | null> {
 
 // User operations
 export async function getUserByEmail(db: D1Database, email: string) {
-  const result = await db.prepare('SELECT id, email, role, name, phone, address, business_name, failed_attempts, locked_until FROM users WHERE email = ?').bind(email).first();
+  const result = await db.prepare('SELECT id, email, role, name, phone, address, business_name, password_hash, failed_attempts, locked_until FROM users WHERE email = ?').bind(email).first();
   return result;
 }
 
