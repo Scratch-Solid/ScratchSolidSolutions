@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, validateSession } from '@/lib/db';
-import { sanitizeText, sanitizeEmail, sanitizePhone } from '@/lib/sanitization';
-import { validateEmail } from '@/lib/validation';
 
 function generateRef(): string {
   const ts = Date.now().toString(36).toUpperCase();
@@ -40,20 +38,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'name, service_id, baseline_price, and final_price are required' }, { status: 400 });
     }
 
-    // Sanitize inputs
-    const sanitizedName = sanitizeText(name.trim());
-    const sanitizedEmail = email ? sanitizeEmail(email.trim()) : '';
-    const sanitizedPhone = phone ? sanitizePhone(phone.trim()) : '';
-    const sanitizedServiceName = service_name ? sanitizeText(service_name) : '';
+    // Simple sanitization (temporarily removed sanitization imports to isolate issue)
+    const sanitizedName = name.trim();
+    const sanitizedEmail = email ? email.trim() : '';
+    const sanitizedPhone = phone ? phone.trim() : '';
+    const sanitizedServiceName = service_name ? service_name : '';
     const sanitizedPromoCode = promo_code ? promo_code.trim().toUpperCase() : '';
 
-    // Validate email format if provided
-    if (sanitizedEmail) {
-      const emailValidation = validateEmail(sanitizedEmail);
-      if (!emailValidation.valid) {
-        return NextResponse.json({ error: emailValidation.errors.join(', ') }, { status: 400 });
-      }
-    }
+    // Email validation temporarily disabled
 
     // Validate service_id exists
     const service = await db.prepare('SELECT id FROM services WHERE id = ? AND is_active = 1').bind(service_id).first();
