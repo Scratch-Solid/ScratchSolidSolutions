@@ -1,22 +1,9 @@
 import { betterAuth } from "better-auth";
-import { D1Adapter } from "better-auth/adapters/d1";
-import { getCloudflareContext } from '@opennextjs/cloudflare';
-
-export interface Env {
-  DB: D1Database;
-}
 
 export const auth = betterAuth({
   providers: [
     // Add providers as needed
   ],
-  adapter: D1Adapter(
-    // Will be configured with the database from Cloudflare context
-    async () => {
-      const { env } = await getCloudflareContext({ async: true });
-      return env?.DB as D1Database;
-    }
-  ),
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days
     updateAge: 60 * 60 * 24, // 1 day
@@ -30,9 +17,6 @@ export const auth = betterAuth({
       maxSessions: 3, // Maximum concurrent sessions per user
       strategy: 'revoke_old' // Revoke oldest sessions when limit exceeded
     }
-  },
-  database: {
-    provider: "sqlite",
   },
   account: {
     accountLinking: {
