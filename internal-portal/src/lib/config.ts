@@ -1,5 +1,8 @@
 // Configuration Management
 // Centralized configuration with validation and defaults
+// Fixed: Use Cloudflare context for environment variables in Workers
+
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 
 export interface AppConfig {
   // Security
@@ -39,9 +42,75 @@ function validateRequired(value: string | undefined, name: string): string {
 }
 
 function getEnvVar(name: string, defaultValue?: string): string {
+  // Try Cloudflare env first, then fallback to process.env
+  try {
+    const { env } = getCloudflareContext({ async: false });
+    if (env && env[name as keyof typeof env]) {
+      return env[name as keyof typeof env] as string;
+    }
+  } catch (error) {
+    // Fallback to process.env if Cloudflare context not available
+  }
   return process.env[name] || defaultValue || '';
 }
 
+// Get configuration with Cloudflare context support
+async function getConfigFromContext(): Promise<AppConfig> {
+  let jwtSecret = '';
+  let csrfSecret = '';
+  let seedKey = '';
+
+  try {
+    const { env } = await getCloudflareContext({ async: true });
+    if (env) {
+      jwtSecret = (env.JWT_SECRET as string) || '';
+      csrfSecret = (env.CSRF_SECRET as string) || '';
+      seedKey = (env.SEED_KEY as string) || '';
+    }
+  } catch (error) {
+    // Fallback to process.env
+    jwtSecret = process.env.JWT_SECRET || '';
+    csrfSecret = process.env.CSRF_SECRET || '';
+    seedKey = process.env.SEED_KEY || '';
+  }
+
+  return {
+    // Security
+    jwtSecret: validateRequired(jwtSecret, 'JWT_SECRET'),
+    csrfSecret: validateRequired(csrfSecret, 'CSRF_SECRET'),
+    seedKey,
+  
+    // Session
+    sessionTimeoutHours: parseInt(getEnvVar('SESSION_TIMEOUT_HOURS', '24'), 10),
+    maxConcurrentSessions: parseInt(getEnvVar('MAX_CONCURRENT_SESSIONS', '3'), 10),
+  
+    // Rate Limiting
+    rateLimitWindowMs: parseInt(getEnvVar('RATE_LIMIT_WINDOW_MS', '60000'), 10),
+    rateLimitMaxRequests: parseInt(getEnvVar('RATE_LIMIT_MAX_REQUESTS', '100'), 10),
+  
+    // Account Lockout
+    maxFailedAttempts: parseInt(getEnvVar('MAX_FAILED_ATTEMPTS', '5'), 10),
+    lockoutDurationMinutes: parseInt(getEnvVar('LOCKOUT_DURATION_MINUTES', '15'), 10),
+  
+    // CORS
+    allowedOrigins: getEnvVar('ALLOWED_ORIGINS', '*'),
+  
+    // Database
+    databaseUrl: getEnvVar('DATABASE_URL'),
+  
+    // Environment
+    nodeEnv: getEnvVar('NODE_ENV', 'development'),
+    isProduction: getEnvVar('NODE_ENV', 'development') === 'production',
+    isDevelopment: getEnvVar('NODE_ENV', 'development') === 'development',
+  };
+}
+
+// Export config as function for Cloudflare Workers compatibility
+export async function getConfig(): Promise<AppConfig> {
+  return await getConfigFromContext();
+}
+
+// Legacy export for compatibility (will use fallback)
 export const config: AppConfig = {
   // Security
   jwtSecret: validateRequired(process.env.JWT_SECRET, 'JWT_SECRET'),
