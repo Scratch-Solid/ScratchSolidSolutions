@@ -23,16 +23,11 @@ export async function POST(request: NextRequest) {
       // Find user by email
       user = await db.prepare('SELECT * FROM users WHERE email = ?').bind(email).first();
     } catch (dbError) {
-      console.log('Database not available, using mock user for testing');
-      // Mock user for testing
-      user = {
-        id: 1,
-        email: email,
-        name: 'Test User',
-        role: 'admin',
-        two_factor_enabled: false,
-        password_hash: await bcrypt.hash('testpassword', 10)
-      };
+      console.error('Database error:', dbError);
+      return NextResponse.json(
+        { success: false, error: 'Database unavailable' },
+        { status: 503 }
+      );
     }
     
     if (!user) {
