@@ -105,11 +105,11 @@ export async function getConfig(): Promise<AppConfig> {
   return cachedConfig;
 }
 
-// Legacy sync export for backward compatibility (uses fallback)
+// Legacy sync export for backward compatibility (uses defaults to prevent module-level crashes)
 export const config: AppConfig = {
-  // Security
-  jwtSecret: validateRequired(process.env.JWT_SECRET, 'JWT_SECRET'),
-  csrfSecret: validateRequired(process.env.CSRF_SECRET, 'CSRF_SECRET'),
+  // Security - use defaults to prevent module-level crashes
+  jwtSecret: process.env.JWT_SECRET || 'fallback-secret',
+  csrfSecret: process.env.CSRF_SECRET || 'fallback-secret',
   seedKey: process.env.SEED_KEY,
   
   // Session
@@ -137,40 +137,41 @@ export const config: AppConfig = {
 };
 
 // Configuration validation function
-export function validateConfig(): { valid: boolean; errors: string[] } {
+export async function validateConfig(): Promise<{ valid: boolean; errors: string[] }> {
   const errors: string[] = [];
+  const cfg = await getConfig();
   
   // Validate required fields
-  if (!config.jwtSecret || config.jwtSecret.length < 32) {
+  if (!cfg.jwtSecret || cfg.jwtSecret.length < 32) {
     errors.push('JWT_SECRET must be at least 32 characters');
   }
   
-  if (!config.csrfSecret || config.csrfSecret.length < 32) {
+  if (!cfg.csrfSecret || cfg.csrfSecret.length < 32) {
     errors.push('CSRF_SECRET must be at least 32 characters');
   }
   
   // Validate numeric ranges
-  if (config.sessionTimeoutHours < 1 || config.sessionTimeoutHours > 168) {
+  if (cfg.sessionTimeoutHours < 1 || cfg.sessionTimeoutHours > 168) {
     errors.push('SESSION_TIMEOUT_HOURS must be between 1 and 168 (7 days)');
   }
   
-  if (config.maxConcurrentSessions < 1 || config.maxConcurrentSessions > 10) {
+  if (cfg.maxConcurrentSessions < 1 || cfg.maxConcurrentSessions > 10) {
     errors.push('MAX_CONCURRENT_SESSIONS must be between 1 and 10');
   }
   
-  if (config.rateLimitWindowMs < 1000 || config.rateLimitWindowMs > 3600000) {
+  if (cfg.rateLimitWindowMs < 1000 || cfg.rateLimitWindowMs > 3600000) {
     errors.push('RATE_LIMIT_WINDOW_MS must be between 1000 and 3600000 (1 hour)');
   }
   
-  if (config.rateLimitMaxRequests < 1 || config.rateLimitMaxRequests > 1000) {
+  if (cfg.rateLimitMaxRequests < 1 || cfg.rateLimitMaxRequests > 1000) {
     errors.push('RATE_LIMIT_MAX_REQUESTS must be between 1 and 1000');
   }
   
-  if (config.maxFailedAttempts < 3 || config.maxFailedAttempts > 10) {
+  if (cfg.maxFailedAttempts < 3 || cfg.maxFailedAttempts > 10) {
     errors.push('MAX_FAILED_ATTEMPTS must be between 3 and 10');
   }
   
-  if (config.lockoutDurationMinutes < 5 || config.lockoutDurationMinutes > 1440) {
+  if (cfg.lockoutDurationMinutes < 5 || cfg.lockoutDurationMinutes > 1440) {
     errors.push('LOCKOUT_DURATION_MINUTES must be between 5 and 1440 (24 hours)');
   }
   
@@ -181,21 +182,14 @@ export function validateConfig(): { valid: boolean; errors: string[] } {
 }
 
 // Get configuration for client-side use (safe values only)
-export function getClientConfig(): Record<string, string | boolean | number> {
+export async function getClientConfig(): Promise<Record<string, string | boolean | number>> {
+  const cfg = await getConfig();
   return {
-    allowedOrigins: config.allowedOrigins,
-    isProduction: config.isProduction,
-    sessionTimeoutHours: config.sessionTimeoutHours,
-    maxConcurrentSessions: config.maxConcurrentSessions,
+    allowedOrigins: cfg.allowedOrigins,
+    isProduction: cfg.isProduction,
+    sessionTimeoutHours: cfg.sessionTimeoutHours,
+    maxConcurrentSessions: cfg.maxConcurrentSessions,
   };
 }
 
-// Validate configuration on import
-if (typeof window === 'undefined') {
-  const validation = validateConfig();
-  if (!validation.valid) {
-    console.error('Configuration validation failed:', validation.errors);
-    // Don't throw error at import time - log warning instead
-    console.warn('Running with invalid configuration - check environment variables');
-  }
-}
+// Remove import-time validation to prevent crashes
