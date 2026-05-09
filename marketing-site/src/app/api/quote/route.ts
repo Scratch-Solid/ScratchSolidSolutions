@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCloudflareContext } from '@opennextjs/cloudflare';
 
 function generateRef(): string {
   const ts = Date.now().toString(36).toUpperCase();
@@ -10,8 +9,9 @@ function generateRef(): string {
 // Public POST: submit a quote request
 export async function POST(request: NextRequest) {
   try {
-    const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
-    const db = env?.scratchsolid_db;
+    // Dynamic import to avoid module-level import error
+    const { getDb } = await import('@/lib/db');
+    const db = await getDb();
     if (!db) return NextResponse.json({ error: 'Database not available' }, { status: 500 });
 
     const body = await request.json() as {
@@ -123,8 +123,9 @@ export async function POST(request: NextRequest) {
 // Admin GET: list all quote requests
 export async function GET(request: NextRequest) {
   try {
-    const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
-    const db = env?.scratchsolid_db;
+    // Dynamic import to avoid module-level import error
+    const { getDb } = await import('@/lib/db');
+    const db = await getDb();
     if (!db) return NextResponse.json({ error: 'Database not available' }, { status: 500 });
 
     const { searchParams } = new URL(request.url);
