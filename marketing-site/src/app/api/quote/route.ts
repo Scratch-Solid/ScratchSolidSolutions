@@ -28,13 +28,8 @@ export async function POST(request: NextRequest) {
       phone?: string;
       service_id?: number;
       service_name?: string;
-      client_type?: string;
       quantity?: number;
-      unit?: string;
       baseline_price?: number;
-      special_price?: number | null;
-      special_label?: string;
-      special_discount?: number;
       promo_code?: string;
       discount_type?: string;
       discount_value?: number;
@@ -43,9 +38,8 @@ export async function POST(request: NextRequest) {
     };
 
     const {
-      name, email, phone, service_id, service_name, client_type, quantity, unit,
-      baseline_price, special_price, special_label, special_discount,
-      promo_code, discount_type, discount_value, discount_amount, final_price
+      name, email, phone, service_id, service_name, quantity,
+      baseline_price, promo_code, discount_type, discount_value, discount_amount, final_price
     } = body;
 
     // Validate required fields
@@ -96,18 +90,16 @@ export async function POST(request: NextRequest) {
 
     // Save quote request to DB
     const result = await db.prepare(
-      `INSERT INTO quotes
-        (ref_number, name, email, phone, service_id, service_name, client_type, quantity,
-         baseline_price, special_price, special_label, special_discount,
-         promo_code, discount_type, discount_value, discount_amount,
+      `INSERT INTO quote_requests
+        (ref_number, name, email, phone, service_id, service_name, quantity,
+         baseline_price, promo_code, discount_type, discount_value, discount_amount,
          final_price, status, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', datetime('now'), datetime('now'))`
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', datetime('now'), datetime('now'))`
     ).bind(
       refNumber,
       sanitizedName, sanitizedEmail, sanitizedPhone,
-      service_id, sanitizedServiceName, client_type || 'individual', quantity || 1,
-      baseline_price, special_price || null, special_label || '', special_discount || 0,
-      sanitizedPromoCode, discount_type || '', discount_value || 0,
+      service_id, sanitizedServiceName, quantity || 1,
+      baseline_price, sanitizedPromoCode, discount_type || '', discount_value || 0,
       discount_amount || 0, final_price
     ).run();
 
@@ -143,7 +135,7 @@ export async function POST(request: NextRequest) {
 
           if (zohoEstimateId) {
             await db.prepare(
-              `UPDATE quotes SET zoho_estimate_number = ?, updated_at = datetime('now') WHERE id = ?`
+              `UPDATE quote_requests SET zoho_estimate_number = ?, updated_at = datetime('now') WHERE id = ?`
             ).bind(zohoEstimateNumber, quoteId).run();
           }
         }
@@ -161,7 +153,6 @@ export async function POST(request: NextRequest) {
       email: sanitizedEmail,
       phone: sanitizedPhone,
       service_name: sanitizedServiceName,
-      client_type: client_type || 'individual',
       baseline_price,
       promo_code: sanitizedPromoCode,
       discount_type: discount_type || '',
@@ -171,7 +162,8 @@ export async function POST(request: NextRequest) {
     }, { status: 201 });
   } catch (error) {
     console.error('Error creating quote:', error);
-    return NextResponse.json({ error: 'Failed to create quote' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ error: 'Failed to create quote', details: errorMessage }, { status: 500 });
   }
 }
 
@@ -193,7 +185,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = parseInt(searchParams.get('offset') || '0');
 
-    let query = `SELECT * FROM quotes`;
+    let query = `SELECT * FROM quote_requests`;
     const params: unknown[] = [];
 
     if (status) {
