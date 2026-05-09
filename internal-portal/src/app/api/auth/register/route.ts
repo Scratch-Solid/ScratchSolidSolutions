@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, createUser } from '@/lib/db';
-import { withTracing, withSecurityHeaders, logRequest, withRateLimit } from '@/lib/middleware';
+import { getDb, createUser, logAuditEvent, createAdminApprovalRequest, createEmailVerificationToken } from '@/lib/db';
+import { withTracing, withSecurityHeaders, logRequest, withRateLimit, getClientIP } from '@/lib/middleware';
 import { sanitizeRequestBody } from '@/lib/sanitization';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -113,12 +113,94 @@ export async function POST(request: NextRequest) {
       ).bind((user as any).id, username, paysheetCode || username, department || 'cleaning').run();
     }
 
-    // Generate JWT token
+    // Log user registration
+    await logAuditEvent(db, {
+      user_id: (user as any).id,
+      action: 'USER_REGISTERED',
+      resource: 'user',
+      resource_id: (user as any).id.toString(),
+      ip_address: getClientIP(request),
+      user_agent: request.headers.get('user-agent') || '',
+      details: JSON.stringify({ email, role: userRole, name: userName }),
+      success: true,
+      trace_id: traceId
+    });
+
+    // Handle admin role registration - requires email verification and approval
+    if (['admin', 'super_admin'].includes(userRole)) {
+      // Create admin approval request
+      await createAdminApprovalRequest(db, (user as any).id, getClientIP(request), request.headers.get('user-agent') || '');
+
+      // Create email verification token
+      const verificationToken = await createEmailVerificationToken(db, (user as any).id, email);
+
+      // Log admin registration requiring approval
+      await logAuditEvent(db, {
+        user_id: (user as any).id,
+        action: 'ADMIN_REGISTRATION_PENDING',
+        resource: 'admin_approval',
+        resource_id: (user as any).id.toString(),
+        ip_address: getClientIP(request),
+        user_agent: request.headers.get('user-agent') || '',
+        details: JSON.stringify({ email, role: userRole, requiresApproval: true, requiresVerification: true }),
+        success: true,
+        trace_id: traceId
+      });
+
+      // TODO: Send verification email
+      // For now, return token in development mode
+      const verificationLink = `${process.env.NEXT_PUBLIC_PORTAL_URL || 'http://localhost:3000'}/auth/verify-email?token=${verificationToken}`;
+
+      if (process.env.NODE_ENV === 'development') {
+        const response = NextResponse.json({
+          message: 'Admin registration successful. Email verification and admin approval required.',
+          requiresVerification: true,
+          requiresApproval: true,
+          verificationLink,
+          verificationToken // Only in development
+        }, { status: 201 });
+        logRequest(request, response, Date.now() - start, traceId);
+        return withSecurityHeaders(response, traceId);
+      }
+
+      const response = NextResponse.json({
+        message: 'Admin registration successful. Email verification and admin approval required.',
+        requiresVerification: true,
+        requiresApproval: true
+      }, { status: 201 });
+      logRequest(request, response, Date.now() - start, traceId);
+      return withSecurityHeaders(response, traceId);
+    }
+
+    // For non-admin roles, create email verification but allow immediate access
+    const verificationToken = await createEmailVerificationToken(db, (user as any).id, email);
+
+    // Generate JWT token for non-admin users
     const token = jwt.sign(
       { userId: (user as any).id, role: userRole, email },
       getJWTSecret(),
       { expiresIn: '24h' }
     );
+
+    // TODO: Send verification email
+    if (process.env.NODE_ENV === 'development') {
+      const verificationLink = `${process.env.NEXT_PUBLIC_PORTAL_URL || 'http://localhost:3000'}/auth/verify-email?token=${verificationToken}`;
+      
+      const response = NextResponse.json({
+        token,
+        user: {
+          id: (user as any).id,
+          email,
+          role,
+          name,
+        },
+        verificationLink,
+        verificationToken, // Only in development
+        message: 'Registration successful. Please check your email to verify your account.'
+      }, { status: 201 });
+      logRequest(request, response, Date.now() - start, traceId);
+      return withSecurityHeaders(response, traceId);
+    }
 
     const response = NextResponse.json({
       token,
@@ -128,6 +210,7 @@ export async function POST(request: NextRequest) {
         role,
         name,
       },
+      message: 'Registration successful. Please check your email to verify your account.'
     }, { status: 201 });
     logRequest(request, response, Date.now() - start, traceId);
     return withSecurityHeaders(response, traceId);

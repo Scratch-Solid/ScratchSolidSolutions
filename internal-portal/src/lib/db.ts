@@ -7,7 +7,7 @@ import crypto from 'crypto';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 
 export interface Env {
-  scratchsolid_db: D1Database;
+  DB: D1Database;
 }
 
 // Helper to get the D1 database from the OpenNext Cloudflare context
@@ -15,8 +15,8 @@ export async function getDb(): Promise<D1Database | null> {
   try {
     // OpenNext on Workers: use getCloudflareContext
     const { env } = await getCloudflareContext({ async: true });
-    if (env?.scratchsolid_db) {
-      return env.scratchsolid_db as D1Database;
+    if (env?.DB) {
+      return env.DB as D1Database;
     }
   } catch (error) {
     console.error('Error getting database from OpenNext context', error);
@@ -286,12 +286,6 @@ export async function createEmployee(db: D1Database, data: Record<string, any>) 
   return result;
 }
 
-// Audit logging
-export async function logAuditEvent(db: D1Database, adminId: number, action: string, resourceType: string, resourceId: number | null = null, details: string = '{}', ipAddress: string = ''): Promise<void> {
-  await db.prepare(
-    'INSERT INTO audit_logs (admin_id, action, resource_type, resource_id, details, ip_address) VALUES (?, ?, ?, ?, ?, ?)'
-  ).bind(adminId, action, resourceType, resourceId, details, ipAddress).run();
-}
 
 // Booking operations
 export async function createBooking(db: D1Database, data: {
@@ -347,5 +341,162 @@ export async function getCleanerEarnings(db: D1Database, cleanerId: number) {
   const result = await db.prepare(
     `SELECT COALESCE(SUM(earnings), 0) as total_earnings, COUNT(*) as completed_jobs FROM task_completions WHERE cleaner_id = ?`
   ).bind(cleanerId).first();
+  return result;
+}
+
+// Email verification functions
+export async function createEmailVerificationToken(db: D1Database, userId: number, email: string) {
+  const token = crypto.randomBytes(32).toString('hex');
+  const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+  
+  await db.prepare(
+    `UPDATE users SET email_verification_token = ?, email_verification_expires = ?, email_verification_sent_at = ? WHERE id = ?`
+  ).bind(token, expires.toISOString(), new Date().toISOString(), userId).run();
+  
+  return token;
+}
+
+export async function verifyEmailToken(db: D1Database, token: string) {
+  const user = await db.prepare(
+    `SELECT id, email FROM users WHERE email_verification_token = ? AND email_verification_expires > datetime('now')`
+  ).bind(token).first();
+  
+  if (user) {
+    await db.prepare(
+      `UPDATE users SET email_verified = 1, email_verification_token = NULL, email_verification_expires = NULL WHERE id = ?`
+    ).bind((user as any).id).run();
+    return user;
+  }
+  
+  return null;
+}
+
+export async function isEmailVerified(db: D1Database, userId: number): Promise<boolean> {
+  const result = await db.prepare('SELECT email_verified FROM users WHERE id = ?').bind(userId).first();
+  return (result as any)?.email_verified === 1;
+}
+
+// Admin approval functions
+export async function createAdminApprovalRequest(db: D1Database, userId: number, registrationIp?: string, userAgent?: string) {
+  await db.prepare(
+    `UPDATE users SET admin_approval_status = 'pending', registration_ip = ?, registration_user_agent = ? WHERE id = ?`
+  ).bind(registrationIp || '', userAgent || '', userId).run();
+}
+
+export async function approveAdminUser(db: D1Database, userId: number, approvedBy: number, notes?: string) {
+  await db.prepare(
+    `UPDATE users SET admin_approval_status = 'approved', approved_by = ?, approved_at = ?, approval_notes = ? WHERE id = ?`
+  ).bind(approvedBy, new Date().toISOString(), notes || '', userId).run();
+}
+
+export async function rejectAdminUser(db: D1Database, userId: number, rejectedBy: number, notes?: string) {
+  await db.prepare(
+    `UPDATE users SET admin_approval_status = 'rejected', approved_by = ?, approved_at = ?, approval_notes = ? WHERE id = ?`
+  ).bind(rejectedBy, new Date().toISOString(), notes || '', userId).run();
+}
+
+export async function getPendingAdminApprovals(db: D1Database) {
+  const result = await db.prepare(
+    `SELECT id, email, name, role, created_at, registration_ip FROM users 
+     WHERE role IN ('admin', 'super_admin') AND admin_approval_status = 'pending' AND email_verified = 1`
+  ).all();
+  return result.results;
+}
+
+export async function isAdminApproved(db: D1Database, userId: number): Promise<boolean> {
+  const result = await db.prepare('SELECT admin_approval_status FROM users WHERE id = ?').bind(userId).first();
+  return (result as any)?.admin_approval_status === 'approved';
+}
+
+// Audit logging functions
+export async function logAuditEvent(db: D1Database, event: {
+  user_id?: number;
+  action: string;
+  resource?: string;
+  resource_id?: string;
+  ip_address?: string;
+  user_agent?: string;
+  details?: string;
+  success?: boolean;
+  error_message?: string;
+  session_id?: string;
+  trace_id?: string;
+}) {
+  await db.prepare(
+    `INSERT INTO audit_logs (user_id, action, resource, resource_id, ip_address, user_agent, details, success, error_message, session_id, trace_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).bind(
+    event.user_id || null,
+    event.action,
+    event.resource || null,
+    event.resource_id || null,
+    event.ip_address || null,
+    event.user_agent || null,
+    event.details || null,
+    event.success ? 1 : 0,
+    event.error_message || null,
+    event.session_id || null,
+    event.trace_id || null
+  ).run();
+}
+
+export async function getAuditLogs(db: D1Database, filters?: {
+  user_id?: number;
+  action?: string;
+  resource?: string;
+  limit?: number;
+  offset?: number;
+}) {
+  let query = `SELECT * FROM audit_logs WHERE 1=1`;
+  const params: any[] = [];
+  
+  if (filters?.user_id) {
+    query += ` AND user_id = ?`;
+    params.push(filters.user_id);
+  }
+  
+  if (filters?.action) {
+    query += ` AND action = ?`;
+    params.push(filters.action);
+  }
+  
+  if (filters?.resource) {
+    query += ` AND resource = ?`;
+    params.push(filters.resource);
+  }
+  
+  query += ` ORDER BY timestamp DESC`;
+  
+  if (filters?.limit) {
+    query += ` LIMIT ?`;
+    params.push(filters.limit);
+    
+    if (filters?.offset) {
+      query += ` OFFSET ?`;
+      params.push(filters.offset);
+    }
+  }
+  
+  const result = await db.prepare(query).bind(...params).all();
+  return result.results;
+}
+
+// Enhanced user tracking functions
+export async function updateUserLoginStats(db: D1Database, userId: number, success: boolean, ip?: string) {
+  if (success) {
+    await db.prepare(
+      `UPDATE users SET login_count = COALESCE(login_count, 0) + 1, last_login = ?, failed_login_attempts = 0 WHERE id = ?`
+    ).bind(new Date().toISOString(), userId).run();
+  } else {
+    await db.prepare(
+      `UPDATE users SET failed_login_attempts = COALESCE(failed_login_attempts, 0) + 1, last_failed_login = ? WHERE id = ?`
+    ).bind(new Date().toISOString(), userId).run();
+  }
+}
+
+export async function getUserLoginStats(db: D1Database, userId: number) {
+  const result = await db.prepare(
+    `SELECT login_count, last_login, failed_login_attempts, last_failed_login FROM users WHERE id = ?`
+  ).bind(userId).first();
   return result;
 }
