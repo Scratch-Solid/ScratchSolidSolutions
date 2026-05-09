@@ -25,9 +25,11 @@ jobs:
           cache-dependency-path: marketing-site/package-lock.json
 
       - run: npm ci
-      - name: Deploy to Cloudflare Workers
-        run: npx wrangler deploy --compatibility-date=2023-03-01
+      - name: Build and deploy with OpenNext
+        run: npx opennextjs-cloudflare build && npx opennextjs-cloudflare deploy
         env:
+          NEXT_PUBLIC_BASE_URL: https://scratchsolidsolutions.org
+          NEXT_PUBLIC_API_URL: https://scratchsolidsolutions.org
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
