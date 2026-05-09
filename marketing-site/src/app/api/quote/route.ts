@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb, validateSession } from '@/lib/db';
 import { sanitizeText, sanitizeEmail, sanitizePhone } from '@/lib/sanitization';
 import { validateEmail } from '@/lib/validation';
-import { findOrCreateContact, createEstimate } from '@/lib/zoho';
 
 function generateRef(): string {
   const ts = Date.now().toString(36).toUpperCase();
@@ -107,36 +106,35 @@ export async function POST(request: NextRequest) {
       ).bind(sanitizedPromoCode).run();
     }
 
-    // Attempt Zoho estimate creation (best-effort, non-blocking)
-    let zohoEstimateId = '';
+    // Attempt Zoho estimate creation (best-effort, non-blocking) - temporarily disabled
     let zohoEstimateNumber = '';
 
-    if (sanitizedEmail || sanitizedName) {
-      try {
-        const contactId = await findOrCreateContact(sanitizedName, sanitizedEmail, sanitizedPhone);
-        if (contactId) {
-          const estimateResp = await createEstimate({
-            contactId,
-            serviceName: sanitizedServiceName || `Service #${service_id}`,
-            baselinePrice: baseline_price,
-            discountAmount: discount_amount || 0,
-            finalPrice: final_price,
-            promoCode: sanitizedPromoCode,
-            refNumber,
-          });
-          zohoEstimateId = estimateResp.estimate?.estimate_id || '';
-          zohoEstimateNumber = estimateResp.estimate?.estimate_number || '';
+    // if (sanitizedEmail || sanitizedName) {
+    //   try {
+    //     const contactId = await findOrCreateContact(sanitizedName, sanitizedEmail, sanitizedPhone);
+    //     if (contactId) {
+    //       const estimateResp = await createEstimate({
+    //         contactId,
+    //         serviceName: sanitizedServiceName || `Service #${service_id}`,
+    //         baselinePrice: baseline_price,
+    //         discountAmount: discount_amount || 0,
+    //         finalPrice: final_price,
+    //         promoCode: sanitizedPromoCode,
+    //         refNumber,
+    //       });
+    //       zohoEstimateId = estimateResp.estimate?.estimate_id || '';
+    //       zohoEstimateNumber = estimateResp.estimate?.estimate_number || '';
 
-          if (zohoEstimateId) {
-            await db.prepare(
-              `UPDATE quote_requests SET zoho_estimate_number = ?, updated_at = datetime('now') WHERE id = ?`
-            ).bind(zohoEstimateNumber, quoteId).run();
-          }
-        }
-      } catch (zohoErr) {
-        console.error('Zoho estimate creation failed (non-fatal):', zohoErr);
-      }
-    }
+    //       if (zohoEstimateId) {
+    //         await db.prepare(
+    //           `UPDATE quote_requests SET zoho_estimate_number = ?, updated_at = datetime('now') WHERE id = ?`
+    //         ).bind(zohoEstimateNumber, quoteId).run();
+    //       }
+    //     }
+    //   } catch (zohoErr) {
+    //     console.error('Zoho estimate creation failed (non-fatal):', zohoErr);
+    //   }
+    // }
 
     return NextResponse.json({
       success: true,
