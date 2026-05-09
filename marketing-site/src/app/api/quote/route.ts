@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getDb } from '@/lib/db';
 
 function generateRef(): string {
   const ts = Date.now().toString(36).toUpperCase();
@@ -9,8 +10,6 @@ function generateRef(): string {
 // Public POST: submit a quote request
 export async function POST(request: NextRequest) {
   try {
-    // Dynamic import to avoid module-level import error
-    const { getDb } = await import('@/lib/db');
     const db = await getDb();
     if (!db) return NextResponse.json({ error: 'Database not available' }, { status: 500 });
 
@@ -123,8 +122,6 @@ export async function POST(request: NextRequest) {
 // Admin GET: list all quote requests
 export async function GET(request: NextRequest) {
   try {
-    // Dynamic import to avoid module-level import error
-    const { getDb } = await import('@/lib/db');
     const db = await getDb();
     if (!db) return NextResponse.json({ error: 'Database not available' }, { status: 500 });
 
