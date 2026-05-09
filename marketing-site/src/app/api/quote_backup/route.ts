@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 
+function generateRef(): string {
+  const ts = Date.now().toString(36).toUpperCase();
+  const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+  return `SSQ-${ts}-${rand}`;
+}
+
+// Public POST: submit a quote request
 export async function POST(request: NextRequest) {
   try {
     const db = await getDb();
-    if (!db) {
-      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
-    }
+    if (!db) return NextResponse.json({ error: 'Database not available' }, { status: 500 });
 
     const body = await request.json() as {
       name?: string;
@@ -64,10 +69,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Generate reference number
-    const ts = Date.now().toString(36).toUpperCase();
-    const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
-    const refNumber = `SSQ-${ts}-${rand}`;
+    const refNumber = generateRef();
 
     // Save quote request to DB
     const result = await db.prepare(
@@ -117,12 +119,11 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// Admin GET: list all quote requests
 export async function GET(request: NextRequest) {
   try {
     const db = await getDb();
-    if (!db) {
-      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
-    }
+    if (!db) return NextResponse.json({ error: 'Database not available' }, { status: 500 });
 
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
