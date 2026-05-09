@@ -1,5 +1,6 @@
 // Configuration Management
 // Centralized configuration with validation and defaults
+// Fixed: Lazy load environment variables to avoid module-level access issues in Cloudflare Workers
 
 export interface AppConfig {
   // Security
@@ -42,35 +43,53 @@ function getEnvVar(name: string, defaultValue?: string): string {
   return process.env[name] || defaultValue || '';
 }
 
-export const config: AppConfig = {
-  // Security
-  jwtSecret: validateRequired(process.env.JWT_SECRET, 'JWT_SECRET'),
-  csrfSecret: validateRequired(process.env.CSRF_SECRET, 'CSRF_SECRET'),
-  seedKey: process.env.SEED_KEY,
+// Lazy load config to avoid module-level process.env access
+let cachedConfig: AppConfig | null = null;
+
+export function getConfig(): AppConfig {
+  if (cachedConfig) {
+    return cachedConfig;
+  }
   
-  // Session
-  sessionTimeoutHours: parseInt(getEnvVar('SESSION_TIMEOUT_HOURS', '24'), 10),
-  maxConcurrentSessions: parseInt(getEnvVar('MAX_CONCURRENT_SESSIONS', '3'), 10),
+  cachedConfig = {
+    // Security
+    jwtSecret: validateRequired(process.env.JWT_SECRET, 'JWT_SECRET'),
+    csrfSecret: validateRequired(process.env.CSRF_SECRET, 'CSRF_SECRET'),
+    seedKey: process.env.SEED_KEY,
+    
+    // Session
+    sessionTimeoutHours: parseInt(getEnvVar('SESSION_TIMEOUT_HOURS', '24'), 10),
+    maxConcurrentSessions: parseInt(getEnvVar('MAX_CONCURRENT_SESSIONS', '3'), 10),
+    
+    // Rate Limiting
+    rateLimitWindowMs: parseInt(getEnvVar('RATE_LIMIT_WINDOW_MS', '60000'), 10),
+    rateLimitMaxRequests: parseInt(getEnvVar('RATE_LIMIT_MAX_REQUESTS', '100'), 10),
+    
+    // Account Lockout
+    maxFailedAttempts: parseInt(getEnvVar('MAX_FAILED_ATTEMPTS', '5'), 10),
+    lockoutDurationMinutes: parseInt(getEnvVar('LOCKOUT_DURATION_MINUTES', '15'), 10),
+    
+    // CORS
+    allowedOrigins: getEnvVar('ALLOWED_ORIGINS', '*'),
+    
+    // Database
+    databaseUrl: process.env.DATABASE_URL,
+    
+    // Environment
+    nodeEnv: getEnvVar('NODE_ENV', 'development'),
+    isProduction: getEnvVar('NODE_ENV', 'development') === 'production',
+    isDevelopment: getEnvVar('NODE_ENV', 'development') === 'development',
+  };
   
-  // Rate Limiting
-  rateLimitWindowMs: parseInt(getEnvVar('RATE_LIMIT_WINDOW_MS', '60000'), 10),
-  rateLimitMaxRequests: parseInt(getEnvVar('RATE_LIMIT_MAX_REQUESTS', '100'), 10),
-  
-  // Account Lockout
-  maxFailedAttempts: parseInt(getEnvVar('MAX_FAILED_ATTEMPTS', '5'), 10),
-  lockoutDurationMinutes: parseInt(getEnvVar('LOCKOUT_DURATION_MINUTES', '15'), 10),
-  
-  // CORS
-  allowedOrigins: getEnvVar('ALLOWED_ORIGINS', '*'),
-  
-  // Database
-  databaseUrl: process.env.DATABASE_URL,
-  
-  // Environment
-  nodeEnv: getEnvVar('NODE_ENV', 'development'),
-  isProduction: getEnvVar('NODE_ENV', 'development') === 'production',
-  isDevelopment: getEnvVar('NODE_ENV', 'development') === 'development',
-};
+  return cachedConfig;
+}
+
+// Legacy export for backward compatibility
+export const config: AppConfig = new Proxy({} as AppConfig, {
+  get(target, prop) {
+    return getConfig()[prop as keyof AppConfig];
+  }
+});
 
 // Configuration validation function
 export function validateConfig(): { valid: boolean; errors: string[] } {
