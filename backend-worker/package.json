@@ -13,7 +13,8 @@
   "dependencies": {
     "itty-router": "^4.0.25",
     "@noble/hashes": "^1.3.3",
-    "@tsndr/cloudflare-worker-jwt": "^2.4.1"
+    "@tsndr/cloudflare-worker-jwt": "^2.4.1",
+    "bcryptjs": "^2.4.3"
   },
   "devDependencies": {
     "wrangler": "^3.114.17",

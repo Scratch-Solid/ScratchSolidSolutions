@@ -6,6 +6,7 @@
 import { Router } from 'itty-router';
 import { sha256 } from '@noble/hashes/sha256';
 import jwt from '@tsndr/cloudflare-worker-jwt';
+import bcrypt from 'bcryptjs';
 
 const router = Router();
 
@@ -220,38 +221,35 @@ async function verifyToken(request, env) {
   }
 }
 
-// User authentication using Web Crypto PBKDF2 (bcryptjs not available in Workers)
+// User authentication using bcrypt (standardized across all projects)
 async function hashPassword(password) {
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const saltHex = Array.from(salt).map(b => b.toString(16).padStart(2, '0')).join('');
-  const encoder = new TextEncoder();
-  const keyMaterial = await crypto.subtle.importKey('raw', encoder.encode(password), 'PBKDF2', false, ['deriveBits']);
-  const derivedBits = await crypto.subtle.deriveBits(
-    { name: 'PBKDF2', salt: encoder.encode(saltHex), iterations: 100000, hash: 'SHA-256' },
-    keyMaterial, 256
-  );
-  const hashHex = Array.from(new Uint8Array(derivedBits)).map(b => b.toString(16).padStart(2, '0')).join('');
-  return `pbkdf2:100000:${saltHex}:${hashHex}`;
+  const saltRounds = 10;
+  return await bcrypt.hash(password, saltRounds);
 }
 
 async function verifyPassword(password, storedHash) {
+  // Support legacy PBKDF2 hashes for migration
+  if (storedHash.startsWith('pbkdf2:')) {
+    const [, , saltHex, expectedHash] = storedHash.split(':');
+    const encoder = new TextEncoder();
+    const keyMaterial = await crypto.subtle.importKey('raw', encoder.encode(password), 'PBKDF2', false, ['deriveBits']);
+    const derivedBits = await crypto.subtle.deriveBits(
+      { name: 'PBKDF2', salt: encoder.encode(saltHex), iterations: 100000, hash: 'SHA-256' },
+      keyMaterial, 256
+    );
+    const hashHex = Array.from(new Uint8Array(derivedBits)).map(b => b.toString(16).padStart(2, '0')).join('');
+    return hashHex === expectedHash;
+  }
   // Support legacy SHA256 hashes for migration
-  if (!storedHash.startsWith('pbkdf2:')) {
+  if (!storedHash.startsWith('$2a$') && !storedHash.startsWith('$2b$')) {
     const encoder = new TextEncoder();
     const data = encoder.encode(password + 'salt');
     const hashBuffer = await sha256(data);
     const legacyHash = Array.from(hashBuffer).map(b => b.toString(16).padStart(2, '0')).join('');
     return legacyHash === storedHash;
   }
-  const [, , saltHex, expectedHash] = storedHash.split(':');
-  const encoder = new TextEncoder();
-  const keyMaterial = await crypto.subtle.importKey('raw', encoder.encode(password), 'PBKDF2', false, ['deriveBits']);
-  const derivedBits = await crypto.subtle.deriveBits(
-    { name: 'PBKDF2', salt: encoder.encode(saltHex), iterations: 100000, hash: 'SHA-256' },
-    keyMaterial, 256
-  );
-  const hashHex = Array.from(new Uint8Array(derivedBits)).map(b => b.toString(16).padStart(2, '0')).join('');
-  return hashHex === expectedHash;
+  // Use bcrypt for new hashes
+  return await bcrypt.compare(password, storedHash);
 }
 
 // Database helpers
@@ -282,14 +280,14 @@ async function findUserByEmail(db, email) {
 router.options('*', (request) => new Response(null, { headers: getCorsHeaders(request) }));
 
 // Health check (no auth required)
-router.get('/health', (request) => {
+router.get('/api/health', (request) => {
   return new Response(JSON.stringify({ status: 'ok', service: 'cloudflare-worker' }), {
     headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
   });
 });
 
 // Auth endpoints
-router.post('/auth/signup', async (request, env) => {
+router.post('/api/auth/signup', async (request, env) => {
   try {
     const { name, email, password, role, phone, address, business_name, business_info } = await request.json();
     
@@ -324,7 +322,7 @@ router.post('/auth/signup', async (request, env) => {
   }
 });
 
-router.post('/auth/login', async (request, env) => {
+router.post('/api/auth/login', async (request, env) => {
   try {
     const { email, password } = await request.json();
     
@@ -354,7 +352,7 @@ router.post('/auth/login', async (request, env) => {
 });
 
 // Get current user
-router.get('/auth/me', async (request, env) => {
+router.get('/api/auth/me', async (request, env) => {
   const payload = await verifyToken(request, env);
   if (!payload) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -372,7 +370,7 @@ router.get('/auth/me', async (request, env) => {
 });
 
 // Bookings endpoints
-router.post('/bookings', async (request, env) => {
+router.post('/api/bookings', async (request, env) => {
   const payload = await verifyToken(request, env);
   if (!payload) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -403,7 +401,7 @@ router.post('/bookings', async (request, env) => {
   }
 });
 
-router.get('/bookings', async (request, env) => {
+router.get('/api/bookings', async (request, env) => {
   const payload = await verifyToken(request, env);
   if (!payload) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -424,7 +422,7 @@ router.get('/bookings', async (request, env) => {
   });
 });
 
-router.delete('/bookings/:id', async (request, env) => {
+router.delete('/api/bookings/:id', async (request, env) => {
   const payload = await verifyToken(request, env);
   if (!payload) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -455,7 +453,7 @@ router.delete('/bookings/:id', async (request, env) => {
 });
 
 // Templates endpoints
-router.post('/templates', async (request, env) => {
+router.post('/api/templates', async (request, env) => {
   const payload = await verifyToken(request, env);
   if (!payload || payload.role !== 'admin') {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -487,7 +485,7 @@ router.post('/templates', async (request, env) => {
   }
 });
 
-router.get('/templates', async (request, env) => {
+router.get('/api/templates', async (request, env) => {
   const payload = await verifyToken(request, env);
   if (!payload) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -503,7 +501,7 @@ router.get('/templates', async (request, env) => {
 });
 
 // Contracts endpoints
-router.post('/contracts', async (request, env) => {
+router.post('/api/contracts', async (request, env) => {
   const payload = await verifyToken(request, env);
   if (!payload || payload.role !== 'business') {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -541,7 +539,7 @@ router.post('/contracts', async (request, env) => {
   }
 });
 
-router.get('/contracts/:id', async (request, env) => {
+router.get('/api/contracts/:id', async (request, env) => {
   const payload = await verifyToken(request, env);
   if (!payload || payload.role !== 'business') {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -577,7 +575,7 @@ router.get('/contracts/:id', async (request, env) => {
   }
 });
 
-router.put('/contracts/:id/rate', async (request, env) => {
+router.put('/api/contracts/:id/rate', async (request, env) => {
   const payload = await verifyToken(request, env);
   if (!payload || payload.role !== 'admin') {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -607,7 +605,7 @@ router.put('/contracts/:id/rate', async (request, env) => {
   }
 });
 
-router.get('/contracts/:id/export', async (request, env) => {
+router.get('/api/contracts/:id/export', async (request, env) => {
   const payload = await verifyToken(request, env);
   if (!payload || payload.role !== 'business') {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -657,7 +655,7 @@ router.get('/contracts/:id/export', async (request, env) => {
 });
 
 // Payments endpoints
-router.post('/payments', async (request, env) => {
+router.post('/api/payments', async (request, env) => {
   const payload = await verifyToken(request, env);
   if (!payload) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -700,7 +698,7 @@ router.post('/payments', async (request, env) => {
   }
 });
 
-router.put('/payments/:id/confirm', async (request, env) => {
+router.put('/api/payments/:id/confirm', async (request, env) => {
   const payload = await verifyToken(request, env);
   if (!payload || payload.role !== 'admin') {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -730,7 +728,7 @@ router.put('/payments/:id/confirm', async (request, env) => {
 });
 
 // Weekend requests endpoints
-router.post('/weekend-requests', async (request, env) => {
+router.post('/api/weekend-requests', async (request, env) => {
   const payload = await verifyToken(request, env);
   if (!payload || payload.role !== 'business') {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -763,7 +761,7 @@ router.post('/weekend-requests', async (request, env) => {
   }
 });
 
-router.get('/weekend-requests', async (request, env) => {
+router.get('/api/weekend-requests', async (request, env) => {
   const payload = await verifyToken(request, env);
   if (!payload || payload.role !== 'business') {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -790,7 +788,7 @@ router.get('/weekend-requests', async (request, env) => {
   }
 });
 
-router.delete('/weekend-requests/:id', async (request, env) => {
+router.delete('/api/weekend-requests/:id', async (request, env) => {
   const payload = await verifyToken(request, env);
   if (!payload || payload.role !== 'business') {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -818,7 +816,7 @@ router.delete('/weekend-requests/:id', async (request, env) => {
 });
 
 // Forgot password endpoint
-router.post('/auth/forgot-password', async (request, env) => {
+router.post('/api/auth/forgot-password', async (request, env) => {
   try {
     const { type, identifier } = await request.json();
     

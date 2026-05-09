@@ -10,7 +10,7 @@
   },
   "d1_databases": [
     {
-      "binding": "scratchsolid_db",
+      "binding": "DB",
       "database_name": "scratchsolid-db",
       "database_id": "0b0b6006-1b2d-4ab1-8909-dc684666e6d3"
     }
