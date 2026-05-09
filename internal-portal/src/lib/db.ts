@@ -15,8 +15,8 @@ export async function getDb(): Promise<D1Database | null> {
   try {
     // OpenNext on Workers: use getCloudflareContext
     const { env } = await getCloudflareContext({ async: true });
-    if (env?.DB) {
-      return env.DB as D1Database;
+    if (env?.scratchsolid_db) {
+      return env.scratchsolid_db as D1Database;
     }
   } catch (error) {
     console.error('Error getting database from OpenNext context', error);
