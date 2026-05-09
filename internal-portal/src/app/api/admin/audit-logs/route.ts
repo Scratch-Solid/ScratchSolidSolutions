@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, getAuditLogs, validateSession, logAuditEvent } from '@/lib/db';
+import { getDb, validateSession } from '@/lib/db';
 import { withRateLimit, withSecurityHeaders, withTracing, logRequest, getClientIP } from '@/lib/middleware';
+import { getAuditLogs, exportAuditLogsToCSV, exportAuditLogsToPDF, AuditLogFilter, logAuditEvent } from '@/lib/audit-logger';
+import { auth } from '@/lib/better-auth';
 
 export async function GET(request: NextRequest) {
   const traceId = withTracing(request);
@@ -37,27 +39,51 @@ export async function GET(request: NextRequest) {
 
     // Parse query parameters for filtering
     const { searchParams } = new URL(request.url);
-    const filters = {
-      user_id: searchParams.get('user_id') ? parseInt(searchParams.get('user_id')!) : undefined,
+    const exportFormat = searchParams.get('export');
+    const filters: AuditLogFilter = {
+      userId: searchParams.get('user_id') ? parseInt(searchParams.get('user_id')!) : undefined,
       action: searchParams.get('action') || undefined,
       resource: searchParams.get('resource') || undefined,
+      severity: searchParams.get('severity') as any || undefined,
+      startDate: searchParams.get('start_date') ? new Date(searchParams.get('start_date')!) : undefined,
+      endDate: searchParams.get('end_date') ? new Date(searchParams.get('end_date')!) : undefined,
       limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 100,
       offset: searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : 0
     };
 
+    // Handle export requests
+    if (exportFormat === 'csv') {
+      const csvContent = await exportAuditLogsToCSV(filters);
+      return new NextResponse(csvContent, {
+        headers: {
+          'Content-Type': 'text/csv',
+          'Content-Disposition': `attachment; filename="audit-logs-${Date.now()}.csv"`
+        }
+      });
+    }
+
+    if (exportFormat === 'pdf') {
+      const pdfBuffer = await exportAuditLogsToPDF(filters);
+      return new NextResponse(pdfBuffer as any, {
+        headers: {
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': `attachment; filename="audit-logs-${Date.now()}.pdf"`
+        }
+      });
+    }
+
     // Get audit logs
-    const auditLogs = await getAuditLogs(db, filters);
+    const auditLogs = await getAuditLogs(filters);
 
     // Log the access
-    await logAuditEvent(db, {
-      user_id: (session as any).id,
+    await logAuditEvent({
+      userId: (session as any).id,
       action: 'AUDIT_LOGS_VIEWED',
       resource: 'audit_logs',
-      ip_address: getClientIP(request),
-      user_agent: request.headers.get('user-agent') || '',
-      details: JSON.stringify({ filters, count: auditLogs.length }),
-      success: true,
-      trace_id: traceId
+      ipAddress: getClientIP(request),
+      userAgent: request.headers.get('user-agent') || '',
+      details: { filters, count: auditLogs.length },
+      severity: 'info'
     });
 
     const response = NextResponse.json({ 
@@ -69,15 +95,14 @@ export async function GET(request: NextRequest) {
     return withSecurityHeaders(response, traceId);
 
   } catch (error) {
-    await logAuditEvent(db, {
+    await logAuditEvent({
+      userId: 0,
       action: 'AUDIT_LOGS_FAILED',
       resource: 'audit_logs',
-      ip_address: getClientIP(request),
-      user_agent: request.headers.get('user-agent') || '',
-      details: JSON.stringify({ error: (error as Error).message }),
-      success: false,
-      error_message: (error as Error).message,
-      trace_id: traceId
+      ipAddress: getClientIP(request),
+      userAgent: request.headers.get('user-agent') || '',
+      details: { error: (error as Error).message },
+      severity: 'error'
     });
 
     const response = NextResponse.json({ error: 'Failed to fetch audit logs' }, { status: 500 });
