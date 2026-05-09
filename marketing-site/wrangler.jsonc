@@ -18,6 +18,10 @@
     {
       "pattern": "api.scratchsolidsolutions.org/*",
       "zone_name": "scratchsolidsolutions.org"
+    },
+    {
+      "pattern": "scratchsolidsolutions.org/*",
+      "zone_name": "scratchsolidsolutions.org"
     }
   ],
   "vars": {
