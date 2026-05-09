@@ -181,7 +181,7 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
       const discountAmt = specialDisc + promoDisc;
       const finalPrice = Math.max(0, baseline - discountAmt);
 
-      const res = await fetch('/api/quote', {
+      const res = await fetch('/api/quote-test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
