@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
 
 function generateRef(): string {
   const ts = Date.now().toString(36).toUpperCase();
@@ -10,8 +9,8 @@ function generateRef(): string {
 // Public POST: submit a quote request
 export async function POST(request: NextRequest) {
   try {
-    const db = await getDb();
-    if (!db) return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+    // Temporarily disable database to isolate module-level error
+    return NextResponse.json({ error: 'Database temporarily disabled for testing' }, { status: 500 });
 
     const body = await request.json() as {
       name?: string;
