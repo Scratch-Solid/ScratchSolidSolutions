@@ -3,7 +3,6 @@ import { getDb, validateSession } from '@/lib/db';
 import { sanitizeText, sanitizeEmail, sanitizePhone } from '@/lib/sanitization';
 import { validateEmail } from '@/lib/validation';
 import { findOrCreateContact, createEstimate } from '@/lib/zoho';
-import { withRateLimit, rateLimits } from '@/lib/middleware';
 
 function generateRef(): string {
   const ts = Date.now().toString(36).toUpperCase();
@@ -13,11 +12,6 @@ function generateRef(): string {
 
 // Public POST: submit a quote request
 export async function POST(request: NextRequest) {
-  const rateLimitResult = await withRateLimit(request, rateLimits.strict);
-  if (rateLimitResult && !rateLimitResult.success) {
-    return NextResponse.json({ error: 'Too many quote requests. Please try again later.' }, { status: 429 });
-  }
-
   try {
     const db = await getDb();
     if (!db) return NextResponse.json({ error: 'Database not available' }, { status: 500 });
