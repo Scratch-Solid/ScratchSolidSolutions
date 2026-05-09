@@ -500,3 +500,73 @@ export async function getUserLoginStats(db: D1Database, userId: number) {
   ).bind(userId).first();
   return result;
 }
+
+// 2FA functions
+export async function createTOTPSecret(db: D1Database, userId: number): Promise<string> {
+  const secret = crypto.randomBytes(20).toString('hex');
+  await db.prepare(
+    `UPDATE users SET totp_secret = ? WHERE id = ?`
+  ).bind(secret, userId).run();
+  return secret;
+}
+
+export async function enableTOTP(db: D1Database, userId: number, secret: string, backupCodes: string[]): Promise<void> {
+  await db.prepare(
+    `UPDATE users SET totp_secret = ?, totp_enabled = 1, backup_codes = ? WHERE id = ?`
+  ).bind(secret, JSON.stringify(backupCodes), userId).run();
+}
+
+export async function disableTOTP(db: D1Database, userId: number): Promise<void> {
+  await db.prepare(
+    `UPDATE users SET totp_secret = NULL, totp_enabled = 0, backup_codes = NULL WHERE id = ?`
+  ).bind(userId).run();
+}
+
+export async function getUserTOTPSecret(db: D1Database, userId: number): Promise<string | null> {
+  const result = await db.prepare(
+    `SELECT totp_secret FROM users WHERE id = ? AND totp_enabled = 1`
+  ).bind(userId).first();
+  return (result as any)?.totp_secret || null;
+}
+
+export async function isTOTPEnabled(db: D1Database, userId: number): Promise<boolean> {
+  const result = await db.prepare(
+    `SELECT totp_enabled FROM users WHERE id = ?`
+  ).bind(userId).first();
+  return (result as any)?.totp_enabled === 1;
+}
+
+export async function getBackupCodes(db: D1Database, userId: number): Promise<string[]> {
+  const result = await db.prepare(
+    `SELECT backup_codes FROM users WHERE id = ? AND totp_enabled = 1`
+  ).bind(userId).first();
+  if ((result as any)?.backup_codes) {
+    return JSON.parse((result as any).backup_codes);
+  }
+  return [];
+}
+
+export async function useBackupCode(db: D1Database, userId: number, code: string): Promise<boolean> {
+  const user = await db.prepare(
+    `SELECT backup_codes FROM users WHERE id = ? AND totp_enabled = 1`
+  ).bind(userId).first();
+
+  if (!user || !(user as any).backup_codes) {
+    return false;
+  }
+
+  const backupCodes = JSON.parse((user as any).backup_codes) as string[];
+  const codeIndex = backupCodes.indexOf(code);
+
+  if (codeIndex === -1) {
+    return false;
+  }
+
+  // Remove used backup code
+  backupCodes.splice(codeIndex, 1);
+  await db.prepare(
+    `UPDATE users SET backup_codes = ? WHERE id = ?`
+  ).bind(JSON.stringify(backupCodes), userId).run();
+
+  return true;
+}
