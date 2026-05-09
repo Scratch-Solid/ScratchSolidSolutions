@@ -16,5 +16,13 @@ database_id = "0b0b6006-1b2d-4ab1-8909-dc684666e6d3"
 ENVIRONMENT = "production"
 NEXT_PUBLIC_BASE_URL = "https://scratchsolidsolutions.org"
 NEXT_PUBLIC_API_URL = "https://api.scratchsolidsolutions.org/api"
-# JWT_SECRET must be set via: wrangler secret put JWT_SECRET
+
+# Secrets (must be set via: wrangler secret put <SECRET_NAME>)
+# Required secrets:
+# - JWT_SECRET
+# - CSRF_SECRET
+# - RESEND_API_KEY
+# - ZOHO_CLIENT_SECRET
+# - ZOHO_ORG_ID
+# - ZOHO_REFRESH_TOKEN
 

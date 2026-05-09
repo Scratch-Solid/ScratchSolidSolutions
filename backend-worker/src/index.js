@@ -197,7 +197,7 @@ function getCorsHeaders(request) {
 }
 
 // JWT utilities
-function createToken(userId, role) {
+function createToken(userId, role, env) {
   return jwt.sign(
     { sub: String(userId), role },
     env.JWT_SECRET,
@@ -205,7 +205,7 @@ function createToken(userId, role) {
   );
 }
 
-async function verifyToken(request) {
+async function verifyToken(request, env) {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) {
     return null;
@@ -307,7 +307,7 @@ router.post('/auth/signup', async (request, env) => {
       name, email, password, role, phone, address, business_name, business_info
     });
     
-    const token = createToken(userId, role);
+    const token = createToken(userId, role, env);
     
     return new Response(JSON.stringify({ 
       access_token: token, 
@@ -336,7 +336,7 @@ router.post('/auth/login', async (request, env) => {
       });
     }
     
-    const token = createToken(user.id, user.role);
+    const token = createToken(user.id, user.role, env);
     
     return new Response(JSON.stringify({ 
       access_token: token, 
@@ -355,7 +355,7 @@ router.post('/auth/login', async (request, env) => {
 
 // Get current user
 router.get('/auth/me', async (request, env) => {
-  const payload = await verifyToken(request);
+  const payload = await verifyToken(request, env);
   if (!payload) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
@@ -373,7 +373,7 @@ router.get('/auth/me', async (request, env) => {
 
 // Bookings endpoints
 router.post('/bookings', async (request, env) => {
-  const payload = await verifyToken(request);
+  const payload = await verifyToken(request, env);
   if (!payload) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
@@ -404,7 +404,7 @@ router.post('/bookings', async (request, env) => {
 });
 
 router.get('/bookings', async (request, env) => {
-  const payload = await verifyToken(request);
+  const payload = await verifyToken(request, env);
   if (!payload) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
@@ -425,7 +425,7 @@ router.get('/bookings', async (request, env) => {
 });
 
 router.delete('/bookings/:id', async (request, env) => {
-  const payload = await verifyToken(request);
+  const payload = await verifyToken(request, env);
   if (!payload) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
@@ -456,7 +456,7 @@ router.delete('/bookings/:id', async (request, env) => {
 
 // Templates endpoints
 router.post('/templates', async (request, env) => {
-  const payload = await verifyToken(request);
+  const payload = await verifyToken(request, env);
   if (!payload || payload.role !== 'admin') {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
@@ -488,7 +488,7 @@ router.post('/templates', async (request, env) => {
 });
 
 router.get('/templates', async (request, env) => {
-  const payload = await verifyToken(request);
+  const payload = await verifyToken(request, env);
   if (!payload) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
@@ -504,7 +504,7 @@ router.get('/templates', async (request, env) => {
 
 // Contracts endpoints
 router.post('/contracts', async (request, env) => {
-  const payload = await verifyToken(request);
+  const payload = await verifyToken(request, env);
   if (!payload || payload.role !== 'business') {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
@@ -542,7 +542,7 @@ router.post('/contracts', async (request, env) => {
 });
 
 router.get('/contracts/:id', async (request, env) => {
-  const payload = await verifyToken(request);
+  const payload = await verifyToken(request, env);
   if (!payload || payload.role !== 'business') {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
@@ -578,7 +578,7 @@ router.get('/contracts/:id', async (request, env) => {
 });
 
 router.put('/contracts/:id/rate', async (request, env) => {
-  const payload = await verifyToken(request);
+  const payload = await verifyToken(request, env);
   if (!payload || payload.role !== 'admin') {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
@@ -608,7 +608,7 @@ router.put('/contracts/:id/rate', async (request, env) => {
 });
 
 router.get('/contracts/:id/export', async (request, env) => {
-  const payload = await verifyToken(request);
+  const payload = await verifyToken(request, env);
   if (!payload || payload.role !== 'business') {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
@@ -658,7 +658,7 @@ router.get('/contracts/:id/export', async (request, env) => {
 
 // Payments endpoints
 router.post('/payments', async (request, env) => {
-  const payload = await verifyToken(request);
+  const payload = await verifyToken(request, env);
   if (!payload) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
@@ -701,7 +701,7 @@ router.post('/payments', async (request, env) => {
 });
 
 router.put('/payments/:id/confirm', async (request, env) => {
-  const payload = await verifyToken(request);
+  const payload = await verifyToken(request, env);
   if (!payload || payload.role !== 'admin') {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
@@ -731,7 +731,7 @@ router.put('/payments/:id/confirm', async (request, env) => {
 
 // Weekend requests endpoints
 router.post('/weekend-requests', async (request, env) => {
-  const payload = await verifyToken(request);
+  const payload = await verifyToken(request, env);
   if (!payload || payload.role !== 'business') {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
@@ -764,7 +764,7 @@ router.post('/weekend-requests', async (request, env) => {
 });
 
 router.get('/weekend-requests', async (request, env) => {
-  const payload = await verifyToken(request);
+  const payload = await verifyToken(request, env);
   if (!payload || payload.role !== 'business') {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
@@ -791,7 +791,7 @@ router.get('/weekend-requests', async (request, env) => {
 });
 
 router.delete('/weekend-requests/:id', async (request, env) => {
-  const payload = await verifyToken(request);
+  const payload = await verifyToken(request, env);
   if (!payload || payload.role !== 'business') {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
@@ -922,7 +922,7 @@ router.post('/auth/forgot-password', async (request, env) => {
 
 // Admin endpoints for weekend requests
 router.put('/weekend-requests/:id/assign', async (request, env) => {
-  const payload = await verifyToken(request);
+  const payload = await verifyToken(request, env);
   if (!payload || payload.role !== 'admin') {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
@@ -1077,43 +1077,9 @@ function generateRandomPassword() {
   return password;
 }
 
-async function hashPassword(password) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  return Array.from(new Uint8Array(hashBuffer))
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
-}
-
-// Helper functions
-function generateToken() {
-  const array = new Uint8Array(32);
-  crypto.getRandomValues(array);
-  return Array.from(array).map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-function generateRandomPassword() {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let password = '';
-  for (let i = 0; i < 12; i++) {
-    password += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return password;
-}
-
-async function hashPassword(password) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  return Array.from(new Uint8Array(hashBuffer))
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
-}
-
 // Business events endpoints
 router.post('/business-events', async (request, env) => {
-  const payload = await verifyToken(request);
+  const payload = await verifyToken(request, env);
   if (!payload || payload.role !== 'business') {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
@@ -1145,7 +1111,7 @@ router.post('/business-events', async (request, env) => {
 });
 
 router.get('/business-events', async (request, env) => {
-  const payload = await verifyToken(request);
+  const payload = await verifyToken(request, env);
   if (!payload || payload.role !== 'business') {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
@@ -1188,7 +1154,7 @@ router.get('/pricing', async (request, env) => {
 });
 
 router.post('/pricing', async (request, env) => {
-  const payload = await verifyToken(request);
+  const payload = await verifyToken(request, env);
   if (!payload || payload.role !== 'admin') {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
