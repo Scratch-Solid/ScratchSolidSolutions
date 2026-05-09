@@ -47,8 +47,19 @@ export async function POST(request: NextRequest) {
       ).bind((user as any).id, resetToken, resetTokenExpiry.toISOString()).run();
 
       // Send email with reset link
-      // TODO: Implement email sending service
-      // const resetLink = `${process.env.NEXT_PUBLIC_BASE_URL}/auth/reset-password?token=${resetToken}`;
+      const resetLink = `${process.env.NEXT_PUBLIC_PORTAL_URL || 'https://portal.scratchsolidsolutions.org'}/auth/reset-password?token=${resetToken}`;
+      
+      // For development, return the token in response
+      if (process.env.NODE_ENV === 'development') {
+        const response = NextResponse.json({ 
+          message: 'If an account exists with this email, a password reset link has been sent.',
+          resetToken: resetToken // Only in development
+        });
+        logRequest(request, response, Date.now() - startTime, traceId);
+        return withSecurityHeaders(response, traceId);
+      }
+      
+      // TODO: Implement email sending service for production
       // await sendPasswordResetEmail(sanitizedEmail, resetLink);
       
       const response = NextResponse.json({ 
