@@ -1,5 +1,6 @@
 // Environment Variable Validation
 // Ensures all required environment variables are set before the application starts
+// Deployment fix: Removed OpenNext import issue
 
 interface EnvConfig {
   JWT_SECRET: string;
