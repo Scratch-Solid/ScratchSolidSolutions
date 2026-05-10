@@ -90,15 +90,15 @@ export default function EmployeeConsentPage() {
     setError("");
 
     // Validate required fields
-    if (!formData.positionAppliedFor) {
+    if (!formData.positionAppliedFor.trim()) {
       newFieldErrors.positionAppliedFor = "Position applied for is required";
     }
-    if (!formData.fullName) {
+    if (!formData.fullName.trim()) {
       newFieldErrors.fullName = "Full name is required";
     }
 
     // Validate ID/Passport number
-    if (!formData.idPassportNumber) {
+    if (!formData.idPassportNumber.trim()) {
       newFieldErrors.idPassportNumber = "ID or passport number is required";
     } else {
       const idPassportResult = formData.idPassportNumber.replace(/\D/g, '').length === 13
@@ -110,7 +110,7 @@ export default function EmployeeConsentPage() {
     }
 
     // Validate phone number
-    if (!formData.contactNumber) {
+    if (!formData.contactNumber.trim()) {
       newFieldErrors.contactNumber = "Contact number is required";
     } else {
       const phoneResult = validatePhone(formData.contactNumber);
@@ -120,13 +120,13 @@ export default function EmployeeConsentPage() {
     }
 
     if (!formData.applicantSignature) {
-      setError("Please confirm your signature by ticking the checkbox");
-      return;
+      newFieldErrors.applicantSignature = "Please confirm your signature.";
     }
 
     if (Object.keys(newFieldErrors).length > 0) {
       setFieldErrors(newFieldErrors);
-      setError("Please fix the errors above");
+      const summary = Object.values(newFieldErrors).join(" · ");
+      setError(summary);
       return;
     }
 
@@ -159,10 +159,10 @@ export default function EmployeeConsentPage() {
         router.push("/auth/consent-submitted");
       } else {
         const data = await response.json() as { error?: string };
-        setError(data.error || "Failed to submit consent. Please try again.");
+        setError(data.error || "Submission failed. Please review highlighted fields and try again.");
       }
     } catch (err) {
-      setError("An error occurred. Please try again.");
+      setError("Network or server error. Please try again.");
     }
   };
 
@@ -171,9 +171,9 @@ export default function EmployeeConsentPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
+    <div className="min-h-screen flex items-center justify-center px-4 py-10" style={{ background: 'linear-gradient(135deg, #f8fafc, #eef3ff)' }}>
       {/* Glassified consent form */}
-      <div className="glass-panel max-w-2xl w-full">
+      <div className="glass-panel max-w-3xl w-full p-8" style={{ boxShadow: '0 20px 50px rgba(9,23,42,0.12)' }}>
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--text-h)' }}>Scratch Solid Solutions</h1>
           <p className="text-lg font-medium" style={{ color: 'var(--text)' }}>
@@ -331,6 +331,7 @@ export default function EmployeeConsentPage() {
                   Applicant Signature (Tick to confirm signature)
                 </label>
                 <p className="text-xs text-gray-600">By ticking this box, I confirm my electronic signature</p>
+                {fieldErrors.applicantSignature && <p className="text-red-500 text-xs mt-1">{fieldErrors.applicantSignature}</p>}
               </div>
             </div>
 
