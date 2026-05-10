@@ -34,10 +34,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid service' }, { status: 400 });
     }
 
-    // Generate reference number
-    const ts = Date.now().toString(36).toUpperCase();
-    const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
-    const refNumber = `SSQ-${ts}-${rand}`;
+    // Generate reference number (using fixed value for testing)
+    const refNumber = `SSQ-TEST-${Date.now()}`;
 
     // Save quote request to DB
     const result = await db.prepare(
