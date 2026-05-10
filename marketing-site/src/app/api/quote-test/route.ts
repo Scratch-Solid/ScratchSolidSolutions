@@ -50,15 +50,16 @@ export async function POST(request: NextRequest) {
     // Save quote request to DB
     const result = await db.prepare(
       `INSERT INTO quote_requests
-        (ref_number, name, email, phone, service_id,
+        (ref_number, name, email, phone, service_id, service_name,
          baseline_price, final_price, status, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', datetime('now'), datetime('now'))`
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', datetime('now'), datetime('now'))`
     ).bind(
       refNumber,
       sanitizedName,
       sanitizedEmail,
       sanitizedPhone,
       service_id,
+      'Test Service',
       baseline_price,
       final_price
     ).run();
