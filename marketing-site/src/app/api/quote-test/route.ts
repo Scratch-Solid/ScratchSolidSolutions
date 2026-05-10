@@ -16,11 +16,15 @@ export async function POST(request: NextRequest) {
       quantity?: number;
       baseline_price?: number;
       final_price?: number;
+      promo_code?: string;
+      discount_type?: string;
+      discount_value?: number;
+      discount_amount?: number;
     };
 
     const {
       name, email, phone, service_id, quantity,
-      baseline_price, final_price
+      baseline_price, final_price, promo_code, discount_type, discount_value, discount_amount
     } = body;
 
     // Validate required fields
@@ -47,8 +51,9 @@ export async function POST(request: NextRequest) {
       const result = await db.prepare(
         `INSERT INTO quote_requests
           (ref_number, name, email, phone, service_id, service_name, quantity,
-           baseline_price, final_price, status, created_at, updated_at, client_type)
-         VALUES (?, ?, ?, ?, ?, 'Test Service', ?, ?, ?, 'pending', datetime('now'), datetime('now'), 'individual')`
+           baseline_price, final_price, promo_code, discount_type, discount_value, discount_amount,
+           status, created_at, updated_at, client_type)
+         VALUES (?, ?, ?, ?, ?, 'Test Service', ?, ?, ?, ?, ?, ?, ?, ?, 'pending', datetime('now'), datetime('now'), 'individual')`
       ).bind(
         refNumber,
         sanitizedName,
@@ -57,7 +62,11 @@ export async function POST(request: NextRequest) {
         service_id,
         quantity || 1,
         baseline_price,
-        final_price
+        final_price,
+        promo_code || '',
+        discount_type || '',
+        discount_value || 0,
+        discount_amount || 0
       ).run();
 
       const quoteId = result.meta.last_row_id;
@@ -73,6 +82,10 @@ export async function POST(request: NextRequest) {
         quantity: quantity || 1,
         baseline_price,
         final_price,
+        promo_code: promo_code || '',
+        discount_type: discount_type || '',
+        discount_value: discount_value || 0,
+        discount_amount: discount_amount || 0,
       }, { status: 201 });
     } catch (dbError) {
       console.error('Database error during INSERT:', dbError);
