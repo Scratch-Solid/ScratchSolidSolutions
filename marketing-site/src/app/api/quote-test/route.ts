@@ -17,11 +17,20 @@ export async function POST(request: NextRequest) {
       email?: string;
       phone?: string;
       service_id?: number;
+      service_name?: string;
+      quantity?: number;
       baseline_price?: number;
+      promo_code?: string;
+      discount_type?: string;
+      discount_value?: number;
+      discount_amount?: number;
       final_price?: number;
     };
 
-    const { name, email, phone, service_id, baseline_price, final_price } = body;
+    const {
+      name, email, phone, service_id, service_name, quantity,
+      baseline_price, promo_code, discount_type, discount_value, discount_amount, final_price
+    } = body;
 
     // Validate required fields
     if (!name || !service_id || baseline_price === undefined || final_price === undefined) {
@@ -32,6 +41,8 @@ export async function POST(request: NextRequest) {
     const sanitizedName = name.trim();
     const sanitizedEmail = email ? email.trim() : '';
     const sanitizedPhone = phone ? phone.trim() : '';
+    const sanitizedServiceName = service_name ? service_name : '';
+    const sanitizedPromoCode = promo_code ? promo_code.trim().toUpperCase() : '';
 
     // Validate service_id exists
     const service = await db.prepare('SELECT id FROM services WHERE id = ? AND is_active = 1').bind(service_id).first();
@@ -47,17 +58,23 @@ export async function POST(request: NextRequest) {
     // Save quote request to DB
     const result = await db.prepare(
       `INSERT INTO quote_requests
-        (ref_number, name, email, phone, service_id, service_name,
-         baseline_price, final_price, status, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', datetime('now'), datetime('now'))`
+        (ref_number, name, email, phone, service_id, service_name, quantity,
+         baseline_price, promo_code, discount_type, discount_value, discount_amount,
+         final_price, status, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', datetime('now'), datetime('now'))`
     ).bind(
       refNumber,
       sanitizedName,
       sanitizedEmail,
       sanitizedPhone,
       service_id,
-      'Test Service',
+      sanitizedServiceName,
+      quantity || 1,
       baseline_price,
+      sanitizedPromoCode,
+      discount_type || '',
+      discount_value || 0,
+      discount_amount || 0,
       final_price
     ).run();
 
@@ -67,10 +84,16 @@ export async function POST(request: NextRequest) {
       success: true,
       id: quoteId,
       ref_number: refNumber,
+      zoho_estimate_number: '',
       name: sanitizedName,
       email: sanitizedEmail,
       phone: sanitizedPhone,
+      service_name: sanitizedServiceName,
       baseline_price,
+      promo_code: sanitizedPromoCode,
+      discount_type: discount_type || '',
+      discount_value: discount_value || 0,
+      discount_amount: discount_amount || 0,
       final_price,
     }, { status: 201 });
   } catch (error) {
