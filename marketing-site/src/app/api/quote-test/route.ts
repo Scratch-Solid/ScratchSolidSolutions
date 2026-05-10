@@ -10,15 +10,13 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json() as {
       name?: string;
-      email?: string;
-      phone?: string;
       service_id?: number;
       baseline_price?: number;
       final_price?: number;
     };
 
     const {
-      name, email, phone, service_id,
+      name, service_id,
       baseline_price, final_price
     } = body;
 
@@ -29,8 +27,6 @@ export async function POST(request: NextRequest) {
 
     // Simple sanitization
     const sanitizedName = name.trim();
-    const sanitizedEmail = email ? email.trim() : '';
-    const sanitizedPhone = phone ? phone.trim() : '';
 
     // Generate reference number
     const ts = Date.now().toString(36).toUpperCase();
@@ -42,14 +38,12 @@ export async function POST(request: NextRequest) {
     // Save quote request to DB
     const result = await db.prepare(
       `INSERT INTO quote_requests
-        (ref_number, name, email, phone, service_id, service_name,
+        (ref_number, name, service_id, service_name,
          baseline_price, final_price, status, created_at, updated_at, client_type)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, 'individual')`
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, 'individual')`
     ).bind(
       refNumber,
       sanitizedName,
-      sanitizedEmail,
-      sanitizedPhone,
       service_id,
       'Test Service',
       baseline_price,
@@ -66,8 +60,6 @@ export async function POST(request: NextRequest) {
       ref_number: refNumber,
       zoho_estimate_number: '',
       name: sanitizedName,
-      email: sanitizedEmail,
-      phone: sanitizedPhone,
       baseline_price,
       final_price,
     }, { status: 201 });
