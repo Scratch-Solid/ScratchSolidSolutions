@@ -8,10 +8,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Database not available' }, { status: 500 });
     }
 
-    // Simple test query to verify database connection works
-    const test = await db.prepare('SELECT 1 as test').first();
-    console.log('Database test result:', test);
-
     const body = await request.json() as {
       name?: string;
       email?: string;
