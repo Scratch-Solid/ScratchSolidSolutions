@@ -28,6 +28,12 @@ export async function POST(request: NextRequest) {
     // Simple sanitization
     const sanitizedName = name.trim();
 
+    // Validate service_id exists
+    const service = await db.prepare('SELECT id FROM services WHERE id = ? AND is_active = 1').bind(service_id).first();
+    if (!service) {
+      return NextResponse.json({ error: 'Invalid service' }, { status: 400 });
+    }
+
     // Generate reference number
     const ts = Date.now().toString(36).toUpperCase();
     const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
