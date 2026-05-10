@@ -41,12 +41,14 @@ export async function POST(request: NextRequest) {
     const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
     const refNumber = `SSQ-${ts}-${rand}`;
 
+    const now = new Date().toISOString();
+
     // Save quote request to DB
     const result = await db.prepare(
       `INSERT INTO quote_requests
         (ref_number, name, email, phone, service_id, service_name,
          baseline_price, final_price, status, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', datetime('now'), datetime('now'))`
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)`
     ).bind(
       refNumber,
       sanitizedName,
@@ -55,7 +57,9 @@ export async function POST(request: NextRequest) {
       service_id,
       'Test Service',
       baseline_price,
-      final_price
+      final_price,
+      now,
+      now
     ).run();
 
     const quoteId = result.meta.last_row_id;
