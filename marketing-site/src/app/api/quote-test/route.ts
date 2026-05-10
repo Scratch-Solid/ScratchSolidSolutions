@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
           (ref_number, name, email, phone, service_id, service_name, quantity,
            baseline_price, final_price, promo_code, discount_type, discount_value, discount_amount,
            status, created_at, updated_at, client_type)
-         VALUES (?, ?, ?, ?, ?, 'Test Service', ?, ?, ?, ?, ?, ?, ?, ?, 'pending', datetime('now'), datetime('now'), 'individual')`
+         VALUES (?, ?, ?, ?, ?, 'Test Service', ?, ?, ?, ?, ?, ?, ?, 'pending', datetime('now'), datetime('now'), 'individual')`
       ).bind(
         refNumber,
         sanitizedName,
