@@ -47,8 +47,8 @@ export async function POST(request: NextRequest) {
     const result = await db.prepare(
       `INSERT INTO quote_requests
         (ref_number, name, email, phone, service_id, service_name,
-         baseline_price, final_price, status, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)`
+         baseline_price, final_price, status, created_at, updated_at, client_type)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, 'individual')`
     ).bind(
       refNumber,
       sanitizedName,
