@@ -14,6 +14,7 @@ interface Statistics {
   jobs_completed: number;
   average_rating: number;
   active_cleaners: number;
+  reviews_count?: number;
 }
 
 interface Leader {
@@ -68,20 +69,22 @@ export default function AboutPage() {
   return (
     <>
     <SiteNav current="about" />
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-white py-8 sm:py-16 px-2 sm:px-4 font-sans animate-fade-in pt-20">
-      <div className="max-w-2xl w-full bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20 p-6 sm:p-10 relative">
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0">
-          <img
-            src="/scratchsolid-logo.jpg"
-            alt="Scratch Solid Logo Background"
-            width={300}
-            height={300}
-            className="opacity-10 w-72 h-72 sm:w-96 sm:h-96 object-contain"
-            aria-hidden="true"
-          />
-        </div>
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-blue-700 mb-4 sm:mb-6 text-center drop-shadow-lg">About Us</h1>
-        
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-white to-blue-50 py-10 sm:py-16 px-3 sm:px-6 font-sans animate-fade-in pt-20">
+      <div className="max-w-5xl w-full space-y-8">
+        <div className="glass-panel relative overflow-hidden border border-white/60 shadow-2xl">
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0">
+            <img
+              src="/scratchsolid-logo.jpg"
+              alt="Scratch Solid Logo Background"
+              width={280}
+              height={280}
+              className="opacity-10 w-64 h-64 sm:w-80 sm:h-80 object-contain"
+              aria-hidden="true"
+            />
+          </div>
+          <div className="relative z-10 p-6 sm:p-10">
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-blue-800 mb-4 sm:mb-6 text-center drop-shadow-lg">About Us</h1>
+            
         {loading ? (
           <div className="text-center text-gray-500 relative z-10">Loading...</div>
         ) : (
@@ -90,40 +93,48 @@ export default function AboutPage() {
               <p key={i} className="text-base sm:text-lg text-zinc-800 mb-4 sm:mb-6 text-center">{item.content}</p>
             ))}
             
-            <div className="my-6 sm:my-8">
+            <div className="my-6 sm:my-8 grid grid-cols-1 md:grid-cols-2 gap-6">
               {getSectionContent('mission').map((item, i) => (
-                <div key={i}>
-                  <h2 className="text-xl sm:text-2xl font-bold text-blue-700 mb-2 text-center">{item.title}</h2>
-                  <p className="text-zinc-800 text-center mb-3 sm:mb-4 text-sm sm:text-base">{item.content}</p>
+                <div key={i} className="glass-card h-full">
+                  <h2 className="text-xl sm:text-2xl font-bold text-blue-800 mb-2 text-center">{item.title}</h2>
+                  <p className="text-zinc-800 text-center mb-3 sm:mb-4 text-sm sm:text-base leading-relaxed">{item.content}</p>
                 </div>
               ))}
               {getSectionContent('vision').map((item, i) => (
-                <div key={i}>
-                  <h2 className="text-xl sm:text-2xl font-bold text-blue-700 mb-2 text-center">{item.title}</h2>
-                  <p className="text-zinc-800 text-center mb-3 sm:mb-4 text-sm sm:text-base">{item.content}</p>
+                <div key={i} className="glass-card h-full">
+                  <h2 className="text-xl sm:text-2xl font-bold text-blue-800 mb-2 text-center">{item.title}</h2>
+                  <p className="text-zinc-800 text-center mb-3 sm:mb-4 text-sm sm:text-base leading-relaxed">{item.content}</p>
                 </div>
               ))}
               {getSectionContent('values').map((item, i) => (
-                <div key={i}>
-                  <h2 className="text-xl sm:text-2xl font-bold text-blue-700 mb-2 text-center">{item.title}</h2>
-                  <p className="text-zinc-800 text-center mb-3 sm:mb-4 text-sm sm:text-base whitespace-pre-line">{item.content}</p>
+                <div key={i} className="glass-card h-full">
+                  <h2 className="text-xl sm:text-2xl font-bold text-blue-800 mb-2 text-center">{item.title}</h2>
+                  <p className="text-zinc-800 text-center mb-3 sm:mb-4 text-sm sm:text-base whitespace-pre-line leading-relaxed">{item.content}</p>
                 </div>
               ))}
             </div>
             
-            {leaders.length > 0 && (
-              <div className="my-6 sm:my-8">
-                <h2 className="text-xl sm:text-2xl font-bold text-blue-700 mb-1 text-center">Our Leadership Team</h2>
-                <p className="text-xs text-gray-400 text-center mb-4">Tap a card to learn more</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="my-6 sm:my-8">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-xl sm:text-2xl font-bold text-blue-800">Our Leadership Team</h2>
+                {leaders.length === 0 && (
+                  <span className="text-xs text-gray-500">Add leaders from the admin dashboard to showcase your team.</span>
+                )}
+              </div>
+              {leaders.length === 0 ? (
+                <div className="glass-card text-center text-sm text-gray-500">
+                  No leaders yet. Add your leadership profiles in the admin dashboard to display them here.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {leaders.map((leader, index) => (
                     <div
                       key={leader.name + index}
-                      className="cursor-pointer"
-                      style={{ perspective: '1000px', height: '220px' }}
+                      className="glass-card cursor-pointer h-full"
                       onClick={() => toggleFlip(index)}
                       role="button"
                       aria-label={`Flip card for ${leader.name}`}
+                      style={{ perspective: '1000px' }}
                     >
                       <div
                         style={{
@@ -132,13 +143,13 @@ export default function AboutPage() {
                           transition: 'transform 0.55s ease',
                           position: 'relative',
                           width: '100%',
-                          height: '100%',
+                          minHeight: '240px',
                         }}
                       >
                         {/* Front */}
                         <div
                           style={{ backfaceVisibility: 'hidden', position: 'absolute', inset: 0 }}
-                          className="bg-blue-50 rounded-xl p-4 text-center flex flex-col items-center justify-center border-2 border-blue-100"
+                          className="bg-white/85 rounded-xl p-5 text-center flex flex-col items-center justify-center border border-blue-100"
                         >
                           {leader.image_url ? (
                             <img
@@ -147,11 +158,11 @@ export default function AboutPage() {
                               className="w-20 h-20 rounded-full mx-auto mb-3 object-cover border-2 border-blue-200 shadow"
                             />
                           ) : (
-                            <div className="w-20 h-20 rounded-full mx-auto mb-3 bg-blue-200 flex items-center justify-center text-3xl text-blue-600 font-bold">
+                            <div className="w-20 h-20 rounded-full mx-auto mb-3 bg-blue-100 flex items-center justify-center text-3xl text-blue-700 font-bold">
                               {leader.name.charAt(0)}
                             </div>
                           )}
-                          <h3 className="font-bold text-blue-700 text-base">{leader.name}</h3>
+                          <h3 className="font-bold text-blue-800 text-base">{leader.name}</h3>
                           <p className="text-sm text-gray-500 mt-1">{leader.title}</p>
                           <p className="text-[10px] text-gray-400 mt-3">Tap to see bio</p>
                         </div>
@@ -163,48 +174,49 @@ export default function AboutPage() {
                             position: 'absolute',
                             inset: 0,
                           }}
-                          className="bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl p-5 text-center flex flex-col items-center justify-center"
+                          className="bg-gradient-to-br from-blue-700 to-blue-500 rounded-xl p-5 text-center flex flex-col items-center justify-center text-white"
                         >
-                          <h3 className="font-bold text-white text-base mb-1">{leader.name}</h3>
-                          <p className="text-blue-200 text-xs mb-3">{leader.title}</p>
+                          <h3 className="font-bold text-base mb-1">{leader.name}</h3>
+                          <p className="text-blue-100 text-xs mb-3">{leader.title}</p>
                           <p className="text-white text-xs leading-relaxed line-clamp-6">
                             {leader.description || 'No bio available.'}
                           </p>
-                          <p className="text-blue-300 text-[10px] mt-3">Tap to flip back</p>
+                          <p className="text-blue-200 text-[10px] mt-3">Tap to flip back</p>
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
             
             {statistics && (
               <div className="my-6 sm:my-8">
-                <h2 className="text-xl sm:text-2xl font-bold text-blue-700 mb-4 text-center">By the Numbers</h2>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-blue-600 rounded-xl p-4 text-center text-white">
-                    <p className="text-3xl font-extrabold">{statistics.clients_serviced}</p>
-                    <p className="text-sm mt-1 opacity-90">Clients Serviced</p>
+                <h2 className="text-xl sm:text-2xl font-bold text-blue-800 mb-4 text-center">By the Numbers</h2>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="glass-card text-center">
+                    <p className="text-3xl font-extrabold text-blue-800">{statistics.clients_serviced}</p>
+                    <p className="text-sm mt-1 text-gray-600">Clients Serviced</p>
                   </div>
-                  <div className="bg-blue-600 rounded-xl p-4 text-center text-white">
-                    <p className="text-3xl font-extrabold">{statistics.jobs_completed}</p>
-                    <p className="text-sm mt-1 opacity-90">Jobs Completed</p>
+                  <div className="glass-card text-center">
+                    <p className="text-3xl font-extrabold text-blue-800">{statistics.jobs_completed}</p>
+                    <p className="text-sm mt-1 text-gray-600">Jobs Completed</p>
                   </div>
-                  <div className="bg-blue-600 rounded-xl p-4 text-center text-white">
-                    <p className="text-3xl font-extrabold">{statistics.average_rating > 0 ? `${statistics.average_rating}★` : 'N/A'}</p>
-                    <p className="text-sm mt-1 opacity-90">Average Rating</p>
+                  <div className="glass-card text-center">
+                    <p className="text-3xl font-extrabold text-blue-800">{statistics.average_rating > 0 ? `${statistics.average_rating}★` : 'N/A'}</p>
+                    <p className="text-sm mt-1 text-gray-600">Average Rating</p>
                   </div>
-                  <div className="bg-blue-600 rounded-xl p-4 text-center text-white">
-                    <p className="text-3xl font-extrabold">{statistics.active_cleaners}</p>
-                    <p className="text-sm mt-1 opacity-90">Active Cleaners</p>
+                  <div className="glass-card text-center">
+                    <p className="text-3xl font-extrabold text-blue-800">{statistics.reviews_count ?? 0}</p>
+                    <p className="text-sm mt-1 text-gray-600">Reviews Received</p>
                   </div>
                 </div>
               </div>
             )}
           </div>
         )}
-        
+          </div>
+        </div>
       </div>
     </div>
     </>
