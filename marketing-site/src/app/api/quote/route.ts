@@ -8,10 +8,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Database not available' }, { status: 500 });
     }
 
-    // Simple test query to verify database connection works
-    const test = await db.prepare('SELECT 1 as test').first();
-    console.log('Database test result:', test);
-
     const body = await request.json() as {
       name?: string;
       email?: string;
@@ -78,8 +74,8 @@ export async function POST(request: NextRequest) {
       `INSERT INTO quote_requests
         (ref_number, name, email, phone, service_id, service_name, quantity,
          baseline_price, promo_code, discount_type, discount_value, discount_amount,
-         final_price, status, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', datetime('now'), datetime('now'))`
+         final_price, status, created_at, updated_at, client_type)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', datetime('now'), datetime('now'), 'individual')`
     ).bind(
       refNumber,
       sanitizedName, sanitizedEmail, sanitizedPhone,
