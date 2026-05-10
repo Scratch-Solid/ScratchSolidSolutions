@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
     const refNumber = `SSQ-${ts}-${rand}`;
 
-    const now = new Date().toISOString();
+    const now = new Date().toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, '');
 
     // Save quote request to DB
     const result = await db.prepare(
