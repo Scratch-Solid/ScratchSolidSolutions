@@ -26,10 +26,10 @@ function LoginContent() {
     setError("");
 
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch('/api/auth/login-better-auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ email: username, password })
       });
 
       const data = await res.json() as { token?: string; role?: string; username?: string; user_id?: string; paysheet_code?: string; error?: string };
