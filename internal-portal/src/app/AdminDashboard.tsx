@@ -533,19 +533,30 @@ export default function AdminDashboard() {
 }
 
 function ContentManagement() {
+  const [mode, setMode] = useState<'static' | 'leaders' | 'ai-bot'>('static');
   const [contentType, setContentType] = useState<'contact' | 'privacy' | 'terms' | 'services' | 'about' | 'indemnity' | 'consent-form' | 'contract'>('contact');
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [formData, setFormData] = useState<any>({});
 
+  const [leaders, setLeaders] = useState<any[]>([]);
+  const [leaderForm, setLeaderForm] = useState<any>({ id: null, name: '', title: '', description: '', image_url: '', display_order: 0, active: true });
+
+  const [aiItems, setAiItems] = useState<any[]>([]);
+  const [aiForm, setAiForm] = useState<any>({ id: null, question: '', response: '', category: '' });
+
   useEffect(() => {
-    fetchContent();
-  }, [contentType]);
+    if (mode === 'static') fetchContent();
+    if (mode === 'leaders') fetchLeaders();
+    if (mode === 'ai-bot') fetchAi();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contentType, mode]);
 
   const fetchContent = async () => {
     setLoading(true);
     try {
+      if (mode !== 'static') return;
       if (contentType === 'consent-form') {
         const token = localStorage.getItem('authToken');
         const response = await fetch('/api/admin/consent-form', {
@@ -579,209 +590,226 @@ function ContentManagement() {
     }
   };
 
-  const handleSave = async () => {
+  const fetchLeaders = async () => {
     setLoading(true);
     try {
-      if (contentType === 'consent-form') {
-        const token = localStorage.getItem('authToken');
-        const response = await fetch('/api/admin/consent-form', {
-          method: formData.id ? 'PUT' : 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            id: formData.id,
-            title: formData.title,
-            consent_text: formData.consent_text,
-            background_checks: formData.background_checks,
-            acknowledgments: formData.acknowledgments,
-            witness_name: formData.witness_name
-          })
-        });
-        if (response.ok) {
-          setMessage('Consent form updated successfully');
-          setTimeout(() => setMessage(''), 3000);
-        } else {
-          setMessage('Failed to update consent form');
-        }
-      } else if (contentType === 'contract') {
-        const token = localStorage.getItem('authToken');
-        const response = await fetch('/api/admin/contract-content', {
-          method: formData.id ? 'PUT' : 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            id: formData.id,
-            title: formData.title,
-            contract_text: formData.contract_text,
-            terms: formData.terms,
-            company_name: formData.company_name
-          })
-        });
-        if (response.ok) {
-          setMessage('Contract updated successfully');
-          setTimeout(() => setMessage(''), 3000);
-        } else {
-          setMessage('Failed to update contract');
-        }
-      } else {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://scratchsolidsolutions.org';
-        const response = await fetch(`${apiUrl}/api/content?type=${contentType}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ content })
-        });
-        if (response.ok) {
-          setMessage('Content updated successfully');
-          setTimeout(() => setMessage(''), 3000);
-        } else {
-          setMessage('Failed to update content');
-        }
+      const token = localStorage.getItem('authToken');
+      const res = await fetch('/api/leaders', { headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok) {
+        setLeaders(await res.json());
       }
-    } catch (error) {
-      setMessage('Failed to update content');
+    } catch (err) {
+      setMessage('Failed to load leaders');
     } finally {
       setLoading(false);
     }
   };
 
+  const fetchAi = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('authToken');
+      const res = await fetch('/api/ai-responses', { headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok) setAiItems(await res.json());
+    } catch (err) {
+      setMessage('Failed to load bot content');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    setLoading(true);
+    try {
+      if (mode === 'static') {
+        if (contentType === 'consent-form') {
+          const token = localStorage.getItem('authToken');
+          const response = await fetch('/api/admin/consent-form', {
+            method: formData.id ? 'PUT' : 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              title: formData.title,
+              content: formData.content
+            })
+          });
+          if (response.ok) {
+            setMessage('Saved');
+            fetchContent();
+          } else {
+            setMessage('Save failed');
+          }
+        } else if (contentType === 'contract') {
+          const token = localStorage.getItem('authToken');
+          const response = await fetch('/api/admin/contract-content', {
+            method: formData.id ? 'PUT' : 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              title: formData.title,
+              body: formData.body,
+              version: formData.version || 'v1',
+            })
+          });
+          if (response.ok) {
+            setMessage('Saved');
+            fetchContent();
+          } else {
+            setMessage('Save failed');
+          }
+        } else {
+          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://scratchsolidsolutions.org';
+          const response = await fetch(`${apiUrl}/api/content?type=${contentType}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content })
+          });
+          if (response.ok) setMessage('Saved');
+          else setMessage('Save failed');
+        }
+      } else if (mode === 'leaders') {
+        const token = localStorage.getItem('authToken');
+        const method = leaderForm.id ? 'PUT' : 'POST';
+        const url = leaderForm.id ? '/api/leaders' : '/api/leaders';
+        const res = await fetch(url, {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            id: leaderForm.id,
+            name: leaderForm.name,
+            title: leaderForm.title,
+            description: leaderForm.description,
+            image_url: leaderForm.image_url,
+            display_order: leaderForm.display_order ?? 0,
+            active: leaderForm.active,
+          })
+        });
+        if (res.ok) {
+          setMessage('Leader saved');
+          setLeaderForm({ id: null, name: '', title: '', description: '', image_url: '', display_order: 0, active: true });
+          fetchLeaders();
+        } else {
+          setMessage('Leader save failed');
+        }
+      } else if (mode === 'ai-bot') {
+        const token = localStorage.getItem('authToken');
+        const method = aiForm.id ? 'PUT' : 'POST';
+        const url = aiForm.id ? `/api/ai-responses/${aiForm.id}` : '/api/ai-responses';
+        const res = await fetch(url, {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            question: aiForm.question,
+            response: aiForm.response,
+            category: aiForm.category,
+          })
+        });
+        if (res.ok) {
+          setMessage('Saved');
+          setAiForm({ id: null, question: '', response: '', category: '' });
+          fetchAi();
+        } else {
+          setMessage('Save failed');
+        }
+      }
+    } catch (error) {
+      setMessage('Action failed');
+    } finally {
+      setLoading(false);
+      setTimeout(() => setMessage(''), 2500);
+    }
+  };
+
+  const handleDeleteLeader = async (id: number) => {
+    const token = localStorage.getItem('authToken');
+    await fetch(`/api/leaders?id=${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+    fetchLeaders();
+  };
+
+  const handleDeleteAi = async (id: number) => {
+    const token = localStorage.getItem('authToken');
+    await fetch(`/api/ai-responses/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+    fetchAi();
+  };
+
+  const handleUpload = async (file: File) => {
+    const token = localStorage.getItem('authToken');
+    const formDataUpload = new FormData();
+    formDataUpload.append('file', file);
+    const res = await fetch('/api/upload', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formDataUpload
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setLeaderForm((prev: any) => ({ ...prev, image_url: data.url }));
+      setMessage('Image uploaded');
+    } else {
+      setMessage('Upload failed');
+    }
+    setTimeout(() => setMessage(''), 2000);
+  };
+
   return (
-    <div className="glass-card">
-      <h3 className="font-bold text-lg mb-4">Content Management</h3>
-      
-      <div className="mb-4">
-        <label className="block text-sm font-medium mb-2">Content Type</label>
-        <select
-          value={contentType}
-          onChange={(e) => setContentType(e.target.value as any)}
-          className="w-full px-3 py-2 border rounded"
-        >
-          <option value="contact">Contact Information</option>
-          <option value="privacy">Privacy Policy</option>
-          <option value="terms">Terms of Service</option>
-          <option value="services">Services</option>
-          <option value="about">About Us</option>
-          <option value="indemnity">Indemnity Form</option>
-          <option value="consent-form">Employee Consent Form</option>
-          <option value="contract">Employment Contract</option>
-        </select>
+    <div className="glass-card space-y-6">
+      <div className="flex gap-2">
+        <button className={`px-3 py-2 rounded ${mode === 'static' ? 'primary-button' : 'secondary-button'}`} onClick={() => setMode('static')}>Static Content</button>
+        <button className={`px-3 py-2 rounded ${mode === 'leaders' ? 'primary-button' : 'secondary-button'}`} onClick={() => setMode('leaders')}>Leaders</button>
+        <button className={`px-3 py-2 rounded ${mode === 'ai-bot' ? 'primary-button' : 'secondary-button'}`} onClick={() => setMode('ai-bot')}>AI Bot Content</button>
       </div>
 
-      {contentType === 'consent-form' ? (
+      {mode === 'static' && (
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2">Form Title</label>
-            <input
-              type="text"
-              value={formData.title || ''}
-              onChange={(e) => setFormData({...formData, title: e.target.value})}
+            <label className="block text-sm font-medium mb-2">Content Type</label>
+            <select
+              value={contentType}
+              onChange={(e) => setContentType(e.target.value as any)}
               className="w-full px-3 py-2 border rounded"
-            />
+            >
+              <option value="contact">Contact Information</option>
+              <option value="privacy">Privacy Policy</option>
+              <option value="terms">Terms of Service</option>
+              <option value="services">Services Page</option>
+              <option value="about">About Page</option>
+              <option value="indemnity">Indemnity</option>
+              <option value="consent-form">Consent Form</option>
+              <option value="contract">Contract Content</option>
+            </select>
           </div>
-          <div>
-            <label className="block text-sm font-medium mb-2">Consent Text</label>
-            <textarea
-              value={formData.consent_text || ''}
-              onChange={(e) => setFormData({...formData, consent_text: e.target.value})}
-              rows={3}
-              className="w-full px-3 py-2 border rounded"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-2">Background Checks (one per line)</label>
-            <textarea
-              value={formData.background_checks || ''}
-              onChange={(e) => setFormData({...formData, background_checks: e.target.value})}
-              rows={3}
-              className="w-full px-3 py-2 border rounded"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-2">Acknowledgments (one per line)</label>
-            <textarea
-              value={formData.acknowledgments || ''}
-              onChange={(e) => setFormData({...formData, acknowledgments: e.target.value})}
-              rows={4}
-              className="w-full px-3 py-2 border rounded"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-2">Witness Name</label>
-            <input
-              type="text"
-              value={formData.witness_name || ''}
-              onChange={(e) => setFormData({...formData, witness_name: e.target.value})}
-              className="w-full px-3 py-2 border rounded"
-            />
-          </div>
-        </div>
-      ) : contentType === 'contract' ? (
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-2">Contract Title</label>
-            <input
-              type="text"
-              value={formData.title || ''}
-              onChange={(e) => setFormData({...formData, title: e.target.value})}
-              className="w-full px-3 py-2 border rounded"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-2">Company Name</label>
-            <input
-              type="text"
-              value={formData.company_name || ''}
-              onChange={(e) => setFormData({...formData, company_name: e.target.value})}
-              className="w-full px-3 py-2 border rounded"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-2">Contract Text</label>
-            <textarea
-              value={formData.contract_text || ''}
-              onChange={(e) => setFormData({...formData, contract_text: e.target.value})}
-              rows={3}
-              className="w-full px-3 py-2 border rounded"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-2">Terms (use \n for line breaks)</label>
-            <textarea
-              value={formData.terms || ''}
-              onChange={(e) => setFormData({...formData, terms: e.target.value})}
-              rows={15}
-              className="w-full px-3 py-2 border rounded font-mono text-sm"
-            />
-          </div>
-        </div>
-      ) : (
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-2">Content (Markdown supported)</label>
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            rows={15}
-            className="w-full px-3 py-2 border rounded font-mono text-sm"
-            placeholder="Enter content here..."
-          />
+
+          {contentType === 'consent-form' ? (
+            <div className="space-y-3">
+              <input type="text" value={formData.title || ''} onChange={(e) => setFormData({ ...formData, title: e.target.value })} className="w-full px-3 py-2 border rounded" placeholder="Title" />
+              <textarea value={formData.content || ''} onChange={(e) => setFormData({ ...formData, content: e.target.value })} rows={10} className="w-full px-3 py-2 border rounded font-mono text-sm" />
+            </div>
+          ) : contentType === 'contract' ? (
+            <div className="space-y-3">
+              <input type="text" value={formData.title || ''} onChange={(e) => setFormData({ ...formData, title: e.target.value })} className="w-full px-3 py-2 border rounded" placeholder="Title" />
+              <input type="text" value={formData.version || ''} onChange={(e) => setFormData({ ...formData, version: e.target.value })} className="w-full px-3 py-2 border rounded" placeholder="Version" />
+              <textarea value={formData.body || ''} onChange={(e) => setFormData({ ...formData, body: e.target.value })} rows={10} className="w-full px-3 py-2 border rounded font-mono text-sm" />
+            </div>
+          ) : (
+            <textarea value={content} onChange={(e) => setContent(e.target.value)} rows={12} className="w-full px-3 py-2 border rounded font-mono text-sm" />
+          )}
         </div>
       )}
 
-      {message && (
-        <div className={`mb-4 p-3 rounded ${message.includes('success') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-          {message}
-        </div>
-      )}
+      {message && <div className="text-sm text-white/80 bg-white/10 rounded px-3 py-2">{message}</div>}
 
-      <button
-        onClick={handleSave}
-        disabled={loading}
-        className="primary-button px-4 py-2"
-      >
-        {loading ? 'Saving...' : 'Save Content'}
+      <button onClick={handleSave} disabled={loading} className="primary-button px-4 py-2">
+        {loading ? 'Saving...' : 'Save'}
       </button>
     </div>
   );

@@ -35,6 +35,38 @@ npx wrangler pages deploy .next --project-name=scratchsolid-portal
 
 Environment variables must be set in Cloudflare Dashboard for the project (not in wrangler.toml for Pages projects).
 
+## Creating an admin user (secure seeding)
+
+We keep a protected seeding endpoint to create admins (and other roles) without hardcoding:
+
+- Endpoint: `POST /api/seed-users`
+- Guard: requires `SEED_KEY` secret in Cloudflare Worker environment
+
+### One-time setup (already done, rotate if needed)
+```
+npx wrangler secret put SEED_KEY --name scratchsolid-portal
+# paste a strong random string
+```
+
+### Create an admin
+```
+curl -X POST https://scratchsolid-portal.sparkling-darkness-405f.workers.dev/api/seed-users \
+  -H "Content-Type: application/json" \
+  -d '{
+    "seedKey": "<YOUR_SEED_KEY>",
+    "userType": "admin",
+    "email": "admin@scratchsolidsolution.org",
+    "password": "StrongTempPass123!",
+    "name": "Portal Admin"
+  }'
+```
+
+Notes:
+- `userType` must be one of `admin | cleaner | digital | transport`.
+- For admin, the login username is the email you pass above.
+- Endpoint only accepts POST; GET returns 405.
+- After creating an admin, no redeploy is required—the user is written to the DB.
+
 ## Technology Stack
 
 - **Framework**: Next.js 16 with React 19
