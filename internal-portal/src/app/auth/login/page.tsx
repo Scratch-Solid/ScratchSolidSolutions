@@ -69,11 +69,14 @@ function LoginContent() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
-      <div className="glass-panel max-w-md w-full">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-2" style={{ color: 'var(--text-h)' }}>Scratch Solid Solutions</h1>
-          <p className="text-lg font-medium" style={{ color: 'var(--text)' }}>Internal Portal</p>
+    <div className="center-container px-4">
+      <div className="glass-panel max-w-md w-full p-8" style={{ boxShadow: '0 16px 40px rgba(9,23,42,0.12)' }}>
+        <div className="text-center mb-8 flex flex-col items-center gap-3">
+          <img src="/logo-scratch-solid.png" alt="Scratch Solid" style={{ width: 96, height: 96, objectFit: 'contain' }} />
+          <div>
+            <h1 className="text-3xl font-bold mb-1" style={{ color: 'var(--text-h)' }}>Internal Portal</h1>
+            <p className="text-base font-medium" style={{ color: 'var(--text)' }}>Welcome back</p>
+          </div>
         </div>
         {error && (
           <div className="error-msg text-center font-semibold mb-6">
