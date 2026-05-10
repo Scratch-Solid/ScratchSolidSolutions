@@ -14,12 +14,14 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json() as {
       name?: string;
+      email?: string;
+      phone?: string;
       service_id?: number;
       baseline_price?: number;
       final_price?: number;
     };
 
-    const { name, service_id, baseline_price, final_price } = body;
+    const { name, email, phone, service_id, baseline_price, final_price } = body;
 
     // Validate required fields
     if (!name || !service_id || baseline_price === undefined || final_price === undefined) {
@@ -28,6 +30,8 @@ export async function POST(request: NextRequest) {
 
     // Simple sanitization
     const sanitizedName = name.trim();
+    const sanitizedEmail = email ? email.trim() : '';
+    const sanitizedPhone = phone ? phone.trim() : '';
 
     // Validate service_id exists
     const service = await db.prepare('SELECT id FROM services WHERE id = ? AND is_active = 1').bind(service_id).first();
@@ -43,12 +47,14 @@ export async function POST(request: NextRequest) {
     // Save quote request to DB
     const result = await db.prepare(
       `INSERT INTO quote_requests
-        (ref_number, name, service_id, service_name,
+        (ref_number, name, email, phone, service_id, service_name,
          baseline_price, final_price, status, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, 'pending', datetime('now'), datetime('now'))`
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', datetime('now'), datetime('now'))`
     ).bind(
       refNumber,
       sanitizedName,
+      sanitizedEmail,
+      sanitizedPhone,
       service_id,
       'Test Service',
       baseline_price,
@@ -62,6 +68,8 @@ export async function POST(request: NextRequest) {
       id: quoteId,
       ref_number: refNumber,
       name: sanitizedName,
+      email: sanitizedEmail,
+      phone: sanitizedPhone,
       baseline_price,
       final_price,
     }, { status: 201 });
