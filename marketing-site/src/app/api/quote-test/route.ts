@@ -38,31 +38,36 @@ export async function POST(request: NextRequest) {
     const refNumber = `SSQ-TEST-${Date.now()}`;
 
     // Save quote request to DB
-    const result = await db.prepare(
-      `INSERT INTO quote_requests
-        (ref_number, name, service_id, service_name,
-         baseline_price, final_price, status, created_at, updated_at, client_type)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', datetime('now'), datetime('now'), 'individual')`
-    ).bind(
-      refNumber,
-      sanitizedName,
-      service_id,
-      'Test Service',
-      baseline_price,
-      final_price
-    ).run();
+    try {
+      const result = await db.prepare(
+        `INSERT INTO quote_requests
+          (ref_number, name, service_id, service_name,
+           baseline_price, final_price, status, created_at, updated_at, client_type)
+         VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', datetime('now'), datetime('now'), 'individual')`
+      ).bind(
+        refNumber,
+        sanitizedName,
+        service_id,
+        'Test Service',
+        baseline_price,
+        final_price
+      ).run();
 
-    const quoteId = result.meta.last_row_id;
+      const quoteId = result.meta.last_row_id;
 
-    return NextResponse.json({
-      success: true,
-      id: quoteId,
-      ref_number: refNumber,
-      zoho_estimate_number: '',
-      name: sanitizedName,
-      baseline_price,
-      final_price,
-    }, { status: 201 });
+      return NextResponse.json({
+        success: true,
+        id: quoteId,
+        ref_number: refNumber,
+        zoho_estimate_number: '',
+        name: sanitizedName,
+        baseline_price,
+        final_price,
+      }, { status: 201 });
+    } catch (dbError) {
+      console.error('Database error during INSERT:', dbError);
+      return NextResponse.json({ error: 'Database insert failed', details: dbError instanceof Error ? dbError.message : 'Unknown error' }, { status: 500 });
+    }
   } catch (error) {
     console.error('Error creating quote:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
