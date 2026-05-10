@@ -43,12 +43,11 @@ export async function POST(request: NextRequest) {
         `INSERT INTO quote_requests
           (ref_number, name, service_id, service_name,
            baseline_price, final_price, status, created_at, updated_at, client_type)
-         VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', datetime('now'), datetime('now'), 'individual')`
+         VALUES (?, ?, ?, 'Test Service', ?, ?, 'pending', datetime('now'), datetime('now'), 'individual')`
       ).bind(
         refNumber,
         sanitizedName,
         service_id,
-        'Test Service',
         baseline_price,
         final_price
       ).run();
