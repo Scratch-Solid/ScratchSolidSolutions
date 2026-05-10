@@ -13,12 +13,13 @@ export async function POST(request: NextRequest) {
       email?: string;
       phone?: string;
       service_id?: number;
+      quantity?: number;
       baseline_price?: number;
       final_price?: number;
     };
 
     const {
-      name, email, phone, service_id,
+      name, email, phone, service_id, quantity,
       baseline_price, final_price
     } = body;
 
@@ -45,15 +46,16 @@ export async function POST(request: NextRequest) {
     try {
       const result = await db.prepare(
         `INSERT INTO quote_requests
-          (ref_number, name, email, phone, service_id, service_name,
+          (ref_number, name, email, phone, service_id, service_name, quantity,
            baseline_price, final_price, status, created_at, updated_at, client_type)
-         VALUES (?, ?, ?, ?, ?, 'Test Service', ?, ?, 'pending', datetime('now'), datetime('now'), 'individual')`
+         VALUES (?, ?, ?, ?, ?, 'Test Service', ?, ?, ?, 'pending', datetime('now'), datetime('now'), 'individual')`
       ).bind(
         refNumber,
         sanitizedName,
         sanitizedEmail,
         sanitizedPhone,
         service_id,
+        quantity || 1,
         baseline_price,
         final_price
       ).run();
@@ -68,6 +70,7 @@ export async function POST(request: NextRequest) {
         name: sanitizedName,
         email: sanitizedEmail,
         phone: sanitizedPhone,
+        quantity: quantity || 1,
         baseline_price,
         final_price,
       }, { status: 201 });
