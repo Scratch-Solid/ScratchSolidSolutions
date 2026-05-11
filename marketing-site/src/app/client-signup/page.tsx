@@ -43,11 +43,7 @@ export default function ClientSignupPage() {
       });
 
       if (response.ok) {
-        const result = await response.json() as { token: string; role: string; id: string };
-        localStorage.setItem("authToken", result.token);
-        localStorage.setItem("userRole", result.role);
-        localStorage.setItem("userId", result.id);
-        window.location.href = "/client-dashboard";
+        window.location.href = "/auth?message=verify_email";
       } else {
         const errorData = await response.json() as { error?: string };
         setError(errorData.error || "Signup failed");

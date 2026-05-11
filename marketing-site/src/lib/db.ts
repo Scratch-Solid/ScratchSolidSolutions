@@ -22,13 +22,22 @@ export async function getDb(): Promise<D1Database | null> {
 
 // User operations
 export async function getUserByEmail(db: D1Database, email: string) {
-  const result = await db.prepare('SELECT id, email, role, name, phone, address, business_name, password_hash, failed_attempts, locked_until, email_verified FROM users WHERE email = ?').bind(email).first();
-  return result;
+  try {
+    return await db.prepare('SELECT id, email, role, name, phone, address, business_name, password_hash, failed_attempts, locked_until, email_verified FROM users WHERE email = ?').bind(email).first();
+  } catch {
+    // email_verified column may not exist yet (migration pending) — fall back and treat as verified
+    const row = await db.prepare('SELECT id, email, role, name, phone, address, business_name, password_hash, failed_attempts, locked_until FROM users WHERE email = ?').bind(email).first();
+    return row ? { ...row, email_verified: 1 } : null;
+  }
 }
 
 export async function getUserByPhone(db: D1Database, phone: string) {
-  const result = await db.prepare('SELECT id, email, role, name, phone, address, business_name, password_hash, failed_attempts, locked_until, email_verified FROM users WHERE phone = ?').bind(phone).first();
-  return result;
+  try {
+    return await db.prepare('SELECT id, email, role, name, phone, address, business_name, password_hash, failed_attempts, locked_until, email_verified FROM users WHERE phone = ?').bind(phone).first();
+  } catch {
+    const row = await db.prepare('SELECT id, email, role, name, phone, address, business_name, password_hash, failed_attempts, locked_until FROM users WHERE phone = ?').bind(phone).first();
+    return row ? { ...row, email_verified: 1 } : null;
+  }
 }
 
 export async function getUserById(db: D1Database, id: number) {
@@ -47,8 +56,8 @@ export async function createUser(db: D1Database, data: {
   business_registration?: string;
 }) {
   const result = await db.prepare(
-    `INSERT INTO users (email, password_hash, role, name, phone, address, business_name, business_registration)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`
+    `INSERT INTO users (email, password_hash, role, name, phone, address, business_name, business_registration, email_verified)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0) RETURNING *`
   ).bind(
     data.email, data.password_hash, data.role, data.name,
     data.phone || '', data.address || '', data.business_name || '', data.business_registration || ''
