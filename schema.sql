@@ -347,7 +347,22 @@ CREATE TABLE IF NOT EXISTS ai_responses (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   question TEXT NOT NULL,
   response TEXT NOT NULL,
-  created_at TEXT DEFAULT (datetime('now'))
+  category TEXT,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
+);
+
+-- Leaders table (for leadership team display)
+CREATE TABLE IF NOT EXISTS leaders (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  title TEXT NOT NULL,
+  description TEXT,
+  image_url TEXT,
+  display_order INTEGER DEFAULT 0,
+  is_active INTEGER DEFAULT 1,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
 );
 
 -- Reviews table

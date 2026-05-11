@@ -1230,9 +1230,11 @@ function ContentManagement() {
 
       {message && <div className="text-sm text-white/80 bg-white/10 rounded px-3 py-2">{message}</div>}
 
-      <button onClick={handleSave} disabled={loading} className="primary-button px-4 py-2">
-        {loading ? 'Saving...' : 'Save'}
-      </button>
+      {mode === 'static' && (
+        <button onClick={handleSave} disabled={loading} className="primary-button px-4 py-2">
+          {loading ? 'Saving...' : 'Save'}
+        </button>
+      )}
 
       {mode === 'backgrounds' && (
         <div className="space-y-4">

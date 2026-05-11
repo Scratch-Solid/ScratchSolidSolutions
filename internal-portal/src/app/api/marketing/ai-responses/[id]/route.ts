@@ -20,38 +20,14 @@ async function proxy(request: NextRequest, url: string, init: RequestInit) {
   return new NextResponse(body, { status: response.status, headers: { 'content-type': contentType } });
 }
 
-export async function GET(request: NextRequest) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const traceId = withTracing(request);
   const auth = await withAuth(request, ['admin']);
   if (auth instanceof NextResponse) return withSecurityHeaders(auth, traceId);
 
-  const target = `${apiBase}/api/ai-responses${request.nextUrl.search}`;
-  const resp = await proxy(request, target, { method: 'GET', headers: upstreamHeaders(request) });
-  return withSecurityHeaders(resp, traceId);
-}
-
-export async function POST(request: NextRequest) {
-  const traceId = withTracing(request);
-  const auth = await withAuth(request, ['admin']);
-  if (auth instanceof NextResponse) return withSecurityHeaders(auth, traceId);
-
+  const { id } = await params;
   const body = await request.json();
-  const target = `${apiBase}/api/ai-responses`;
-  const resp = await proxy(request, target, {
-    method: 'POST',
-    headers: upstreamHeaders(request),
-    body: JSON.stringify(body),
-  });
-  return withSecurityHeaders(resp, traceId);
-}
-
-export async function PUT(request: NextRequest) {
-  const traceId = withTracing(request);
-  const auth = await withAuth(request, ['admin']);
-  if (auth instanceof NextResponse) return withSecurityHeaders(auth, traceId);
-
-  const body = await request.json();
-  const target = `${apiBase}/api/ai-responses${request.nextUrl.search}`;
+  const target = `${apiBase}/api/ai-responses/${id}`;
   const resp = await proxy(request, target, {
     method: 'PUT',
     headers: upstreamHeaders(request),
@@ -60,12 +36,13 @@ export async function PUT(request: NextRequest) {
   return withSecurityHeaders(resp, traceId);
 }
 
-export async function DELETE(request: NextRequest) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const traceId = withTracing(request);
   const auth = await withAuth(request, ['admin']);
   if (auth instanceof NextResponse) return withSecurityHeaders(auth, traceId);
 
-  const target = `${apiBase}/api/ai-responses${request.nextUrl.search}`;
+  const { id } = await params;
+  const target = `${apiBase}/api/ai-responses/${id}`;
   const resp = await proxy(request, target, { method: 'DELETE', headers: upstreamHeaders(request) });
   return withSecurityHeaders(resp, traceId);
 }
