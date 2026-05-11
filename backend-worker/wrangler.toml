@@ -9,7 +9,7 @@ name = "cleaning-service-backend-prod"
 [[d1_databases]]
 binding = "DB"
 database_name = "scratchsolid-db"
-database_id = "0b0b6006-1b2d-4ab1-8909-dc684666e6d3"
+database_id = "b4f175df-b233-47dd-ab41-99455bf990b8"
 
 # KV Namespace bindings
 [[kv_namespaces]]
