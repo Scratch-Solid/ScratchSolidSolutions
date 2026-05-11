@@ -43,6 +43,7 @@ export async function POST(request: NextRequest) {
   const traceId = withTracing(request);
   const db = await getDb();
   if (!db) {
+    console.error('Database unavailable (pending-contracts submit)');
     return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
   }
 

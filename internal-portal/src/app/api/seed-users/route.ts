@@ -33,6 +33,7 @@ export async function POST(request: NextRequest) {
 
     const db = await getDb();
     if (!db) {
+      console.error('Database unavailable (seed-users)');
       return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
     }
 

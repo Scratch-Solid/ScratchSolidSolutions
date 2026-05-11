@@ -9,6 +9,7 @@ export async function GET(request: NextRequest) {
 
   const db = await getDb();
   if (!db) {
+    console.error('Database unavailable (pending-contracts check)');
     return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
   }
 

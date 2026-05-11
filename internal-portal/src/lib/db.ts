@@ -16,11 +16,21 @@ export async function getDb(): Promise<D1Database | null> {
     // OpenNext on Workers: use getCloudflareContext
     const { env } = await getCloudflareContext({ async: true });
     const envAny = env as any;
-    const db = envAny?.scratchsolid_db || envAny?.DB;
+    const db = envAny?.scratchsolid_db || envAny?.scratchsolidDb || envAny?.DB || envAny?.db || envAny?.database;
     if (db) {
       return db as D1Database;
     }
+    // As a last resort, scan env for a D1-like binding (has prepare method)
+    const candidateKey = Object.keys(envAny || {}).find((k) => {
+      const val = (envAny as any)[k];
+      return val && typeof val === 'object' && typeof (val as any).prepare === 'function';
+    });
+    if (candidateKey) {
+      console.warn(`D1 binding not found under expected names; using candidate binding '${candidateKey}'`);
+      return (envAny as any)[candidateKey] as D1Database;
+    }
     console.error('D1 binding missing: expected scratchsolid_db or DB');
+    console.error('Available env keys:', Object.keys(envAny || {}));
   } catch (error) {
     console.error('Error getting database from OpenNext context', error);
   }
