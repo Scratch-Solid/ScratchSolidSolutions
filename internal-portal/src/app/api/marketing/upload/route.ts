@@ -14,14 +14,27 @@ function upstreamHeaders(request: NextRequest) {
 }
 
 async function proxy(request: NextRequest, url: string) {
+  const headers = upstreamHeaders(request);
+  let body: BodyInit | undefined;
+
+  if (request.method === 'POST' || request.method === 'PUT') {
+    const contentType = request.headers.get('content-type');
+    if (contentType?.includes('application/json')) {
+      const jsonBody = await request.json();
+      body = JSON.stringify(jsonBody);
+    } else {
+      body = request.body;
+    }
+  }
+
   const res = await fetch(url, {
     method: request.method,
-    headers: upstreamHeaders(request),
-    body: request.body,
+    headers,
+    body,
   });
-  const body = await res.text();
-  const contentType = res.headers.get('content-type') || 'application/json';
-  return new NextResponse(body, { status: res.status, headers: { 'content-type': contentType } });
+  const responseBody = await res.text();
+  const responseContentType = res.headers.get('content-type') || 'application/json';
+  return new NextResponse(responseBody, { status: res.status, headers: { 'content-type': responseContentType } });
 }
 
 export async function POST(request: NextRequest) {
