@@ -78,19 +78,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate a simple session token
-    const sessionToken = Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2);
-
-    // Increment login count and compute password reset flag
+    // Ensure columns and fetch login counters
     const db = await getDb();
     if (db) {
       await db.prepare('ALTER TABLE users ADD COLUMN password_needs_reset INTEGER DEFAULT 0').run().catch(() => {});
       await db.prepare('ALTER TABLE users ADD COLUMN login_count INTEGER DEFAULT 0').run().catch(() => {});
+      const meta = await db.prepare('SELECT password_needs_reset, login_count FROM users WHERE id = ?').bind(user.id).first();
+      (user as any).password_needs_reset = (meta as any)?.password_needs_reset ?? user.password_needs_reset;
+      (user as any).login_count = (meta as any)?.login_count ?? user.login_count;
+      // Block if password must be reset and user already logged in twice with temp password
+      if ((user as any).password_needs_reset === 1 && ((user as any).login_count ?? 0) >= 2) {
+        return NextResponse.json({ success: false, error: 'Password change required', mustChangePassword: true }, { status: 403 });
+      }
+      // Increment login count for this successful login
       await db.prepare('UPDATE users SET login_count = COALESCE(login_count,0) + 1 WHERE id = ?').bind(user.id).run();
       const refreshed = await db.prepare('SELECT password_needs_reset, login_count FROM users WHERE id = ?').bind(user.id).first();
       (user as any).password_needs_reset = (refreshed as any)?.password_needs_reset ?? user.password_needs_reset;
       (user as any).login_count = (refreshed as any)?.login_count ?? user.login_count;
     }
+
+    // Generate a simple session token
+    const sessionToken = Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2);
     
     // Log successful login
     const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';

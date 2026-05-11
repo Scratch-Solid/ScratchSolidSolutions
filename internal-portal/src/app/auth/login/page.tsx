@@ -32,7 +32,7 @@ function LoginContent() {
         body: JSON.stringify({ identifier: username, password })
       });
 
-      const data = await res.json() as { token?: string; role?: string; username?: string; user_id?: string; paysheet_code?: string; error?: string };
+      const data = await res.json() as { token?: string; role?: string; username?: string; user_id?: string; paysheet_code?: string; error?: string; mustChangePassword?: boolean };
       if (!res.ok) {
         setError(data.error || 'Login failed');
         return;
@@ -42,6 +42,11 @@ function LoginContent() {
       localStorage.setItem("userRole", data.role || '');
       localStorage.setItem("username", data.username || username);
       localStorage.setItem("user_id", data.user_id || '');
+
+      if (data.mustChangePassword) {
+        router.push('/auth/change-password');
+        return;
+      }
 
       if (data.role === 'admin') {
         localStorage.setItem("userEmail", username);
