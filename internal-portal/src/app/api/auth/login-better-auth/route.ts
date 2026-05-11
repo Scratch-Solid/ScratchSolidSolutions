@@ -7,9 +7,9 @@ import { generateDeviceFingerprint, parseUserAgent } from '@/lib/device-fingerpr
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json() as { email?: string; password?: string };
-    const { email, password } = body;
-    const identifier = email; // now supports username or email
+    const body = await request.json() as { email?: string; password?: string; username?: string; identifier?: string };
+    const identifier = body.identifier || body.username || body.email;
+    const password = body.password;
 
     if (!identifier || !password) {
       return NextResponse.json(
