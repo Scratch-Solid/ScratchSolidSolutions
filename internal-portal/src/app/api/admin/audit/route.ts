@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth, withSecurityHeaders, withTracing } from '@/lib/middleware';
 

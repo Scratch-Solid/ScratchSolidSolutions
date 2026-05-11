@@ -1,31 +1,39 @@
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/middleware';
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest) {
   const authResult = await withAuth(request, ['admin']);
   if (authResult instanceof NextResponse) return authResult;
   const { db } = authResult;
 
   try {
-    const bookingId = params.id;
+    // Get all pending bookings
+    const pendingBookings = await db.prepare(
+      'SELECT * FROM bookings WHERE status = ? AND cleaner_id IS NULL'
+    ).bind('pending').all();
 
-    // Get booking details
-    const booking = await db.prepare('SELECT * FROM bookings WHERE id = ?').bind(bookingId).first();
-    if (!booking) {
-      return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
+    const bookings = pendingBookings.results || [];
+
+    if (bookings.length === 0) {
+      return NextResponse.json({ message: 'No pending bookings to assign', assigned: 0 });
     }
 
-    // Get available cleaners (not blocked, idle or on_way)
+    // Get available cleaners (not blocked, idle)
     const cleaners = await db.prepare(
       `SELECT cp.*, u.email, u.name 
        FROM cleaner_profiles cp
        JOIN users u ON cp.user_id = u.id
-       WHERE cp.blocked = 0 AND cp.status IN ('idle', 'on_way')`
+       WHERE cp.blocked = 0 AND cp.status = 'idle'`
     ).all();
 
     const availableCleaners = cleaners.results || [];
 
-    // Get current workload for each cleaner (bookings assigned but not completed)
+    if (availableCleaners.length === 0) {
+      return NextResponse.json({ message: 'No available cleaners', assigned: 0 }, { status: 400 });
+    }
+
+    // Get current workload for each cleaner
     const cleanerWorkloads: any = {};
     for (const cleaner of availableCleaners) {
       const workload = await db.prepare(
@@ -35,51 +43,34 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       cleanerWorkloads[(cleaner as any).user_id] = (workload as any)?.count || 0;
     }
 
-    // Calculate distance if GPS coordinates available (simplified Haversine formula)
-    const bookingLat = (booking as any).gps_lat || null;
-    const bookingLng = (booking as any).gps_long || null;
+    // Assign bookings to cleaners with lowest workload (round-robin style)
+    let assignedCount = 0;
+    let cleanerIndex = 0;
 
-    const scoredCleaners = (availableCleaners as any[]).map((cleaner: any) => {
-      let distanceScore = 0;
-      let workloadScore = cleanerWorkloads[cleaner.user_id] * 10; // Penalty per active booking
+    for (const booking of bookings as any[]) {
+      // Find cleaner with minimum workload
+      const sortedCleaners = [...availableCleaners].sort((a, b) => {
+        const workloadA = cleanerWorkloads[(a as any).user_id] || 0;
+        const workloadB = cleanerWorkloads[(b as any).user_id] || 0;
+        return workloadA - workloadB;
+      });
 
-      if (bookingLat && bookingLng && cleaner.gps_lat && cleaner.gps_long) {
-        const distance = calculateDistance(
-          bookingLat, bookingLng,
-          cleaner.gps_lat, cleaner.gps_long
-        );
-        distanceScore = distance; // Lower is better
-      }
+      const selectedCleaner = sortedCleaners[0];
+      const cleanerId = (selectedCleaner as any).user_id;
 
-      return {
-        ...cleaner,
-        current_workload: cleanerWorkloads[cleaner.user_id],
-        distance_km: distanceScore,
-        score: workloadScore + distanceScore
-      };
-    });
+      // Assign booking
+      await db.prepare(
+        'UPDATE bookings SET cleaner_id = ?, status = ?, updated_at = datetime("now") WHERE id = ?'
+      ).bind(cleanerId, 'assigned', booking.id).run();
 
-    // Sort by score (lowest first)
-    scoredCleaners.sort((a, b) => a.score - b.score);
+      // Update workload
+      cleanerWorkloads[cleanerId]++;
 
-    return NextResponse.json(scoredCleaners.slice(0, 5)); // Return top 5 suggestions
+      assignedCount++;
+    }
+
+    return NextResponse.json({ message: `Auto-assigned ${assignedCount} bookings`, assigned: assignedCount });
   } catch (error) {
-    const response = NextResponse.json({ error: 'Failed to suggest cleaner' }, { status: 500 });
+    const response = NextResponse.json({ error: 'Failed to auto-assign bookings' }, { status: 500 });
   }
-}
-
-function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371; // Earth's radius in km
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
-
-function toRad(degrees: number): number {
-  return degrees * (Math.PI / 180);
 }

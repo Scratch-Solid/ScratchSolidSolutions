@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getDb, getPendingContracts, createPendingContract, updatePendingContractStatus, deletePendingContract, logAuditEvent } from "../../../lib/db";
 import { withAuth, withSecurityHeaders, withTracing, withRateLimit, withCsrf } from "../../../lib/middleware";

@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, validateSession, logAuditEvent } from '@/lib/db';
 import { createRole, getUserPermissions, canManageSystem } from '@/lib/rbac';

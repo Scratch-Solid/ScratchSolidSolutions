@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/middleware';
 import { shouldPurge } from '@/lib/data-retention';

@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import bcrypt from 'bcryptjs';
@@ -109,8 +110,15 @@ export async function POST(request: NextRequest) {
     (user as any).password_needs_reset = (refreshed as any)?.password_needs_reset ?? user.password_needs_reset;
     (user as any).login_count = (refreshed as any)?.login_count ?? user.login_count;
 
-    // Generate a simple session token
-    const sessionToken = Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2);
+    // Generate and persist session token
+    const sessionToken = crypto.randomUUID() + crypto.randomUUID().replace(/-/g, '');
+    try {
+      await db.prepare(
+        `INSERT INTO sessions (user_id, token, expires_at) VALUES (?, ?, datetime('now', '+7 days'))`
+      ).bind(user.id, sessionToken).run();
+    } catch (sessionErr) {
+      console.error('Failed to persist session:', sessionErr);
+    }
     
     // Log successful login
     const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
@@ -137,19 +145,17 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json({
       success: true,
-      data: {
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          two_factor_enabled: user.two_factor_enabled || false
-        },
-        session: {
-          token: sessionToken,
-          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-          mustChangePassword: (user as any)?.password_needs_reset === 1
-        }
+      token: sessionToken,
+      role: user.role,
+      username: (user as any).username || user.email,
+      user_id: String(user.id),
+      paysheet_code: (user as any).paysheet_code || '',
+      mustChangePassword: (user as any)?.password_needs_reset === 1,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
       }
     });
   } catch (error) {

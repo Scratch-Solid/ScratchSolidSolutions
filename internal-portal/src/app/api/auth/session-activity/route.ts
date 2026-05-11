@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/better-auth';
 import { getSessionActivity, detectSuspiciousActivity } from '@/lib/session-activity-logger';

@@ -1,45 +1,42 @@
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/middleware';
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest) {
   const authResult = await withAuth(request, ['admin']);
   if (authResult instanceof NextResponse) return authResult;
   const { db } = authResult;
 
   try {
-    const body = await request.json() as { deductions?: number; weekday_rate?: number; weekend_rate?: number };
-    const { deductions, weekday_rate, weekend_rate } = body;
-    const cleanerId = params.id;
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get('status');
+    const cleaner_id = searchParams.get('cleaner_id');
 
-    const updates: string[] = [];
-    const values: any[] = [];
+    let query = `
+      SELECT p.*, u.name as user_name, u.email as user_email
+      FROM payments p
+      LEFT JOIN users u ON p.user_id = u.id
+    `;
+    const conditions: string[] = [];
+    const params: any[] = [];
 
-    if (deductions !== undefined) {
-      updates.push('deductions = ?');
-      values.push(deductions);
+    if (status) {
+      conditions.push('p.status = ?');
+      params.push(status);
     }
-    if (weekday_rate !== undefined) {
-      updates.push('weekday_rate = ?');
-      values.push(weekday_rate);
-    }
-    if (weekend_rate !== undefined) {
-      updates.push('weekend_rate = ?');
-      values.push(weekend_rate);
-    }
-
-    if (updates.length === 0) {
-      return NextResponse.json({ error: 'No fields to update' }, { status: 400 });
+    if (cleaner_id) {
+      conditions.push('p.cleaner_id = ?');
+      params.push(cleaner_id);
     }
 
-    updates.push('updated_at = datetime("now")');
-    values.push(cleanerId);
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ');
+    }
+    query += ' ORDER BY p.created_at DESC';
 
-    await db.prepare(
-      `UPDATE cleaner_profiles SET ${updates.join(', ')} WHERE user_id = ?`
-    ).bind(...values).run();
-
-    return NextResponse.json({ success: true });
+    const payments = await db.prepare(query).bind(...params).all();
+    return NextResponse.json(payments.results || []);
   } catch (error) {
-    const response = NextResponse.json({ error: 'Failed to amend payroll' }, { status: 500 });
+    const response = NextResponse.json({ error: 'Failed to fetch payroll' }, { status: 500 });
   }
 }

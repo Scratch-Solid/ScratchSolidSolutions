@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 /**
  * Enhanced Signup Endpoint with Security Features
  * Phase 3.2: Enhanced API Security Implementation
