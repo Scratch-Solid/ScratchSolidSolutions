@@ -556,6 +556,7 @@ function ContentManagement() {
   const [formData, setFormData] = useState<any>({});
 
   const apiBase = process.env.NEXT_PUBLIC_API_URL || 'https://scratchsolidsolutions.org';
+  const marketingProxy = (path: string) => `/api/marketing${path}`;
 
   const [leaders, setLeaders] = useState<any[]>([]);
   const [leaderForm, setLeaderForm] = useState<any>({ id: null, name: '', title: '', description: '', image_url: '', display_order: 0, active: true });
@@ -596,7 +597,7 @@ function ContentManagement() {
           setMessage('Authentication required to load content');
           return;
         }
-        const response = await fetch(`${apiBase}/api/content?type=${contentType}`, {
+        const response = await fetch(marketingProxy(`/content?type=${contentType}`), {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (response.ok) {
@@ -621,7 +622,7 @@ function ContentManagement() {
         setMessage('Authentication required to load leaders');
         return;
       }
-      const res = await fetch(`${apiBase}/api/leaders`, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(marketingProxy('/leaders'), { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) {
         setLeaders(await res.json());
       } else {
@@ -642,7 +643,7 @@ function ContentManagement() {
         setMessage('Authentication required to load bot content');
         return;
       }
-      const res = await fetch(`${apiBase}/api/ai-responses`, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(marketingProxy('/ai-responses'), { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) setAiItems(await res.json());
       else setMessage('Failed to load bot content');
     } catch (err) {
@@ -700,7 +701,7 @@ function ContentManagement() {
           if (!token) {
             setMessage('Authentication required to save content');
           } else {
-            const response = await fetch(`${apiBase}/api/content?type=${contentType}`, {
+            const response = await fetch(marketingProxy(`/content?type=${contentType}`), {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
               body: JSON.stringify({ content })
@@ -716,7 +717,7 @@ function ContentManagement() {
           return;
         }
         const method = leaderForm.id ? 'PUT' : 'POST';
-        const url = `${apiBase}/api/leaders`;
+        const url = marketingProxy('/leaders');
         const res = await fetch(url, {
           method,
           headers: {
@@ -747,7 +748,7 @@ function ContentManagement() {
           return;
         }
         const method = aiForm.id ? 'PUT' : 'POST';
-        const url = aiForm.id ? `${apiBase}/api/ai-responses/${aiForm.id}` : `${apiBase}/api/ai-responses`;
+        const url = aiForm.id ? marketingProxy(`/ai-responses/${aiForm.id}`) : marketingProxy('/ai-responses');
         const res = await fetch(url, {
           method,
           headers: {
@@ -782,7 +783,7 @@ function ContentManagement() {
       setMessage('Authentication required to delete leader');
       return;
     }
-    await fetch(`${apiBase}/api/leaders?id=${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+    await fetch(marketingProxy(`/leaders?id=${id}`), { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
     fetchLeaders();
   };
 
@@ -792,7 +793,7 @@ function ContentManagement() {
       setMessage('Authentication required to delete bot content');
       return;
     }
-    await fetch(`${apiBase}/api/ai-responses/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+    await fetch(marketingProxy(`/ai-responses/${id}`), { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
     fetchAi();
   };
 
@@ -804,7 +805,7 @@ function ContentManagement() {
     }
     const formDataUpload = new FormData();
     formDataUpload.append('file', file);
-    const res = await fetch(`${apiBase}/api/upload`, {
+    const res = await fetch(marketingProxy('/upload'), {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` },
       body: formDataUpload
