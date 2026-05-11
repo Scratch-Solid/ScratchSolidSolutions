@@ -9,6 +9,9 @@ export default function GalleryClient() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState<'left' | 'right'>('left');
 
+  const buildSrcSet = (url: string) => [640, 960, 1440, 1920].map((w) => `${url}?width=${w}&quality=82&format=auto ${w}w`).join(', ');
+  const sizes = '(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw';
+
   useEffect(() => {
     Promise.all([
       fetch('/api/reviews?status=approved&limit=12').then(res => res.ok ? res.json() : Promise.resolve({ results: [] })),
@@ -77,8 +80,10 @@ export default function GalleryClient() {
                   <div key={idx} className="relative overflow-hidden rounded-2xl shadow-lg border border-white/40 bg-white">
                     <img
                       src={img.url}
+                      srcSet={buildSrcSet(img.url)}
+                      sizes={sizes}
                       alt={img.caption || `Gallery image ${idx + 1}`}
-                      className="w-full h-64 object-cover transition-transform duration-300 hover:scale-105"
+                      className="w-full h-64 object-cover transition-transform duration-300 hover:scale-105 bg-gradient-to-br from-slate-100 to-slate-200"
                       loading="lazy"
                     />
                     {img.caption && (

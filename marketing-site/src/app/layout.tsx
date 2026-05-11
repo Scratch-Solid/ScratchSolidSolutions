@@ -14,6 +14,19 @@ async function getBackgroundUrl(): Promise<string | null> {
   }
 }
 
+function cdn(url: string | null, width = 1920, quality = 82) {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    u.searchParams.set('width', String(width));
+    u.searchParams.set('quality', String(quality));
+    u.searchParams.set('format', 'auto');
+    return u.toString();
+  } catch {
+    return url;
+  }
+}
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -36,9 +49,10 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const backgroundUrl = await getBackgroundUrl();
+  const optimizedBackground = cdn(backgroundUrl);
   const backgroundStyle = backgroundUrl
     ? {
-        backgroundImage: `linear-gradient(135deg, rgba(10,17,40,0.65), rgba(12,36,80,0.55)), url(${backgroundUrl})`,
+        backgroundImage: `linear-gradient(135deg, rgba(10,17,40,0.65), rgba(12,36,80,0.55)), url(${optimizedBackground || backgroundUrl})`,
         backgroundSize: 'cover',
         backgroundAttachment: 'fixed',
         backgroundPosition: 'center',

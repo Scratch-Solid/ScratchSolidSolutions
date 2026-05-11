@@ -897,31 +897,71 @@ function ContentManagement() {
       setMessage('Authentication required to upload');
       return;
     }
-    const formDataUpload = new FormData();
-    formDataUpload.append('file', file);
-    const res = await fetch(marketingProxy('/upload'), {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
-      body: formDataUpload
-    });
-    if (res.ok) {
-      const data = await res.json() as { url?: string };
-      if (data.url) {
+    try {
+      setLoading(true);
+      // Step 1: request presigned PUT URL from marketing API (proxied)
+      const folder = mode === 'backgrounds' ? 'backgrounds' : mode === 'gallery' ? 'gallery' : 'leaders';
+      const presignRes = await fetch(marketingProxy('/upload'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          filename: file.name,
+          contentType: file.type || 'application/octet-stream',
+          contentLength: file.size,
+          folder,
+        }),
+      });
+
+      if (!presignRes.ok) {
+        setMessage('Failed to get upload URL');
+        setLoading(false);
+        return;
+      }
+
+      const presignData = await presignRes.json() as { uploadUrl?: string; publicUrl?: string; fallbackUrl?: string; requiredHeaders?: Record<string, string> };
+      if (!presignData.uploadUrl) {
+        setMessage('Upload URL missing');
+        setLoading(false);
+        return;
+      }
+
+      // Step 2: PUT the file to R2 using the signed URL
+      const putRes = await fetch(presignData.uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': file.type || 'application/octet-stream',
+          ...(presignData.requiredHeaders || {}),
+        },
+        body: file,
+      });
+
+      if (!putRes.ok) {
+        setMessage('Upload failed');
+        setLoading(false);
+        return;
+      }
+
+      const finalUrl = presignData.publicUrl || presignData.fallbackUrl;
+      if (finalUrl) {
         if (mode === 'leaders') {
-          setLeaderForm((prev: any) => ({ ...prev, image_url: data.url }));
+          setLeaderForm((prev: any) => ({ ...prev, image_url: finalUrl }));
         } else if (mode === 'backgrounds') {
-          setBackgroundUrl(data.url);
-          setBackgroundPreview(data.url);
+          setBackgroundUrl(finalUrl);
+          setBackgroundPreview(finalUrl);
         } else if (mode === 'gallery') {
-          setGalleryImages(prev => [...prev, { url: data.url, caption: galleryCaption }]);
+          setGalleryImages(prev => [...prev, { url: finalUrl, caption: galleryCaption }]);
           setGalleryCaption('');
         }
+        setMessage('Image uploaded');
+      } else {
+        setMessage('Upload failed: no URL returned');
       }
-      setMessage('Image uploaded');
-    } else {
+    } catch (err) {
       setMessage('Upload failed');
+    } finally {
+      setLoading(false);
+      setTimeout(() => setMessage(''), 2000);
     }
-    setTimeout(() => setMessage(''), 2000);
   };
 
   return (
