@@ -15,14 +15,14 @@ function getSlugFromType(type: string): string {
     services: "services",
     about: "about-us",
     indemnity: "indemnity-form",
+    "background-image": "site-background",
+    "gallery-images": "gallery-images",
   };
   return slugMap[type] || "privacy-policy";
 }
 
 export async function GET(request: NextRequest) {
   const traceId = withTracing(request);
-  const authResult = await withAuth(request, ['admin']);
-  if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
 
   const rateLimitResult = await withRateLimit(request, rateLimits.standard);
   if (rateLimitResult && !rateLimitResult.success) {
@@ -112,7 +112,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: typeValidation.errors.join(', ') }, { status: 400 });
     }
 
-    const contentValidation = validateString(content, 'content', 1, 10000);
+    const contentValidation = validateString(content, 'content', 1, 20000);
     if (!contentValidation.valid) {
       return NextResponse.json({ error: contentValidation.errors.join(', ') }, { status: 400 });
     }

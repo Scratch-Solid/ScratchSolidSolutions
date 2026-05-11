@@ -550,7 +550,7 @@ export default function AdminDashboard() {
 }
 
 function ContentManagement() {
-  const [mode, setMode] = useState<'static' | 'leaders' | 'ai-bot'>('static');
+  const [mode, setMode] = useState<'static' | 'leaders' | 'ai-bot' | 'backgrounds' | 'gallery' | 'reviews'>('static');
   const [contentType, setContentType] = useState<'contact' | 'privacy' | 'terms' | 'services' | 'about' | 'indemnity' | 'consent-form' | 'contract'>('contact');
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(false);
@@ -566,12 +566,24 @@ function ContentManagement() {
   const [aiItems, setAiItems] = useState<any[]>([]);
   const [aiForm, setAiForm] = useState<any>({ id: null, question: '', response: '', category: '' });
 
+  const [backgroundUrl, setBackgroundUrl] = useState('');
+  const [backgroundPreview, setBackgroundPreview] = useState('');
+
+  const [galleryImages, setGalleryImages] = useState<{ url: string; caption?: string }[]>([]);
+  const [galleryCaption, setGalleryCaption] = useState('');
+
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [reviewFilter, setReviewFilter] = useState<'approved' | 'pending' | 'rejected'>('pending');
+
   useEffect(() => {
     if (mode === 'static') fetchContent();
     if (mode === 'leaders') fetchLeaders();
     if (mode === 'ai-bot') fetchAi();
+    if (mode === 'backgrounds') fetchBackground();
+    if (mode === 'gallery') fetchGallery();
+    if (mode === 'reviews') fetchReviews();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contentType, mode]);
+  }, [contentType, mode, reviewFilter]);
 
   const fetchContent = async () => {
     setLoading(true);
@@ -616,6 +628,84 @@ function ContentManagement() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchBackground = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('authToken');
+      const res = await fetch(marketingProxy('/content?type=background-image'), { headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok) {
+        const data = await res.json() as { content?: string };
+        setBackgroundUrl(data.content || '');
+        setBackgroundPreview(data.content || '');
+      }
+    } catch (err) {
+      setMessage('Failed to load background');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchGallery = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('authToken');
+      const res = await fetch(marketingProxy('/content?type=gallery-images'), { headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok) {
+        const data = await res.json() as { content?: string };
+        if (data.content) {
+          try {
+            const json = typeof data.content === 'string' ? JSON.parse(data.content) : data.content;
+            const arr = Array.isArray(json) ? json : json?.images || [];
+            setGalleryImages(arr.filter((x: any) => x?.url));
+          } catch (e) {
+            setGalleryImages([]);
+          }
+        } else {
+          setGalleryImages([]);
+        }
+      }
+    } catch (err) {
+      setMessage('Failed to load gallery');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchReviews = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('authToken');
+      const res = await fetch(marketingProxy(`/reviews?status=${reviewFilter}`), { headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok) {
+        const data = await res.json();
+        setReviews((data as any)?.results || (Array.isArray(data) ? data : []));
+      }
+    } catch (err) {
+      setMessage('Failed to load reviews');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateReviewStatus = async (id: number, status: string) => {
+    const token = localStorage.getItem('authToken');
+    await fetch(marketingProxy('/reviews'), {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ id, status })
+    });
+    fetchReviews();
+  };
+
+  const deleteReview = async (id: number) => {
+    const token = localStorage.getItem('authToken');
+    await fetch(marketingProxy(`/reviews?id=${id}`), {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    fetchReviews();
   };
 
   const fetchLeaders = async () => {
@@ -816,7 +906,17 @@ function ContentManagement() {
     });
     if (res.ok) {
       const data = await res.json() as { url?: string };
-      if (data.url) setLeaderForm((prev: any) => ({ ...prev, image_url: data.url }));
+      if (data.url) {
+        if (mode === 'leaders') {
+          setLeaderForm((prev: any) => ({ ...prev, image_url: data.url }));
+        } else if (mode === 'backgrounds') {
+          setBackgroundUrl(data.url);
+          setBackgroundPreview(data.url);
+        } else if (mode === 'gallery') {
+          setGalleryImages(prev => [...prev, { url: data.url, caption: galleryCaption }]);
+          setGalleryCaption('');
+        }
+      }
       setMessage('Image uploaded');
     } else {
       setMessage('Upload failed');
@@ -830,6 +930,9 @@ function ContentManagement() {
         <button className={`px-3 py-2 rounded ${mode === 'static' ? 'primary-button' : 'secondary-button'}`} onClick={() => setMode('static')}>Static Content</button>
         <button className={`px-3 py-2 rounded ${mode === 'leaders' ? 'primary-button' : 'secondary-button'}`} onClick={() => setMode('leaders')}>Leaders</button>
         <button className={`px-3 py-2 rounded ${mode === 'ai-bot' ? 'primary-button' : 'secondary-button'}`} onClick={() => setMode('ai-bot')}>AI Bot Content</button>
+        <button className={`px-3 py-2 rounded ${mode === 'backgrounds' ? 'primary-button' : 'secondary-button'}`} onClick={() => setMode('backgrounds')}>Backgrounds</button>
+        <button className={`px-3 py-2 rounded ${mode === 'gallery' ? 'primary-button' : 'secondary-button'}`} onClick={() => setMode('gallery')}>Gallery</button>
+        <button className={`px-3 py-2 rounded ${mode === 'reviews' ? 'primary-button' : 'secondary-button'}`} onClick={() => setMode('reviews')}>Reviews</button>
       </div>
 
       {mode === 'static' && (
@@ -874,6 +977,114 @@ function ContentManagement() {
       <button onClick={handleSave} disabled={loading} className="primary-button px-4 py-2">
         {loading ? 'Saving...' : 'Save'}
       </button>
+
+      {mode === 'backgrounds' && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <input type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0])} />
+            <button className="secondary-button" onClick={() => backgroundUrl && setBackgroundPreview(backgroundUrl)}>Preview</button>
+          </div>
+          {backgroundPreview && (
+            <div className="rounded-xl overflow-hidden border border-white/20">
+              <img src={backgroundPreview} alt="Background preview" className="w-full h-64 object-cover" />
+            </div>
+          )}
+          <button
+            className="primary-button"
+            disabled={loading || !backgroundUrl}
+            onClick={async () => {
+              setLoading(true);
+              try {
+                const token = localStorage.getItem('authToken');
+                await fetch(marketingProxy('/content?type=background-image'), {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                  body: JSON.stringify({ content: backgroundUrl })
+                });
+                setMessage('Saved');
+              } catch (e) {
+                setMessage('Save failed');
+              } finally {
+                setLoading(false);
+                setTimeout(() => setMessage(''), 2000);
+              }
+            }}
+          >Save Background</button>
+        </div>
+      )}
+
+      {mode === 'gallery' && (
+        <div className="space-y-4">
+          <div className="flex flex-col gap-2 md:flex-row md:items-end md:gap-3">
+            <div className="flex-1">
+              <label className="block text-sm font-medium mb-1">Caption (optional)</label>
+              <input value={galleryCaption} onChange={(e) => setGalleryCaption(e.target.value)} className="w-full px-3 py-2 border rounded" placeholder="Sparkling kitchen transformation" />
+            </div>
+            <div>
+              <input type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0])} />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {galleryImages.map((img, idx) => (
+              <div key={idx} className="relative rounded-lg overflow-hidden border border-white/10 bg-white/5">
+                <img src={img.url} alt={img.caption || `Gallery ${idx + 1}`} className="w-full h-40 object-cover" />
+                {img.caption && <div className="p-2 text-sm text-white/80">{img.caption}</div>}
+                <button className="absolute top-2 right-2 text-xs bg-red-500/80 text-white px-2 py-1 rounded" onClick={() => setGalleryImages(prev => prev.filter((_, i) => i !== idx))}>Remove</button>
+              </div>
+            ))}
+          </div>
+          <button
+            className="primary-button"
+            disabled={loading}
+            onClick={async () => {
+              setLoading(true);
+              try {
+                const token = localStorage.getItem('authToken');
+                await fetch(marketingProxy('/content?type=gallery-images'), {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                  body: JSON.stringify({ content: JSON.stringify(galleryImages) })
+                });
+                setMessage('Saved');
+              } catch (e) {
+                setMessage('Save failed');
+              } finally {
+                setLoading(false);
+                setTimeout(() => setMessage(''), 2000);
+              }
+            }}
+          >Save Gallery</button>
+        </div>
+      )}
+
+      {mode === 'reviews' && (
+        <div className="space-y-4">
+          <div className="flex gap-2 items-center">
+            <span className="text-white/80 text-sm">Filter:</span>
+            {(['pending','approved','rejected'] as const).map(f => (
+              <button key={f} onClick={() => setReviewFilter(f)} className={`px-3 py-1 rounded ${reviewFilter === f ? 'bg-white/20 text-white' : 'bg-white/10 text-white/60 hover:bg-white/15'}`}>{f}</button>
+            ))}
+          </div>
+          <div className="space-y-3">
+            {reviews.map((rev: any) => (
+              <div key={rev.id} className="border border-white/10 rounded p-4 bg-white/5 text-white">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="font-semibold">{rev.user_name || 'Client'} • {rev.rating}★</div>
+                    <div className="text-sm text-white/70">{rev.service_location || 'Verified Client'}</div>
+                  </div>
+                  <div className="flex gap-2 text-sm">
+                    <button className="bg-green-500/20 px-3 py-1 rounded border border-green-500/40" onClick={() => updateReviewStatus(rev.id, 'approved')}>Approve</button>
+                    <button className="bg-red-500/20 px-3 py-1 rounded border border-red-500/40" onClick={() => updateReviewStatus(rev.id, 'rejected')}>Reject</button>
+                    <button className="bg-white/10 px-3 py-1 rounded border border-white/30" onClick={() => deleteReview(rev.id)}>Delete</button>
+                  </div>
+                </div>
+                <p className="mt-2 text-white/90">{rev.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

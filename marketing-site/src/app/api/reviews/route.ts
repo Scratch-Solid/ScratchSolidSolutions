@@ -116,9 +116,57 @@ export async function POST(request: NextRequest) {
   }
 }
 
+export async function PUT(request: NextRequest) {
+  const traceId = withTracing(request);
+  const authResult = await withAuth(request, ['admin']);
+  if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
+  const { db } = authResult;
+
+  try {
+    const body = await request.json() as { id?: number; status?: string };
+    if (!body.id || !body.status) {
+      return withSecurityHeaders(NextResponse.json({ error: 'id and status required' }, { status: 400 }), traceId);
+    }
+    await db.prepare('UPDATE reviews SET status = ?, updated_at = datetime("now") WHERE id = ?').bind(body.status, body.id).run();
+    return withSecurityHeaders(NextResponse.json({ success: true }), traceId);
+  } catch (error) {
+    logger.error('Error updating review', error as Error);
+    return withSecurityHeaders(NextResponse.json({ error: 'Failed to update review' }, { status: 500 }), traceId);
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  const traceId = withTracing(request);
+  const authResult = await withAuth(request, ['admin']);
+  if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
+  const { db } = authResult;
+
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    if (!id) {
+      return withSecurityHeaders(NextResponse.json({ error: 'id required' }, { status: 400 }), traceId);
+    }
+    await db.prepare('DELETE FROM reviews WHERE id = ?').bind(parseInt(id)).run();
+    return withSecurityHeaders(NextResponse.json({ success: true }), traceId);
+  } catch (error) {
+    logger.error('Error deleting review', error as Error);
+    return withSecurityHeaders(NextResponse.json({ error: 'Failed to delete review' }, { status: 500 }), traceId);
+  }
+}
+
 export async function GET(request: NextRequest) {
   const traceId = withTracing(request);
-  const db = await getDb();
+  // Allow public read for approved reviews, require admin auth for other statuses
+  let authDb = null;
+  let isAdmin = false;
+  const authAttempt = await withAuth(request, ['admin']);
+  if (!(authAttempt instanceof NextResponse)) {
+    isAdmin = true;
+    authDb = authAttempt.db;
+  }
+
+  const db = authDb || await getDb();
   if (!db) {
     return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 });
   }
@@ -127,6 +175,9 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status') || 'approved';
     const limit = parseInt(searchParams.get('limit') || '20');
+    if (!isAdmin && status !== 'approved') {
+      return withSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }), traceId);
+    }
 
     const reviews = await db.prepare(
       `SELECT r.*, u.name as user_name, b.location as service_location 

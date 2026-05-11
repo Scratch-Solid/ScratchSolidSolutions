@@ -5,17 +5,29 @@ import SiteNav from "@/components/SiteNav";
 export default function GalleryClient() {
   const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [galleryImages, setGalleryImages] = useState<{ url: string; caption?: string }[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState<'left' | 'right'>('left');
 
   useEffect(() => {
-    fetch('/api/reviews?status=approved&limit=10')
-      .then(res => res.ok ? res.json() : Promise.resolve({ results: [] }))
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .then((reviewsData: any) => {
-        setReviews(reviewsData?.results || []);
-        setLoading(false);
-      });
+    Promise.all([
+      fetch('/api/reviews?status=approved&limit=12').then(res => res.ok ? res.json() : Promise.resolve({ results: [] })),
+      fetch('/api/content?type=gallery-images').then(res => res.ok ? res.json() : Promise.resolve({ content: '' })),
+    ]).then(([reviewsData, galleryData]) => {
+      setReviews((reviewsData as any)?.results || (Array.isArray(reviewsData) ? reviewsData : []));
+      const parsed = (() => {
+        try {
+          const raw = (galleryData as any)?.content;
+          if (!raw) return [];
+          const json = typeof raw === 'string' ? JSON.parse(raw) : raw;
+          return Array.isArray(json) ? json : (json?.images || []);
+        } catch (e) {
+          return [];
+        }
+      })();
+      setGalleryImages(parsed.filter((x: any) => x?.url));
+      setLoading(false);
+    });
   }, []);
 
   useEffect(() => {
@@ -55,9 +67,29 @@ export default function GalleryClient() {
             <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-6 text-center">
               Before & After
             </h2>
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-8 text-center border-2 border-dashed border-blue-200">
-              <p className="text-gray-500 text-lg">Gallery images will be uploaded via admin panel</p>
-            </div>
+            {galleryImages.length === 0 ? (
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-8 text-center border-2 border-dashed border-blue-200">
+                <p className="text-gray-500 text-lg">Gallery images will appear here once uploaded.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {galleryImages.map((img, idx) => (
+                  <div key={idx} className="relative overflow-hidden rounded-2xl shadow-lg border border-white/40 bg-white">
+                    <img
+                      src={img.url}
+                      alt={img.caption || `Gallery image ${idx + 1}`}
+                      className="w-full h-64 object-cover transition-transform duration-300 hover:scale-105"
+                      loading="lazy"
+                    />
+                    {img.caption && (
+                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent text-white p-3 text-sm">
+                        {img.caption}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
