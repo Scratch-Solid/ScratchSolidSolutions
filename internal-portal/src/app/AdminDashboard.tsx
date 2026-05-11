@@ -540,6 +540,8 @@ function ContentManagement() {
   const [message, setMessage] = useState('');
   const [formData, setFormData] = useState<any>({});
 
+  const apiBase = process.env.NEXT_PUBLIC_API_URL || 'https://scratchsolidsolutions.org';
+
   const [leaders, setLeaders] = useState<any[]>([]);
   const [leaderForm, setLeaderForm] = useState<any>({ id: null, name: '', title: '', description: '', image_url: '', display_order: 0, active: true });
 
@@ -557,8 +559,8 @@ function ContentManagement() {
     setLoading(true);
     try {
       if (mode !== 'static') return;
+      const token = localStorage.getItem('authToken');
       if (contentType === 'consent-form') {
-        const token = localStorage.getItem('authToken');
         const response = await fetch('/api/admin/consent-form', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -567,7 +569,6 @@ function ContentManagement() {
           setFormData(data || {});
         }
       } else if (contentType === 'contract') {
-        const token = localStorage.getItem('authToken');
         const response = await fetch('/api/admin/contract-content', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -576,11 +577,18 @@ function ContentManagement() {
           setFormData(data || {});
         }
       } else {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://scratchsolidsolutions.org';
-        const response = await fetch(`${apiUrl}/api/content?type=${contentType}`);
+        if (!token) {
+          setMessage('Authentication required to load content');
+          return;
+        }
+        const response = await fetch(`${apiBase}/api/content?type=${contentType}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
         if (response.ok) {
           const data = await response.json() as { content?: string };
           setContent(data.content || '');
+        } else {
+          setMessage('Failed to load content');
         }
       }
     } catch (error) {
@@ -594,9 +602,15 @@ function ContentManagement() {
     setLoading(true);
     try {
       const token = localStorage.getItem('authToken');
-      const res = await fetch('/api/leaders', { headers: { Authorization: `Bearer ${token}` } });
+      if (!token) {
+        setMessage('Authentication required to load leaders');
+        return;
+      }
+      const res = await fetch(`${apiBase}/api/leaders`, { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) {
         setLeaders(await res.json());
+      } else {
+        setMessage('Failed to load leaders');
       }
     } catch (err) {
       setMessage('Failed to load leaders');
@@ -609,8 +623,13 @@ function ContentManagement() {
     setLoading(true);
     try {
       const token = localStorage.getItem('authToken');
-      const res = await fetch('/api/ai-responses', { headers: { Authorization: `Bearer ${token}` } });
+      if (!token) {
+        setMessage('Authentication required to load bot content');
+        return;
+      }
+      const res = await fetch(`${apiBase}/api/ai-responses`, { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) setAiItems(await res.json());
+      else setMessage('Failed to load bot content');
     } catch (err) {
       setMessage('Failed to load bot content');
     } finally {
@@ -662,19 +681,27 @@ function ContentManagement() {
             setMessage('Save failed');
           }
         } else {
-          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://scratchsolidsolutions.org';
-          const response = await fetch(`${apiUrl}/api/content?type=${contentType}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ content })
-          });
-          if (response.ok) setMessage('Saved');
-          else setMessage('Save failed');
+          const token = localStorage.getItem('authToken');
+          if (!token) {
+            setMessage('Authentication required to save content');
+          } else {
+            const response = await fetch(`${apiBase}/api/content?type=${contentType}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+              body: JSON.stringify({ content })
+            });
+            if (response.ok) setMessage('Saved');
+            else setMessage('Save failed');
+          }
         }
       } else if (mode === 'leaders') {
         const token = localStorage.getItem('authToken');
+        if (!token) {
+          setMessage('Authentication required to save leader');
+          return;
+        }
         const method = leaderForm.id ? 'PUT' : 'POST';
-        const url = leaderForm.id ? '/api/leaders' : '/api/leaders';
+        const url = `${apiBase}/api/leaders`;
         const res = await fetch(url, {
           method,
           headers: {
@@ -700,8 +727,12 @@ function ContentManagement() {
         }
       } else if (mode === 'ai-bot') {
         const token = localStorage.getItem('authToken');
+        if (!token) {
+          setMessage('Authentication required to save bot content');
+          return;
+        }
         const method = aiForm.id ? 'PUT' : 'POST';
-        const url = aiForm.id ? `/api/ai-responses/${aiForm.id}` : '/api/ai-responses';
+        const url = aiForm.id ? `${apiBase}/api/ai-responses/${aiForm.id}` : `${apiBase}/api/ai-responses`;
         const res = await fetch(url, {
           method,
           headers: {
@@ -732,28 +763,40 @@ function ContentManagement() {
 
   const handleDeleteLeader = async (id: number) => {
     const token = localStorage.getItem('authToken');
-    await fetch(`/api/leaders?id=${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+    if (!token) {
+      setMessage('Authentication required to delete leader');
+      return;
+    }
+    await fetch(`${apiBase}/api/leaders?id=${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
     fetchLeaders();
   };
 
   const handleDeleteAi = async (id: number) => {
     const token = localStorage.getItem('authToken');
-    await fetch(`/api/ai-responses/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+    if (!token) {
+      setMessage('Authentication required to delete bot content');
+      return;
+    }
+    await fetch(`${apiBase}/api/ai-responses/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
     fetchAi();
   };
 
   const handleUpload = async (file: File) => {
     const token = localStorage.getItem('authToken');
+    if (!token) {
+      setMessage('Authentication required to upload');
+      return;
+    }
     const formDataUpload = new FormData();
     formDataUpload.append('file', file);
-    const res = await fetch('/api/upload', {
+    const res = await fetch(`${apiBase}/api/upload`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` },
       body: formDataUpload
     });
     if (res.ok) {
-      const data = await res.json();
-      setLeaderForm((prev: any) => ({ ...prev, image_url: data.url }));
+      const data = await res.json() as { url?: string };
+      if (data.url) setLeaderForm((prev: any) => ({ ...prev, image_url: data.url }));
       setMessage('Image uploaded');
     } else {
       setMessage('Upload failed');

@@ -35,11 +35,11 @@ export default function DashboardLayout({ children, title, role = 'admin' }: Das
     switch (role) {
       case 'admin':
         return [
-          { href: '/AdminDashboard', label: 'Overview' },
-          { href: '/AdminDashboard?tab=new-joiners', label: 'New Joiners' },
-          { href: '/AdminDashboard?tab=employees', label: 'Employees' },
-          { href: '/AdminDashboard?tab=services-banking', label: 'Services & Banking' },
-          { href: '/AdminDashboard?tab=content', label: 'Content' },
+          { href: '/admin-dashboard', label: 'Overview' },
+          { href: '/admin-dashboard?tab=new-joiners', label: 'New Joiners' },
+          { href: '/admin-dashboard?tab=employees', label: 'Employees' },
+          { href: '/admin-dashboard?tab=services-banking', label: 'Services & Banking' },
+          { href: '/admin-dashboard?tab=content', label: 'Content' },
         ];
       case 'cleaner':
         return [
