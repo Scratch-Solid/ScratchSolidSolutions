@@ -56,3 +56,10 @@ jobs:
           node-version: 20
           cache: npm
           cache-dependency-path: internal-portal/package-lock.json
+
+      - run: npm ci
+      - name: Build and deploy with OpenNext
+        run: npx opennextjs-cloudflare build && npx opennextjs-cloudflare deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
