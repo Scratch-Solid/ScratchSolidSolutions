@@ -27,6 +27,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Ensure users table exists to avoid opaque errors
+    const usersTable = await db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='users'").first();
+    if (!usersTable) {
+      console.error('Database schema missing users table. Run migrations on D1.');
+      return NextResponse.json({ success: false, error: 'Database not initialized' }, { status: 503 });
+    }
+
     // Find user by email or username
     let user;
     try {
