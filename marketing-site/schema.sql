@@ -351,3 +351,13 @@ CREATE INDEX IF NOT EXISTS idx_reviews_user_id ON reviews(user_id);
 CREATE INDEX IF NOT EXISTS idx_reviews_booking_id ON reviews(booking_id);
 CREATE INDEX IF NOT EXISTS idx_reviews_status ON reviews(status);
 CREATE INDEX IF NOT EXISTS idx_content_collection_slug ON content(collection, slug);
+
+-- Default users (passwords hashed with bcrypt)
+-- admin@scratchsolid.com / admin123
+INSERT OR IGNORE INTO users (email, password_hash, role, name) VALUES ('admin@scratchsolid.com', '$2a$10$wjg4aMRm09ImXuxeajH04Oykj3zBJ97eBp0gUF0LF/WmE/Sx4AlGO', 'admin', 'Admin User');
+-- scratch@scratchsolid.com / staff123
+INSERT OR IGNORE INTO users (email, password_hash, role, name) VALUES ('scratch@scratchsolid.com', '$2a$10$dUOWAWeATuaAt7BN8aOROOD1MdRHqlnMiMgUH4KvBLYQzgzCipTBu', 'cleaner', 'Scratch Cleaner');
+-- solid@scratchsolid.com / staff123
+INSERT OR IGNORE INTO users (email, password_hash, role, name) VALUES ('solid@scratchsolid.com', '$2a$10$dUOWAWeATuaAt7BN8aOROOD1MdRHqlnMiMgUH4KvBLYQzgzCipTBu', 'digital', 'Solid Digital');
+-- trans@scratchsolid.com / staff123
+INSERT OR IGNORE INTO users (email, password_hash, role, name) VALUES ('trans@scratchsolid.com', '$2a$10$dUOWAWeATuaAt7BN8aOROOD1MdRHqlnMiMgUH4KvBLYQzgzCipTBu', 'transport', 'Trans Transport');
