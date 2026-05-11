@@ -22,12 +22,12 @@ export async function getDb(): Promise<D1Database | null> {
 
 // User operations
 export async function getUserByEmail(db: D1Database, email: string) {
-  const result = await db.prepare('SELECT id, email, role, name, phone, address, business_name, password_hash, failed_attempts, locked_until FROM users WHERE email = ?').bind(email).first();
+  const result = await db.prepare('SELECT id, email, role, name, phone, address, business_name, password_hash, failed_attempts, locked_until, email_verified FROM users WHERE email = ?').bind(email).first();
   return result;
 }
 
 export async function getUserByPhone(db: D1Database, phone: string) {
-  const result = await db.prepare('SELECT id, email, role, name, phone, address, business_name, password_hash, failed_attempts, locked_until FROM users WHERE phone = ?').bind(phone).first();
+  const result = await db.prepare('SELECT id, email, role, name, phone, address, business_name, password_hash, failed_attempts, locked_until, email_verified FROM users WHERE phone = ?').bind(phone).first();
   return result;
 }
 
@@ -148,6 +148,30 @@ export async function validateSession(db: D1Database, token: string) {
 
 export async function deleteSession(db: D1Database, token: string) {
   await db.prepare('DELETE FROM sessions WHERE token = ?').bind(token).run();
+}
+
+export async function revokeAllUserSessions(db: D1Database, userId: number) {
+  await db.prepare('DELETE FROM sessions WHERE user_id = ?').bind(userId).run();
+}
+
+// Email verification operations
+export async function createEmailVerificationToken(db: D1Database, userId: number): Promise<string> {
+  const token = crypto.randomUUID();
+  await db.prepare(
+    `UPDATE users SET email_verification_token = ?, email_verification_expires = datetime('now', '+24 hours') WHERE id = ?`
+  ).bind(token, userId).run();
+  return token;
+}
+
+export async function verifyEmailToken(db: D1Database, token: string): Promise<boolean> {
+  const user = await db.prepare(
+    `SELECT id FROM users WHERE email_verification_token = ? AND email_verification_expires > datetime('now')`
+  ).bind(token).first();
+  if (!user) return false;
+  await db.prepare(
+    `UPDATE users SET email_verified = 1, email_verification_token = NULL, email_verification_expires = NULL WHERE id = ?`
+  ).bind((user as any).id).run();
+  return true;
 }
 
 // Password reset operations

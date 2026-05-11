@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { getDb, revokeAllUserSessions, logAuditEvent } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import { withAuth, withTracing, withSecurityHeaders, withRateLimit } from '@/lib/middleware';
 
@@ -36,6 +36,18 @@ export async function POST(request: NextRequest) {
 
     const newHash = await bcrypt.hash(newPassword, 10);
     await db.prepare('UPDATE users SET password_hash = ?, password_needs_reset = 0, login_count = 0 WHERE id = ?').bind(newHash, user.id).run();
+
+    const currentToken = request.headers.get('Authorization')?.replace('Bearer ', '');
+    await revokeAllUserSessions(db, user.id, currentToken);
+
+    await logAuditEvent(db, {
+      user_id: user.id,
+      action: 'password_changed',
+      resource: 'user',
+      resource_id: String(user.id),
+      ip_address: request.headers.get('x-forwarded-for') || 'unknown',
+      success: true
+    });
 
     return withSecurityHeaders(NextResponse.json({ success: true }), traceId);
   } catch (err) {

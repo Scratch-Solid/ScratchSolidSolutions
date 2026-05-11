@@ -1,11 +1,10 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, getUserByEmail, createUser, createSession } from "@/lib/db";
+import { getDb, getUserByEmail, createUser, createEmailVerificationToken } from "@/lib/db";
+import { sendEmailVerificationEmail } from "@/lib/email";
 import { sanitizeEmail, sanitizeText, sanitizePhone } from "@/lib/sanitization";
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
 import { logger } from "@/lib/logger";
-import { getJWTSecret } from "@/lib/env";
 import { validateEmail, validatePassword } from "@/lib/validation";
 import { withRateLimit, rateLimits } from "@/lib/middleware";
 
@@ -98,18 +97,21 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Failed to create business account' }, { status: 500 });
       }
 
-      const token = jwt.sign({ id: (user as any).id, email: (user as any).email, role: (user as any).role }, getJWTSecret(), { expiresIn: '7d' });
-      await createSession(db, (user as any).id, token);
-      
-      return NextResponse.json({ 
-        id: (user as any).id, 
+      const verifyToken = await createEmailVerificationToken(db, (user as any).id);
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://scratchsolidsolutions.org';
+      const verifyLink = `${baseUrl}/api/auth/verify-email?token=${verifyToken}`;
+      try {
+        await sendEmailVerificationEmail((user as any).email, (user as any).name || 'there', verifyLink);
+      } catch (emailErr) {
+        logger.warn('Failed to send verification email', emailErr as Error);
+      }
+
+      return NextResponse.json({
+        id: (user as any).id,
         email: (user as any).email,
         role: (user as any).role,
         name: (user as any).name,
-        phone: (user as any).phone || '',
-        address: (user as any).address || '',
-        token: token,
-        message: 'Business account created successfully' 
+        message: 'Business account created successfully. Please check your email to verify your account.'
       }, { status: 201 });
     }
 
@@ -127,18 +129,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unable to create account. Please try again or contact support.' }, { status: 500 });
     }
 
-    const token = jwt.sign({ id: (user as any).id, email: (user as any).email, role: (user as any).role }, getJWTSecret(), { expiresIn: '7d' });
-    await createSession(db, (user as any).id, token);
+    const verifyToken = await createEmailVerificationToken(db, (user as any).id);
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://scratchsolidsolutions.org';
+    const verifyLink = `${baseUrl}/api/auth/verify-email?token=${verifyToken}`;
+    try {
+      await sendEmailVerificationEmail((user as any).email, (user as any).name || 'there', verifyLink);
+    } catch (emailErr) {
+      logger.warn('Failed to send verification email', emailErr as Error);
+    }
 
     return NextResponse.json({
       id: (user as any).id,
       email: (user as any).email,
       role: (user as any).role,
       name: (user as any).name,
-      phone: (user as any).phone || '',
-      address: (user as any).address || '',
-      token: token,
-      message: 'Account created successfully'
+      message: 'Account created successfully. Please check your email to verify your account.'
     }, { status: 201 });
   } catch (error) {
     logger.error('Error creating user', error as Error);

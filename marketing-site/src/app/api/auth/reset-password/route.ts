@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, validatePasswordResetToken, deletePasswordResetToken, getUserById } from "@/lib/db";
+import { getDb, validatePasswordResetToken, deletePasswordResetToken, getUserById, revokeAllUserSessions } from "@/lib/db";
 import bcrypt from 'bcryptjs';
 import { logger } from "@/lib/logger";
 import { validatePassword } from "@/lib/validation";
@@ -70,8 +70,9 @@ export async function POST(request: NextRequest) {
       .bind(passwordHash, (user as any).id)
       .run();
 
-    // Delete the reset token
+    // Delete the reset token and revoke all active sessions (force re-auth on all devices)
     await deletePasswordResetToken(db, token);
+    await revokeAllUserSessions(db, (user as any).id);
 
     logger.info('Password reset successful', { userId: (user as any).id });
 

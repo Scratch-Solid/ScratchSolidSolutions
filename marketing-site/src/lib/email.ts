@@ -257,3 +257,30 @@ export async function sendAdminAlertEmail(clientName: string, bookingDate: strin
     from: 'Scratch Solid Solutions <customerservice@scratchsolidsolutions.org>'
   });
 }
+
+export async function sendEmailVerificationEmail(email: string, name: string, verifyLink: string) {
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8"><title>Verify your email</title></head>
+    <body style="font-family: Arial, sans-serif; background: #f4f6fb; padding: 32px;">
+      <div style="max-width: 520px; margin: 0 auto; background: #fff; border-radius: 10px; padding: 32px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+        <h2 style="color: #1a2a5e; margin-top: 0;">Verify your email address</h2>
+        <p style="color: #374151;">Hi ${name},</p>
+        <p style="color: #374151;">Thanks for signing up with Scratch Solid Solutions. Please verify your email address to activate your account.</p>
+        <div style="text-align: center; margin: 32px 0;">
+          <a href="${verifyLink}" style="background: #1a2a5e; color: #fff; padding: 14px 32px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 16px;">Verify Email Address</a>
+        </div>
+        <p style="color: #6b7280; font-size: 13px;">This link expires in 24 hours. If you did not create an account, please ignore this email.</p>
+        <p style="color: #6b7280; font-size: 12px;">Or copy this link: <a href="${verifyLink}" style="color: #1a2a5e;">${verifyLink}</a></p>
+      </div>
+    </body>
+    </html>
+  `;
+  return sendEmail({
+    to: email,
+    subject: 'Verify your Scratch Solid Solutions account',
+    html,
+    from: 'Scratch Solid Solutions <customerservice@scratchsolidsolutions.org>'
+  });
+}
