@@ -66,7 +66,8 @@ export default function AdminDashboard() {
           setContracts(await contractsRes.value.json());
         }
         if (paymentsRes.status === 'fulfilled' && paymentsRes.value.ok) {
-          setPayments(await paymentsRes.value.json());
+          const pay = await paymentsRes.value.json();
+          setPayments(pay as any[]);
         }
         if (notificationsRes.status === 'fulfilled' && notificationsRes.value.ok) {
           setNotifications(await notificationsRes.value.json());
@@ -92,11 +93,22 @@ export default function AdminDashboard() {
           setEmployees(resolvedEmployees);
         }
 
+        const totalRevenue = (payments || []).reduce((sum: number, p: any) => {
+          const val = p?.amount ?? p?.total_amount ?? 0;
+          return sum + (typeof val === 'number' ? val : parseFloat(val) || 0);
+        }, 0);
+        const weekendAssignments = resolvedBookings.filter((b: any) => {
+          const d = b?.booking_date ? new Date(b.booking_date) : null;
+          if (!d || isNaN(d.getTime())) return false;
+          const day = d.getUTCDay();
+          return (day === 0 || day === 6) && (b?.status ?? '').toLowerCase() !== 'completed';
+        }).length;
+
         setStats({
           totalBookings: resolvedBookings.length,
-          totalRevenue: 0,
+          totalRevenue,
           activeCleaners: resolvedEmployees.length,
-          pendingWeekendAssignments: 0,
+          pendingWeekendAssignments: weekendAssignments,
         });
       } catch (err) {
         setError((err as Error).message);
@@ -109,19 +121,22 @@ export default function AdminDashboard() {
 
   const assignCleaner = async (bookingId: string, cleanerId: string) => {
     try {
+      const token = localStorage.getItem('authToken');
       const res = await fetch(`/api/bookings/${bookingId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ cleaner_id: cleanerId })
       });
       if (res.ok) {
         // Refresh bookings
-        const token = localStorage.getItem('authToken');
         const bookingsRes = await fetch("/api/admin/bookings", { headers: { 'Authorization': `Bearer ${token}` } });
         if (bookingsRes.ok) setBookings(await bookingsRes.json());
+      } else {
+        setError('Failed to assign cleaner');
       }
     } catch (err) {
       console.error("Failed to assign cleaner:", err);
+      setError('Failed to assign cleaner');
     }
   };
 

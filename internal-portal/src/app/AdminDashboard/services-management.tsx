@@ -115,17 +115,23 @@ export default function ServicesManagement() {
 
       if (servicesRes.ok) {
         const servicesData = await servicesRes.json();
-        setServices(servicesData);
+        setServices(servicesData as Service[]);
+      } else {
+        setError('Failed to load services');
       }
       
       if (pricingRes.ok) {
         const pricingData = await pricingRes.json();
-        setServicePricing(pricingData);
+        setServicePricing(pricingData as ServicePricing[]);
+      } else {
+        setError('Failed to load pricing');
       }
       
       if (promosRes.ok) {
         const promosData = await promosRes.json();
-        setPromoCodes(promosData);
+        setPromoCodes(promosData as PromoCode[]);
+      } else {
+        setError('Failed to load promos');
       }
     } catch (err) {
       setError('Failed to fetch data');
@@ -164,6 +170,8 @@ export default function ServicesManagement() {
           display_order: '',
           is_active: true
         });
+      } else {
+        setError('Failed to add service');
       }
     } catch (err) {
       setError('Failed to add service');
@@ -201,6 +209,8 @@ export default function ServicesManagement() {
           display_order: '',
           is_active: true
         });
+      } else {
+        setError('Failed to update service');
       }
     } catch (err) {
       setError('Failed to update service');
@@ -219,6 +229,8 @@ export default function ServicesManagement() {
 
       if (res.ok) {
         fetchData();
+      } else {
+        setError('Failed to delete service');
       }
     } catch (err) {
       setError('Failed to delete service');
@@ -262,6 +274,8 @@ export default function ServicesManagement() {
           special_valid_from: '',
           special_valid_until: ''
         });
+      } else {
+        setError('Failed to add pricing');
       }
     } catch (err) {
       setError('Failed to add pricing');
@@ -303,6 +317,8 @@ export default function ServicesManagement() {
           valid_until: '',
           is_active: true
         });
+      } else {
+        setError('Failed to add promo code');
       }
     } catch (err) {
       setError('Failed to add promo code');
@@ -321,6 +337,8 @@ export default function ServicesManagement() {
 
       if (res.ok) {
         fetchData();
+      } else {
+        setError('Failed to delete promo code');
       }
     } catch (err) {
       setError('Failed to delete promo code');
