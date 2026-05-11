@@ -913,13 +913,16 @@ function ContentManagement() {
       });
 
       if (!presignRes.ok) {
-        setMessage('Failed to get upload URL');
+        const errorText = await presignRes.text();
+        console.error('Upload URL request failed:', presignRes.status, errorText);
+        setMessage(`Failed to get upload URL: ${presignRes.status} - ${errorText}`);
         setLoading(false);
         return;
       }
 
       const presignData = await presignRes.json() as { uploadUrl?: string; publicUrl?: string; fallbackUrl?: string; requiredHeaders?: Record<string, string> };
       if (!presignData.uploadUrl) {
+        console.error('Upload URL missing from response:', presignData);
         setMessage('Upload URL missing');
         setLoading(false);
         return;
@@ -936,6 +939,7 @@ function ContentManagement() {
       });
 
       if (!putRes.ok) {
+        console.error('R2 upload failed:', putRes.status, await putRes.text());
         setMessage('Upload failed');
         setLoading(false);
         return;
@@ -957,10 +961,11 @@ function ContentManagement() {
         setMessage('Upload failed: no URL returned');
       }
     } catch (err) {
-      setMessage('Upload failed');
+      console.error('Upload error:', err);
+      setMessage(`Upload failed: ${(err as Error).message}`);
     } finally {
       setLoading(false);
-      setTimeout(() => setMessage(''), 2000);
+      setTimeout(() => setMessage(''), 5000);
     }
   };
 
