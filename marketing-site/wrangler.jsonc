@@ -14,6 +14,12 @@
       "database_id": "0b0b6006-1b2d-4ab1-8909-dc684666e6d3"
     }
   ],
+  "kv_namespaces": [
+    {
+      "binding": "RATE_LIMIT_KV",
+      "id": "859744ffa6fc44caa84edaaa1e481800"
+    }
+  ],
   "routes": [
     {
       "pattern": "api.scratchsolidsolutions.org/*",
