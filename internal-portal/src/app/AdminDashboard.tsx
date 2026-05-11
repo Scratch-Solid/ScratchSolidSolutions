@@ -18,6 +18,7 @@ export default function AdminDashboard() {
   const [employees, setEmployees] = useState([]);
   const [newJoiners, setNewJoiners] = useState([]);
   const [activeTab, setActiveTab] = useState("overview");
+  const [employeeSubTab, setEmployeeSubTab] = useState<'new' | 'existing'>('new');
   const [stats, setStats] = useState({ totalBookings: 0, totalRevenue: 0, activeCleaners: 0, pendingWeekendAssignments: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -342,12 +343,6 @@ export default function AdminDashboard() {
           Overview
         </button>
         <button
-          onClick={() => setActiveTab("new-joiners")}
-          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTab === "new-joiners" ? "bg-white/20 text-white" : "bg-white/10 text-white/70 hover:bg-white/15"}`}
-        >
-          New Joiners
-        </button>
-        <button
           onClick={() => setActiveTab("employees")}
           className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTab === "employees" ? "bg-white/20 text-white" : "bg-white/10 text-white/70 hover:bg-white/15"}`}
         >
@@ -433,111 +428,118 @@ export default function AdminDashboard() {
             </ul>
           </div>
         </>
-      ) : activeTab === "new-joiners" ? (
-        <>
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
-            <h3 className="font-bold text-lg text-white mb-4">New Joiners - Pending Approval</h3>
-            {newJoiners.length === 0 ? (
-              <p className="text-white/60">No pending new joiners.</p>
-            ) : (
-              <div className="space-y-3">
-                {newJoiners.map((joiner: any) => (
-                  <div key={joiner.id} className="border border-white/10 rounded p-4 bg-white/5">
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <p className="font-bold text-lg text-white">{joiner.fullName}</p>
-                        <p className="text-sm text-white/60">ID/Passport: {joiner.idPassportNumber}</p>
-                        <p className="text-sm text-white/60">Contact: {joiner.contactNumber}</p>
-                        <p className="text-sm text-white/60">Position: {joiner.positionAppliedFor}</p>
-                        <p className="text-sm text-white/60">Department: {joiner.department}</p>
-                        <p className="text-sm text-white/60">Username: {joiner.generatedUsername}</p>
-                        <p className="text-sm text-white/60">Submitted: {new Date(joiner.submittedAt).toLocaleString()}</p>
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => setSelectedJoiner(joiner)}
-                          className="bg-white/20 hover:bg-white/30 text-white px-3 py-1 text-sm rounded border border-white/30 transition-all"
-                        >
-                          View Consent
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+      ) : activeTab === "employees" ? (
+        <div className="space-y-4">
+          <div className="flex space-x-2">
+            <button onClick={() => setEmployeeSubTab('new')} className={`px-3 py-2 rounded ${employeeSubTab === 'new' ? 'bg-white/20 text-white' : 'bg-white/10 text-white/70 hover:bg-white/15'}`}>New Joiners</button>
+            <button onClick={() => setEmployeeSubTab('existing')} className={`px-3 py-2 rounded ${employeeSubTab === 'existing' ? 'bg-white/20 text-white' : 'bg-white/10 text-white/70 hover:bg-white/15'}`}>Employee Details</button>
           </div>
 
-          {/* Consent Form Modal */}
-          {selectedJoiner && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-              <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 max-w-2xl w-full max-h-[80vh] overflow-y-auto p-6">
-                <h3 className="font-bold text-xl text-white mb-4">Consent Form Details</h3>
-                <div className="space-y-3 text-sm text-white/80">
-                  <p><b className="text-white">Full Name:</b> {selectedJoiner.fullName}</p>
-                  <p><b className="text-white">ID/Passport:</b> {selectedJoiner.idPassportNumber}</p>
-                  <p><b className="text-white">Contact:</b> {selectedJoiner.contactNumber}</p>
-                  <p><b className="text-white">Position:</b> {selectedJoiner.positionAppliedFor}</p>
-                  <p><b className="text-white">Department:</b> {selectedJoiner.department}</p>
-                  <p><b className="text-white">Username:</b> {selectedJoiner.generatedUsername}</p>
-                  <p><b className="text-white">Submitted:</b> {new Date(selectedJoiner.submittedAt).toLocaleString()}</p>
-                </div>
-                <div className="flex gap-4 mt-6">
-                  <button
-                    onClick={() => handleApproveJoiner(selectedJoiner)}
-                    className="flex-1 bg-green-500/20 hover:bg-green-500/30 text-green-200 px-4 py-2 rounded-lg border border-green-500/30 transition-all"
-                  >
-                    Approve
-                  </button>
-                  <button
-                    onClick={() => handleRejectJoiner(selectedJoiner)}
-                    className="flex-1 bg-red-500/20 hover:bg-red-500/30 text-red-200 px-4 py-2 rounded-lg border border-red-500/30 transition-all"
-                  >
-                    Reject
-                  </button>
-                  <button
-                    onClick={() => setSelectedJoiner(null)}
-                    className="flex-1 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg border border-white/30 transition-all"
-                  >
-                    Close
-                  </button>
-                </div>
+          {employeeSubTab === 'new' ? (
+            <>
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
+                <h3 className="font-bold text-lg text-white mb-4">New Joiners - Pending Approval</h3>
+                {newJoiners.length === 0 ? (
+                  <p className="text-white/60">No pending new joiners.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {newJoiners.map((joiner: any) => (
+                      <div key={joiner.id} className="border border-white/10 rounded p-4 bg-white/5">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <p className="font-bold text-lg text-white">{joiner.fullName}</p>
+                            <p className="text-sm text-white/60">ID/Passport: {joiner.idPassportNumber}</p>
+                            <p className="text-sm text-white/60">Contact: {joiner.contactNumber}</p>
+                            <p className="text-sm text-white/60">Position: {joiner.positionAppliedFor}</p>
+                            <p className="text-sm text-white/60">Department: {joiner.department}</p>
+                            <p className="text-sm text-white/60">Username: {joiner.generatedUsername}</p>
+                            <p className="text-sm text-white/60">Submitted: {new Date(joiner.submittedAt).toLocaleString()}</p>
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => setSelectedJoiner(joiner)}
+                              className="bg-white/20 hover:bg-white/30 text-white px-3 py-1 text-sm rounded border border-white/30 transition-all"
+                            >
+                              View Consent
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
+
+              {selectedJoiner && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                  <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 max-w-2xl w-full max-h-[80vh] overflow-y-auto p-6">
+                    <h3 className="font-bold text-xl text-white mb-4">Consent Form Details</h3>
+                    <div className="space-y-3 text-sm text-white/80">
+                      <p><b className="text-white">Full Name:</b> {selectedJoiner.fullName}</p>
+                      <p><b className="text-white">ID/Passport:</b> {selectedJoiner.idPassportNumber}</p>
+                      <p><b className="text-white">Contact:</b> {selectedJoiner.contactNumber}</p>
+                      <p><b className="text-white">Position:</b> {selectedJoiner.positionAppliedFor}</p>
+                      <p><b className="text-white">Department:</b> {selectedJoiner.department}</p>
+                      <p><b className="text-white">Username:</b> {selectedJoiner.generatedUsername}</p>
+                      <p><b className="text-white">Submitted:</b> {new Date(selectedJoiner.submittedAt).toLocaleString()}</p>
+                    </div>
+                    <div className="flex gap-4 mt-6">
+                      <button
+                        onClick={() => handleApproveJoiner(selectedJoiner)}
+                        className="flex-1 bg-green-500/20 hover:bg-green-500/30 text-green-200 px-4 py-2 rounded-lg border border-green-500/30 transition-all"
+                      >
+                        Approve
+                      </button>
+                      <button
+                        onClick={() => handleRejectJoiner(selectedJoiner)}
+                        className="flex-1 bg-red-500/20 hover:bg-red-500/30 text-red-200 px-4 py-2 rounded-lg border border-red-500/30 transition-all"
+                      >
+                        Reject
+                      </button>
+                      <button
+                        onClick={() => setSelectedJoiner(null)}
+                        className="flex-1 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg border border-white/30 transition-all"
+                      >
+                        Close
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
+              <h3 className="font-bold text-lg text-white mb-2">Employees</h3>
+              {employees.length === 0 ? (
+                <div className="text-white/60">No employees found.</div>
+              ) : (
+                <ul className="space-y-4">
+                  {employees.map((emp: any) => (
+                    <li key={emp.id} className="border border-white/10 rounded p-4 bg-white/5">
+                      <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-white"><b className="text-white">Full Name:</b> {emp.fullName}</p>
+                            <p className="text-white"><b className="text-white">Position Applied For:</b> {emp.positionAppliedFor}</p>
+                            <p className="text-white"><b className="text-white">ID/Passport:</b> {emp.idPassportNumber}</p>
+                            <p className="text-white"><b className="text-white">Username:</b> {emp.username}</p>
+                            <p className="text-white"><b className="text-white">Department:</b> {emp.department}</p>
+                          </div>
+                          <div>
+                            <p className="text-white"><b className="text-white">Contact Number:</b> {emp.contactNumber}</p>
+                            <p className="text-white"><b className="text-white">Status:</b> {emp.status}</p>
+                            <p className="text-white"><b className="text-white">Consent Date:</b> {new Date(emp.consentDate).toLocaleString()}</p>
+                          </div>
+                        </div>
+                        <div className="mt-2 pt-2 border-t border-white/10">
+                          <p className="text-sm text-white/60"><b className="text-white">Signature Confirmed:</b> {emp.applicantSignature ? "Yes" : "No"}</p>
+                        </div>
+                      </li>
+                    ))}
+                </ul>
+              )}
             </div>
           )}
-        </>
-      ) : activeTab === "employees" ? (
-        <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
-          <h3 className="font-bold text-lg text-white mb-2">Employees</h3>
-          {employees.length === 0 ? (
-            <div className="text-white/60">No employees found.</div>
-          ) : (
-            <ul className="space-y-4">
-              {employees.map((emp: any) => (
-                <li key={emp.id} className="border border-white/10 rounded p-4 bg-white/5">
-                  <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-white"><b className="text-white">Full Name:</b> {emp.fullName}</p>
-                        <p className="text-white"><b className="text-white">Position Applied For:</b> {emp.positionAppliedFor}</p>
-                        <p className="text-white"><b className="text-white">ID/Passport:</b> {emp.idPassportNumber}</p>
-                        <p className="text-white"><b className="text-white">Username:</b> {emp.username}</p>
-                        <p className="text-white"><b className="text-white">Department:</b> {emp.department}</p>
-                      </div>
-                      <div>
-                        <p className="text-white"><b className="text-white">Contact Number:</b> {emp.contactNumber}</p>
-                        <p className="text-white"><b className="text-white">Status:</b> {emp.status}</p>
-                        <p className="text-white"><b className="text-white">Consent Date:</b> {new Date(emp.consentDate).toLocaleString()}</p>
-                      </div>
-                    </div>
-                    <div className="mt-2 pt-2 border-t border-white/10">
-                      <p className="text-sm text-white/60"><b className="text-white">Signature Confirmed:</b> {emp.applicantSignature ? "Yes" : "No"}</p>
-                      <p className="text-sm text-white/60"><b className="text-white">Witness:</b> {emp.witnessRepresentative}</p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+        </div>
       ) : activeTab === "services-banking" ? (
         <ServicesManagement />
       ) : activeTab === "content" ? (

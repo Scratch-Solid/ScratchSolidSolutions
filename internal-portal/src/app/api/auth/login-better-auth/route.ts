@@ -7,12 +7,13 @@ import { generateDeviceFingerprint, parseUserAgent } from '@/lib/device-fingerpr
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const body = await request.json() as { email?: string; password?: string };
     const { email, password } = body;
-    
-    if (!email || !password) {
+    const identifier = email; // now supports username or email
+
+    if (!identifier || !password) {
       return NextResponse.json(
-        { success: false, error: 'Email and password required' },
+        { success: false, error: 'Email/username and password required' },
         { status: 400 }
       );
     }
@@ -20,8 +21,8 @@ export async function POST(request: NextRequest) {
     let user;
     try {
       const db = await getDb();
-      // Find user by email
-      user = await db.prepare('SELECT * FROM users WHERE email = ?').bind(email).first();
+      // Find user by email or username
+      user = await db.prepare('SELECT * FROM users WHERE email = ? OR username = ?').bind(identifier, identifier).first();
     } catch (dbError) {
       console.error('Database error:', dbError);
       return NextResponse.json(
@@ -79,6 +80,17 @@ export async function POST(request: NextRequest) {
 
     // Generate a simple session token
     const sessionToken = Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2);
+
+    // Increment login count and compute password reset flag
+    const db = await getDb();
+    if (db) {
+      await db.prepare('ALTER TABLE users ADD COLUMN password_needs_reset INTEGER DEFAULT 0').run().catch(() => {});
+      await db.prepare('ALTER TABLE users ADD COLUMN login_count INTEGER DEFAULT 0').run().catch(() => {});
+      await db.prepare('UPDATE users SET login_count = COALESCE(login_count,0) + 1 WHERE id = ?').bind(user.id).run();
+      const refreshed = await db.prepare('SELECT password_needs_reset, login_count FROM users WHERE id = ?').bind(user.id).first();
+      (user as any).password_needs_reset = (refreshed as any)?.password_needs_reset ?? user.password_needs_reset;
+      (user as any).login_count = (refreshed as any)?.login_count ?? user.login_count;
+    }
     
     // Log successful login
     const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
@@ -115,7 +127,8 @@ export async function POST(request: NextRequest) {
         },
         session: {
           token: sessionToken,
-          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          mustChangePassword: (user as any)?.password_needs_reset === 1
         }
       }
     });
