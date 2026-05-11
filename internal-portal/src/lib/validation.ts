@@ -40,12 +40,10 @@ export function validatePhone(phone: string): ValidationResult {
     const digits = phone.replace(/\D/g, '');
 
     // South African phone number validation
-    // Format: +27 XX XXX XXXX or 0XX XXX XXXX (10 digits after country code, 11 with leading 0)
-    if (digits.length === 11 && digits.startsWith('0')) {
-      // Format: 0XX XXX XXXX - valid SA format
-    } else if (digits.length === 10 && digits.startsWith('27')) {
-      // Format: +27 XX XXX XXXX - valid SA format
-    } else {
+    // Accept: 0XX XXX XXXX (11 digits incl leading 0) OR +27 XX XXX XXXX (11 digits starting 27)
+    const isLocal = digits.length === 11 && digits.startsWith('0');
+    const isInternational = digits.length === 11 && digits.startsWith('27');
+    if (!isLocal && !isInternational) {
       errors.push('Invalid South African phone number. Use format: +27 XX XXX XXXX or 0XX XXX XXXX');
     }
   }

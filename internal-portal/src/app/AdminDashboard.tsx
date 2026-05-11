@@ -581,16 +581,18 @@ function ContentManagement() {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (response.ok) {
-          const data = await response.json();
+          const data = await response.json() as { title?: string; content?: string; id?: string };
           setFormData(data || {});
+          setContent(data?.content || '');
         }
       } else if (contentType === 'contract') {
         const response = await fetch('/api/admin/contract-content', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (response.ok) {
-          const data = await response.json();
+          const data = await response.json() as { title?: string; body?: string; version?: string; id?: string };
           setFormData(data || {});
+          setContent(data?.body || '');
         }
       } else {
         if (!token) {
@@ -851,13 +853,13 @@ function ContentManagement() {
           {contentType === 'consent-form' ? (
             <div className="space-y-3">
               <input type="text" value={formData.title || ''} onChange={(e) => setFormData({ ...formData, title: e.target.value })} className="w-full px-3 py-2 border rounded" placeholder="Title" />
-              <textarea value={formData.content || ''} onChange={(e) => setFormData({ ...formData, content: e.target.value })} rows={10} className="w-full px-3 py-2 border rounded font-mono text-sm" />
+              <textarea value={formData.content || ''} onChange={(e) => setFormData({ ...formData, content: e.target.value })} rows={10} className="w-full px-3 py-2 border rounded font-mono text-sm" placeholder="Enter consent text" />
             </div>
           ) : contentType === 'contract' ? (
             <div className="space-y-3">
               <input type="text" value={formData.title || ''} onChange={(e) => setFormData({ ...formData, title: e.target.value })} className="w-full px-3 py-2 border rounded" placeholder="Title" />
               <input type="text" value={formData.version || ''} onChange={(e) => setFormData({ ...formData, version: e.target.value })} className="w-full px-3 py-2 border rounded" placeholder="Version" />
-              <textarea value={formData.body || ''} onChange={(e) => setFormData({ ...formData, body: e.target.value })} rows={10} className="w-full px-3 py-2 border rounded font-mono text-sm" />
+              <textarea value={formData.body || ''} onChange={(e) => setFormData({ ...formData, body: e.target.value })} rows={10} className="w-full px-3 py-2 border rounded font-mono text-sm" placeholder="Enter contract body" />
             </div>
           ) : (
             <textarea value={content} onChange={(e) => setContent(e.target.value)} rows={12} className="w-full px-3 py-2 border rounded font-mono text-sm" />
