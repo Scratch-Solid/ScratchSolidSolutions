@@ -5,28 +5,16 @@ import { v4 as uuidv4 } from "uuid";
 import { withAuth, withTracing, withSecurityHeaders } from "@/lib/middleware";
 import { logger } from "@/lib/logger";
 import { withRateLimit, rateLimits } from "@/lib/middleware";
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 
 export const dynamic = "force-dynamic";
 
 const REGION = "auto"; // R2 uses 'auto' region
-const BUCKET = process.env.R2_BUCKET!;
-const ACCOUNT_ID = process.env.R2_ACCOUNT_ID!;
-const ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID!;
-const SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY!;
 const PUBLIC_BASE = (process.env.R2_PUBLIC_BASE || 'https://uploads.scratchsolidsolutions.org').replace(/\/$/, '');
 
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
 const MAX_FILE_SIZE = 8 * 1024 * 1024; // 8MB
 const URL_EXPIRY_SECONDS = 15 * 60; // 15 minutes
-
-const s3 = new S3Client({
-  region: REGION,
-  endpoint: `https://${ACCOUNT_ID}.r2.cloudflarestorage.com`,
-  credentials: {
-    accessKeyId: ACCESS_KEY_ID,
-    secretAccessKey: SECRET_ACCESS_KEY,
-  },
-});
 
 function sanitizeFilename(name: string) {
   return name.replace(/[^a-zA-Z0-9._-]/g, '_');
@@ -37,13 +25,22 @@ export async function POST(req: NextRequest) {
   const authResult = await withAuth(req, ['admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
 
+  // Get R2 bucket from Cloudflare context
+  let bucket: any;
+  try {
+    const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
+    bucket = env?.BUCKET;
+  } catch (error) {
+    logger.error('Error getting R2 bucket from Cloudflare context', error as Error);
+  }
+
   // Rate limiting check
   const rateLimitResult = await withRateLimit(req, rateLimits.strict);
   if (rateLimitResult && !rateLimitResult.success) {
     return withSecurityHeaders(
       NextResponse.json(
         { error: 'Too many upload requests. Please try again later.' },
-        { 
+        {
           status: 429,
           headers: {
             'X-RateLimit-Limit': rateLimitResult.limit.toString(),
@@ -54,6 +51,10 @@ export async function POST(req: NextRequest) {
       ),
       traceId
     );
+  }
+
+  if (!bucket) {
+    return withSecurityHeaders(NextResponse.json({ error: 'R2 bucket binding not found' }, { status: 500 }), traceId);
   }
 
   try {
@@ -74,24 +75,21 @@ export async function POST(req: NextRequest) {
     const key = `${folder ? `${folder.replace(/\/+$/, '')}/` : ''}${uuidv4()}-${safeFilename}`;
 
     const uploadUrl = await getSignedUrl(
-      s3,
+      bucket,
       new PutObjectCommand({
-        Bucket: BUCKET,
+        Bucket: bucket.name,
         Key: key,
         ContentType: contentType,
-        ContentLength: contentLength,
       }),
       { expiresIn: URL_EXPIRY_SECONDS }
     );
 
     const publicUrl = `${PUBLIC_BASE}/${key}`;
-    const fallbackUrl = `https://${ACCOUNT_ID}.r2.cloudflarestorage.com/${BUCKET}/${key}`;
 
     const response = NextResponse.json({
       uploadUrl,
       key,
       publicUrl,
-      fallbackUrl,
       expiresIn: URL_EXPIRY_SECONDS,
       requiredHeaders: { 'Content-Type': contentType },
       maxBytes: MAX_FILE_SIZE,

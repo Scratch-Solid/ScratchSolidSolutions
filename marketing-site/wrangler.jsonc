@@ -20,6 +20,12 @@
       "id": "859744ffa6fc44caa84edaaa1e481800"
     }
   ],
+  "r2_buckets": [
+    {
+      "binding": "BUCKET",
+      "bucket_name": "scratchsolid-uploads"
+    }
+  ],
   "routes": [
     {
       "pattern": "api.scratchsolidsolutions.org/*",
@@ -32,7 +38,9 @@
   ],
   "vars": {
     "NEXT_PUBLIC_BASE_URL": "https://scratchsolidsolutions.org",
-    "NEXT_PUBLIC_API_URL": "https://api.scratchsolidsolutions.org/api"
+    "NEXT_PUBLIC_API_URL": "https://api.scratchsolidsolutions.org/api",
+    "R2_BUCKET": "scratchsolid-uploads",
+    "R2_PUBLIC_BASE": "https://uploads.scratchsolidsolutions.org"
   },
   "observability": {
     "enabled": true

@@ -1012,6 +1012,222 @@ function ContentManagement() {
         </div>
       )}
 
+      {mode === 'leaders' && (
+        <div className="space-y-4">
+          <div className="border border-white/20 rounded-lg p-4 bg-white/5">
+            <h3 className="text-lg font-semibold text-white mb-4">{leaderForm.id ? 'Edit Leader' : 'Add New Leader'}</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2 text-white">Name</label>
+                <input
+                  type="text"
+                  value={leaderForm.name}
+                  onChange={(e) => setLeaderForm({ ...leaderForm, name: e.target.value })}
+                  className="w-full px-3 py-2 border rounded bg-white/10 text-white placeholder-white/50"
+                  placeholder="Full name"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2 text-white">Title</label>
+                <input
+                  type="text"
+                  value={leaderForm.title}
+                  onChange={(e) => setLeaderForm({ ...leaderForm, title: e.target.value })}
+                  className="w-full px-3 py-2 border rounded bg-white/10 text-white placeholder-white/50"
+                  placeholder="Job title"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium mb-2 text-white">Description</label>
+                <textarea
+                  value={leaderForm.description}
+                  onChange={(e) => setLeaderForm({ ...leaderForm, description: e.target.value })}
+                  rows={3}
+                  className="w-full px-3 py-2 border rounded bg-white/10 text-white placeholder-white/50"
+                  placeholder="Brief description"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2 text-white">Display Order</label>
+                <input
+                  type="number"
+                  value={leaderForm.display_order}
+                  onChange={(e) => setLeaderForm({ ...leaderForm, display_order: parseInt(e.target.value) || 0 })}
+                  className="w-full px-3 py-2 border rounded bg-white/10 text-white placeholder-white/50"
+                  placeholder="0"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2 text-white">Image</label>
+                <div className="flex gap-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0])}
+                    className="flex-1 text-sm text-white"
+                  />
+                  {leaderForm.image_url && (
+                    <img src={leaderForm.image_url} alt="Preview" className="w-12 h-12 rounded object-cover border border-white/20" />
+                  )}
+                </div>
+              </div>
+              <div className="md:col-span-2 flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="leaderActive"
+                  checked={leaderForm.active}
+                  onChange={(e) => setLeaderForm({ ...leaderForm, active: e.target.checked })}
+                  className="w-4 h-4"
+                />
+                <label htmlFor="leaderActive" className="text-sm text-white">Active</label>
+              </div>
+            </div>
+            <div className="flex gap-2 mt-4">
+              <button
+                onClick={handleSave}
+                disabled={loading}
+                className="primary-button px-4 py-2"
+              >
+                {loading ? 'Saving...' : (leaderForm.id ? 'Update' : 'Add')}
+              </button>
+              {leaderForm.id && (
+                <button
+                  onClick={() => setLeaderForm({ id: null, name: '', title: '', description: '', image_url: '', display_order: 0, active: true })}
+                  className="secondary-button px-4 py-2"
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="border border-white/20 rounded-lg p-4 bg-white/5">
+            <h3 className="text-lg font-semibold text-white mb-4">Existing Leaders</h3>
+            {leaders.length === 0 ? (
+              <p className="text-white/60">No leaders found.</p>
+            ) : (
+              <div className="space-y-3">
+                {leaders.map((leader: any) => (
+                  <div key={leader.id} className="flex items-center gap-4 p-3 border border-white/10 rounded bg-white/5">
+                    {leader.image_url && <img src={leader.image_url} alt={leader.name} className="w-12 h-12 rounded object-cover" />}
+                    <div className="flex-1">
+                      <div className="font-semibold text-white">{leader.name}</div>
+                      <div className="text-sm text-white/70">{leader.title}</div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setLeaderForm(leader)}
+                        className="text-sm bg-blue-500/20 hover:bg-blue-500/30 text-blue-200 px-3 py-1 rounded border border-blue-500/40"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteLeader(leader.id)}
+                        className="text-sm bg-red-500/20 hover:bg-red-500/30 text-red-200 px-3 py-1 rounded border border-red-500/40"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {mode === 'ai-bot' && (
+        <div className="space-y-4">
+          <div className="border border-white/20 rounded-lg p-4 bg-white/5">
+            <h3 className="text-lg font-semibold text-white mb-4">{aiForm.id ? 'Edit Q&A' : 'Add New Q&A'}</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2 text-white">Question</label>
+                <input
+                  type="text"
+                  value={aiForm.question}
+                  onChange={(e) => setAiForm({ ...aiForm, question: e.target.value })}
+                  className="w-full px-3 py-2 border rounded bg-white/10 text-white placeholder-white/50"
+                  placeholder="Enter the question"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2 text-white">Response</label>
+                <textarea
+                  value={aiForm.response}
+                  onChange={(e) => setAiForm({ ...aiForm, response: e.target.value })}
+                  rows={4}
+                  className="w-full px-3 py-2 border rounded bg-white/10 text-white placeholder-white/50"
+                  placeholder="Enter the AI response"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2 text-white">Category</label>
+                <input
+                  type="text"
+                  value={aiForm.category}
+                  onChange={(e) => setAiForm({ ...aiForm, category: e.target.value })}
+                  className="w-full px-3 py-2 border rounded bg-white/10 text-white placeholder-white/50"
+                  placeholder="e.g., pricing, services, contact"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleSave}
+                  disabled={loading}
+                  className="primary-button px-4 py-2"
+                >
+                  {loading ? 'Saving...' : (aiForm.id ? 'Update' : 'Add')}
+                </button>
+                {aiForm.id && (
+                  <button
+                    onClick={() => setAiForm({ id: null, question: '', response: '', category: '' })}
+                    className="secondary-button px-4 py-2"
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="border border-white/20 rounded-lg p-4 bg-white/5">
+            <h3 className="text-lg font-semibold text-white mb-4">Existing Q&A</h3>
+            {aiItems.length === 0 ? (
+              <p className="text-white/60">No Q&A found.</p>
+            ) : (
+              <div className="space-y-3">
+                {aiItems.map((item: any) => (
+                  <div key={item.id} className="p-4 border border-white/10 rounded bg-white/5">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex-1">
+                        <div className="font-semibold text-white">{item.question}</div>
+                        <div className="text-sm text-white/80 mt-1">{item.response}</div>
+                        {item.category && <div className="text-xs text-white/50 mt-1">Category: {item.category}</div>}
+                      </div>
+                      <div className="flex gap-2 ml-4">
+                        <button
+                          onClick={() => setAiForm(item)}
+                          className="text-sm bg-blue-500/20 hover:bg-blue-500/30 text-blue-200 px-3 py-1 rounded border border-blue-500/40"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteAi(item.id)}
+                          className="text-sm bg-red-500/20 hover:bg-red-500/30 text-red-200 px-3 py-1 rounded border border-red-500/40"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {message && <div className="text-sm text-white/80 bg-white/10 rounded px-3 py-2">{message}</div>}
 
       <button onClick={handleSave} disabled={loading} className="primary-button px-4 py-2">
