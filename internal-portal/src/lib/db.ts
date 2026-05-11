@@ -15,9 +15,12 @@ export async function getDb(): Promise<D1Database | null> {
   try {
     // OpenNext on Workers: use getCloudflareContext
     const { env } = await getCloudflareContext({ async: true });
-    if (env?.scratchsolid_db) {
-      return env.scratchsolid_db as D1Database;
+    const envAny = env as any;
+    const db = envAny?.scratchsolid_db || envAny?.DB;
+    if (db) {
+      return db as D1Database;
     }
+    console.error('D1 binding missing: expected scratchsolid_db or DB');
   } catch (error) {
     console.error('Error getting database from OpenNext context', error);
   }
