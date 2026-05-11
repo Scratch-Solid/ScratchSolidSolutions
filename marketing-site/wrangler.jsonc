@@ -22,7 +22,7 @@
   ],
   "r2_buckets": [
     {
-      "binding": "BUCKET",
+      "binding": "UPLOADS_BUCKET",
       "bucket_name": "scratchsolid-uploads"
     }
   ],

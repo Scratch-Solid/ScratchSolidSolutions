@@ -16,6 +16,11 @@ database_id = "b4f175df-b233-47dd-ab41-99455bf990b8"
 binding = "RATE_LIMIT_KV"
 id = "859744ffa6fc44caa84edaaa1e481800"
 
+# R2 Bucket bindings
+[[r2_buckets]]
+binding = "UPLOADS_BUCKET"
+bucket_name = "scratchsolid-uploads"
+
 # Environment variables
 [vars]
 ENVIRONMENT = "production"

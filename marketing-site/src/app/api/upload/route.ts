@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
   let useEnvVars = false;
   try {
     const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
-    bucket = env?.BUCKET;
+    bucket = env?.UPLOADS_BUCKET;
     logger.error('R2 bucket from context:', { bucketFound: !!bucket, bucketName: bucket?.name });
   } catch (error) {
     logger.error('Error getting R2 bucket from Cloudflare context, falling back to env vars', error as Error);

@@ -21,6 +21,12 @@
       "id": "859744ffa6fc44caa84edaaa1e481800"
     }
   ],
+  "r2_buckets": [
+    {
+      "binding": "UPLOADS_BUCKET",
+      "bucket_name": "scratchsolid-uploads"
+    }
+  ],
   "vars": {
     "ALLOWED_ORIGINS": "https://portal.scratchsolidsolutions.org"
   },
