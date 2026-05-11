@@ -25,13 +25,42 @@ export async function POST(req: NextRequest) {
   const authResult = await withAuth(req, ['admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
 
-  // Get R2 bucket from Cloudflare context
+  // Get R2 bucket from Cloudflare context or fall back to environment variables
   let bucket: any;
+  let useEnvVars = false;
   try {
     const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
     bucket = env?.BUCKET;
+    logger.error('R2 bucket from context:', { bucketFound: !!bucket, bucketName: bucket?.name });
   } catch (error) {
-    logger.error('Error getting R2 bucket from Cloudflare context', error as Error);
+    logger.error('Error getting R2 bucket from Cloudflare context, falling back to env vars', error as Error);
+    useEnvVars = true;
+  }
+
+  // If bucket binding not available, use S3Client with environment variables
+  let s3Client: S3Client | null = null;
+  if (!bucket) {
+    useEnvVars = true;
+    const accountId = process.env.R2_ACCOUNT_ID;
+    const accessKeyId = process.env.R2_ACCESS_KEY_ID;
+    const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
+    const bucketName = process.env.R2_BUCKET;
+
+    if (!accountId || !accessKeyId || !secretAccessKey || !bucketName) {
+      logger.error('R2 environment variables missing', { accountId: !!accountId, accessKeyId: !!accessKeyId, secretAccessKey: !!secretAccessKey, bucketName: !!bucketName });
+      return withSecurityHeaders(NextResponse.json({ error: 'R2 configuration missing' }, { status: 500 }), traceId);
+    }
+
+    s3Client = new S3Client({
+      region: REGION,
+      endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+      credentials: {
+        accessKeyId,
+        secretAccessKey,
+      },
+    });
+    bucket = { name: bucketName };
+    logger.error('Using S3Client with environment variables');
   }
 
   // Rate limiting check
@@ -75,7 +104,7 @@ export async function POST(req: NextRequest) {
     const key = `${folder ? `${folder.replace(/\/+$/, '')}/` : ''}${uuidv4()}-${safeFilename}`;
 
     const uploadUrl = await getSignedUrl(
-      bucket,
+      useEnvVars ? s3Client! : bucket,
       new PutObjectCommand({
         Bucket: bucket.name,
         Key: key,
@@ -97,7 +126,7 @@ export async function POST(req: NextRequest) {
     return withSecurityHeaders(response, traceId);
   } catch (err) {
     logger.error('Upload presign error', err as Error);
-    const response = NextResponse.json({ error: 'Failed to create upload URL' }, { status: 400 });
+    const response = NextResponse.json({ error: 'Failed to create upload URL', details: (err as Error).message }, { status: 400 });
     return withSecurityHeaders(response, traceId);
   }
 }
