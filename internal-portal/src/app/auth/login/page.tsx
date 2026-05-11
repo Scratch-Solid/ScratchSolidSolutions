@@ -42,6 +42,7 @@ function LoginContent() {
       localStorage.setItem("userRole", data.role || '');
       localStorage.setItem("username", data.username || username);
       localStorage.setItem("user_id", data.user_id || '');
+      localStorage.setItem("mustChangePassword", data.mustChangePassword ? 'true' : 'false');
 
       if (data.mustChangePassword) {
         router.push('/auth/change-password');

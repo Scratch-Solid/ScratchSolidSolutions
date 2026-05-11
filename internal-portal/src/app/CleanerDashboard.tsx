@@ -17,6 +17,7 @@ export default function CleanerDashboard() {
   const [error, setError] = useState("");
   const [activeTile, setActiveTile] = useState("profile");
   const [editingProfile, setEditingProfile] = useState(false);
+  const [mustChangePassword, setMustChangePassword] = useState(false);
   const [profileData, setProfileData] = useState({
     profilePicture: "",
     firstName: "",
@@ -40,12 +41,14 @@ export default function CleanerDashboard() {
         const storedUserId = localStorage.getItem("user_id");
         if (storedUsername) {
           setUsername(storedUsername);
+          const mustChange = localStorage.getItem('mustChangePassword') === 'true';
+          setMustChangePassword(mustChange);
 
           // Fetch cleaner profile
           const profileRes = await fetch(`/api/cleaner-profile?username=${storedUsername}`);
           if (profileRes.ok) {
-            const profile = await profileRes.json();
-            setProfileData(profile);
+            const profile = await profileRes.json() as any;
+            setProfileData(profile as any);
             setCleanerId(profile.user_id || parseInt(storedUserId || '1'));
           }
         }
@@ -54,14 +57,14 @@ export default function CleanerDashboard() {
         if (storedUserId) {
           const statusRes = await fetch(`/api/cleaner-status?cleaner_id=${storedUserId}`);
           if (statusRes.ok) {
-            const statusData = await statusRes.json();
+            const statusData = await statusRes.json() as any;
             setCleanerStatus(statusData.status || 'idle');
           }
 
           // Fetch task completions for earnings
           const earningsRes = await fetch(`/api/cleaner-earnings?cleaner_id=${storedUserId}`);
           if (earningsRes.ok) {
-            const earningsData = await earningsRes.json();
+            const earningsData = await earningsRes.json() as any[];
             const totalEarnings = earningsData.reduce((sum: number, item: any) => sum + (item.earnings || 0), 0);
             setCleaner(prev => prev ? { ...prev, totalEarnings, completedJobs: earningsData.length } : prev);
           }
@@ -69,7 +72,7 @@ export default function CleanerDashboard() {
           // Fetch bookings for tasks
           const bookingsRes = await fetch(`/api/bookings?cleaner_id=${storedUserId}`);
           if (bookingsRes.ok) {
-            const bookingsData = await bookingsRes.json();
+            const bookingsData = await bookingsRes.json() as any[];
             setTasks(bookingsData.map((b: any) => ({
               id: b.id,
               customer: b.client_name,
@@ -97,7 +100,7 @@ export default function CleanerDashboard() {
           setTasks([]);
         }
       } catch (err) {
-        setError((err as Error).message);
+        setError((err as any)?.error || (err as Error).message);
       } finally {
         setLoading(false);
       }
@@ -158,12 +161,13 @@ export default function CleanerDashboard() {
         setCleanerStatus(newStatus);
         alert(`Status updated to ${newStatus}`);
       } else {
-        const error = await response.json();
-        alert(`Failed to update status: ${error.error}`);
+        const error = await response.json() as any;
+        alert(`Failed to update status: ${error?.error || 'Unknown error'}`);
       }
     } catch (err) {
       console.error("Failed to update cleaner status:", err);
-      alert("An error occurred while updating status");
+      const msg = (err as any)?.error || (err as Error)?.message || 'An error occurred while updating status';
+      alert(msg);
     }
   };
 
@@ -226,6 +230,15 @@ export default function CleanerDashboard() {
 
   return (
     <DashboardLayout title="Cleaner Dashboard" role="cleaner">
+      {mustChangePassword && (
+        <div className="mb-4 bg-yellow-100 text-yellow-900 px-4 py-3 rounded border border-yellow-300">
+          <div className="font-bold">Action required</div>
+          <div>Please update your password to continue using the portal.</div>
+          <button className="mt-2 primary-button" onClick={() => window.location.href = '/auth/change-password'}>
+            Change Password
+          </button>
+        </div>
+      )}
       {/* Tile Navigation */}
       <div className="mb-6 flex space-x-2 border-b border-white/20 pb-2">
         <button

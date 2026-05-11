@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { SkeletonDashboard } from "@/components/Skeleton";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import DashboardLayout from "@/components/DashboardLayout";
+import PasswordBanner from "./components/PasswordBanner";
 
 export default function DigitalDashboard() {
   useSessionTimeout(true);
@@ -35,6 +36,7 @@ export default function DigitalDashboard() {
 
   return (
     <DashboardLayout title="Digital Marketing Dashboard" role="digital">
+      <PasswordBanner />
       <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
         <h3 className="font-bold text-lg text-white mb-4">Tasks</h3>
         <ul className="space-y-2">
