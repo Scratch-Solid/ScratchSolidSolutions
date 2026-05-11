@@ -63,6 +63,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid credentials. Please check your details and try again.' }, { status: 401 });
     }
 
+    // Enforce email verification
+    if ((user as any).email_verified === 0 || (user as any).email_verified === null) {
+      return NextResponse.json({
+        error: 'Please verify your email address before logging in. Check your inbox for a verification link.',
+        code: 'EMAIL_NOT_VERIFIED'
+      }, { status: 403 });
+    }
+
     // Generate JWT token
     const token = jwt.sign({ id: (user as any).id, email: (user as any).email, role: (user as any).role }, getJWTSecret(), { expiresIn: '7d' });
 

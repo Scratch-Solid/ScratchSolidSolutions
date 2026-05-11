@@ -110,6 +110,25 @@ export async function POST(request: NextRequest) {
     (user as any).password_needs_reset = (refreshed as any)?.password_needs_reset ?? user.password_needs_reset;
     (user as any).login_count = (refreshed as any)?.login_count ?? user.login_count;
 
+    // Enforce 2FA for privileged roles
+    const privilegedRoles = ['admin', 'super_admin'];
+    if (privilegedRoles.includes((user as any).role)) {
+      const totpRow = await db.prepare('SELECT totp_enabled FROM users WHERE id = ?').bind(user.id).first();
+      if ((totpRow as any)?.totp_enabled === 1) {
+        // Issue a short-lived pre-auth token — full session requires TOTP verification
+        const preAuthToken = crypto.randomUUID();
+        await db.prepare(
+          `INSERT INTO sessions (user_id, token, expires_at) VALUES (?, ?, datetime('now', '+5 minutes'))`
+        ).bind(user.id, 'pre:' + preAuthToken).run();
+        return NextResponse.json({
+          success: false,
+          require2FA: true,
+          preAuthToken,
+          message: '2FA verification required'
+        }, { status: 202 });
+      }
+    }
+
     // Generate and persist session token
     const sessionToken = crypto.randomUUID() + crypto.randomUUID().replace(/-/g, '');
     try {

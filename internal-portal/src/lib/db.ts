@@ -260,8 +260,15 @@ export async function getPendingContractById(db: D1Database, id: number) {
   return result;
 }
 
+const PENDING_CONTRACT_ALLOWED_FIELDS = new Set([
+  'full_name','email','phone','id_number','address','position','department',
+  'start_date','contract_type','status','submitted_at','consent_given',
+  'signature','notes','user_id'
+]);
+
 export async function createPendingContract(db: D1Database, data: Record<string, any>) {
-  const fields = Object.keys(data);
+  const fields = Object.keys(data).filter(k => PENDING_CONTRACT_ALLOWED_FIELDS.has(k));
+  if (fields.length === 0) throw new Error('No valid fields provided for pending contract');
   const placeholders = fields.map(() => '?').join(', ');
   const values = fields.map(f => data[f]);
   
@@ -288,8 +295,15 @@ export async function getEmployees(db: D1Database) {
   return result.results;
 }
 
+const EMPLOYEE_ALLOWED_FIELDS = new Set([
+  'user_id','email','name','phone','id_number','address','position','department',
+  'paysheet_code','start_date','employment_type','status','emergency_contact',
+  'emergency_phone','bank_name','bank_account','bank_branch','notes'
+]);
+
 export async function createEmployee(db: D1Database, data: Record<string, any>) {
-  const fields = Object.keys(data);
+  const fields = Object.keys(data).filter(k => EMPLOYEE_ALLOWED_FIELDS.has(k));
+  if (fields.length === 0) throw new Error('No valid fields provided for employee');
   const placeholders = fields.map(() => '?').join(', ');
   const values = fields.map(f => data[f]);
   

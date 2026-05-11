@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/middleware';
+import { logAuditEvent } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   const authResult = await withAuth(request, ['admin']);
@@ -12,7 +13,7 @@ export async function GET(request: NextRequest) {
     const role = searchParams.get('role');
     const deleted = searchParams.get('deleted');
 
-    let query = 'SELECT * FROM users';
+    let query = 'SELECT id, email, name, role, phone, department, username, paysheet_code, created_at, updated_at, deleted, soft_delete_at, last_login, failed_attempts, locked_until, email_verified, admin_approval_status, login_count, password_needs_reset FROM users';
     const conditions: string[] = [];
     const params: any[] = [];
 
@@ -42,7 +43,7 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   const authResult = await withAuth(request, ['admin']);
   if (authResult instanceof NextResponse) return authResult;
-  const { db } = authResult;
+  const { user: adminUser, db } = authResult;
 
   try {
     const body = await request.json() as { user_id?: number; role?: string; deleted?: boolean };
@@ -77,6 +78,17 @@ export async function PUT(request: NextRequest) {
     await db.prepare(
       `UPDATE users SET ${updates.join(', ')} WHERE id = ?`
     ).bind(...values).run();
+
+    const ip = request.headers.get('x-forwarded-for') || 'unknown';
+    await logAuditEvent(db, {
+      user_id: (adminUser as any).user_id,
+      action: 'user_updated',
+      resource: 'user',
+      resource_id: String(user_id),
+      ip_address: ip,
+      details: JSON.stringify({ role, deleted }),
+      success: true
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

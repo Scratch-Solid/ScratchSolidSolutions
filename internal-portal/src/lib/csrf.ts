@@ -1,4 +1,4 @@
-import { randomBytes, createHmac } from 'crypto';
+import { randomBytes, createHmac, timingSafeEqual } from 'crypto';
 
 const CSRF_SECRET = process.env.CSRF_SECRET;
 
@@ -7,7 +7,6 @@ function getCsrfSecret(): string {
     if (process.env.NODE_ENV === 'production') {
       throw new Error('CSRF_SECRET environment variable is required in production');
     }
-    // Use a fallback for development/build time
     return 'dev-secret-fallback-do-not-use-in-production';
   }
   return CSRF_SECRET;
@@ -20,8 +19,18 @@ export function generateCsrfToken(): string {
 }
 
 export function validateCsrfToken(token: string): boolean {
-  const [payload, hash] = token.split('.');
-  if (!payload || !hash) return false;
-  const expected = createHmac('sha256', getCsrfSecret()).update(payload).digest('hex');
-  return hash === expected;
+  try {
+    const dotIndex = token.lastIndexOf('.');
+    if (dotIndex === -1) return false;
+    const payload = token.slice(0, dotIndex);
+    const hash = token.slice(dotIndex + 1);
+    if (!payload || !hash) return false;
+    const expected = createHmac('sha256', getCsrfSecret()).update(payload).digest('hex');
+    const hashBuf = Buffer.from(hash, 'hex');
+    const expectedBuf = Buffer.from(expected, 'hex');
+    if (hashBuf.length !== expectedBuf.length) return false;
+    return timingSafeEqual(hashBuf, expectedBuf);
+  } catch {
+    return false;
+  }
 }
