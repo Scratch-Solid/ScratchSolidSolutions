@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, getCleanerProfileByUserId, getCleanerProfileByUsername, createCleanerProfile, updateCleanerProfile } from "@/lib/db";
 import { logger } from "@/lib/logger";

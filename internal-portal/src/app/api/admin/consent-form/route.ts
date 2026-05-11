@@ -11,11 +11,11 @@ export async function GET(request: NextRequest) {
 
   try {
     const consentForm = await db.prepare('SELECT * FROM consent_form_content ORDER BY id DESC LIMIT 1').first();
-    const response = NextResponse.json(consentForm || null);
+    return NextResponse.json(consentForm || null);
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     console.error('Error fetching consent form:', error);
-    const response = NextResponse.json({ error: 'Failed to fetch consent form' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to fetch consent form' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     const { title, consent_text, background_checks, acknowledgments, witness_name } = body;
 
     if (!consent_text || !background_checks || !acknowledgments) {
-      const response = NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
       return withSecurityHeaders(response, traceId);
     }
 
@@ -54,11 +54,11 @@ export async function POST(request: NextRequest) {
       (user as any).id
     ).run();
 
-    const response = NextResponse.json({ id: result.meta.last_row_id }, { status: 201 });
+    return NextResponse.json({ id: result.meta.last_row_id }, { status: 201 });
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     console.error('Error creating consent form:', error);
-    const response = NextResponse.json({ error: 'Failed to create consent form' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to create consent form' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }
@@ -82,7 +82,7 @@ export async function PUT(request: NextRequest) {
     const { id, title, consent_text, background_checks, acknowledgments, witness_name } = body;
 
     if (!id) {
-      const response = NextResponse.json({ error: 'ID is required' }, { status: 400 });
+      return NextResponse.json({ error: 'ID is required' }, { status: 400 });
       return withSecurityHeaders(response, traceId);
     }
 
@@ -99,15 +99,15 @@ export async function PUT(request: NextRequest) {
     ).bind(title, consent_text, background_checks, acknowledgments, witness_name, (user as any).id, id).run();
 
     if (result.meta.rows_written === 0) {
-      const response = NextResponse.json({ error: 'Consent form not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Consent form not found' }, { status: 404 });
       return withSecurityHeaders(response, traceId);
     }
 
-    const response = NextResponse.json({ success: true });
+    return NextResponse.json({ success: true });
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     console.error('Error updating consent form:', error);
-    const response = NextResponse.json({ error: 'Failed to update consent form' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to update consent form' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

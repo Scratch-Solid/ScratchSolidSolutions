@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     const users = await db.prepare(query).bind(...params).all();
     return NextResponse.json(users.results || []);
   } catch (error) {
-    const response = NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 });
   }
 }
 
@@ -80,6 +80,6 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    const response = NextResponse.json({ error: 'Failed to update user' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to update user' }, { status: 500 });
   }
 }

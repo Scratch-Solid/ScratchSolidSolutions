@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
 
   const zohoAuthToken = process.env.ZOHO_AUTH_TOKEN;
   if (!zohoAuthToken) {
-    const response = NextResponse.json({ error: 'Zoho integration not configured' }, { status: 503 });
+    return NextResponse.json({ error: 'Zoho integration not configured' }, { status: 503 });
     return withSecurityHeaders(response, traceId);
   }
 
@@ -34,11 +34,11 @@ export async function POST(request: NextRequest) {
       }),
     });
     const data = await zohoResponse.json();
-    const response = NextResponse.json(data, { status: zohoResponse.ok ? 201 : 502 });
+    return NextResponse.json(data, { status: zohoResponse.ok ? 201 : 502 });
     logRequest(request, response, Date.now() - start, traceId);
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    const response = NextResponse.json({ error: 'Failed to process refund' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to process refund' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

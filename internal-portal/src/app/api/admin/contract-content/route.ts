@@ -11,11 +11,11 @@ export async function GET(request: NextRequest) {
 
   try {
     const contractContent = await db.prepare('SELECT * FROM contract_content ORDER BY id DESC LIMIT 1').first();
-    const response = NextResponse.json(contractContent || null);
+    return NextResponse.json(contractContent || null);
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     console.error('Error fetching contract content:', error);
-    const response = NextResponse.json({ error: 'Failed to fetch contract content' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to fetch contract content' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     const { title, contract_text, terms, company_name } = body;
 
     if (!contract_text || !terms) {
-      const response = NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
       return withSecurityHeaders(response, traceId);
     }
 
@@ -52,11 +52,11 @@ export async function POST(request: NextRequest) {
       (user as any).id
     ).run();
 
-    const response = NextResponse.json({ id: result.meta.last_row_id }, { status: 201 });
+    return NextResponse.json({ id: result.meta.last_row_id }, { status: 201 });
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     console.error('Error creating contract content:', error);
-    const response = NextResponse.json({ error: 'Failed to create contract content' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to create contract content' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }
@@ -79,7 +79,7 @@ export async function PUT(request: NextRequest) {
     const { id, title, contract_text, terms, company_name } = body;
 
     if (!id) {
-      const response = NextResponse.json({ error: 'ID is required' }, { status: 400 });
+      return NextResponse.json({ error: 'ID is required' }, { status: 400 });
       return withSecurityHeaders(response, traceId);
     }
 
@@ -95,15 +95,15 @@ export async function PUT(request: NextRequest) {
     ).bind(title, contract_text, terms, company_name, (user as any).id, id).run();
 
     if (result.meta.rows_written === 0) {
-      const response = NextResponse.json({ error: 'Contract content not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Contract content not found' }, { status: 404 });
       return withSecurityHeaders(response, traceId);
     }
 
-    const response = NextResponse.json({ success: true });
+    return NextResponse.json({ success: true });
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     console.error('Error updating contract content:', error);
-    const response = NextResponse.json({ error: 'Failed to update contract content' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to update contract content' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

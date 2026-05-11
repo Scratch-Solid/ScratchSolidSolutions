@@ -35,11 +35,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const response = NextResponse.json({ answer });
+    return NextResponse.json({ answer });
     logRequest(request, response, Date.now() - start, traceId);
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    const response = NextResponse.json({ error: 'Failed to process chatbot request' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to process chatbot request' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

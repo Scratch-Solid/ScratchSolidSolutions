@@ -14,11 +14,11 @@ export async function GET(request: NextRequest) {
       'SELECT * FROM banking_details WHERE is_active = 1 ORDER BY id DESC LIMIT 1'
     ).first();
     
-    const response = NextResponse.json(bankingDetails || null);
+    return NextResponse.json(bankingDetails || null);
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     console.error('Error fetching banking details:', error);
-    const response = NextResponse.json({ error: 'Failed to fetch banking details' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to fetch banking details' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     const { bank_name, account_number, account_holder, branch_code, account_type } = body;
 
     if (!bank_name || !account_number || !account_holder || !branch_code) {
-      const response = NextResponse.json({ error: 'All banking details are required' }, { status: 400 });
+      return NextResponse.json({ error: 'All banking details are required' }, { status: 400 });
       return withSecurityHeaders(response, traceId);
     }
 
@@ -48,11 +48,11 @@ export async function POST(request: NextRequest) {
        RETURNING *`
     ).bind(bank_name, account_number, account_holder, branch_code, account_type || 'current').first();
 
-    const response = NextResponse.json(result, { status: 201 });
+    return NextResponse.json(result, { status: 201 });
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     console.error('Error creating banking details:', error);
-    const response = NextResponse.json({ error: 'Failed to create banking details' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to create banking details' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }
@@ -68,7 +68,7 @@ export async function PUT(request: NextRequest) {
     const { id, bank_name, account_number, account_holder, branch_code, account_type, is_active } = body;
 
     if (!id) {
-      const response = NextResponse.json({ error: 'Banking details ID is required' }, { status: 400 });
+      return NextResponse.json({ error: 'Banking details ID is required' }, { status: 400 });
       return withSecurityHeaders(response, traceId);
     }
 
@@ -80,15 +80,15 @@ export async function PUT(request: NextRequest) {
     ).bind(bank_name, account_number, account_holder, branch_code, account_type || 'current', is_active !== undefined ? (is_active ? 1 : 0) : 1, id).first();
 
     if (!result) {
-      const response = NextResponse.json({ error: 'Banking details not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Banking details not found' }, { status: 404 });
       return withSecurityHeaders(response, traceId);
     }
 
-    const response = NextResponse.json(result);
+    return NextResponse.json(result);
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     console.error('Error updating banking details:', error);
-    const response = NextResponse.json({ error: 'Failed to update banking details' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to update banking details' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     } = body;
 
     if (!user_id) {
-      const response = NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
       return withSecurityHeaders(response, traceId);
     }
 
@@ -79,11 +79,11 @@ export async function POST(request: NextRequest) {
       ).run();
     }
 
-    const response = NextResponse.json({ success: true });
+    return NextResponse.json({ success: true });
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     console.error('Error creating/updating cleaner profile:', error);
-    const response = NextResponse.json({ error: 'Failed to create cleaner profile' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to create cleaner profile' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }
@@ -96,11 +96,11 @@ export async function GET(request: NextRequest) {
 
   try {
     const profile = await db.prepare('SELECT * FROM cleaner_profiles WHERE user_id = ?').bind((user as any).id).first();
-    const response = NextResponse.json(profile || null);
+    return NextResponse.json(profile || null);
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     console.error('Error fetching cleaner profile:', error);
-    const response = NextResponse.json({ error: 'Failed to fetch cleaner profile' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to fetch cleaner profile' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

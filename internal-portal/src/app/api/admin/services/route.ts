@@ -14,11 +14,11 @@ export async function GET(request: NextRequest) {
       'SELECT * FROM services WHERE is_active = 1 ORDER BY category, name'
     ).all();
     
-    const response = NextResponse.json(services.results || []);
+    return NextResponse.json(services.results || []);
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     console.error('Error fetching services:', error);
-    const response = NextResponse.json({ error: 'Failed to fetch services' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to fetch services' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     const { name, description, base_price, duration_hours, category } = body;
 
     if (!name || !base_price) {
-      const response = NextResponse.json({ error: 'Name and base price are required' }, { status: 400 });
+      return NextResponse.json({ error: 'Name and base price are required' }, { status: 400 });
       return withSecurityHeaders(response, traceId);
     }
 
@@ -44,11 +44,11 @@ export async function POST(request: NextRequest) {
        RETURNING *`
     ).bind(name, description || '', base_price, duration_hours || 4, category || 'standard').first();
 
-    const response = NextResponse.json(result, { status: 201 });
+    return NextResponse.json(result, { status: 201 });
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     console.error('Error creating service:', error);
-    const response = NextResponse.json({ error: 'Failed to create service' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to create service' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }
@@ -64,7 +64,7 @@ export async function PUT(request: NextRequest) {
     const { id, name, description, base_price, duration_hours, category, is_active } = body;
 
     if (!id) {
-      const response = NextResponse.json({ error: 'Service ID is required' }, { status: 400 });
+      return NextResponse.json({ error: 'Service ID is required' }, { status: 400 });
       return withSecurityHeaders(response, traceId);
     }
 
@@ -76,15 +76,15 @@ export async function PUT(request: NextRequest) {
     ).bind(name, description || '', base_price, duration_hours || 4, category || 'standard', is_active !== undefined ? (is_active ? 1 : 0) : 1, id).first();
 
     if (!result) {
-      const response = NextResponse.json({ error: 'Service not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Service not found' }, { status: 404 });
       return withSecurityHeaders(response, traceId);
     }
 
-    const response = NextResponse.json(result);
+    return NextResponse.json(result);
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     console.error('Error updating service:', error);
-    const response = NextResponse.json({ error: 'Failed to update service' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to update service' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }
@@ -100,17 +100,17 @@ export async function DELETE(request: NextRequest) {
     const id = searchParams.get('id');
 
     if (!id) {
-      const response = NextResponse.json({ error: 'Service ID is required' }, { status: 400 });
+      return NextResponse.json({ error: 'Service ID is required' }, { status: 400 });
       return withSecurityHeaders(response, traceId);
     }
 
     await db.prepare('DELETE FROM services WHERE id = ?').bind(id).run();
 
-    const response = NextResponse.json({ message: 'Service deleted successfully' });
+    return NextResponse.json({ message: 'Service deleted successfully' });
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     console.error('Error deleting service:', error);
-    const response = NextResponse.json({ error: 'Failed to delete service' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to delete service' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

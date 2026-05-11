@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
       'SELECT action, resource_type, resource_id, details, created_at FROM audit_logs WHERE admin_id = ?'
     ).bind(userId).all();
 
-    const response = NextResponse.json({
+    return NextResponse.json({
       user: {
         email: (userData as any)?.email,
         name: (userData as any)?.name,
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     console.error('Data access error:', error);
-    const response = NextResponse.json({ error: 'Failed to retrieve data' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to retrieve data' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }
@@ -80,7 +80,7 @@ export async function DELETE(request: NextRequest) {
     
     // Require explicit confirmation
     if (body.confirmation !== 'DELETE_MY_DATA') {
-      const response = NextResponse.json({ 
+      return NextResponse.json({ 
         error: 'Explicit confirmation required. Set confirmation to "DELETE_MY_DATA"' 
       }, { status: 400 });
       return withSecurityHeaders(response, traceId);
@@ -116,14 +116,14 @@ export async function DELETE(request: NextRequest) {
       ipAddress
     );
 
-    const response = NextResponse.json({ 
+    return NextResponse.json({ 
       success: true, 
       message: 'Your data has been deleted as per your rights under POPIA' 
     });
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     console.error('Data deletion error:', error);
-    const response = NextResponse.json({ error: 'Failed to delete data' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to delete data' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

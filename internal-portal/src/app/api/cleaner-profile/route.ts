@@ -15,11 +15,11 @@ export async function GET(request: NextRequest) {
   if (username) {
     const profile = await getCleanerProfileByUsername(db, username);
     if (profile) {
-      const response = NextResponse.json(profile);
+      return NextResponse.json(profile);
       response.headers.set('Cache-Control', 'private, max-age=60');
       return withSecurityHeaders(response, traceId);
     }
-    const response = NextResponse.json({ error: "Profile not found" }, { status: 404 });
+    return NextResponse.json({ error: "Profile not found" }, { status: 404 });
     return withSecurityHeaders(response, traceId);
   }
   
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
   const countResult = await db.prepare('SELECT COUNT(*) as total FROM cleaner_profiles').first();
   const total = (countResult as any)?.total || 0;
 
-  const response = NextResponse.json({
+  return NextResponse.json({
     data: profiles.results,
     pagination: {
       page,
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
     const updated = await updateCleanerProfile(db, data.username, data);
     if (updated) {
       await logAuditEvent(db, (user as any).id, 'update_cleaner_profile', 'cleaner_profile', (updated as any).id, JSON.stringify({ username: data.username }), request.headers.get('x-forwarded-for') || '');
-      const response = NextResponse.json(updated, { status: 200 });
+      return NextResponse.json(updated, { status: 200 });
       return withSecurityHeaders(response, traceId);
     }
   } else {
@@ -79,11 +79,11 @@ export async function POST(request: NextRequest) {
     
     if (result) {
       await logAuditEvent(db, (user as any).id, 'create_cleaner_profile', 'cleaner_profile', (result as any).id, JSON.stringify({ username: data.username }), request.headers.get('x-forwarded-for') || '');
-      const response = NextResponse.json(result, { status: 201 });
+      return NextResponse.json(result, { status: 201 });
       return withSecurityHeaders(response, traceId);
     }
   }
-  const response = NextResponse.json({ error: "Failed to create/update profile" }, { status: 500 });
+  return NextResponse.json({ error: "Failed to create/update profile" }, { status: 500 });
   return withSecurityHeaders(response, traceId);
 }
 
@@ -108,10 +108,10 @@ export async function PUT(request: NextRequest) {
     if ((user as any).role === 'admin') {
       await logAuditEvent(db, (user as any).id, 'update_cleaner_profile', 'cleaner_profile', (updated as any).id, JSON.stringify({ username }), request.headers.get('x-forwarded-for') || '');
     }
-    const response = NextResponse.json(updated);
+    return NextResponse.json(updated);
     return withSecurityHeaders(response, traceId);
   }
   
-  const response = NextResponse.json({ error: "Profile not found" }, { status: 404 });
+  return NextResponse.json({ error: "Profile not found" }, { status: 404 });
   return withSecurityHeaders(response, traceId);
 }

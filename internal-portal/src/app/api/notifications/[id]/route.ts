@@ -25,12 +25,12 @@ export async function GET(request: NextRequest) {
     query += ' ORDER BY created_at DESC LIMIT 50';
     
     const results = await db.prepare(query).bind(...params).all();
-    const response = NextResponse.json(results.results || []);
+    return NextResponse.json(results.results || []);
     response.headers.set('Cache-Control', 'private, max-age=15');
     logRequest(request, response, Date.now() - start, traceId);
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    const response = NextResponse.json({ error: 'Failed to fetch notifications' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to fetch notifications' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }
@@ -53,11 +53,11 @@ export async function POST(request: NextRequest) {
       'INSERT INTO notifications (user_id, type, title, message, data, read, created_at, expires_at) VALUES (?, ?, ?, ?, ?, 0, datetime("now"), ?) RETURNING *'
     ).bind(user_id, type, title, message, dataJson, expires_at || null).first();
     
-    const response = NextResponse.json(result, { status: 201 });
+    return NextResponse.json(result, { status: 201 });
     logRequest(request, response, Date.now() - start, traceId);
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    const response = NextResponse.json({ error: 'Failed to create notification' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to create notification' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

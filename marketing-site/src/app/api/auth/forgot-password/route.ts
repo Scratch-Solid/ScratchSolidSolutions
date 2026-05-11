@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, getUserByEmail, getUserByPhone, createPasswordResetToken } from "@/lib/db";
 import { sanitizeEmail, sanitizePhone } from "@/lib/sanitization";

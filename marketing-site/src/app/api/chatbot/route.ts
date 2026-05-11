@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { withTracing, withSecurityHeaders } from "@/lib/middleware";
 import { withRateLimit, rateLimits } from "@/lib/middleware";

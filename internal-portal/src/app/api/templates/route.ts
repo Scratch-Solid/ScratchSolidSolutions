@@ -34,10 +34,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Template creation failed' }, { status: 500 });
     }
 
-    const response = NextResponse.json(result, { status: 201 });
+    return NextResponse.json(result, { status: 201 });
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    const response = NextResponse.json({ error: 'Failed to create template' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to create template' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }
@@ -64,10 +64,10 @@ export async function GET(request: NextRequest) {
 
     const templates = await db.prepare(query).bind(...params).all();
 
-    const response = NextResponse.json(templates);
+    return NextResponse.json(templates);
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    const response = NextResponse.json({ error: 'Failed to fetch templates' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to fetch templates' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }
@@ -97,13 +97,13 @@ export async function DELETE(request: NextRequest) {
     // We just delete the template, contracts keep their template_id
     await db.prepare('DELETE FROM templates WHERE id = ?').bind(id).run();
 
-    const response = NextResponse.json({ 
+    return NextResponse.json({ 
       message: 'Template deleted successfully',
       affectedContracts: contractCount
     });
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    const response = NextResponse.json({ error: 'Failed to delete template' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to delete template' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

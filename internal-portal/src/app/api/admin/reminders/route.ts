@@ -26,6 +26,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ reminders_sent: reminders.length, details: reminders });
   } catch (error) {
-    const response = NextResponse.json({ error: 'Failed to fetch reminders' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to fetch reminders' }, { status: 500 });
   }
 }

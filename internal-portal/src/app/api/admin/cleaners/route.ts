@@ -26,11 +26,11 @@ export async function GET(request: NextRequest) {
     query += ' ORDER BY cp.created_at DESC';
 
     const cleaners = await db.prepare(query).bind(...params).all();
-    const response = NextResponse.json(cleaners.results || []);
+    return NextResponse.json(cleaners.results || []);
     response.headers.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300, s-maxage=60');
     return response;
   } catch (error) {
-    const response = NextResponse.json({ error: 'Failed to fetch cleaners' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to fetch cleaners' }, { status: 500 });
     return response;
   }
 }
@@ -73,7 +73,7 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    const response = NextResponse.json({ error: 'Failed to update cleaner' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to update cleaner' }, { status: 500 });
     return response;
   }
 }

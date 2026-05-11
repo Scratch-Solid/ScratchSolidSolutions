@@ -23,7 +23,7 @@ export async function PUT(request: NextRequest) {
     });
 
     if (error) {
-      const response = NextResponse.json({ error }, { status: 400 });
+      return NextResponse.json({ error }, { status: 400 });
       return withSecurityHeaders(response, traceId);
     }
 
@@ -70,10 +70,10 @@ export async function PUT(request: NextRequest) {
       `UPDATE cleaner_profiles SET ${updates.join(', ')} WHERE user_id = ?`
     ).bind(...values).run();
 
-    const response = NextResponse.json({ success: true, status });
+    return NextResponse.json({ success: true, status });
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    const response = NextResponse.json({ error: 'Failed to update cleaner status' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to update cleaner status' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }
@@ -98,11 +98,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Cleaner not found' }, { status: 404 });
     }
 
-    const response = NextResponse.json(cleaner);
+    return NextResponse.json(cleaner);
     response.headers.set('Cache-Control', 'private, max-age=10');
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    const response = NextResponse.json({ error: 'Failed to fetch cleaner status' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to fetch cleaner status' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

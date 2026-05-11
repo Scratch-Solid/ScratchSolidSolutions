@@ -1,35 +1,21 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { withAuth } from '@/lib/middleware';
 import { logAuditEvent } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
+  const authResult = await withAuth(request, ['admin', 'cleaner', 'transport', 'digital']);
+  if (authResult instanceof NextResponse) return authResult;
+  const { user, db } = authResult;
+
   try {
-    const db = await getDb();
-    
-    // Mock session data for testing
-    const sessions = [
-      {
-        id: 1,
-        token: 'session-token-1',
-        created_at: new Date().toISOString(),
-        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-        ip_address: '192.168.1.1',
-        user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-      },
-      {
-        id: 2,
-        token: 'session-token-2',
-        created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-        expires_at: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000).toISOString(),
-        ip_address: '192.168.1.2',
-        user_agent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
-      }
-    ];
+    const sessions = await db.prepare(
+      `SELECT id, created_at, expires_at, ip_address, user_agent FROM sessions WHERE user_id = ? AND expires_at > datetime('now') ORDER BY created_at DESC`
+    ).bind(user.user_id).all();
 
     return NextResponse.json({
       success: true,
-      data: { sessions }
+      data: { sessions: sessions.results || [] }
     });
   } catch (error) {
     console.error('Sessions fetch error:', error);
@@ -41,22 +27,33 @@ export async function GET(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const authResult = await withAuth(request, ['admin', 'cleaner', 'transport', 'digital']);
+  if (authResult instanceof NextResponse) return authResult;
+  const { user, db } = authResult;
+
   try {
-    const db = await getDb();
-    const body = await request.json();
-    
-    // Log session revocation
+    const body = await request.json() as { session_id?: number; revoke_all?: boolean };
+    const currentToken = request.headers.get('Authorization')?.replace('Bearer ', '');
+
+    if (body.revoke_all) {
+      await db.prepare('DELETE FROM sessions WHERE user_id = ? AND token != ?')
+        .bind(user.user_id, currentToken || '').run();
+    } else if (body.session_id) {
+      await db.prepare('DELETE FROM sessions WHERE id = ? AND user_id = ?')
+        .bind(body.session_id, user.user_id).run();
+    } else {
+      return NextResponse.json({ error: 'session_id or revoke_all required' }, { status: 400 });
+    }
+
     await logAuditEvent(db, {
+      user_id: user.user_id,
       action: 'session_revoked',
       resource: 'session',
-      details: 'Session revoked by user',
+      details: body.revoke_all ? 'All other sessions revoked' : `Session ${body.session_id} revoked`,
       success: true
     });
 
-    return NextResponse.json({
-      success: true,
-      message: 'Session revoked successfully'
-    });
+    return NextResponse.json({ success: true, message: 'Session revoked successfully' });
   } catch (error) {
     console.error('Session revoke error:', error);
     return NextResponse.json(

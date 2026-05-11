@@ -43,10 +43,10 @@ export async function POST(request: NextRequest) {
       pending_contract_id: pendingContractId || null
     });
 
-    const response = NextResponse.json(employee, { status: 201 });
+    return NextResponse.json(employee, { status: 201 });
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    const response = NextResponse.json({ error: 'Failed to create employee' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to create employee' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }
@@ -59,11 +59,11 @@ export async function GET(request: NextRequest) {
 
   try {
     const employees = await getEmployees(db);
-    const response = NextResponse.json(employees, { status: 200 });
+    return NextResponse.json(employees, { status: 200 });
     response.headers.set('Cache-Control', 'private, max-age=60');
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    const response = NextResponse.json({ error: 'Failed to fetch employees' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to fetch employees' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

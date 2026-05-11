@@ -306,7 +306,8 @@ export async function withSecurityHeaders(response: NextResponse, traceId: strin
   response.headers.set('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self'; connect-src 'self' https://books.zoho.com https://graph.facebook.com https://api.sendgrid.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self';");
   response.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(self)');
-  response.headers.set('Access-Control-Allow-Origin', process.env.ALLOWED_ORIGINS || '*');
+  const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'https://portal.scratchsolidsolutions.org').split(',').map(o => o.trim());
+  response.headers.set('Access-Control-Allow-Origin', allowedOrigins[0]);
   response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
   response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-CSRF-Token, X-Request-ID');
   response.headers.set('Access-Control-Max-Age', '86400');

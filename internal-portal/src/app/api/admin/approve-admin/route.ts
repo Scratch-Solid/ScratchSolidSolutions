@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
 
   const db = await getDb();
   if (!db) {
-    const response = NextResponse.json({ error: 'Database not available' }, { status: 500 });
+    return NextResponse.json({ error: 'Database not available' }, { status: 500 });
     logRequest(request, response, Date.now() - startTime, traceId);
     return withSecurityHeaders(response, traceId);
   }
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     // Validate admin session
     const authHeader = request.headers.get('authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      const response = NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
       logRequest(request, response, Date.now() - startTime, traceId);
       return withSecurityHeaders(response, traceId);
     }
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     const session = await validateSession(db, token);
 
     if (!session || (session as any).role !== 'admin' && (session as any).role !== 'super_admin') {
-      const response = NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
       logRequest(request, response, Date.now() - startTime, traceId);
       return withSecurityHeaders(response, traceId);
     }
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (error) {
-      const response = NextResponse.json({ error }, { status: 400 });
+      return NextResponse.json({ error }, { status: 400 });
       logRequest(request, response, Date.now() - startTime, traceId);
       return withSecurityHeaders(response, traceId);
     }
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
       trace_id: traceId
     });
 
-    const response = NextResponse.json({ 
+    return NextResponse.json({ 
       message: 'Admin user approved successfully',
       userId
     });
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
       trace_id: traceId
     });
 
-    const response = NextResponse.json({ error: 'Failed to approve admin user' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to approve admin user' }, { status: 500 });
     logRequest(request, response, Date.now() - startTime, traceId);
     return withSecurityHeaders(response, traceId);
   }

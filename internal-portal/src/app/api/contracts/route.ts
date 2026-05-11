@@ -14,12 +14,12 @@ export async function GET(request: NextRequest) {
     const results = await db.prepare(
       'SELECT c.*, u.name as business_name FROM contracts c LEFT JOIN users u ON c.business_id = u.id ORDER BY c.created_at DESC LIMIT 100'
     ).all();
-    const response = NextResponse.json(results.results || []);
+    return NextResponse.json(results.results || []);
     response.headers.set('Cache-Control', 'private, max-age=30');
     logRequest(request, response, Date.now() - start, traceId);
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    const response = NextResponse.json({ error: 'Failed to fetch contracts' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to fetch contracts' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

@@ -71,6 +71,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ message: `Auto-assigned ${assignedCount} bookings`, assigned: assignedCount });
   } catch (error) {
-    const response = NextResponse.json({ error: 'Failed to auto-assign bookings' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to auto-assign bookings' }, { status: 500 });
   }
 }

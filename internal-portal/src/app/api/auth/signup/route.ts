@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     // TODO: Implement actual user creation logic
     // For now, return success response with security headers
     
-    const response = NextResponse.json({
+    return NextResponse.json({
       success: true,
       message: 'User registered successfully',
       user: {

@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(roles.results || []);
   } catch (error) {
-    const response = NextResponse.json({ error: 'Failed to fetch roles' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to fetch roles' }, { status: 500 });
   }
 }
 
@@ -42,6 +42,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true }, { status: 201 });
   } catch (error) {
-    const response = NextResponse.json({ error: 'Failed to create role' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to create role' }, { status: 500 });
   }
 }

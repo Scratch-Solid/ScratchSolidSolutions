@@ -24,12 +24,12 @@ export async function GET(request: NextRequest) {
     query += ' ORDER BY booking_date DESC LIMIT 100';
 
     const results = await db.prepare(query).bind(...binds).all();
-    const response = NextResponse.json(results.results || []);
+    return NextResponse.json(results.results || []);
     response.headers.set('Cache-Control', 'private, max-age=15');
     logRequest(request, response, Date.now() - start, traceId);
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    const response = NextResponse.json({ error: 'Failed to fetch bookings' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to fetch bookings' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }
@@ -52,11 +52,11 @@ export async function POST(request: NextRequest) {
       'INSERT INTO bookings (service_id, user_id, cleaner_id, booking_date, booking_time, status, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, "pending", ?, datetime("now"), datetime("now")) RETURNING *'
     ).bind(service_id, user_id || null, cleaner_id || null, booking_date, booking_time, notes || null).first();
     
-    const response = NextResponse.json(result, { status: 201 });
+    return NextResponse.json(result, { status: 201 });
     logRequest(request, response, Date.now() - start, traceId);
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    const response = NextResponse.json({ error: 'Failed to create booking' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to create booking' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

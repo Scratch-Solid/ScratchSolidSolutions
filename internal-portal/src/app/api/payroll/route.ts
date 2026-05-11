@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
     const grossEarnings = weekdayEarnings + weekendEarnings;
     const netEarnings = grossEarnings - deductions;
 
-    const response = NextResponse.json({
+    return NextResponse.json({
       cleanerId,
       cleanerName: `${(cleaner as any).first_name} ${(cleaner as any).last_name}`,
       period: {
@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
     response.headers.set('Cache-Control', 'private, max-age=60');
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    const response = NextResponse.json({ error: 'Failed to fetch payroll' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to fetch payroll' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }
@@ -151,10 +151,10 @@ export async function PUT(request: NextRequest) {
       `UPDATE cleaner_profiles SET ${updates.join(', ')} WHERE user_id = ?`
     ).bind(...values).run();
 
-    const response = NextResponse.json({ success: true });
+    return NextResponse.json({ success: true });
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    const response = NextResponse.json({ error: 'Failed to update payroll settings' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to update payroll settings' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }
@@ -176,10 +176,10 @@ export async function POST(request: NextRequest) {
       'INSERT INTO payroll (cleaner_id, paysheet_code, period_start, period_end, hours_worked, hourly_rate, gross_pay, deductions, net_pay, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, "pending", datetime("now")) RETURNING *'
     ).bind(cleaner_id, paysheet_code || null, period_start, period_end, hours_worked || 0, hourly_rate || 0, gross_pay, deductions || 0, net_pay).first();
     
-    const response = NextResponse.json(result, { status: 201 });
+    return NextResponse.json(result, { status: 201 });
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    const response = NextResponse.json({ error: 'Failed to create payroll record' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to create payroll record' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

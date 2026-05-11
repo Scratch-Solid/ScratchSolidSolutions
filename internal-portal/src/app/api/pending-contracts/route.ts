@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
   const countResult = await db.prepare('SELECT COUNT(*) as total FROM pending_contracts').first();
   const total = (countResult as any)?.total || 0;
 
-  const response = NextResponse.json({
+  return NextResponse.json({
     data: contracts,
     pagination: {
       page,
@@ -54,21 +54,21 @@ export async function POST(request: NextRequest) {
   const contactNumber = data.contactNumber || data.contact_number || '';
   const phoneValidation = validatePhone(contactNumber);
   if (!phoneValidation.valid) {
-    const response = NextResponse.json({ error: phoneValidation.errors.join(', ') }, { status: 400 });
+    return NextResponse.json({ error: phoneValidation.errors.join(', ') }, { status: 400 });
     return withSecurityHeaders(response, traceId);
   }
 
   // Validate ID/Passport number
   const idPassportNumber = data.idPassportNumber || data.id_passport_number || '';
   if (!idPassportNumber) {
-    const response = NextResponse.json({ error: 'ID or passport number is required' }, { status: 400 });
+    return NextResponse.json({ error: 'ID or passport number is required' }, { status: 400 });
     return withSecurityHeaders(response, traceId);
   } else {
     const idPassportValidation = idPassportNumber.replace(/\D/g, '').length === 13
       ? validateSaIdNumber(idPassportNumber)
       : validateSaPassport(idPassportNumber);
     if (!idPassportValidation.valid) {
-      const response = NextResponse.json({ error: idPassportValidation.errors.join(', ') }, { status: 400 });
+      return NextResponse.json({ error: idPassportValidation.errors.join(', ') }, { status: 400 });
       return withSecurityHeaders(response, traceId);
     }
   }
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
     console.error('User provisioning failed after consent submission:', err);
   }
 
-  const response = NextResponse.json(newContract, { status: 201 });
+  return NextResponse.json(newContract, { status: 201 });
   return withSecurityHeaders(response, traceId);
 }
 
@@ -141,7 +141,7 @@ export async function PUT(request: NextRequest) {
   });
 
   if (error) {
-    const response = NextResponse.json({ error }, { status: 400 });
+    return NextResponse.json({ error }, { status: 400 });
     return withSecurityHeaders(response, traceId);
   }
 
@@ -160,7 +160,7 @@ export async function PUT(request: NextRequest) {
     if (sanitizedData.status === 'rejected') {
       const contract = await db.prepare('SELECT * FROM pending_contracts WHERE id = ?').bind(parseInt(id)).first();
       if (!contract) {
-        const response = NextResponse.json({ error: "Contract not found" }, { status: 404 });
+        return NextResponse.json({ error: "Contract not found" }, { status: 404 });
         return withSecurityHeaders(response, traceId);
       }
 
@@ -183,7 +183,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json(updated);
     }
   }
-  const response = NextResponse.json({ error: "Contract not found" }, { status: 404 });
+  return NextResponse.json({ error: "Contract not found" }, { status: 404 });
   return withSecurityHeaders(response, traceId);
 }
 
@@ -204,6 +204,6 @@ export async function DELETE(request: NextRequest) {
     await logAuditEvent(db, (user as any).id, 'delete_contract', 'pending_contract', parseInt(id), JSON.stringify({ contract_id: id }), request.headers.get('x-forwarded-for') || '');
     return NextResponse.json({ success: true });
   }
-  const response = NextResponse.json({ error: "ID required" }, { status: 400 });
+  return NextResponse.json({ error: "ID required" }, { status: 400 });
   return withSecurityHeaders(response, traceId);
 }

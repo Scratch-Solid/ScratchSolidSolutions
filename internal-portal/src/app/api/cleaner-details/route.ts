@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   if (username) {
     const profile = await getCleanerProfileByUsername(db, username);
     if (profile) {
-      const response = NextResponse.json({
+      return NextResponse.json({
         profilePicture: (profile as any).profile_picture || '',
         fullName: `${(profile as any).first_name || ''} ${(profile as any).last_name || ''}`.trim(),
         address: (profile as any).residential_address || '',
@@ -24,10 +24,10 @@ export async function GET(request: NextRequest) {
       response.headers.set('Cache-Control', 'private, max-age=60');
       return withSecurityHeaders(response, traceId);
     }
-    const response = NextResponse.json({ error: "Cleaner not found" }, { status: 404 });
+    return NextResponse.json({ error: "Cleaner not found" }, { status: 404 });
     return withSecurityHeaders(response, traceId);
   }
   
-  const response = NextResponse.json({ error: "Username required" }, { status: 400 });
+  return NextResponse.json({ error: "Username required" }, { status: 400 });
   return withSecurityHeaders(response, traceId);
 }
