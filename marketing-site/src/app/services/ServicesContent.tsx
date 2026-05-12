@@ -37,6 +37,7 @@ interface ServicePricing {
 export default function ServicesContent() {
   const [services, setServices] = useState<Service[]>([]);
   const [pricing, setPricing] = useState<ServicePricing[]>([]);
+  const [servicesDescription, setServicesDescription] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [showQuote, setShowQuote] = useState(false);
   const [quoteServiceId, setQuoteServiceId] = useState<number | null>(null);
@@ -55,14 +56,17 @@ export default function ServicesContent() {
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        const [sRes, pRes] = await Promise.all([
+        const [sRes, pRes, descRes] = await Promise.all([
           fetch('/api/services'),
           fetch('/api/service-pricing'),
+          fetch('/api/content?type=services'),
         ]);
         const servicesData: Service[] = sRes.ok ? await sRes.json() as Service[] : [];
         const pricingData: ServicePricing[] = pRes.ok ? await pRes.json() as ServicePricing[] : [];
+        const descData = descRes.ok ? await descRes.json() as { content?: string } : null;
         setServices(servicesData);
         setPricing(pricingData);
+        setServicesDescription(descData?.content || '');
       } catch (err) {
         console.error('Error fetching data:', err);
       } finally {
@@ -123,6 +127,9 @@ export default function ServicesContent() {
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-blue-700 mb-6 sm:mb-8 text-center relative z-10">
             Our Services
           </h1>
+          {servicesDescription && (
+            <p className="text-base sm:text-lg text-zinc-700 mb-6 text-center relative z-10 whitespace-pre-line">{servicesDescription}</p>
+          )}
 
           {loading ? (
             <div className="text-center text-gray-500 relative z-10">Loading...</div>

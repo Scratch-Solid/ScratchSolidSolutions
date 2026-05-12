@@ -26,6 +26,7 @@ interface Leader {
 
 export default function AboutPage() {
   const [aboutContent, setAboutContent] = useState<AboutContent[]>([]);
+  const [aboutText, setAboutText] = useState<string>('');
   const [leaders, setLeaders] = useState<Leader[]>([]);
   const [statistics, setStatistics] = useState<Statistics | null>(null);
   const [loading, setLoading] = useState(true);
@@ -42,17 +43,20 @@ export default function AboutPage() {
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        const [contentRes, leadersRes, statsRes] = await Promise.all([
+        const [contentRes, leadersRes, statsRes, aboutTextRes] = await Promise.all([
           fetch('/api/about-content'),
           fetch('/api/leaders'),
           fetch('/api/statistics'),
+          fetch('/api/content?type=about'),
         ]);
         const contentData: AboutContent[] = contentRes.ok ? await contentRes.json() as AboutContent[] : [];
         const leadersData: Leader[] = leadersRes.ok ? await leadersRes.json() as Leader[] : [];
         const statsData: Statistics | null = statsRes.ok ? await statsRes.json() as Statistics : null;
+        const aboutTextData = aboutTextRes.ok ? await aboutTextRes.json() as { content?: string } : null;
         setAboutContent(Array.isArray(contentData) ? contentData : []);
         setLeaders(Array.isArray(leadersData) ? leadersData : []);
         setStatistics(statsData);
+        setAboutText(aboutTextData?.content || '');
       } catch (err) {
         console.error('Error fetching data:', err);
       } finally {
@@ -89,9 +93,14 @@ export default function AboutPage() {
           <div className="text-center text-gray-500 relative z-10">Loading...</div>
         ) : (
           <div className="text-base sm:text-lg text-zinc-800 mb-6 sm:mb-8 relative z-10">
-            {getSectionContent('about-main').map((item, i) => (
-              <p key={i} className="text-base sm:text-lg text-zinc-800 mb-4 sm:mb-6 text-center">{item.content}</p>
-            ))}
+            {getSectionContent('about-main').length > 0
+              ? getSectionContent('about-main').map((item, i) => (
+                  <p key={i} className="text-base sm:text-lg text-zinc-800 mb-4 sm:mb-6 text-center">{item.content}</p>
+                ))
+              : aboutText
+                ? <p className="text-base sm:text-lg text-zinc-800 mb-4 sm:mb-6 text-center whitespace-pre-line">{aboutText}</p>
+                : null
+            }
             
             <div className="my-6 sm:my-8 grid grid-cols-1 md:grid-cols-2 gap-6">
               {getSectionContent('mission').map((item, i) => (
