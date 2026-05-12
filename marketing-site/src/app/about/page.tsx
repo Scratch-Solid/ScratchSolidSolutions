@@ -29,6 +29,12 @@ export default function AboutPage() {
       title: 'Founder and CEO',
       image_url: '/Jason Prof Pic.jpg',
       description: 'Leading Scratch Solid Solutions with a commitment to excellence and community impact.'
+    },
+    {
+      name: 'Arnica Nqayi',
+      title: 'Client Success Manager',
+      image_url: '/Arnica_Nqayi.jpg',
+      description: 'Dedicated to ensuring every client experiences exceptional service and complete satisfaction with every clean.'
     }
   ];
 
