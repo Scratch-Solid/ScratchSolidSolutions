@@ -168,13 +168,40 @@ export default function ServicesContent() {
                       position: 'absolute',
                       inset: 0,
                     }}
-                    className="bg-gradient-to-br from-blue-700 to-blue-500 rounded-xl p-4 sm:p-5 text-center flex flex-col items-center justify-center text-white"
+                    className="bg-gradient-to-br from-blue-700 to-blue-500 rounded-xl p-3 sm:p-4 flex flex-col text-white overflow-hidden"
                   >
-                    <h3 className="font-bold text-sm sm:text-base mb-2">Maintenance Clean</h3>
-                    <p className="text-xs sm:text-sm leading-relaxed px-1 mb-3">
-                      Perfect for keeping your home or office in top shape. We focus on high-traffic areas, surfaces, and floors to maintain a consistently clean environment. Includes dusting, vacuuming, mopping, bathroom sanitization, and kitchen surface cleaning.
-                    </p>
-                    <p className="text-[10px] text-blue-200 mt-2">Tap to flip back</p>
+                    <h3 className="font-bold text-xs sm:text-sm mb-2 text-center">Maintenance Clean - What We Clean</h3>
+                    <div className="flex-1 overflow-y-auto text-[10px] sm:text-xs leading-tight space-y-1.5 pr-1" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.3) transparent' }}>
+                      <p className="text-blue-100 italic text-center mb-2">Your home/office reset. Book weekly or bi-weekly.</p>
+                      <div><strong>All Areas:</strong></div>
+                      <div>✓ Floors mopped</div>
+                      <div>✓ Surfaces dusted</div>
+                      <div>✓ Skirting boards wiped</div>
+                      <div>✓ Light switches & handles disinfected</div>
+                      <div>✓ Bins emptied + new bags</div>
+                      <div>✓ Windowsills wiped</div>
+                      <div className="mt-1"><strong>Kitchen:</strong></div>
+                      <div>✓ Sink scrubbed + taps polished</div>
+                      <div>✓ Counters & stovetop wiped</div>
+                      <div>✓ Outside appliances wiped</div>
+                      <div>✓ Splashback degreased</div>
+                      <div className="mt-1"><strong>Bathrooms:</strong></div>
+                      <div>✓ Toilet cleaned + disinfected</div>
+                      <div>✓ Shower/bath scrubbed</div>
+                      <div>✓ Sink, taps & counters wiped</div>
+                      <div>✓ Mirrors streak-free</div>
+                      <div>✓ Floors mopped incl. behind doors</div>
+                      <div className="mt-1"><strong>Bedrooms:</strong></div>
+                      <div>✓ Dusted incl. tops of cupboards</div>
+                      <div>✓ Floors mopped + under bed edges</div>
+                      <div>✓ Mirrors/glass wiped</div>
+                      <div className="mt-1"><strong>Final Touches:</strong></div>
+                      <div>✓ Fresh lemon final touch spray</div>
+                      <div>✓ Toilet paper folded 💚</div>
+                      <div>✓ Home secured as found</div>
+                      <div className="mt-2 text-blue-200 italic text-[9px]">Note: Inside cupboards, ovens, fridges, windows & vacuum covered in Deep Clean.</div>
+                    </div>
+                    <p className="text-[10px] text-blue-200 mt-2 text-center">Tap to flip back</p>
                   </div>
                 </div>
               </div>
@@ -211,13 +238,41 @@ export default function ServicesContent() {
                       position: 'absolute',
                       inset: 0,
                     }}
-                    className="bg-gradient-to-br from-blue-700 to-blue-500 rounded-xl p-4 sm:p-5 text-center flex flex-col items-center justify-center text-white"
+                    className="bg-gradient-to-br from-blue-700 to-blue-500 rounded-xl p-3 sm:p-4 flex flex-col text-white overflow-hidden"
                   >
-                    <h3 className="font-bold text-sm sm:text-base mb-2">Deep Clean</h3>
-                    <p className="text-xs sm:text-sm leading-relaxed px-1 mb-3">
-                      Ideal for first-time visits, seasonal resets, or move-in/move-out. We go beyond the surface—cleaning behind furniture, inside appliances, deep grout scrubbing, baseboards, and those hard-to-reach spots. Your space will feel brand new.
-                    </p>
-                    <p className="text-[10px] text-blue-200 mt-2">Tap to flip back</p>
+                    <h3 className="font-bold text-xs sm:text-sm mb-2 text-center">Deep Clean - What We Clean</h3>
+                    <div className="flex-1 overflow-y-auto text-[10px] sm:text-xs leading-tight space-y-1.5 pr-1" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.3) transparent' }}>
+                      <p className="text-blue-100 italic text-center mb-2">Includes EVERYTHING from Maintenance Clean, PLUS:</p>
+                      <div><strong>Whole Home/Office:</strong></div>
+                      <div>✓ Inside all windows + frames + tracks</div>
+                      <div>✓ All doors + door frames wiped</div>
+                      <div>✓ Light fixtures & ceiling fans dusted</div>
+                      <div>✓ Blinds/window dressings dusted</div>
+                      <div>✓ High dusting - vents, tops of cupboards</div>
+                      <div>✓ Under & behind light furniture moved</div>
+                      <div className="mt-1"><strong>Kitchen Deep Additions:</strong></div>
+                      <div>✓ Inside oven + under stovetop</div>
+                      <div>✓ Inside fridge + freezer wiped</div>
+                      <div>✓ Inside all cupboards & drawers</div>
+                      <div>✓ Range hood filters degreased</div>
+                      <div>✓ Tile grout scrubbed</div>
+                      <div className="mt-1"><strong>Bathroom Deep Additions:</strong></div>
+                      <div>✓ Tile grout & silicone lines scrubbed</div>
+                      <div>✓ Shower heads descaled</div>
+                      <div>✓ Inside vanity cupboards wiped</div>
+                      <div>✓ Exhaust fans dusted</div>
+                      <div className="mt-1"><strong>Office Deep Additions:</strong></div>
+                      <div>✓ Carpets spot treated/steam cleaned</div>
+                      <div>✓ Office chairs vacuumed incl. under</div>
+                      <div>✓ Inside kitchenette cupboards</div>
+                      <div>✓ Computers/servers dusted - exterior</div>
+                      <div className="mt-1"><strong>Final Touches:</strong></div>
+                      <div>✓ Shower glass water-repellent treated</div>
+                      <div>✓ Bins deodorized with baking soda</div>
+                      <div>✓ Fresh lemon final touch spray</div>
+                      <div className="mt-2 text-blue-200 italic text-[9px]">Your space reset to "like new". Recommend Deep Clean every 3-6 months.</div>
+                    </div>
+                    <p className="text-[10px] text-blue-200 mt-2 text-center">Tap to flip back</p>
                   </div>
                 </div>
               </div>
