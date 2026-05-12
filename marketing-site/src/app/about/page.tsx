@@ -160,10 +160,10 @@ export default function AboutPage() {
                             <img
                               src={leader.image_url}
                               alt={leader.name}
-                              className="w-20 h-20 rounded-full mx-auto mb-3 object-cover border-2 border-blue-200 shadow"
+                              className="w-28 h-28 rounded-full mx-auto mb-3 object-cover border-2 border-blue-200 shadow"
                             />
                           ) : (
-                            <div className="w-20 h-20 rounded-full mx-auto mb-3 bg-blue-100 flex items-center justify-center text-3xl text-blue-700 font-bold">
+                            <div className="w-28 h-28 rounded-full mx-auto mb-3 bg-blue-100 flex items-center justify-center text-3xl text-blue-700 font-bold">
                               {leader.name.charAt(0)}
                             </div>
                           )}
