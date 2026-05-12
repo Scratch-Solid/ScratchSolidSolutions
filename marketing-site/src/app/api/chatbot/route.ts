@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { withTracing, withSecurityHeaders } from "@/lib/middleware";
 import { withRateLimit, rateLimits } from "@/lib/middleware";
+import { getDb } from "@/lib/db";
 
 // Expanded in-memory knowledge base for practical Q&A
 const siteContent = [
@@ -63,12 +64,47 @@ export async function POST(req: NextRequest) {
     const response = NextResponse.json({ error: "No question provided." }, { status: 400 });
     return withSecurityHeaders(response, traceId);
   }
-  const results = searchContent(question);
-  if (results.length === 0) {
-    const response = NextResponse.json({ answer: "Sorry, I couldn't find an answer in our site content." });
+
+  try {
+    const db = await getDb();
+    if (!db) {
+      const response = NextResponse.json({ 
+        answer: "Sorry, I'm having trouble processing your request right now. Please contact us on WhatsApp at +27 69 673 5947." 
+      });
+      return withSecurityHeaders(response, traceId);
+    }
+
+    const input = question.toLowerCase();
+
+    // Check for exact matches first
+    const exactMatch = await db.prepare(
+      `SELECT response FROM ai_responses WHERE LOWER(question) = ? LIMIT 1`
+    ).bind(input).first();
+
+    if (exactMatch) {
+      const response = NextResponse.json({ answer: exactMatch.response as string });
+      return withSecurityHeaders(response, traceId);
+    }
+
+    // Check for keyword matches using LIKE
+    const keywordMatch = await db.prepare(
+      `SELECT response FROM ai_responses WHERE LOWER(question) LIKE ? LIMIT 1`
+    ).bind(`%${input}%`).first();
+
+    if (keywordMatch) {
+      const response = NextResponse.json({ answer: keywordMatch.response as string });
+      return withSecurityHeaders(response, traceId);
+    }
+
+    // Default response
+    const response = NextResponse.json({ 
+      answer: "Sorry, I couldn't find an answer. Please contact us on WhatsApp at +27 69 673 5947 for assistance." 
+    });
+    return withSecurityHeaders(response, traceId);
+  } catch (error) {
+    const response = NextResponse.json({ 
+      answer: "Sorry, I'm having trouble processing your request right now. Please contact us on WhatsApp at +27 69 673 5947." 
+    });
     return withSecurityHeaders(response, traceId);
   }
-  // Return the first relevant snippet
-  const response = NextResponse.json({ answer: results[0].text });
-  return withSecurityHeaders(response, traceId);
 }
