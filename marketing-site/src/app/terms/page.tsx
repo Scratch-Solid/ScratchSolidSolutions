@@ -5,7 +5,7 @@ import LogoWatermark from '@/components/LogoWatermark';
 
 export default function TermsPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white py-8 sm:py-16 px-2 sm:px-4 font-sans">
+    <div className="min-h-screen py-8 sm:py-16 px-2 sm:px-4 font-sans">
       <div className="max-w-2xl mx-auto bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20 p-6 sm:p-10 relative overflow-hidden">
         <LogoWatermark size="lg" />
         <h1 className="text-3xl sm:text-4xl font-extrabold text-blue-700 mb-4 sm:mb-6 text-center drop-shadow-lg">Terms of Service</h1>

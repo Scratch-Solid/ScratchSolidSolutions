@@ -58,7 +58,7 @@ export default function AboutPage() {
   return (
     <>
     <SiteNav current="about" />
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-white to-blue-50 py-10 sm:py-16 px-3 sm:px-6 font-sans animate-fade-in pt-20">
+    <div className="flex flex-col items-center justify-center min-h-screen py-10 sm:py-16 px-3 sm:px-6 font-sans animate-fade-in pt-20">
       <div className="max-w-5xl w-full space-y-8">
         <div className="glass-panel relative overflow-hidden border border-white/60 shadow-2xl">
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0">
