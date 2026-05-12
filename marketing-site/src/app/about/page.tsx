@@ -19,10 +19,18 @@ interface Leader {
 }
 
 export default function AboutPage() {
-  const [leaders, setLeaders] = useState<Leader[]>([]);
   const [statistics, setStatistics] = useState<Statistics | null>(null);
   const [loading, setLoading] = useState(true);
   const [flippedCards, setFlippedCards] = useState<Set<number>>(new Set());
+
+  const staticLeaders: Leader[] = [
+    {
+      name: 'Jason Tshaka',
+      title: 'Founder and CEO',
+      image_url: '/Jason Prof Pic.jpg',
+      description: 'Leading Scratch Solid Solutions with a commitment to excellence and community impact.'
+    }
+  ];
 
   const toggleFlip = (index: number) => {
     setFlippedCards(prev => {
@@ -35,13 +43,8 @@ export default function AboutPage() {
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        const [leadersRes, statsRes] = await Promise.all([
-          fetch('/api/leaders'),
-          fetch('/api/statistics'),
-        ]);
-        const leadersData: Leader[] = leadersRes.ok ? await leadersRes.json() as Leader[] : [];
+        const statsRes = await fetch('/api/statistics');
         const statsData: Statistics | null = statsRes.ok ? await statsRes.json() as Statistics : null;
-        setLeaders(Array.isArray(leadersData) ? leadersData : []);
         setStatistics(statsData);
       } catch (err) {
         console.error('Error fetching data:', err);
@@ -127,19 +130,9 @@ export default function AboutPage() {
             </div>
             
             <div className="my-6 sm:my-8">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-xl sm:text-2xl font-bold text-blue-800">Our Leadership Team</h2>
-                {leaders.length === 0 && (
-                  <span className="text-xs text-gray-500">Add leaders from the admin dashboard to showcase your team.</span>
-                )}
-              </div>
-              {leaders.length === 0 ? (
-                <div className="glass-card text-center text-sm text-gray-500">
-                  No leaders yet. Add your leadership profiles in the admin dashboard to display them here.
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {leaders.map((leader, index) => (
+              <h2 className="text-xl sm:text-2xl font-bold text-blue-800 mb-4">Our Leadership Team</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {staticLeaders.map((leader, index) => (
                     <div
                       key={leader.name + index}
                       className="glass-card cursor-pointer h-full"
@@ -199,7 +192,6 @@ export default function AboutPage() {
                     </div>
                   ))}
                 </div>
-              )}
             </div>
             
             {statistics && (
