@@ -1,13 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import SiteNav from "@/components/SiteNav";
-
-interface AboutContent {
-  section: string;
-  title?: string;
-  content: string;
-}
 
 interface Statistics {
   clients_serviced: number;
@@ -25,8 +19,6 @@ interface Leader {
 }
 
 export default function AboutPage() {
-  const [aboutContent, setAboutContent] = useState<AboutContent[]>([]);
-  const [aboutText, setAboutText] = useState<string>('');
   const [leaders, setLeaders] = useState<Leader[]>([]);
   const [statistics, setStatistics] = useState<Statistics | null>(null);
   const [loading, setLoading] = useState(true);
@@ -43,20 +35,14 @@ export default function AboutPage() {
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        const [contentRes, leadersRes, statsRes, aboutTextRes] = await Promise.all([
-          fetch('/api/about-content'),
+        const [leadersRes, statsRes] = await Promise.all([
           fetch('/api/leaders'),
           fetch('/api/statistics'),
-          fetch('/api/content?type=about'),
         ]);
-        const contentData: AboutContent[] = contentRes.ok ? await contentRes.json() as AboutContent[] : [];
         const leadersData: Leader[] = leadersRes.ok ? await leadersRes.json() as Leader[] : [];
         const statsData: Statistics | null = statsRes.ok ? await statsRes.json() as Statistics : null;
-        const aboutTextData = aboutTextRes.ok ? await aboutTextRes.json() as { content?: string } : null;
-        setAboutContent(Array.isArray(contentData) ? contentData : []);
         setLeaders(Array.isArray(leadersData) ? leadersData : []);
         setStatistics(statsData);
-        setAboutText(aboutTextData?.content || '');
       } catch (err) {
         console.error('Error fetching data:', err);
       } finally {
@@ -65,10 +51,6 @@ export default function AboutPage() {
     };
     fetchAll();
   }, []);
-
-  const getSectionContent = (section: string) => {
-    return aboutContent.filter(c => c.section === section);
-  };
 
   return (
     <>
@@ -93,34 +75,55 @@ export default function AboutPage() {
           <div className="text-center text-gray-500 relative z-10">Loading...</div>
         ) : (
           <div className="text-base sm:text-lg text-zinc-800 mb-6 sm:mb-8 relative z-10">
-            {getSectionContent('about-main').length > 0
-              ? getSectionContent('about-main').map((item, i) => (
-                  <p key={i} className="text-base sm:text-lg text-zinc-800 mb-4 sm:mb-6 text-center">{item.content}</p>
-                ))
-              : aboutText
-                ? <p className="text-base sm:text-lg text-zinc-800 mb-4 sm:mb-6 text-center whitespace-pre-line">{aboutText}</p>
-                : null
-            }
-            
+            <h2 className="text-2xl sm:text-3xl font-bold text-blue-800 mb-4 text-center">About Scratch Solid Solutions</h2>
+            <p className="text-base sm:text-lg text-zinc-800 mb-4 sm:mb-6 text-center leading-relaxed">
+              At Scratch Solid Solutions, we believe a clean environment is the foundation of a productive life and a successful business. Based in the heart of the Northern Suburbs, we provide premium, dependable cleaning services tailored to the unique needs of our local community.
+            </p>
+            <p className="text-base sm:text-lg text-zinc-800 mb-4 sm:mb-6 text-center leading-relaxed">
+              Our expertise covers the essential sectors that keep our suburbs running smoothly:
+            </p>
+            <ul className="text-base sm:text-lg text-zinc-800 mb-6 sm:mb-8 text-left list-disc list-inside space-y-2">
+              <li><strong>Residential Excellence:</strong> Giving homeowners their time back with meticulous attention to detail.</li>
+              <li><strong>Office & Commercial Spaces:</strong> Creating hygienic, professional environments that inspire productivity.</li>
+              <li><strong>Move-In / Move-Out:</strong> Providing intensive deep-cleans to ensure a seamless transition for tenants and homeowners.</li>
+              <li><strong>LekkeSlaap Turnovers:</strong> Ensuring that local guests arrive to a spotless, welcoming stay with high-standard, reliable turnovers.</li>
+            </ul>
+            <p className="text-base sm:text-lg text-zinc-800 mb-6 sm:mb-8 text-center leading-relaxed">
+              Our team is the heart of our business. We invest in quality equipment and rigorous safety standards to ensure that every job is performed with integrity and care. When you choose Scratch Solid Solutions, you aren't just hiring a cleaning crew—you're partnering with a local business dedicated to making our community shine, one space at a time.
+            </p>
+
             <div className="my-6 sm:my-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-              {getSectionContent('mission').map((item, i) => (
-                <div key={i} className="glass-card h-full">
-                  <h2 className="text-xl sm:text-2xl font-bold text-blue-800 mb-2 text-center">{item.title}</h2>
-                  <p className="text-zinc-800 text-center mb-3 sm:mb-4 text-sm sm:text-base leading-relaxed">{item.content}</p>
-                </div>
-              ))}
-              {getSectionContent('vision').map((item, i) => (
-                <div key={i} className="glass-card h-full">
-                  <h2 className="text-xl sm:text-2xl font-bold text-blue-800 mb-2 text-center">{item.title}</h2>
-                  <p className="text-zinc-800 text-center mb-3 sm:mb-4 text-sm sm:text-base leading-relaxed">{item.content}</p>
-                </div>
-              ))}
-              {getSectionContent('values').map((item, i) => (
-                <div key={i} className="glass-card h-full">
-                  <h2 className="text-xl sm:text-2xl font-bold text-blue-800 mb-2 text-center">{item.title}</h2>
-                  <p className="text-zinc-800 text-center mb-3 sm:mb-4 text-sm sm:text-base whitespace-pre-line leading-relaxed">{item.content}</p>
-                </div>
-              ))}
+              <div className="glass-card h-full">
+                <h2 className="text-xl sm:text-2xl font-bold text-blue-800 mb-2 text-center">Our Mission</h2>
+                <p className="text-zinc-800 text-center mb-3 sm:mb-4 text-sm sm:text-base leading-relaxed">
+                  To provide seamless, high-standard cleaning solutions that enhance the quality of life for our residential clients and the operational success of our commercial partners through reliability, integrity, and expert care.
+                </p>
+              </div>
+              <div className="glass-card h-full">
+                <h2 className="text-xl sm:text-2xl font-bold text-blue-800 mb-2 text-center">Our Vision</h2>
+                <p className="text-zinc-800 text-center mb-3 sm:mb-4 text-sm sm:text-base leading-relaxed">
+                  To be the Western Cape's most trusted name in property maintenance, recognized for empowering our local staff and setting the gold standard for cleanliness in the residential and hospitality sectors.
+                </p>
+              </div>
+            </div>
+
+            <div className="my-6 sm:my-8 glass-card">
+              <h2 className="text-xl sm:text-2xl font-bold text-blue-800 mb-4 text-center">Areas We Service</h2>
+              <p className="text-base sm:text-lg text-zinc-800 mb-4 text-center leading-relaxed">
+                We provide professional on-site cleaning across the Northern Suburbs, including:
+              </p>
+              <p className="text-base sm:text-lg text-zinc-800 text-center font-semibold text-blue-700">
+                Parow | Plattekloof | Durbanville | Tygervalley | Bellville | Kuilsriver | Brackenfell
+              </p>
+            </div>
+
+            <div className="my-6 sm:my-8 glass-card">
+              <h2 className="text-xl sm:text-2xl font-bold text-blue-800 mb-4 text-center">Core Values</h2>
+              <ul className="text-base sm:text-lg text-zinc-800 text-left list-disc list-inside space-y-3">
+                <li><strong>Precision:</strong> We don't just clean; we restore and maintain with an eye for the smallest details.</li>
+                <li><strong>Reliability:</strong> Our clients depend on our consistency, and we show up ready to deliver every time.</li>
+                <li><strong>Local Commitment:</strong> We are proud to contribute to the local economy by providing quality service and meaningful employment within our community.</li>
+              </ul>
             </div>
             
             <div className="my-6 sm:my-8">

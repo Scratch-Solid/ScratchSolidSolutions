@@ -37,7 +37,6 @@ interface ServicePricing {
 export default function ServicesContent() {
   const [services, setServices] = useState<Service[]>([]);
   const [pricing, setPricing] = useState<ServicePricing[]>([]);
-  const [servicesDescription, setServicesDescription] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [showQuote, setShowQuote] = useState(false);
   const [quoteServiceId, setQuoteServiceId] = useState<number | null>(null);
@@ -56,17 +55,14 @@ export default function ServicesContent() {
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        const [sRes, pRes, descRes] = await Promise.all([
+        const [sRes, pRes] = await Promise.all([
           fetch('/api/services'),
           fetch('/api/service-pricing'),
-          fetch('/api/content?type=services'),
         ]);
         const servicesData: Service[] = sRes.ok ? await sRes.json() as Service[] : [];
         const pricingData: ServicePricing[] = pRes.ok ? await pRes.json() as ServicePricing[] : [];
-        const descData = descRes.ok ? await descRes.json() as { content?: string } : null;
         setServices(servicesData);
         setPricing(pricingData);
-        setServicesDescription(descData?.content || '');
       } catch (err) {
         console.error('Error fetching data:', err);
       } finally {
@@ -127,9 +123,43 @@ export default function ServicesContent() {
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-blue-700 mb-6 sm:mb-8 text-center relative z-10">
             Our Services
           </h1>
-          {servicesDescription && (
-            <p className="text-base sm:text-lg text-zinc-700 mb-6 text-center relative z-10 whitespace-pre-line">{servicesDescription}</p>
-          )}
+          <div className="text-base sm:text-lg text-zinc-700 mb-8 text-center relative z-10 leading-relaxed">
+            <p className="mb-6">
+              At Scratch Solid Solutions, we provide more than just a clean space—we provide peace of mind. Whether you need a quick weekly reset or a heavy-duty deep clean, our teams bring precision and care to every property across the Northern Suburbs.
+            </p>
+          </div>
+
+          <div className="glass-card mb-8 relative z-10">
+            <h2 className="text-xl sm:text-2xl font-bold text-blue-800 mb-4 text-center">1. Choose Your Level of Clean</h2>
+            <p className="text-base sm:text-lg text-zinc-800 mb-4 text-center leading-relaxed">
+              We offer two primary cleaning tiers to suit your needs and budget.
+            </p>
+            <div className="space-y-4">
+              <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
+                <h3 className="text-lg font-bold text-blue-800 mb-2">Maintenance Clean</h3>
+                <p className="text-sm text-zinc-700 mb-2"><strong>Best for:</strong> Weekly or bi-weekly visits to keep your home or office in top shape.</p>
+                <p className="text-sm text-zinc-700">This service is designed to stay on top of daily dust and grime, ensuring your environment remains healthy and inviting.</p>
+              </div>
+              <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
+                <h3 className="text-lg font-bold text-blue-800 mb-2">Deep Clean</h3>
+                <p className="text-sm text-zinc-700 mb-2"><strong>Best for:</strong> First-time visits, seasonal resets, or "like new" restorations.</p>
+                <p className="text-sm text-zinc-700">We get into the spots nobody sees—behind furniture, inside appliances, and deep into the grout.</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="glass-card mb-8 relative z-10">
+            <h2 className="text-xl sm:text-2xl font-bold text-blue-800 mb-4 text-center">2. Specialized Sectors</h2>
+            <p className="text-base sm:text-lg text-zinc-800 mb-4 text-center leading-relaxed">
+              Professional solutions tailored to your specific environment.
+            </p>
+            <ul className="text-base sm:text-lg text-zinc-800 text-left list-disc list-inside space-y-2">
+              <li><strong>Residential Spaces:</strong> Reliable, trustworthy care for your private home.</li>
+              <li><strong>Office & Commercial:</strong> Hygienic, professional environments for businesses and corporate workspaces.</li>
+              <li><strong>LekkeSlaap & Short-Term Stays:</strong> Five-star guest turnovers to ensure your local rental stays "Lekke."</li>
+              <li><strong>Move-In / Move-Out:</strong> High-intensity deep cleans to take the stress out of moving day.</li>
+            </ul>
+          </div>
 
           {loading ? (
             <div className="text-center text-gray-500 relative z-10">Loading...</div>
