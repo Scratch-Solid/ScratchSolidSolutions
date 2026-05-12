@@ -74,11 +74,12 @@ export async function POST(req: NextRequest) {
       return withSecurityHeaders(response, traceId);
     }
 
-    const input = question.toLowerCase();
+    // Normalize input: lowercase and remove punctuation
+    const input = question.toLowerCase().replace(/[?!.]/g, '').trim();
 
     // Check for exact matches first
     const exactMatch = await db.prepare(
-      `SELECT response FROM ai_responses WHERE LOWER(question) = ? LIMIT 1`
+      `SELECT response FROM ai_responses WHERE LOWER(REPLACE(REPLACE(question, '?', ''), '!', '')) = ? LIMIT 1`
     ).bind(input).first();
 
     if (exactMatch) {

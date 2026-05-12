@@ -40,7 +40,7 @@
 }
 
 body {
-  background: url('/cleaning-bg.JPG') center center / cover no-repeat fixed;
+  background: url('/cleaning-bg.jpg') center center / cover no-repeat fixed;
   color: var(--text);
   font-family: var(--sans);
   min-height: 100vh;
