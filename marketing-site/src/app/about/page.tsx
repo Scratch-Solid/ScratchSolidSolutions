@@ -136,8 +136,8 @@ export default function AboutPage() {
             </div>
             
             <div className="my-6 sm:my-8">
-              <h2 className="text-xl sm:text-2xl font-bold text-blue-800 mb-4">Our Leadership Team</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <h2 className="text-xl sm:text-2xl font-bold text-blue-800 mb-4 text-center">Our Leadership Team</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {staticLeaders.map((leader, index) => (
                     <div
                       key={leader.name + index}
@@ -154,28 +154,28 @@ export default function AboutPage() {
                           transition: 'transform 0.55s ease',
                           position: 'relative',
                           width: '100%',
-                          minHeight: '240px',
+                          minHeight: '280px',
                         }}
                       >
                         {/* Front */}
                         <div
                           style={{ backfaceVisibility: 'hidden', position: 'absolute', inset: 0 }}
-                          className="bg-white/85 rounded-xl p-5 text-center flex flex-col items-center justify-center border border-blue-100"
+                          className="bg-white/85 rounded-xl p-4 sm:p-5 text-center flex flex-col items-center justify-center border border-blue-100"
                         >
                           {leader.image_url ? (
                             <img
                               src={leader.image_url}
                               alt={leader.name}
-                              className="w-28 h-28 rounded-full mx-auto mb-3 object-cover border-2 border-blue-200 shadow"
+                              className="w-24 h-24 sm:w-28 sm:h-28 rounded-full mx-auto mb-2 sm:mb-3 object-cover border-2 border-blue-200 shadow"
                             />
                           ) : (
-                            <div className="w-28 h-28 rounded-full mx-auto mb-3 bg-blue-100 flex items-center justify-center text-3xl text-blue-700 font-bold">
+                            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full mx-auto mb-2 sm:mb-3 bg-blue-100 flex items-center justify-center text-3xl text-blue-700 font-bold">
                               {leader.name.charAt(0)}
                             </div>
                           )}
-                          <h3 className="font-bold text-blue-800 text-base">{leader.name}</h3>
-                          <p className="text-sm text-gray-500 mt-1">{leader.title}</p>
-                          <p className="text-[10px] text-gray-400 mt-3">Tap to see bio</p>
+                          <h3 className="font-bold text-blue-800 text-sm sm:text-base">{leader.name}</h3>
+                          <p className="text-xs sm:text-sm text-gray-500 mt-1">{leader.title}</p>
+                          <p className="text-[10px] text-gray-400 mt-2 sm:mt-3">Tap to see bio</p>
                         </div>
                         {/* Back */}
                         <div
@@ -185,14 +185,14 @@ export default function AboutPage() {
                             position: 'absolute',
                             inset: 0,
                           }}
-                          className="bg-gradient-to-br from-blue-700 to-blue-500 rounded-xl p-5 text-center flex flex-col items-center justify-center text-white"
+                          className="bg-gradient-to-br from-blue-700 to-blue-500 rounded-xl p-4 sm:p-5 text-center flex flex-col items-center justify-center text-white"
                         >
-                          <h3 className="font-bold text-base mb-1">{leader.name}</h3>
-                          <p className="text-blue-100 text-xs mb-3">{leader.title}</p>
-                          <p className="text-white text-xs leading-relaxed line-clamp-6">
+                          <h3 className="font-bold text-sm sm:text-base mb-1">{leader.name}</h3>
+                          <p className="text-blue-100 text-xs mb-2 sm:mb-3">{leader.title}</p>
+                          <p className="text-white text-xs leading-relaxed px-1">
                             {leader.description || 'No bio available.'}
                           </p>
-                          <p className="text-blue-200 text-[10px] mt-3">Tap to flip back</p>
+                          <p className="text-blue-200 text-[10px] mt-2 sm:mt-3">Tap to flip back</p>
                         </div>
                       </div>
                     </div>
