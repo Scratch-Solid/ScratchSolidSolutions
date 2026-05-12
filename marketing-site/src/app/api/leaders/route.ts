@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     }
     
     const leaders = await db.prepare(
-      `SELECT * FROM leaders ORDER BY display_order ASC`
+      `SELECT * FROM leaders WHERE is_active = 1 ORDER BY display_order ASC`
     ).all();
     
     return NextResponse.json(leaders.results || []);
