@@ -279,8 +279,41 @@ CREATE TABLE IF NOT EXISTS ai_responses (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   question TEXT NOT NULL,
   response TEXT NOT NULL,
-  created_at TEXT DEFAULT (datetime('now'))
+  category TEXT DEFAULT '',
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
 );
+
+-- Leaders table (for leadership team display)
+CREATE TABLE IF NOT EXISTS leaders (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  title TEXT NOT NULL,
+  description TEXT DEFAULT '',
+  image_url TEXT DEFAULT '',
+  display_order INTEGER DEFAULT 0,
+  is_active INTEGER DEFAULT 1,
+  active INTEGER DEFAULT 1,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_leaders_display_order ON leaders(display_order);
+CREATE INDEX IF NOT EXISTS idx_leaders_is_active ON leaders(is_active);
+
+-- About Us Content (structured sections for the about page)
+CREATE TABLE IF NOT EXISTS about_us_content (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  section TEXT NOT NULL,
+  title TEXT DEFAULT '',
+  content TEXT NOT NULL DEFAULT '',
+  display_order INTEGER DEFAULT 0,
+  active INTEGER DEFAULT 1,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_about_us_content_section ON about_us_content(section);
 
 -- Reviews table
 CREATE TABLE IF NOT EXISTS reviews (

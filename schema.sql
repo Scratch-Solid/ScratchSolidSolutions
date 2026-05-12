@@ -56,6 +56,34 @@ CREATE TABLE IF NOT EXISTS content_pages (
   created_at TEXT DEFAULT (datetime('now'))
 );
 
+-- Content table (used by /api/content for static site content: contact, privacy, terms, services, about, etc.)
+CREATE TABLE IF NOT EXISTS content (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  collection TEXT NOT NULL DEFAULT 'pages',
+  slug TEXT UNIQUE NOT NULL,
+  title TEXT NOT NULL DEFAULT '',
+  text TEXT NOT NULL DEFAULT '',
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_content_slug ON content(slug);
+CREATE INDEX IF NOT EXISTS idx_content_collection ON content(collection);
+
+-- About Us Content (structured sections for the about page)
+CREATE TABLE IF NOT EXISTS about_us_content (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  section TEXT NOT NULL,
+  title TEXT,
+  content TEXT NOT NULL DEFAULT '',
+  display_order INTEGER DEFAULT 0,
+  active INTEGER DEFAULT 1,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_about_us_content_section ON about_us_content(section);
+
 -- Background Images (for marketing site)
 CREATE TABLE IF NOT EXISTS background_images (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
