@@ -899,67 +899,46 @@ function ContentManagement() {
     }
     try {
       setLoading(true);
-      // Step 1: request presigned PUT URL from marketing API (proxied)
       const folder = mode === 'backgrounds' ? 'backgrounds' : mode === 'gallery' ? 'gallery' : 'leaders';
-      const presignRes = await fetch(marketingProxy('/upload'), {
+
+      // Upload file directly to marketing API (proxied)
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('folder', folder);
+
+      const uploadRes = await fetch(marketingProxy('/upload'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          filename: file.name,
-          contentType: file.type || 'application/octet-stream',
-          contentLength: file.size,
-          folder,
-        }),
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
       });
 
-      if (!presignRes.ok) {
-        const errorText = await presignRes.text();
-        console.error('Upload URL request failed:', presignRes.status, errorText);
-        setMessage(`Failed to get upload URL: ${presignRes.status} - ${errorText}`);
+      if (!uploadRes.ok) {
+        const errorText = await uploadRes.text();
+        console.error('Upload request failed:', uploadRes.status, errorText);
+        setMessage(`Upload failed: ${uploadRes.status} - ${errorText}`);
         setLoading(false);
         return;
       }
 
-      const presignData = await presignRes.json() as { uploadUrl?: string; publicUrl?: string; fallbackUrl?: string; requiredHeaders?: Record<string, string> };
-      if (!presignData.uploadUrl) {
-        console.error('Upload URL missing from response:', presignData);
-        setMessage('Upload URL missing');
-        setLoading(false);
-        return;
-      }
-
-      // Step 2: PUT the file to R2 using the signed URL
-      const putRes = await fetch(presignData.uploadUrl, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': file.type || 'application/octet-stream',
-          ...(presignData.requiredHeaders || {}),
-        },
-        body: file,
-      });
-
-      if (!putRes.ok) {
-        console.error('R2 upload failed:', putRes.status, await putRes.text());
-        setMessage('Upload failed');
-        setLoading(false);
-        return;
-      }
-
-      const finalUrl = presignData.publicUrl || presignData.fallbackUrl;
-      if (finalUrl) {
-        if (mode === 'leaders') {
-          setLeaderForm((prev: any) => ({ ...prev, image_url: finalUrl }));
-        } else if (mode === 'backgrounds') {
-          setBackgroundUrl(finalUrl);
-          setBackgroundPreview(finalUrl);
-        } else if (mode === 'gallery') {
-          setGalleryImages(prev => [...prev, { url: finalUrl, caption: galleryCaption }]);
-          setGalleryCaption('');
-        }
-        setMessage('Image uploaded');
-      } else {
+      const uploadData = await uploadRes.json() as { publicUrl?: string; key?: string };
+      if (!uploadData.publicUrl) {
+        console.error('Public URL missing from response:', uploadData);
         setMessage('Upload failed: no URL returned');
+        setLoading(false);
+        return;
       }
+
+      const finalUrl = uploadData.publicUrl;
+      if (mode === 'leaders') {
+        setLeaderForm((prev: any) => ({ ...prev, image_url: finalUrl }));
+      } else if (mode === 'backgrounds') {
+        setBackgroundUrl(finalUrl);
+        setBackgroundPreview(finalUrl);
+      } else if (mode === 'gallery') {
+        setGalleryImages(prev => [...prev, { url: finalUrl, caption: galleryCaption }]);
+        setGalleryCaption('');
+      }
+      setMessage('Image uploaded');
     } catch (err) {
       console.error('Upload error:', err);
       setMessage(`Upload failed: ${(err as Error).message}`);

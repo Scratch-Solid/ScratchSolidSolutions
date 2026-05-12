@@ -55,45 +55,44 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const body = await req.json() as { filename?: string; contentType?: string; contentLength?: number; folder?: string };
-    const { filename, contentType = 'application/octet-stream', contentLength = 0, folder } = body;
+    const formData = await req.formData();
+    const file = formData.get('file') as File;
+    const folder = formData.get('folder') as string || 'uploads';
 
-    if (!filename) {
-      return withSecurityHeaders(NextResponse.json({ error: 'filename is required' }, { status: 400 }), traceId);
+    if (!file) {
+      return withSecurityHeaders(NextResponse.json({ error: 'file is required' }, { status: 400 }), traceId);
     }
-    if (!ALLOWED_MIME_TYPES.includes(contentType)) {
+
+    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
       return withSecurityHeaders(NextResponse.json({ error: 'File type not allowed. Use JPEG, PNG, GIF, WebP, or PDF.' }, { status: 400 }), traceId);
     }
-    if (contentLength > MAX_FILE_SIZE) {
+    if (file.size > MAX_FILE_SIZE) {
       return withSecurityHeaders(NextResponse.json({ error: 'File exceeds 8MB limit' }, { status: 400 }), traceId);
     }
 
-    const safeFilename = sanitizeFilename(filename);
-    const key = `${folder ? `${folder.replace(/\/+$/, '')}/` : ''}${uuidv4()}-${safeFilename}`;
+    const safeFilename = sanitizeFilename(file.name);
+    const key = `${folder.replace(/\/+$/, '')}/${uuidv4()}-${safeFilename}`;
 
-    // Generate a presigned URL using the R2 bucket binding
-    // R2 bucket bindings support the put() method with onlyUrl option
-    const signedUrl = await bucket.put(key, {
+    // Upload file directly to R2 using the bucket binding
+    await bucket.put(key, file.stream(), {
       httpMetadata: {
-        contentType: contentType,
+        contentType: file.type,
       },
-    }, {
-      onlyUrl: true,
     });
 
     const publicUrl = `${PUBLIC_BASE}/${key}`;
 
     const response = NextResponse.json({
-      uploadUrl: signedUrl,
       key,
       publicUrl,
-      requiredHeaders: { 'Content-Type': contentType },
-      maxBytes: MAX_FILE_SIZE,
+      filename: file.name,
+      size: file.size,
+      contentType: file.type,
     });
     return withSecurityHeaders(response, traceId);
   } catch (err) {
     logger.error('Upload error', err as Error);
-    const response = NextResponse.json({ error: 'Failed to create upload URL', details: (err as Error).message }, { status: 400 });
+    const response = NextResponse.json({ error: 'Failed to upload file', details: (err as Error).message }, { status: 400 });
     return withSecurityHeaders(response, traceId);
   }
 }
