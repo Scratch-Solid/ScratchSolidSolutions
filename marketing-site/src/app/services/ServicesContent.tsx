@@ -134,16 +134,92 @@ export default function ServicesContent() {
             <p className="text-base sm:text-lg text-zinc-800 mb-4 text-center leading-relaxed">
               We offer two primary cleaning tiers to suit your needs and budget.
             </p>
-            <div className="space-y-4">
-              <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
-                <h3 className="text-lg font-bold text-blue-800 mb-2">Maintenance Clean</h3>
-                <p className="text-sm text-zinc-700 mb-2"><strong>Best for:</strong> Weekly or bi-weekly visits to keep your home or office in top shape.</p>
-                <p className="text-sm text-zinc-700">This service is designed to stay on top of daily dust and grime, ensuring your environment remains healthy and inviting.</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+              <div
+                style={{ perspective: '1000px' }}
+                className="cursor-pointer"
+                onClick={() => toggleFlip(1)}
+                role="button"
+                aria-label={`${flippedCards.has(1) ? 'Flip back' : 'See details for'} Maintenance Clean`}
+              >
+                <div
+                  style={{
+                    transformStyle: 'preserve-3d',
+                    transform: flippedCards.has(1) ? 'rotateY(180deg)' : 'rotateY(0deg)',
+                    transition: 'transform 0.55s ease',
+                    position: 'relative',
+                    width: '100%',
+                    minHeight: '280px',
+                  }}
+                >
+                  <div
+                    style={{ backfaceVisibility: 'hidden', position: 'absolute', inset: 0 }}
+                    className="bg-white/85 rounded-xl p-4 sm:p-5 text-center flex flex-col items-center justify-center border border-blue-100"
+                  >
+                    <div className="text-4xl mb-3">🧹</div>
+                    <h3 className="font-bold text-blue-800 text-sm sm:text-base mb-1">Maintenance Clean</h3>
+                    <p className="text-xs sm:text-sm text-gray-500 mb-2">Weekly or bi-weekly visits</p>
+                    <p className="text-[10px] text-gray-400 mt-2">Tap to see details</p>
+                  </div>
+                  <div
+                    style={{
+                      backfaceVisibility: 'hidden',
+                      transform: 'rotateY(180deg)',
+                      position: 'absolute',
+                      inset: 0,
+                    }}
+                    className="bg-gradient-to-br from-blue-700 to-blue-500 rounded-xl p-4 sm:p-5 text-center flex flex-col items-center justify-center text-white"
+                  >
+                    <h3 className="font-bold text-sm sm:text-base mb-2">Maintenance Clean</h3>
+                    <p className="text-xs sm:text-sm leading-relaxed px-1 mb-3">
+                      Perfect for keeping your home or office in top shape. We focus on high-traffic areas, surfaces, and floors to maintain a consistently clean environment. Includes dusting, vacuuming, mopping, bathroom sanitization, and kitchen surface cleaning.
+                    </p>
+                    <p className="text-[10px] text-blue-200 mt-2">Tap to flip back</p>
+                  </div>
+                </div>
               </div>
-              <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
-                <h3 className="text-lg font-bold text-blue-800 mb-2">Deep Clean</h3>
-                <p className="text-sm text-zinc-700 mb-2"><strong>Best for:</strong> First-time visits, seasonal resets, or "like new" restorations.</p>
-                <p className="text-sm text-zinc-700">We get into the spots nobody sees—behind furniture, inside appliances, and deep into the grout.</p>
+              <div
+                style={{ perspective: '1000px' }}
+                className="cursor-pointer"
+                onClick={() => toggleFlip(2)}
+                role="button"
+                aria-label={`${flippedCards.has(2) ? 'Flip back' : 'See details for'} Deep Clean`}
+              >
+                <div
+                  style={{
+                    transformStyle: 'preserve-3d',
+                    transform: flippedCards.has(2) ? 'rotateY(180deg)' : 'rotateY(0deg)',
+                    transition: 'transform 0.55s ease',
+                    position: 'relative',
+                    width: '100%',
+                    minHeight: '280px',
+                  }}
+                >
+                  <div
+                    style={{ backfaceVisibility: 'hidden', position: 'absolute', inset: 0 }}
+                    className="bg-white/85 rounded-xl p-4 sm:p-5 text-center flex flex-col items-center justify-center border border-blue-100"
+                  >
+                    <div className="text-4xl mb-3">✨</div>
+                    <h3 className="font-bold text-blue-800 text-sm sm:text-base mb-1">Deep Clean</h3>
+                    <p className="text-xs sm:text-sm text-gray-500 mb-2">First-time or seasonal resets</p>
+                    <p className="text-[10px] text-gray-400 mt-2">Tap to see details</p>
+                  </div>
+                  <div
+                    style={{
+                      backfaceVisibility: 'hidden',
+                      transform: 'rotateY(180deg)',
+                      position: 'absolute',
+                      inset: 0,
+                    }}
+                    className="bg-gradient-to-br from-blue-700 to-blue-500 rounded-xl p-4 sm:p-5 text-center flex flex-col items-center justify-center text-white"
+                  >
+                    <h3 className="font-bold text-sm sm:text-base mb-2">Deep Clean</h3>
+                    <p className="text-xs sm:text-sm leading-relaxed px-1 mb-3">
+                      Ideal for first-time visits, seasonal resets, or move-in/move-out. We go beyond the surface—cleaning behind furniture, inside appliances, deep grout scrubbing, baseboards, and those hard-to-reach spots. Your space will feel brand new.
+                    </p>
+                    <p className="text-[10px] text-blue-200 mt-2">Tap to flip back</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
