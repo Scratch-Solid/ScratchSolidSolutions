@@ -108,7 +108,7 @@ export default function ServicesContent() {
         initialServiceId={quoteServiceId}
       />
 
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-white py-8 sm:py-16 px-2 sm:px-4 font-sans animate-fade-in pt-20">
+      <div className="flex flex-col items-center justify-center min-h-screen py-8 sm:py-16 px-2 sm:px-4 font-sans animate-fade-in pt-20">
         <div className="max-w-2xl w-full bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20 p-6 sm:p-10 relative">
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0">
             <img
