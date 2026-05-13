@@ -279,16 +279,16 @@ export default function EmployeeConsentPage() {
           </div>
 
           {/* Consent & Authorization Section */}
-          <div className="border-t pt-6">
+          <div className="border-t pt-6 text-center">
             <h2 className="text-xl font-bold mb-4">Consent & Authorisation</h2>
             <div className="text-sm leading-relaxed space-y-2">
-              <p>
+              <p className="text-left">
                 {loadingContent ? 'Loading...' : (consentContent?.consent_text || 'I, the undersigned, hereby give written, informed consent to Scratch Solid Solutions to conduct background checks relevant to my application for employment.')}
               </p>
-              <p>
+              <p className="text-left">
                 I understand that these checks may include:
               </p>
-              <ul className="list-disc list-inside ml-4 space-y-1">
+              <ul className="list-disc list-inside ml-4 space-y-1 text-left">
                 {loadingContent ? (
                   <li>Loading...</li>
                 ) : (
@@ -297,10 +297,10 @@ export default function EmployeeConsentPage() {
                   ))
                 )}
               </ul>
-              <p>
+              <p className="text-left">
                 I acknowledge that:
               </p>
-              <ul className="list-disc list-inside ml-4 space-y-1">
+              <ul className="list-disc list-inside ml-4 space-y-1 text-left">
                 {loadingContent ? (
                   <li>Loading...</li>
                 ) : (
@@ -309,7 +309,7 @@ export default function EmployeeConsentPage() {
                   ))
                 )}
               </ul>
-              <p className="font-semibold">
+              <p className="font-semibold text-left">
                 I confirm that the information I have provided is true and correct.
               </p>
             </div>
