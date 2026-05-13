@@ -296,7 +296,7 @@ export default function ServicesContent() {
             <div className="text-center text-gray-500 relative z-10">Loading...</div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6 relative z-10">
-              {services.filter(s => s.is_active).map((service) => {
+              {services.filter(s => s.is_active && s.id !== 1 && s.id !== 2).map((service) => {
                 const isFlipped = flippedCards.has(service.id);
                 const priceLabel = getPriceLabel(service.id);
                 return (
