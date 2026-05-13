@@ -2,13 +2,12 @@
 import Link from "next/link";
 
 interface Props {
-  current: "services" | "about" | "gallery" | "customer-dashboard";
+  current: "services" | "about" | "gallery";
 }
 
 const links = [
   { href: "/", label: "Home" },
   { href: "/services", label: "Services", id: "services" },
-  { href: "/customer-dashboard", label: "My Quotes", id: "customer-dashboard" },
   { href: "/about", label: "About Us", id: "about" },
   { href: "/gallery", label: "Gallery", id: "gallery" },
 ];

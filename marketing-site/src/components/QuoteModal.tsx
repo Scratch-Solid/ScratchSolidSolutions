@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import LogoWatermark from '@/components/LogoWatermark';
+import QuoteHistory from '@/components/QuoteHistory';
 
 interface Service {
   id: number;
@@ -66,6 +67,7 @@ interface Props {
 }
 
 export default function QuoteModal({ isOpen, onClose, services, pricing, initialServiceId }: Props) {
+  const [tab, setTab] = useState<'new' | 'history'>('new');
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [clientType, setClientType] = useState<'individual' | 'business'>('individual');
   const [selectedServiceId, setSelectedServiceId] = useState<number | null>(initialServiceId || null);
@@ -87,6 +89,7 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
 
   useEffect(() => {
     if (!isOpen) {
+      setTab('new');
       setStep(1);
       setClientType('individual');
       setPromoInput('');
@@ -295,18 +298,46 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
         <div className="relative w-full max-w-md bg-white/95 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/30 overflow-hidden">
           <LogoWatermark size="lg" />
           {/* Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <img src="/scratchsolid-logo.jpg" alt="Scratch Solid" className="w-8 h-8 rounded-full object-cover bg-white" />
-              <h2 className="text-white font-bold text-lg">
-                {step === 3 ? 'Your Quote' : 'Request a Quote'}
-              </h2>
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-3">
+                <img src="/scratchsolid-logo.jpg" alt="Scratch Solid" className="w-8 h-8 rounded-full object-cover bg-white" />
+                <h2 className="text-white font-bold text-lg">
+                  {tab === 'history' ? 'My Quotes' : step === 3 ? 'Your Quote' : 'Request a Quote'}
+                </h2>
+              </div>
+              <button onClick={onClose} className="text-white/80 hover:text-white transition-colors text-2xl leading-none">&times;</button>
             </div>
-            <button onClick={onClose} className="text-white/80 hover:text-white transition-colors text-2xl leading-none">&times;</button>
+            
+            {/* Tab Navigation */}
+            {step !== 3 && (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setTab('new')}
+                  className={`flex-1 py-2 px-4 rounded-lg font-semibold text-sm transition-all ${
+                    tab === 'new' 
+                      ? 'bg-white text-blue-700' 
+                      : 'bg-white/20 text-white hover:bg-white/30'
+                  }`}
+                >
+                  New Quote
+                </button>
+                <button
+                  onClick={() => setTab('history')}
+                  className={`flex-1 py-2 px-4 rounded-lg font-semibold text-sm transition-all ${
+                    tab === 'history' 
+                      ? 'bg-white text-blue-700' 
+                      : 'bg-white/20 text-white hover:bg-white/30'
+                  }`}
+                >
+                  My Quotes
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Step indicators */}
-          {step !== 3 && (
+          {step !== 3 && tab === 'new' && (
             <div className="flex items-center gap-2 px-6 pt-4">
               {[1, 2].map(s => (
                 <div key={s} className="flex items-center gap-2">
@@ -319,11 +350,19 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
           )}
 
           <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
-            {/* ── STEP 1: Service + Promo ── */}
-            {step === 1 && (
+            {/* ── HISTORY TAB ── */}
+            {tab === 'history' && (
+              <QuoteHistory onClose={onClose} />
+            )}
+
+            {/* ── NEW QUOTE TAB ── */}
+            {tab === 'new' && (
               <>
-                {/* Client type selector */}
-                <div>
+                {/* ── STEP 1: Service + Promo ── */}
+                {step === 1 && (
+                  <>
+                    {/* Client type selector */}
+                    <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">I am a... <span className="text-red-500">*</span></label>
                   <div className="flex gap-2">
                     <button
@@ -618,8 +657,10 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
                     </div>
                   </>
                 )}
-              </>
-            )}
+                </>
+              )}
+            </>
+          )}
           </div>
         </div>
       </div>
