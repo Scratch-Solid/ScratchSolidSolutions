@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import QRCode from 'qrcode.react';
+import { QRCodeCanvas as QRCode } from 'qrcode.react';
 
 interface QRCodeDisplayProps {
   promoCode: string;
@@ -83,7 +83,6 @@ export default function QRCodeDisplay({ promoCode, shareUrl, onClose }: QRCodeDi
                 size={200}
                 level="M"
                 includeMargin={true}
-                renderAs="canvas"
               />
             </div>
 
