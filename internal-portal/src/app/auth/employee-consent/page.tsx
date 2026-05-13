@@ -18,27 +18,9 @@ export default function EmployeeConsentPage() {
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [existingStatus, setExistingStatus] = useState<string | null>(null);
-  const [consentContent, setConsentContent] = useState<any>(null);
-  const [loadingContent, setLoadingContent] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    // Fetch consent form content from database
-    const fetchConsentContent = async () => {
-      try {
-        const response = await fetch('/api/admin/consent-form');
-        if (response.ok) {
-          const data = await response.json();
-          setConsentContent(data);
-        }
-      } catch (err) {
-        console.error('Error fetching consent content:', err);
-      } finally {
-        setLoadingContent(false);
-      }
-    };
-    fetchConsentContent();
-
     // Check if user has an existing contract submission
     const checkExistingContract = async () => {
       try {
@@ -177,7 +159,7 @@ export default function EmployeeConsentPage() {
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--text-h)' }}>Scratch Solid Solutions</h1>
           <p className="text-lg font-medium" style={{ color: 'var(--text)' }}>
-            {loadingContent ? 'Loading...' : (consentContent?.title || 'Employee Background Check Consent Form')}
+            Employee Background Check Consent Form
           </p>
         </div>
 
@@ -283,31 +265,24 @@ export default function EmployeeConsentPage() {
             <h2 className="text-xl font-bold mb-4">Consent & Authorisation</h2>
             <div className="text-sm leading-relaxed space-y-2">
               <p className="text-left">
-                {loadingContent ? 'Loading...' : (consentContent?.consent_text || 'I, the undersigned, hereby give written, informed consent to Scratch Solid Solutions to conduct background checks relevant to my application for employment.')}
+                I, the undersigned, hereby give written, informed consent to Scratch Solid Solutions to conduct background checks relevant to my application for employment.
               </p>
               <p className="text-left">
                 I understand that these checks may include:
               </p>
               <ul className="list-disc list-inside ml-4 space-y-1 text-left">
-                {loadingContent ? (
-                  <li>Loading...</li>
-                ) : (
-                  (consentContent?.background_checks || 'Identity verification\nCriminal record check (where relevant to the position)\nReference and employment history checks').split('\n').map((item: string, idx: number) => (
-                    <li key={idx}>{item}</li>
-                  ))
-                )}
+                <li>Identity verification</li>
+                <li>Criminal record check (where relevant to the position)</li>
+                <li>Reference and employment history checks</li>
               </ul>
               <p className="text-left">
                 I acknowledge that:
               </p>
               <ul className="list-disc list-inside ml-4 space-y-1 text-left">
-                {loadingContent ? (
-                  <li>Loading...</li>
-                ) : (
-                  (consentContent?.acknowledgments || 'All information will be processed in accordance with the Protection of Personal Information Act (POPIA)\nInformation collected will only be used for employment-related purposes\nMy personal information will be stored securely and confidentially\nI may request access to my information or withdraw consent in writing').split('\n').map((item: string, idx: number) => (
-                    <li key={idx}>{item}</li>
-                  ))
-                )}
+                <li>All information will be processed in accordance with the Protection of Personal Information Act (POPIA)</li>
+                <li>Information collected will only be used for employment-related purposes</li>
+                <li>My personal information will be stored securely and confidentially</li>
+                <li>I may request access to my information or withdraw consent in writing</li>
               </ul>
               <p className="font-semibold text-left">
                 I confirm that the information I have provided is true and correct.
@@ -344,7 +319,7 @@ export default function EmployeeConsentPage() {
 
             <div>
               <label className="block text-sm font-bold mb-2">
-                Witness / Company Representative: {loadingContent ? 'Loading...' : (consentContent?.witness_name || 'Xolani Jason Tshaka')}
+                Witness / Company Representative: Xolani Jason Tshaka
               </label>
             </div>
           </div>
