@@ -1,48 +1,55 @@
 {
-  "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "scratchsolidsolutions",
-  "main": ".open-next/worker.js",
-  "compatibility_date": "2026-04-23",
-  "compatibility_flags": ["nodejs_compat"],
-  "assets": {
-    "directory": ".open-next/assets"
-  },
-  "d1_databases": [
-    {
-      "binding": "scratchsolid_db",
-      "database_name": "scratchsolid-db",
-      "database_id": "b4f175df-b233-47dd-ab41-99455bf990b8"
-    }
-  ],
-  "kv_namespaces": [
-    {
-      "binding": "RATE_LIMIT_KV",
-      "id": "859744ffa6fc44caa84edaaa1e481800"
-    }
-  ],
-  "r2_buckets": [
-    {
-      "binding": "UPLOADS_BUCKET",
-      "bucket_name": "scratchsolid-uploads"
-    }
-  ],
-  "routes": [
-    {
-      "pattern": "api.scratchsolidsolutions.org/*",
-      "zone_name": "scratchsolidsolutions.org"
-    },
-    {
-      "pattern": "scratchsolidsolutions.org/*",
-      "zone_name": "scratchsolidsolutions.org"
-    }
-  ],
-  "vars": {
-    "NEXT_PUBLIC_BASE_URL": "https://scratchsolidsolutions.org",
-    "NEXT_PUBLIC_API_URL": "https://api.scratchsolidsolutions.org/api",
-    "R2_BUCKET": "scratchsolid-uploads",
-    "R2_PUBLIC_BASE": "https://uploads.scratchsolidsolutions.org"
-  },
-  "observability": {
-    "enabled": true
-  }
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"name": "scratchsolidsolutions",
+	"main": ".open-next/worker.js",
+	"compatibility_date": "2026-04-23",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	"assets": {
+		"directory": ".open-next/assets"
+	},
+	"d1_databases": [
+		{
+			"binding": "scratchsolid_db",
+			"database_name": "scratchsolid-db",
+			"database_id": "b4f175df-b233-47dd-ab41-99455bf990b8"
+		},
+		{
+			"binding": "scratchsolid_db_local",
+			"database_name": "scratchsolid-db-local",
+			"database_id": "5d72d761-c7c5-43d3-b336-56c7abdf4abd"
+		}
+	],
+	"kv_namespaces": [
+		{
+			"binding": "RATE_LIMIT_KV",
+			"id": "859744ffa6fc44caa84edaaa1e481800"
+		}
+	],
+	"r2_buckets": [
+		{
+			"binding": "UPLOADS_BUCKET",
+			"bucket_name": "scratchsolid-uploads"
+		}
+	],
+	"routes": [
+		{
+			"pattern": "api.scratchsolidsolutions.org/*",
+			"zone_name": "scratchsolidsolutions.org"
+		},
+		{
+			"pattern": "scratchsolidsolutions.org/*",
+			"zone_name": "scratchsolidsolutions.org"
+		}
+	],
+	"vars": {
+		"NEXT_PUBLIC_BASE_URL": "https://scratchsolidsolutions.org",
+		"NEXT_PUBLIC_API_URL": "https://api.scratchsolidsolutions.org/api",
+		"R2_BUCKET": "scratchsolid-uploads",
+		"R2_PUBLIC_BASE": "https://uploads.scratchsolidsolutions.org"
+	},
+	"observability": {
+		"enabled": true
+	}
 }
