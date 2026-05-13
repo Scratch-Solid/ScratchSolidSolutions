@@ -1,8 +1,27 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
+import { withRateLimit, rateLimits } from '@/lib/middleware';
+import { sanitizeText, sanitizeEmail, sanitizePhone } from '@/lib/sanitization';
+import { validateEmail } from '@/lib/validation';
 
 export async function POST(request: NextRequest) {
+  // Rate limiting - prevent abuse
+  const rateLimitResult = await withRateLimit(request, { windowMs: 3600000, maxRequests: 5 }); // 5 quotes per hour
+  if (rateLimitResult && !rateLimitResult.success) {
+    return NextResponse.json(
+      { error: 'Too many quote requests. Please try again later.' },
+      { 
+        status: 429,
+        headers: {
+          'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+          'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+          'X-RateLimit-Reset': rateLimitResult.reset.toString()
+        }
+      }
+    );
+  }
+
   try {
     const db = await getDb();
     if (!db) {
@@ -14,44 +33,61 @@ export async function POST(request: NextRequest) {
       email?: string;
       phone?: string;
       service_id?: number;
-      service_name?: string;
       quantity?: number;
-      baseline_price?: number;
       promo_code?: string;
-      discount_type?: string;
-      discount_value?: number;
-      discount_amount?: number;
-      final_price?: number;
     };
 
     const {
-      name, email, phone, service_id, service_name, quantity,
-      baseline_price, promo_code, discount_type, discount_value, discount_amount, final_price
+      name, email, phone, service_id, quantity, promo_code
     } = body;
 
     // Validate required fields
-    if (!name || !service_id || baseline_price === undefined || final_price === undefined) {
-      return NextResponse.json({ error: 'name, service_id, baseline_price, and final_price are required' }, { status: 400 });
+    if (!name || !service_id || !email) {
+      return NextResponse.json({ error: 'name, email, and service_id are required' }, { status: 400 });
     }
 
-    // Simple sanitization
-    const sanitizedName = name.trim();
-    const sanitizedEmail = email ? email.trim() : '';
-    const sanitizedPhone = phone ? phone.trim() : '';
-    const sanitizedServiceName = service_name ? service_name : '';
-    const sanitizedPromoCode = promo_code ? promo_code.trim().toUpperCase() : '';
+    // Proper sanitization using sanitization library
+    const sanitizedName = sanitizeText(name);
+    if (!sanitizedName) {
+      return NextResponse.json({ error: 'Invalid name' }, { status: 400 });
+    }
 
-    // Validate service_id exists
-    const service = await db.prepare('SELECT id FROM services WHERE id = ? AND is_active = 1').bind(service_id).first();
+    // Validate and sanitize email
+    const emailValidation = validateEmail(email);
+    if (!emailValidation.valid) {
+      return NextResponse.json({ error: emailValidation.errors.join(', ') }, { status: 400 });
+    }
+    const sanitizedEmail = sanitizeEmail(email);
+    if (!sanitizedEmail) {
+      return NextResponse.json({ error: 'Invalid email address' }, { status: 400 });
+    }
+
+    const sanitizedPhone = phone ? sanitizePhone(phone) : '';
+    const sanitizedPromoCode = promo_code ? sanitizeText(promo_code).toUpperCase() : '';
+    const sanitizedQuantity = quantity || 1;
+
+    // Validate service_id exists and fetch pricing
+    const service = await db.prepare('SELECT id, name, base_price, room_multiplier FROM services WHERE id = ? AND is_active = 1').bind(service_id).first();
     if (!service) {
       return NextResponse.json({ error: 'Invalid service' }, { status: 400 });
     }
 
+    // Calculate baseline price on server-side
+    const basePrice = (service as any).base_price || 0;
+    const roomMultiplier = (service as any).room_multiplier || 1.0;
+    const baseline_price = basePrice * sanitizedQuantity * roomMultiplier;
+    const serviceName = (service as any).name || '';
+
+    // Initialize discount variables
+    let discount_type = '';
+    let discount_value = 0;
+    let discount_amount = 0;
+
     // Validate promo code if provided
     if (sanitizedPromoCode) {
       const promo = await db.prepare(
-        `SELECT id, discount_type, discount_value, is_active, valid_until 
-         FROM promo_codes 
+        `SELECT id, discount_type, discount_value, is_active, valid_until, max_uses, used_count
+         FROM promo_codes
          WHERE UPPER(code) = UPPER(?) AND is_active = 1`
       ).bind(sanitizedPromoCode).first();
 
@@ -63,29 +99,68 @@ export async function POST(request: NextRequest) {
       if ((promo as any).valid_until && new Date((promo as any).valid_until) < new Date()) {
         return NextResponse.json({ error: 'Promo code has expired' }, { status: 400 });
       }
+
+      // Check if promo code has reached max uses
+      const maxUses = (promo as any).max_uses;
+      const usedCount = (promo as any).used_count || 0;
+      if (maxUses !== null && usedCount >= maxUses) {
+        return NextResponse.json({ error: 'Promo code usage limit reached' }, { status: 400 });
+      }
+
+      // Calculate discount on server-side
+      discount_type = (promo as any).discount_type;
+      discount_value = (promo as any).discount_value;
+      if (discount_type === 'percentage') {
+        discount_amount = baseline_price * (discount_value / 100);
+      } else {
+        discount_amount = discount_value;
+      }
     }
 
-    // Generate reference number
-    const ts = Date.now().toString(36).toUpperCase();
-    const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
-    const refNumber = `SSQ-${ts}-${rand}`;
+    // Calculate final price on server-side
+    const final_price = Math.max(0, baseline_price - discount_amount);
 
-    // Save quote request to DB
-    const result = await db.prepare(
-      `INSERT INTO quote_requests
-        (ref_number, name, email, phone, service_id, service_name, quantity,
-         baseline_price, promo_code, discount_type, discount_value, discount_amount,
-         final_price, status, created_at, updated_at, client_type)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', datetime('now'), datetime('now'), 'individual')`
-    ).bind(
-      refNumber,
-      sanitizedName, sanitizedEmail, sanitizedPhone,
-      service_id, sanitizedServiceName, quantity || 1,
-      baseline_price, sanitizedPromoCode, discount_type || '', discount_value || 0,
-      discount_amount || 0, final_price
-    ).run();
+    // Generate reference number with collision handling
+    let refNumber = '';
+    let quoteId = 0;
+    let attempts = 0;
+    const maxAttempts = 5;
 
-    const quoteId = result.meta.last_row_id;
+    while (attempts < maxAttempts) {
+      const ts = Date.now().toString(36).toUpperCase();
+      const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+      refNumber = `SSQ-${ts}-${rand}`;
+
+      try {
+        const result = await db.prepare(
+          `INSERT INTO quote_requests
+            (ref_number, name, email, phone, service_id, service_name, quantity,
+             baseline_price, promo_code, discount_type, discount_value, discount_amount,
+             final_price, status, created_at, updated_at, client_type)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', datetime('now'), datetime('now'), 'individual')`
+        ).bind(
+          refNumber,
+          sanitizedName, sanitizedEmail, sanitizedPhone,
+          service_id, serviceName, sanitizedQuantity,
+          baseline_price, sanitizedPromoCode, discount_type || '', discount_value || 0,
+          discount_amount || 0, final_price
+        ).run();
+
+        quoteId = result.meta.last_row_id;
+        break; // Success, exit loop
+      } catch (error: unknown) {
+        attempts++;
+        const msg = error instanceof Error ? error.message : '';
+        if (!msg.includes('UNIQUE') || attempts >= maxAttempts) {
+          throw error; // Re-throw if not a unique constraint error or max attempts reached
+        }
+        // Collision occurred, retry with new reference number
+      }
+    }
+
+    if (!quoteId) {
+      return NextResponse.json({ error: 'Failed to generate unique reference number' }, { status: 500 });
+    }
 
     // Only increment promo code usage after successful quote creation
     if (sanitizedPromoCode) {
@@ -103,7 +178,7 @@ export async function POST(request: NextRequest) {
       name: sanitizedName,
       email: sanitizedEmail,
       phone: sanitizedPhone,
-      service_name: sanitizedServiceName,
+      service_name: serviceName,
       baseline_price,
       promo_code: sanitizedPromoCode,
       discount_type: discount_type || '',
@@ -118,32 +193,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET(request: NextRequest) {
-  try {
-    const db = await getDb();
-    if (!db) {
-      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
-    }
-
-    const { searchParams } = new URL(request.url);
-    const status = searchParams.get('status');
-    const limit = parseInt(searchParams.get('limit') || '50');
-    const offset = parseInt(searchParams.get('offset') || '0');
-
-    let query = `SELECT * FROM quote_requests`;
-    const params: unknown[] = [];
-
-    if (status) {
-      query += ` WHERE status = ?`;
-      params.push(status);
-    }
-    query += ` ORDER BY created_at DESC LIMIT ? OFFSET ?`;
-    params.push(limit, offset);
-
-    const quotes = await db.prepare(query).bind(...params).all();
-    return NextResponse.json(quotes.results || []);
-  } catch (error) {
-    console.error('Error fetching quotes:', error);
-    return NextResponse.json({ error: 'Failed to fetch quotes' }, { status: 500 });
-  }
-}
+// GET endpoint removed - critical security fix
+// Previously exposed all quote data without authentication
+// Use /api/customer/quotes (authenticated) or create admin endpoint with proper auth

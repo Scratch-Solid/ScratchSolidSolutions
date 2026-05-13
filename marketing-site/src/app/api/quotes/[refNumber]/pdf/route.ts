@@ -1,11 +1,46 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
+import { withAuth, withRateLimit, rateLimits } from '@/lib/middleware';
+import jwt from 'jsonwebtoken';
+import { getJWTSecret } from '@/lib/env';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { refNumber: string } }
 ) {
+  // Rate limiting
+  const rateLimitResult = await withRateLimit(request, rateLimits.standard);
+  if (rateLimitResult && !rateLimitResult.success) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please try again later.' },
+      { 
+        status: 429,
+        headers: {
+          'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+          'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+          'X-RateLimit-Reset': rateLimitResult.reset.toString()
+        }
+      }
+    );
+  }
+
+  // Authentication - check if user is admin or quote owner
+  const authHeader = request.headers.get('authorization');
+  let userEmail: string | null = null;
+  let isAdmin = false;
+
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.substring(7);
+    try {
+      const decoded = jwt.verify(token, getJWTSecret()) as { email: string; role: string };
+      userEmail = decoded.email;
+      isAdmin = decoded.role === 'admin';
+    } catch {
+      // Invalid token, continue without auth (will be checked against quote)
+    }
+  }
+
   try {
     const db = await getDb();
     if (!db) {
@@ -24,6 +59,12 @@ export async function GET(
     }
 
     const q = quote as Record<string, unknown>;
+
+    // Authorization check - only quote owner or admin can access PDF
+    const quoteEmail = (q.email as string) || '';
+    if (!isAdmin && (!userEmail || userEmail !== quoteEmail)) {
+      return NextResponse.json({ error: 'Unauthorized - you can only access your own quotes' }, { status: 403 });
+    }
 
     // Generate HTML for PDF
     const html = generateQuoteHTML(q);

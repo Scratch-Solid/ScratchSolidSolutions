@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
+import { withAuth, withRateLimit, rateLimits } from '@/lib/middleware';
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,46 +13,42 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const code = searchParams.get('code');
 
-    if (code) {
-      // Validate a specific promo code
-      const promo = await db.prepare(
-        `SELECT * FROM promo_codes WHERE UPPER(code) = UPPER(?) AND is_active = 1`
-      ).bind(code.trim()).first();
-
-      if (!promo) {
-        return NextResponse.json({ valid: false, error: 'Invalid or inactive promo code' }, { status: 200 });
-      }
-
-      const now = new Date().toISOString();
-      const p = promo as Record<string, unknown>;
-
-      if (p.valid_from && (p.valid_from as string) > now) {
-        return NextResponse.json({ valid: false, error: 'Promo code not yet active' }, { status: 200 });
-      }
-      if (p.valid_until && (p.valid_until as string) < now) {
-        return NextResponse.json({ valid: false, error: 'Promo code has expired' }, { status: 200 });
-      }
-      if (p.max_uses !== null && (p.used_count as number) >= (p.max_uses as number)) {
-        return NextResponse.json({ valid: false, error: 'Promo code usage limit reached' }, { status: 200 });
-      }
-
-      return NextResponse.json({
-        valid: true,
-        id: p.id,
-        code: p.code,
-        description: p.description,
-        discount_type: p.discount_type,
-        discount_value: p.discount_value,
-        valid_until: p.valid_until,
-      });
+    // Require code parameter - removed "list all" functionality for security
+    if (!code) {
+      return NextResponse.json({ error: 'Code parameter is required' }, { status: 400 });
     }
 
-    // List all promo codes (for admin use)
-    const promos = await db.prepare(
-      `SELECT * FROM promo_codes ORDER BY created_at DESC`
-    ).all();
+    // Validate a specific promo code
+    const promo = await db.prepare(
+      `SELECT * FROM promo_codes WHERE UPPER(code) = UPPER(?) AND is_active = 1`
+    ).bind(code.trim()).first();
 
-    return NextResponse.json(promos.results || []);
+    if (!promo) {
+      return NextResponse.json({ valid: false, error: 'Invalid or inactive promo code' }, { status: 200 });
+    }
+
+    const now = new Date().toISOString();
+    const p = promo as Record<string, unknown>;
+
+    if (p.valid_from && (p.valid_from as string) > now) {
+      return NextResponse.json({ valid: false, error: 'Promo code not yet active' }, { status: 200 });
+    }
+    if (p.valid_until && (p.valid_until as string) < now) {
+      return NextResponse.json({ valid: false, error: 'Promo code has expired' }, { status: 200 });
+    }
+    if (p.max_uses !== null && (p.used_count as number) >= (p.max_uses as number)) {
+      return NextResponse.json({ valid: false, error: 'Promo code usage limit reached' }, { status: 200 });
+    }
+
+    return NextResponse.json({
+      valid: true,
+      id: p.id,
+      code: p.code,
+      description: p.description,
+      discount_type: p.discount_type,
+      discount_value: p.discount_value,
+      valid_until: p.valid_until,
+    });
   } catch (error) {
     console.error('Error fetching promo codes:', error);
     return NextResponse.json({ error: 'Failed to fetch promo codes' }, { status: 500 });
@@ -59,8 +56,28 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  // Rate limiting
+  const rateLimitResult = await withRateLimit(request, rateLimits.strict);
+  if (rateLimitResult && !rateLimitResult.success) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please try again later.' },
+      { 
+        status: 429,
+        headers: {
+          'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+          'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+          'X-RateLimit-Reset': rateLimitResult.reset.toString()
+        }
+      }
+    );
+  }
+
+  // Authentication - require admin role
+  const authResult = await withAuth(request, ['admin']);
+  if (authResult instanceof NextResponse) return authResult;
+  const { db } = authResult;
+
   try {
-    const db = await getDb();
     if (!db) {
       return NextResponse.json({ error: 'Database not available' }, { status: 500 });
     }
@@ -113,8 +130,28 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+  // Rate limiting
+  const rateLimitResult = await withRateLimit(request, rateLimits.strict);
+  if (rateLimitResult && !rateLimitResult.success) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please try again later.' },
+      { 
+        status: 429,
+        headers: {
+          'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+          'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+          'X-RateLimit-Reset': rateLimitResult.reset.toString()
+        }
+      }
+    );
+  }
+
+  // Authentication - require admin role
+  const authResult = await withAuth(request, ['admin']);
+  if (authResult instanceof NextResponse) return authResult;
+  const { db } = authResult;
+
   try {
-    const db = await getDb();
     if (!db) {
       return NextResponse.json({ error: 'Database not available' }, { status: 500 });
     }
@@ -163,8 +200,28 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  // Rate limiting
+  const rateLimitResult = await withRateLimit(request, rateLimits.strict);
+  if (rateLimitResult && !rateLimitResult.success) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please try again later.' },
+      { 
+        status: 429,
+        headers: {
+          'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+          'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+          'X-RateLimit-Reset': rateLimitResult.reset.toString()
+        }
+      }
+    );
+  }
+
+  // Authentication - require admin role
+  const authResult = await withAuth(request, ['admin']);
+  if (authResult instanceof NextResponse) return authResult;
+  const { db } = authResult;
+
   try {
-    const db = await getDb();
     if (!db) {
       return NextResponse.json({ error: 'Database not available' }, { status: 500 });
     }
