@@ -253,7 +253,7 @@ export default function EmployeeConsentPage() {
                   onChange={handleChange}
                   className="w-full"
                   required
-                  placeholder="+27 XX XXX XXXX or 0XX XXX XXXX"
+                  placeholder="+27XXXXXXXXX or 0XXXXXXXXX or XXXXXXXXXX (10 digits)"
                 />
                 {fieldErrors.contactNumber && <p className="text-red-500 text-xs mt-1">{fieldErrors.contactNumber}</p>}
               </div>

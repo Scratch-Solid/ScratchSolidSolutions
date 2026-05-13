@@ -40,11 +40,12 @@ export function validatePhone(phone: string): ValidationResult {
     const digits = phone.replace(/\D/g, '');
 
     // South African phone number validation
-    // Accept: 0XX XXX XXXX (11 digits incl leading 0) OR +27 XX XXX XXXX (11 digits starting 27)
-    const isLocal = digits.length === 11 && digits.startsWith('0');
+    // Accept: 0XX XXX XXXX (11 digits incl leading 0) OR +27 XX XXX XXXX (11 digits starting 27) OR XX XXX XXXX (10 digits local)
+    const isLocal11 = digits.length === 11 && digits.startsWith('0');
     const isInternational = digits.length === 11 && digits.startsWith('27');
-    if (!isLocal && !isInternational) {
-      errors.push('Invalid South African phone number. Use format: +27 XX XXX XXXX or 0XX XXX XXXX');
+    const isLocal10 = digits.length === 10; // 10-digit local format (without leading 0)
+    if (!isLocal11 && !isInternational && !isLocal10) {
+      errors.push('Invalid South African phone number. Use format: +27 XX XXX XXXX, 0XX XXX XXXX, or XX XXX XXXX (10 digits)');
     }
   }
 
