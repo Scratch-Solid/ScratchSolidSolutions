@@ -18,6 +18,7 @@ interface QuoteRequest {
   created_at: string;
   zoho_estimate_id: string;
   zoho_estimate_number: string;
+  valid_until?: string;
 }
 
 export default function CustomerDashboard() {
@@ -51,7 +52,7 @@ export default function CustomerDashboard() {
       });
 
       if (res.ok) {
-        const data = await res.json();
+        const data = await res.json() as { quotes: QuoteRequest[] };
         setQuotes(data.quotes || []);
       } else {
         setError('Failed to fetch quotes');
@@ -71,6 +72,28 @@ export default function CustomerDashboard() {
       case 'declined': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  const isQuoteExpired = (validUntil: string | undefined) => {
+    if (!validUntil) return false;
+    return new Date(validUntil) < new Date();
+  };
+
+  const getExpirationColor = (validUntil: string | undefined) => {
+    if (!validUntil) return 'hidden';
+    if (isQuoteExpired(validUntil)) return 'bg-red-100 text-red-800';
+    const daysUntilExpiry = Math.ceil((new Date(validUntil).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+    if (daysUntilExpiry <= 7) return 'bg-orange-100 text-orange-800';
+    return 'bg-green-100 text-green-800';
+  };
+
+  const getExpirationText = (validUntil: string | undefined) => {
+    if (!validUntil) return '';
+    if (isQuoteExpired(validUntil)) return 'Expired';
+    const daysUntilExpiry = Math.ceil((new Date(validUntil).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+    if (daysUntilExpiry <= 1) return 'Expires today';
+    if (daysUntilExpiry <= 7) return `Expires in ${daysUntilExpiry} days`;
+    return `Valid until ${new Date(validUntil).toLocaleDateString()}`;
   };
 
   const handleDownloadPDF = (refNumber: string) => {
@@ -151,6 +174,11 @@ export default function CustomerDashboard() {
                         <p className="text-xs text-zinc-500">
                           {new Date(quote.created_at).toLocaleDateString()}
                         </p>
+                        {quote.valid_until && (
+                          <span className={`inline-block mt-1 px-2 py-0.5 rounded text-xs font-semibold ${getExpirationColor(quote.valid_until)}`}>
+                            {getExpirationText(quote.valid_until)}
+                          </span>
+                        )}
                       </div>
                       <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(quote.status)}`}>
                         {quote.status}
@@ -177,7 +205,7 @@ export default function CustomerDashboard() {
                         >
                           Download PDF
                         </button>
-                        {quote.status === 'pending' && (
+                        {quote.status === 'pending' && !isQuoteExpired(quote.valid_until) && (
                           <button
                             onClick={() => window.location.href = `/services?quote=${quote.ref_number}`}
                             className="text-green-600 hover:text-green-700 px-3 py-1 border border-green-500/30 rounded transition-all text-sm"

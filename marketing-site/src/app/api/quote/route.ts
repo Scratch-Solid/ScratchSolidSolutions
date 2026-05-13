@@ -120,6 +120,9 @@ export async function POST(request: NextRequest) {
     // Calculate final price on server-side
     const final_price = Math.max(0, baseline_price - discount_amount);
 
+    // Calculate quote expiration (30 days from creation)
+    const validUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
     // Generate reference number with collision handling
     let refNumber = '';
     let quoteId = 0;
@@ -136,14 +139,14 @@ export async function POST(request: NextRequest) {
           `INSERT INTO quote_requests
             (ref_number, name, email, phone, service_id, service_name, quantity,
              baseline_price, promo_code, discount_type, discount_value, discount_amount,
-             final_price, status, created_at, updated_at, client_type)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', datetime('now'), datetime('now'), 'individual')`
+             final_price, status, valid_until, created_at, updated_at, client_type)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'), 'individual')`
         ).bind(
           refNumber,
           sanitizedName, sanitizedEmail, sanitizedPhone,
           service_id, serviceName, sanitizedQuantity,
           baseline_price, sanitizedPromoCode, discount_type || '', discount_value || 0,
-          discount_amount || 0, final_price
+          discount_amount || 0, final_price, 'pending', validUntil
         ).run();
 
         quoteId = result.meta.last_row_id;
