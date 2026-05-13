@@ -36,15 +36,26 @@ npx wrangler d1 execute scratchsolid-db --remote --file=migrations/fix_about_us_
 
 ## Build & Deploy
 
+**CI/CD Deployment (Recommended)**
+This project uses CI/CD via GitHub Actions. Pushing to the main branch automatically triggers deployment to Cloudflare Workers.
+
+```bash
+# Push changes to GitHub to trigger automatic deployment
+git add .
+git commit -m "Your commit message"
+git push origin main
+```
+
+**Note:** Due to OpenNext limitations on Windows, manual deployment via `npm run deploy` is not recommended. Use the CI/CD pipeline by pushing to GitHub instead.
+
+**Local Development Only**
 ```bash
 # Install dependencies
 npm install
 
-# Build and deploy to Cloudflare Pages
-npm run deploy
+# Local development (does not deploy)
+npm run dev
 ```
-
-The `deploy` script runs: `opennextjs-cloudflare build && wrangler pages deploy`
 
 ## Cache Purge After Deploy
 After deploying, purge the Cloudflare cache to ensure users get the latest version:
