@@ -2,6 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from "@/components/DashboardLayout";
+import QRCodeDisplay from "@/components/QRCodeDisplay";
+import PromoDistributionModal from "@/components/PromoDistributionModal";
+import AnalyticsDashboard from "@/components/AnalyticsDashboard";
 
 interface Service {
   id: number;
@@ -45,6 +48,9 @@ interface PromoCode {
   is_active: number;
   created_at: string;
   updated_at: string;
+  distribution_count?: number;
+  last_distributed_at?: string | null;
+  distribution_channels?: string;
 }
 
 export default function ServicesManagement() {
@@ -53,7 +59,15 @@ export default function ServicesManagement() {
   const [promoCodes, setPromoCodes] = useState<PromoCode[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState<'services' | 'pricing' | 'promos'>('services');
+  const [activeTab, setActiveTab] = useState<'services' | 'pricing' | 'promos' | 'analytics'>('services');
+  
+  // QR code modal state
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [selectedPromoCode, setSelectedPromoCode] = useState<PromoCode | null>(null);
+  
+  // Distribution modal state
+  const [showDistributionModal, setShowDistributionModal] = useState(false);
+  const [selectedPromoForDistribution, setSelectedPromoForDistribution] = useState<PromoCode | null>(null);
   
   // Service form state
   const [serviceForm, setServiceForm] = useState({
@@ -345,6 +359,56 @@ export default function ServicesManagement() {
     }
   };
 
+  const handleShowQRCode = (promo: PromoCode) => {
+    setSelectedPromoCode(promo);
+    setShowQRModal(true);
+  };
+
+  const handleCloseQRModal = () => {
+    setShowQRModal(false);
+    setSelectedPromoCode(null);
+  };
+
+  const handleShowDistribution = (promo: PromoCode) => {
+    setSelectedPromoForDistribution(promo);
+    setShowDistributionModal(true);
+  };
+
+  const handleCloseDistributionModal = () => {
+    setShowDistributionModal(false);
+    setSelectedPromoForDistribution(null);
+  };
+
+  const handleDistribute = async (data: { channel: string; recipientCount: number; notes: string }) => {
+    if (!selectedPromoForDistribution) return;
+
+    try {
+      const token = localStorage.getItem('authToken');
+      const res = await fetch('/api/promo-distribution', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          promoCodeId: selectedPromoForDistribution.id,
+          promoCode: selectedPromoForDistribution.code,
+          channel: data.channel,
+          recipientCount: data.recipientCount,
+          notes: data.notes,
+        }),
+      });
+
+      if (res.ok) {
+        fetchData(); // Refresh to show updated distribution data
+      } else {
+        setError('Failed to distribute promo code');
+      }
+    } catch (err) {
+      setError('Failed to distribute promo code');
+    }
+  };
+
   if (loading) return <DashboardLayout title="Services Management" role="admin"><div className="animate-pulse">Loading...</div></DashboardLayout>;
   if (error) return <DashboardLayout title="Services Management" role="admin"><div className="text-red-500">{error}</div></DashboardLayout>;
 
@@ -370,6 +434,12 @@ export default function ServicesManagement() {
             className={`px-4 py-2 rounded-lg transition-all ${activeTab === 'promos' ? 'bg-white/20 text-white' : 'bg-white/10 text-white/70'}`}
           >
             Promo Codes
+          </button>
+          <button
+            onClick={() => setActiveTab('analytics')}
+            className={`px-4 py-2 rounded-lg transition-all ${activeTab === 'analytics' ? 'bg-white/20 text-white' : 'bg-white/10 text-white/70'}`}
+          >
+            Analytics
           </button>
         </div>
 
@@ -660,20 +730,63 @@ export default function ServicesManagement() {
                         Active: {promo.is_active ? 'Yes' : 'No'}
                         {promo.valid_until && ` | Expires: ${new Date(promo.valid_until).toLocaleDateString()}`}
                       </p>
+                      {(promo.distribution_count || 0) > 0 && (
+                        <p className="text-xs text-green-400 mt-1">
+                          Distributed: {promo.distribution_count}x
+                          {promo.last_distributed_at && ` | Last: ${new Date(promo.last_distributed_at).toLocaleDateString()}`}
+                        </p>
+                      )}
                     </div>
-                    <button
-                      onClick={() => handleDeletePromo(promo.id)}
-                      className="text-red-400 hover:text-red-300 px-3 py-1 border border-red-500/30 rounded transition-all"
-                    >
-                      Delete
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleShowDistribution(promo)}
+                        className="text-green-400 hover:text-green-300 px-3 py-1 border border-green-500/30 rounded transition-all"
+                      >
+                        Distribute
+                      </button>
+                      <button
+                        onClick={() => handleShowQRCode(promo)}
+                        className="text-blue-400 hover:text-blue-300 px-3 py-1 border border-blue-500/30 rounded transition-all"
+                      >
+                        QR Code
+                      </button>
+                      <button
+                        onClick={() => handleDeletePromo(promo.id)}
+                        className="text-red-400 hover:text-red-300 px-3 py-1 border border-red-500/30 rounded transition-all"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
           </div>
         )}
+
+        {/* Analytics Tab */}
+        {activeTab === 'analytics' && (
+          <AnalyticsDashboard />
+        )}
       </div>
+      
+      {/* QR Code Modal */}
+      {showQRModal && selectedPromoCode && (
+        <QRCodeDisplay
+          promoCode={selectedPromoCode.code}
+          shareUrl={`${process.env.NEXT_PUBLIC_BASE_URL || 'https://scratchsolidsolutions.org'}/services?promo=${selectedPromoCode.code}`}
+          onClose={handleCloseQRModal}
+        />
+      )}
+      
+      {/* Distribution Modal */}
+      {showDistributionModal && selectedPromoForDistribution && (
+        <PromoDistributionModal
+          promoCode={selectedPromoForDistribution}
+          onClose={handleCloseDistributionModal}
+          onDistribute={handleDistribute}
+        />
+      )}
     </DashboardLayout>
   );
 }

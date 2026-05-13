@@ -61,7 +61,15 @@ export async function GET(request: NextRequest) {
     query += ` ORDER BY created_at DESC`;
     const promos = await db.prepare(query).all();
     
-    return NextResponse.json(promos.results || []);
+    // Ensure distribution fields are included (will be 0 or NULL if migration hasn't run yet)
+    const resultsWithDefaults = (promos.results || []).map((promo: any) => ({
+      ...promo,
+      distribution_count: promo.distribution_count || 0,
+      last_distributed_at: promo.last_distributed_at || null,
+      distribution_channels: promo.distribution_channels || '[]'
+    }));
+    
+    return NextResponse.json(resultsWithDefaults);
   } catch (error) {
     console.error('Error fetching promo codes:', error);
     return NextResponse.json({ error: 'Failed to fetch promo codes' }, { status: 500 });
