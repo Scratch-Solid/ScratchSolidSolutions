@@ -113,10 +113,16 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
           const data = await res.json() as { quotes: any[] };
           setQuotes(data.quotes || []);
         } else {
-          setQuotesError('Failed to fetch quotes');
+          // Don't show error for non-401 errors - might be temporary
+          if (res.status === 401) {
+            // Token invalid, clear it and don't show error
+            localStorage.removeItem('authToken');
+            setUserEmail('');
+          }
         }
       } catch (err) {
-        setQuotesError('Failed to fetch quotes');
+        // Silently fail - don't show error to users
+        console.error('Failed to fetch quotes:', err);
       } finally {
         setQuotesLoading(false);
       }
@@ -464,40 +470,44 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Select Service <span className="text-red-500">*</span></label>
-                  <div className="space-y-2">
-                    {services.filter(s => s.is_active).map(service => (
-                      <button
-                        key={service.id}
-                        onClick={() => setSelectedServiceId(service.id)}
-                        className={`w-full text-left px-4 py-3 rounded-xl border-2 transition-all ${
-                          selectedServiceId === service.id
-                            ? 'border-blue-500 bg-blue-50'
-                            : 'border-gray-200 hover:border-blue-200 bg-white'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2">
-                          {service.icon && <span className="text-xl">{service.icon}</span>}
-                          <div className="flex-1">
-                            <p className="font-semibold text-sm text-gray-800">{service.name}</p>
-                            {(() => {
-                              const row = getActivePricingRow(service.id);
-                              if (!row) return null;
-                              const sd = getSpecialDiscount(service.id);
-                              return sd > 0 ? (
-                                <p className="text-xs font-medium">
-                                  <span className="line-through text-gray-400">R{row.price.toFixed(2)}</span>
-                                  <span className="text-green-600 ml-1">R{(row.price - sd).toFixed(2)}</span>
-                                  <span className="ml-1 bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">{row.special_label || 'Special'}</span>
-                                </p>
-                              ) : row.price > 0 ? (
-                                <p className="text-xs text-blue-600 font-medium">From R{row.price.toFixed(2)}</p>
-                              ) : null;
-                            })()}
+                  {services.filter(s => s.is_active).length === 0 ? (
+                    <p className="text-red-500 text-sm">No services available. Please try again later.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {services.filter(s => s.is_active).map(service => (
+                        <button
+                          key={service.id}
+                          onClick={() => setSelectedServiceId(service.id)}
+                          className={`w-full text-left px-4 py-3 rounded-xl border-2 transition-all ${
+                            selectedServiceId === service.id
+                              ? 'border-blue-500 bg-blue-50'
+                              : 'border-gray-200 hover:border-blue-200 bg-white'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            {service.icon && <span className="text-xl">{service.icon}</span>}
+                            <div className="flex-1">
+                              <p className="font-semibold text-sm text-gray-800">{service.name}</p>
+                              {(() => {
+                                const row = getActivePricingRow(service.id);
+                                if (!row) return null;
+                                const sd = getSpecialDiscount(service.id);
+                                return sd > 0 ? (
+                                  <p className="text-xs font-medium">
+                                    <span className="line-through text-gray-400">R{row.price.toFixed(2)}</span>
+                                    <span className="text-green-600 ml-1">R{(row.price - sd).toFixed(2)}</span>
+                                    <span className="ml-1 bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">{row.special_label || 'Special'}</span>
+                                  </p>
+                                ) : row.price > 0 ? (
+                                  <p className="text-xs text-blue-600 font-medium">From R{row.price.toFixed(2)}</p>
+                                ) : null;
+                              })()}
+                            </div>
                           </div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div>
