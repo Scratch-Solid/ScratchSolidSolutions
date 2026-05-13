@@ -4,6 +4,7 @@ import { getDb } from '@/lib/db';
 import { withRateLimit, rateLimits } from '@/lib/middleware';
 import { sanitizeText, sanitizeEmail, sanitizePhone } from '@/lib/sanitization';
 import { validateEmail } from '@/lib/validation';
+import { logAuditEvent } from '@/lib/audit';
 
 export async function POST(request: NextRequest) {
   // Rate limiting - prevent abuse
@@ -172,6 +173,30 @@ export async function POST(request: NextRequest) {
          WHERE UPPER(code) = UPPER(?) AND is_active = 1`
       ).bind(sanitizedPromoCode).run();
     }
+
+    // Log audit event for quote creation
+    const clientIp = request.headers.get('x-forwarded-for') || request.headers.get('cf-connecting-ip') || '';
+    await logAuditEvent({
+      resourceType: 'quote',
+      resourceId: quoteId,
+      action: 'create',
+      userEmail: sanitizedEmail,
+      userRole: 'customer',
+      ipAddress: clientIp,
+      details: {
+        ref_number: refNumber,
+        service_id,
+        service_name: serviceName,
+        baseline_price,
+        final_price,
+        promo_code: sanitizedPromoCode,
+        discount_amount,
+      },
+      metadata: {
+        quantity: sanitizedQuantity,
+        client_type: 'individual',
+      },
+    });
 
     return NextResponse.json({
       success: true,

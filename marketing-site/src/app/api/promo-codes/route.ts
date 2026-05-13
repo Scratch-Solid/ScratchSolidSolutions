@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { withAuth, withRateLimit, rateLimits } from '@/lib/middleware';
+import { logAuditEvent } from '@/lib/audit';
 
 export async function GET(request: NextRequest) {
   try {
@@ -75,7 +76,7 @@ export async function POST(request: NextRequest) {
   // Authentication - require admin role
   const authResult = await withAuth(request, ['admin']);
   if (authResult instanceof NextResponse) return authResult;
-  const { db } = authResult;
+  const { db, user } = authResult;
 
   try {
     if (!db) {
@@ -118,7 +119,32 @@ export async function POST(request: NextRequest) {
       max_uses ?? null, is_active !== false ? 1 : 0
     ).run();
 
-    return NextResponse.json({ id: result.meta.last_row_id, success: true }, { status: 201 });
+    const promoId = result.meta.last_row_id;
+
+    // Log audit event for promo code creation
+    const clientIp = request.headers.get('x-forwarded-for') || request.headers.get('cf-connecting-ip') || '';
+    await logAuditEvent({
+      resourceType: 'promo_code',
+      resourceId: promoId,
+      action: 'create',
+      adminId: user.id,
+      userEmail: user.email,
+      userRole: user.role,
+      ipAddress: clientIp,
+      details: {
+        code: code.trim(),
+        description,
+        discount_type,
+        discount_value,
+        min_amount,
+        max_uses,
+        valid_from,
+        valid_until,
+        is_active: is_active !== false,
+      },
+    });
+
+    return NextResponse.json({ id: promoId, success: true }, { status: 201 });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : '';
     if (msg.includes('UNIQUE')) {
@@ -149,7 +175,7 @@ export async function PUT(request: NextRequest) {
   // Authentication - require admin role
   const authResult = await withAuth(request, ['admin']);
   if (authResult instanceof NextResponse) return authResult;
-  const { db } = authResult;
+  const { db, user } = authResult;
 
   try {
     if (!db) {
@@ -192,6 +218,29 @@ export async function PUT(request: NextRequest) {
     if (result.meta.changes === 0) {
       return NextResponse.json({ error: 'Promo code not found' }, { status: 404 });
     }
+
+    // Log audit event for promo code update
+    const clientIp = request.headers.get('x-forwarded-for') || request.headers.get('cf-connecting-ip') || '';
+    await logAuditEvent({
+      resourceType: 'promo_code',
+      resourceId: id,
+      action: 'update',
+      adminId: user.id,
+      userEmail: user.email,
+      userRole: user.role,
+      ipAddress: clientIp,
+      details: {
+        description,
+        discount_type,
+        discount_value,
+        min_amount,
+        max_uses,
+        valid_from,
+        valid_until,
+        is_active,
+      },
+    });
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error updating promo code:', error);
@@ -219,7 +268,7 @@ export async function DELETE(request: NextRequest) {
   // Authentication - require admin role
   const authResult = await withAuth(request, ['admin']);
   if (authResult instanceof NextResponse) return authResult;
-  const { db } = authResult;
+  const { db, user } = authResult;
 
   try {
     if (!db) {
@@ -234,6 +283,20 @@ export async function DELETE(request: NextRequest) {
     if (result.meta.changes === 0) {
       return NextResponse.json({ error: 'Promo code not found' }, { status: 404 });
     }
+
+    // Log audit event for promo code deletion
+    const clientIp = request.headers.get('x-forwarded-for') || request.headers.get('cf-connecting-ip') || '';
+    await logAuditEvent({
+      resourceType: 'promo_code',
+      resourceId: parseInt(id),
+      action: 'delete',
+      adminId: user.id,
+      userEmail: user.email,
+      userRole: user.role,
+      ipAddress: clientIp,
+      details: { deleted_id: id },
+    });
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting promo code:', error);
