@@ -40,6 +40,7 @@ jobs:
         apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         command: deploy
         workingDirectory: marketing-site
+        wranglerVersion: 4.91.0
 
   deploy-internal-portal-production:
     name: Deploy Internal Portal to Production
@@ -75,6 +76,7 @@ jobs:
         apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         command: deploy
         workingDirectory: internal-portal
+        wranglerVersion: 4.91.0
 
   deploy-backend-worker-production:
     name: Deploy Backend Worker to Production
@@ -106,3 +108,4 @@ jobs:
         apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         command: deploy
         workingDirectory: backend-worker
+        wranglerVersion: 4.91.0
