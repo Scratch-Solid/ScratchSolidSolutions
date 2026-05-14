@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { sanitizeHtml } from '@/lib/htmlSanitizer';
 
 export default function SignContractPage() {
   const router = useRouter();
@@ -92,14 +93,14 @@ export default function SignContractPage() {
           {loadingContent ? (
             <p>Loading contract content...</p>
           ) : (
-            <div 
+            <div
               className="prose prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: contractContent?.contract_text || `
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(contractContent?.contract_text || `
                 <p>This Employment Agreement is entered into between Scratch Solid Solutions and the Employee.</p>
                 <p>By signing this contract, you agree to the terms and conditions of employment.</p>
                 <p>Terms include but are not limited to: work hours, compensation, confidentiality, and termination policies.</p>
                 <p class="text-xs text-gray-500">Full contract details available from HR department.</p>
-              `}}
+              `) }}
             />
           )}
         </div>

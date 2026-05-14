@@ -1,0 +1,105 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, staging, develop ]
+  pull_request:
+    branches: [ main, staging, develop ]
+
+jobs:
+  marketing-site:
+    name: Marketing Site - Build & Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: marketing-site/package-lock.json
+    
+    - name: Install dependencies
+      working-directory: ./marketing-site
+      run: npm ci
+    
+    - name: Run linter
+      working-directory: ./marketing-site
+      run: npm run lint
+    
+    - name: Run tests
+      working-directory: ./marketing-site
+      run: npm test
+    
+    - name: Build
+      working-directory: ./marketing-site
+      run: npm run build
+    
+    - name: Security audit
+      working-directory: ./marketing-site
+      run: npm audit --audit-level=high
+
+  internal-portal:
+    name: Internal Portal - Build & Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: internal-portal/package-lock.json
+    
+    - name: Install dependencies
+      working-directory: ./internal-portal
+      run: npm ci
+    
+    - name: Run linter
+      working-directory: ./internal-portal
+      run: npm run lint
+    
+    - name: Run tests
+      working-directory: ./internal-portal
+      run: npm test
+    
+    - name: Build
+      working-directory: ./internal-portal
+      run: npm run build
+    
+    - name: Security audit
+      working-directory: ./internal-portal
+      run: npm audit --audit-level=high
+
+  backend-worker:
+    name: Backend Worker - Build & Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: backend-worker/package-lock.json
+    
+    - name: Install dependencies
+      working-directory: ./backend-worker
+      run: npm ci
+    
+    - name: Run tests
+      working-directory: ./backend-worker
+      run: npm test
+    
+    - name: Security audit
+      working-directory: ./backend-worker
+      run: npm audit --audit-level=high

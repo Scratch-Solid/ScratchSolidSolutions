@@ -1,36 +1,65 @@
 {
-  "$schema": "./node_modules/wrangler/config-schema.json",
-  "main": ".open-next/worker.js",
-  "name": "scratchsolid-portal",
-  "compatibility_date": "2026-04-23",
-  "compatibility_flags": ["nodejs_compat"],
-  "assets": {
-    "directory": ".open-next/assets",
-    "binding": "ASSETS"
-  },
-  "d1_databases": [
-    {
-      "binding": "scratchsolid_db",
-      "database_name": "scratchsolid-db",
-      "database_id": "b4f175df-b233-47dd-ab41-99455bf990b8"
-    }
-  ],
-  "kv_namespaces": [
-    {
-      "binding": "RATE_LIMIT_KV",
-      "id": "859744ffa6fc44caa84edaaa1e481800"
-    }
-  ],
-  "r2_buckets": [
-    {
-      "binding": "UPLOADS_BUCKET",
-      "bucket_name": "scratchsolid-uploads"
-    }
-  ],
-  "vars": {
-    "ALLOWED_ORIGINS": "https://portal.scratchsolidsolutions.org"
-  },
-  "observability": {
-    "enabled": true
-  }
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"main": ".open-next/worker.js",
+	"name": "scratchsolid-portal",
+	"compatibility_date": "2026-04-23",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	"assets": {
+		"directory": ".open-next/assets",
+		"binding": "ASSETS"
+	},
+	"d1_databases": [
+		{
+			"binding": "scratchsolid_db",
+			"database_name": "scratchsolid-db",
+			"database_id": "b4f175df-b233-47dd-ab41-99455bf990b8"
+		}
+	],
+	"kv_namespaces": [
+		{
+			"binding": "RATE_LIMIT_KV",
+			"id": "859744ffa6fc44caa84edaaa1e481800"
+		}
+	],
+	"r2_buckets": [
+		{
+			"binding": "UPLOADS_BUCKET",
+			"bucket_name": "scratchsolid-uploads"
+		}
+	],
+	"vars": {
+		"ALLOWED_ORIGINS": "https://portal.scratchsolidsolutions.org"
+	},
+	"observability": {
+		"enabled": true
+	},
+	"env": {
+		"staging": {
+			"d1_databases": [
+				{
+					"binding": "scratchsolid_db",
+					"database_name": "scratchsolid-db-portal-staging",
+					"database_id": "cc0bb727-585b-40c9-8afa-77947e725813"
+				}
+			],
+			"kv_namespaces": [
+				{
+					"binding": "RATE_LIMIT_KV",
+					"id": "918298e91aec470ba7f8d800b2f8f124"
+				}
+			],
+			"r2_buckets": [
+				{
+					"binding": "UPLOADS_BUCKET",
+					"bucket_name": "scratchsolid-uploads-portal-staging"
+				}
+			],
+			"vars": {
+				"ALLOWED_ORIGINS": "https://portal-staging.scratchsolidsolutions.org",
+				"NODE_ENV": "staging"
+			}
+		}
+	}
 }

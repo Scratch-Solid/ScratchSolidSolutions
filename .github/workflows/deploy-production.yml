@@ -1,0 +1,108 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy-marketing-site-production:
+    name: Deploy Marketing Site to Production
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: marketing-site/package-lock.json
+    
+    - name: Install dependencies
+      working-directory: ./marketing-site
+      run: npm ci
+    
+    - name: Run tests
+      working-directory: ./marketing-site
+      run: npm test
+    
+    - name: Build
+      working-directory: ./marketing-site
+      run: npm run cloudflare-build
+    
+    - name: Deploy to Cloudflare Workers (Production)
+      uses: cloudflare/wrangler-action@v3
+      with:
+        apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        command: deploy
+        workingDirectory: marketing-site
+
+  deploy-internal-portal-production:
+    name: Deploy Internal Portal to Production
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: internal-portal/package-lock.json
+    
+    - name: Install dependencies
+      working-directory: ./internal-portal
+      run: npm ci
+    
+    - name: Run tests
+      working-directory: ./internal-portal
+      run: npm test
+    
+    - name: Build
+      working-directory: ./internal-portal
+      run: npm run cloudflare-build
+    
+    - name: Deploy to Cloudflare Workers (Production)
+      uses: cloudflare/wrangler-action@v3
+      with:
+        apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        command: deploy
+        workingDirectory: internal-portal
+
+  deploy-backend-worker-production:
+    name: Deploy Backend Worker to Production
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: backend-worker/package-lock.json
+    
+    - name: Install dependencies
+      working-directory: ./backend-worker
+      run: npm ci
+    
+    - name: Run tests
+      working-directory: ./backend-worker
+      run: npm test
+    
+    - name: Deploy to Cloudflare Workers (Production)
+      uses: cloudflare/wrangler-action@v3
+      with:
+        apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        command: deploy
+        workingDirectory: backend-worker

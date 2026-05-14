@@ -1,0 +1,95 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches: [ staging ]
+
+jobs:
+  deploy-marketing-site-staging:
+    name: Deploy Marketing Site to Staging
+    runs-on: ubuntu-latest
+    environment: staging
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: marketing-site/package-lock.json
+    
+    - name: Install dependencies
+      working-directory: ./marketing-site
+      run: npm ci
+    
+    - name: Build
+      working-directory: ./marketing-site
+      run: npm run cloudflare-build
+    
+    - name: Deploy to Cloudflare Workers (Staging)
+      uses: cloudflare/wrangler-action@v3
+      with:
+        apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        command: deploy --env staging
+        workingDirectory: marketing-site
+
+  deploy-internal-portal-staging:
+    name: Deploy Internal Portal to Staging
+    runs-on: ubuntu-latest
+    environment: staging
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: internal-portal/package-lock.json
+    
+    - name: Install dependencies
+      working-directory: ./internal-portal
+      run: npm ci
+    
+    - name: Build
+      working-directory: ./internal-portal
+      run: npm run cloudflare-build
+    
+    - name: Deploy to Cloudflare Workers (Staging)
+      uses: cloudflare/wrangler-action@v3
+      with:
+        apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        command: deploy --env staging
+        workingDirectory: internal-portal
+
+  deploy-backend-worker-staging:
+    name: Deploy Backend Worker to Staging
+    runs-on: ubuntu-latest
+    environment: staging
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: backend-worker/package-lock.json
+    
+    - name: Install dependencies
+      working-directory: ./backend-worker
+      run: npm ci
+    
+    - name: Deploy to Cloudflare Workers (Staging)
+      uses: cloudflare/wrangler-action@v3
+      with:
+        apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        command: deploy --env staging
+        workingDirectory: backend-worker

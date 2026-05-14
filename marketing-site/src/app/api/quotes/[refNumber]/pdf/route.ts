@@ -7,7 +7,7 @@ import { getJWTSecret } from '@/lib/env';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { refNumber: string } }
+  { params }: { params: Promise<{ refNumber: string }> }
 ) {
   // Rate limiting
   const rateLimitResult = await withRateLimit(request, rateLimits.standard);
@@ -47,7 +47,7 @@ export async function GET(
       return NextResponse.json({ error: 'Database not available' }, { status: 500 });
     }
 
-    const refNumber = params.refNumber;
+    const { refNumber } = await params;
 
     // Fetch quote request details
     const quote = await db.prepare(

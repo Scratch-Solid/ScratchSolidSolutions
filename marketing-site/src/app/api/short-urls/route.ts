@@ -5,7 +5,10 @@ import { nanoid } from 'nanoid';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const body = await request.json() as {
+      promoCodeId?: number;
+      promoCode?: string;
+    };
     const { promoCodeId, promoCode } = body;
 
     if (!promoCodeId || !promoCode) {
@@ -22,17 +25,9 @@ export async function POST(request: NextRequest) {
 
     // Store in KV (if available)
     try {
-      const kv = (request.env as any)?.KV;
-      if (kv) {
-        await kv.put(`short:${shortCode}`, JSON.stringify({
-          targetUrl,
-          promoCodeId,
-          promoCode,
-          createdAt: new Date().toISOString()
-        }), {
-          expirationTtl: 365 * 24 * 60 * 60 // 1 year
-        });
-      }
+      // KV binding is available in the Cloudflare Workers environment
+      // For now, we'll use the database fallback since KV binding access requires special handling
+      // In production, this would be accessed via the env binding
     } catch (kvError) {
       console.warn('KV not available, using database fallback:', kvError);
     }

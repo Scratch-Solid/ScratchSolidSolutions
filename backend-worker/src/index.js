@@ -7,6 +7,7 @@ import { Router } from 'itty-router';
 import { sha256 } from '@noble/hashes/sha256';
 import jwt from '@tsndr/cloudflare-worker-jwt';
 import bcrypt from 'bcryptjs';
+import DataRetentionCleanup from './data-retention.js';
 
 const router = Router();
 
@@ -1194,5 +1195,13 @@ router.all('*', (request) => {
 export default {
   async fetch(request, env, ctx) {
     return router.handle(request, env, ctx);
+  },
+  async scheduled(event, env, ctx) {
+    // Data retention cleanup task
+    // Runs daily at midnight UTC
+    const cleanup = new DataRetentionCleanup(env);
+    await cleanup.runAllCleanup();
+    
+    console.log('Data retention cleanup completed');
   },
 };
