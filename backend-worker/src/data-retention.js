@@ -8,6 +8,11 @@
  * - Temporary/cache data: 7 days
  */
 
+// Helper function to get database session for read operations
+function getReadSession(env) {
+  return env.DB.withSession("first-unconstrained");
+}
+
 export class DataRetentionCleanup {
   constructor(env) {
     this.env = env;
@@ -50,7 +55,8 @@ export class DataRetentionCleanup {
     const cutoffDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
     
     // Get logs to archive
-    const logs = await this.env.DB.prepare(`
+    const db = getReadSession(this.env);
+    const logs = await db.prepare(`
       SELECT * FROM audit_logs 
       WHERE created_at < ?
       AND archived = 0
@@ -109,7 +115,8 @@ export class DataRetentionCleanup {
     const cutoffDate = new Date(Date.now() - 2 * 365 * 24 * 60 * 60 * 1000);
     
     // Get bookings to archive
-    const bookings = await this.env.DB.prepare(`
+    const db = getReadSession(this.env);
+    const bookings = await db.prepare(`
       SELECT * FROM bookings 
       WHERE created_at < ?
       AND archived = 0
