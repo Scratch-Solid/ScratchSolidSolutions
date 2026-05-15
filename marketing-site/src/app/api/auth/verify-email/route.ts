@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
   const token = searchParams.get('token');
 
   if (!token) {
-    return NextResponse.redirect(new URL('/auth/login?error=missing_token', request.url));
+    return NextResponse.redirect(new URL('/auth?error=missing_token', request.url));
   }
 
   const db = await getDb();
@@ -18,8 +18,8 @@ export async function GET(request: NextRequest) {
   const verified = await verifyEmailToken(db, token);
 
   if (!verified) {
-    return NextResponse.redirect(new URL('/auth/login?error=invalid_or_expired_token', request.url));
+    return NextResponse.redirect(new URL('/auth?error=invalid_or_expired_token', request.url));
   }
 
-  return NextResponse.redirect(new URL('/auth/login?verified=1', request.url));
+  return NextResponse.redirect(new URL('/auth?verified=1', request.url));
 }
