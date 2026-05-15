@@ -38,88 +38,111 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const rateLimitResponse = await withRateLimit(request);
-  if (rateLimitResponse) return rateLimitResponse;
-
-  const traceId = withTracing(request);
-  const db = await getDb();
-  if (!db) {
-    console.error('Database unavailable (pending-contracts submit)');
-    return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
-  }
-
-  const data = await request.json() as any;
-
-  // Validate phone number
-  const contactNumber = data.contactNumber || data.contact_number || '';
-  const phoneValidation = validatePhone(contactNumber);
-  if (!phoneValidation.valid) {
-    return NextResponse.json({ error: phoneValidation.errors.join(', ') }, { status: 400 });
-    return withSecurityHeaders(response, traceId);
-  }
-
-  // Validate ID/Passport number
-  const idPassportNumber = data.idPassportNumber || data.id_passport_number || '';
-  if (!idPassportNumber) {
-    return NextResponse.json({ error: 'ID or passport number is required' }, { status: 400 });
-    return withSecurityHeaders(response, traceId);
-  } else {
-    const idPassportValidation = idPassportNumber.replace(/\D/g, '').length === 13
-      ? validateSaIdNumber(idPassportNumber)
-      : validateSaPassport(idPassportNumber);
-    if (!idPassportValidation.valid) {
-      return NextResponse.json({ error: idPassportValidation.errors.join(', ') }, { status: 400 });
-      return withSecurityHeaders(response, traceId);
-    }
-  }
-
-  const consentData = {
-    ...JSON.parse(data.consentData || data.consent_data || '{}'),
-    password: data.password || null // Password will be set during profile creation
-  };
-  const newContract = await createPendingContract(db, {
-    full_name: data.fullName || data.full_name || '',
-    id_passport_number: idPassportNumber,
-    contact_number: contactNumber,
-    position_applied_for: data.positionAppliedFor || data.position_applied_for || '',
-    department: data.department || 'cleaning',
-    generated_username: data.generatedUsername || data.generated_username || '',
-    status: 'pending',
-    applicant_signature: data.applicantSignature || data.applicant_signature || '',
-    witness_representative: data.witnessRepresentative || data.witness_representative || 'Xolani Jason Tshaka',
-    consent_data: JSON.stringify(consentData)
-  });
-
-  // Create or update user with temp password = phone digits, username = generatedUsername
+  console.log('[PENDING-CONTRACTS POST] Starting request');
+  
   try {
-    // Ensure optional columns exist
-    await db.prepare('ALTER TABLE users ADD COLUMN username TEXT').run().catch(() => {});
-    await db.prepare('ALTER TABLE users ADD COLUMN password_needs_reset INTEGER DEFAULT 0').run().catch(() => {});
-    await db.prepare('ALTER TABLE users ADD COLUMN login_count INTEGER DEFAULT 0').run().catch(() => {});
-
-    const phoneDigits = contactNumber.replace(/\D/g, '');
-    const tempPasswordHash = await bcrypt.hash(phoneDigits, 10);
-    const username = data.generatedUsername || data.generated_username || data.fullName || `user${Date.now()}`;
-    const email = data.email || `${username}@scratch.local`;
-
-    const existingUser = await db.prepare('SELECT id FROM users WHERE username = ? OR email = ?').bind(username, email).first();
-
-    if (existingUser) {
-      await db.prepare(
-        `UPDATE users SET password_hash = ?, phone = ?, role = ?, name = ?, password_needs_reset = 1, login_count = 0, username = ?, email = ? WHERE id = ?`
-      ).bind(tempPasswordHash, contactNumber, 'cleaner', data.fullName || data.full_name || username, username, email, (existingUser as any).id).run();
-    } else {
-      await db.prepare(
-        `INSERT INTO users (email, password_hash, role, name, phone, username, password_needs_reset, login_count)
-         VALUES (?, ?, ?, ?, ?, ?, 1, 0)`
-      ).bind(email, tempPasswordHash, 'cleaner', data.fullName || data.full_name || username, contactNumber, username).run();
+    const rateLimitResponse = await withRateLimit(request);
+    if (rateLimitResponse) {
+      console.log('[PENDING-CONTRACTS POST] Rate limit exceeded');
+      return rateLimitResponse;
     }
-  } catch (err) {
-    console.error('User provisioning failed after consent submission:', err);
-  }
 
-  return NextResponse.json(newContract, { status: 201 });
-  return withSecurityHeaders(response, traceId);
+    const traceId = withTracing(request);
+    const db = await getDb();
+    if (!db) {
+      console.error('[PENDING-CONTRACTS POST] Database unavailable');
+      return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
+    }
+    console.log('[PENDING-CONTRACTS POST] Database connected');
+
+    const data = await request.json() as any;
+    console.log('[PENDING-CONTRACTS POST] Request body parsed:', JSON.stringify(data, null, 2));
+
+    // Validate phone number
+    const contactNumber = data.contactNumber || data.contact_number || '';
+    console.log('[PENDING-CONTRACTS POST] Contact number:', contactNumber);
+    const phoneValidation = validatePhone(contactNumber);
+    if (!phoneValidation.valid) {
+      console.log('[PENDING-CONTRACTS POST] Phone validation failed:', phoneValidation.errors);
+      return NextResponse.json({ error: phoneValidation.errors.join(', ') }, { status: 400 });
+    }
+
+    // Validate ID/Passport number
+    const idPassportNumber = data.idPassportNumber || data.id_passport_number || '';
+    console.log('[PENDING-CONTRACTS POST] ID/Passport:', idPassportNumber);
+    if (!idPassportNumber) {
+      console.log('[PENDING-CONTRACTS POST] ID/Passport missing');
+      return NextResponse.json({ error: 'ID or passport number is required' }, { status: 400 });
+    } else {
+      const idPassportValidation = idPassportNumber.replace(/\D/g, '').length === 13
+        ? validateSaIdNumber(idPassportNumber)
+        : validateSaPassport(idPassportNumber);
+      if (!idPassportValidation.valid) {
+        console.log('[PENDING-CONTRACTS POST] ID/Passport validation failed:', idPassportValidation.errors);
+        return NextResponse.json({ error: idPassportValidation.errors.join(', ') }, { status: 400 });
+      }
+    }
+
+    const consentData = {
+      ...JSON.parse(data.consentData || data.consent_data || '{}'),
+      password: data.password || null // Password will be set during profile creation
+    };
+    console.log('[PENDING-CONTRACTS POST] Creating pending contract');
+    const newContract = await createPendingContract(db, {
+      full_name: data.fullName || data.full_name || '',
+      id_passport_number: idPassportNumber,
+      contact_number: contactNumber,
+      position_applied_for: data.positionAppliedFor || data.position_applied_for || '',
+      department: data.department || 'cleaning',
+      generated_username: data.generatedUsername || data.generated_username || '',
+      status: 'pending',
+      applicant_signature: data.applicantSignature || data.applicant_signature || '',
+      witness_representative: data.witnessRepresentative || data.witness_representative || 'Xolani Jason Tshaka',
+      consent_data: JSON.stringify(consentData)
+    });
+    console.log('[PENDING-CONTRACTS POST] Pending contract created:', JSON.stringify(newContract, null, 2));
+
+    // Create or update user with temp password = phone digits, username = generatedUsername
+    console.log('[PENDING-CONTRACTS POST] Starting user provisioning');
+    try {
+      // Ensure optional columns exist
+      await db.prepare('ALTER TABLE users ADD COLUMN username TEXT').run().catch(() => {});
+      await db.prepare('ALTER TABLE users ADD COLUMN password_needs_reset INTEGER DEFAULT 0').run().catch(() => {});
+      await db.prepare('ALTER TABLE users ADD COLUMN login_count INTEGER DEFAULT 0').run().catch(() => {});
+
+      const phoneDigits = contactNumber.replace(/\D/g, '');
+      console.log('[PENDING-CONTRACTS POST] Phone digits:', phoneDigits);
+      const tempPasswordHash = await bcrypt.hash(phoneDigits, 10);
+      const username = data.generatedUsername || data.generated_username || data.fullName || `user${Date.now()}`;
+      const email = data.email || `${username}@scratch.local`;
+      console.log('[PENDING-CONTRACTS POST] Username:', username, 'Email:', email);
+
+      const existingUser = await db.prepare('SELECT id FROM users WHERE username = ? OR email = ?').bind(username, email).first();
+      console.log('[PENDING-CONTRACTS POST] Existing user:', existingUser ? 'Yes' : 'No');
+
+      if (existingUser) {
+        console.log('[PENDING-CONTRACTS POST] Updating existing user:', (existingUser as any).id);
+        await db.prepare(
+          `UPDATE users SET password_hash = ?, phone = ?, role = ?, name = ?, password_needs_reset = 1, login_count = 0, username = ?, email = ? WHERE id = ?`
+        ).bind(tempPasswordHash, contactNumber, 'cleaner', data.fullName || data.full_name || username, username, email, (existingUser as any).id).run();
+      } else {
+        console.log('[PENDING-CONTRACTS POST] Creating new user');
+        await db.prepare(
+          `INSERT INTO users (email, password_hash, role, name, phone, username, password_needs_reset, login_count)
+           VALUES (?, ?, ?, ?, ?, ?, 1, 0)`
+        ).bind(email, tempPasswordHash, 'cleaner', data.fullName || data.full_name || username, contactNumber, username).run();
+      }
+      console.log('[PENDING-CONTRACTS POST] User provisioning successful');
+    } catch (err) {
+      console.error('[PENDING-CONTRACTS POST] User provisioning failed:', err);
+    }
+
+    console.log('[PENDING-CONTRACTS POST] Returning success response');
+    return NextResponse.json(newContract, { status: 201 });
+  } catch (error) {
+    console.error('[PENDING-CONTRACTS POST] Unhandled error:', error);
+    return NextResponse.json({ error: 'Failed to process consent form', details: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
+  }
 }
 
 export async function PUT(request: NextRequest) {
