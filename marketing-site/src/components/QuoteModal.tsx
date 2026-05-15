@@ -26,6 +26,7 @@ interface ServicePricing {
   id: number;
   service_id: number;
   price: number;
+  unit_price: number;
   unit: string;
   min_quantity: number;
   max_quantity: number | null;

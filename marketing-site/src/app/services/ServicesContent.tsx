@@ -25,6 +25,7 @@ interface ServicePricing {
   min_quantity: number;
   max_quantity: number | null;
   price: number;
+  unit_price: number;
   unit: string;
   client_type: string;
   special_price: number | null;
