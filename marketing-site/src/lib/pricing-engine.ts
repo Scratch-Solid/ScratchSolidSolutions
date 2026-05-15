@@ -57,15 +57,15 @@ const SERVICE_PRICING: Record<string, PricingConfig> = {
     unitType: 'bedroom',
     unitPrice: 100,
     minQuantity: 1,
-    maxQuantity: 5,
+    maxQuantity: 10,
     afterHoursSurcharge: 15
   },
   'residential-deep': {
     basePrice: 950,
-    unitType: 'm2',
-    unitPrice: 15,
-    minQuantity: 50,
-    maxQuantity: 500,
+    unitType: 'bedroom',
+    unitPrice: 150,
+    minQuantity: 1,
+    maxQuantity: 10,
     afterHoursSurcharge: 15
   },
   'post-construction': {
@@ -73,14 +73,14 @@ const SERVICE_PRICING: Record<string, PricingConfig> = {
     unitType: 'm2',
     unitPrice: 45,
     minQuantity: 50,
-    maxQuantity: 1000,
+    maxQuantity: 2000,
     afterHoursSurcharge: 20
   },
   'commercial': {
     basePrice: 1500,
     unitType: 'm2',
     unitPrice: 20,
-    minQuantity: 100,
+    minQuantity: 50,
     maxQuantity: 2000,
     afterHoursSurcharge: 15
   },

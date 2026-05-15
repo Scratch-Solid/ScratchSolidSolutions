@@ -103,6 +103,15 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
     if (initialServiceId) setSelectedServiceId(initialServiceId);
   }, [initialServiceId]);
 
+  // Update quantity when property type changes to ensure it meets minimum requirements
+  useEffect(() => {
+    if (propertyType === 'residential' || propertyType === 'short-term-stay') {
+      setQuantity(prev => Math.max(1, Math.min(prev, 10)));
+    } else {
+      setQuantity(prev => Math.max(50, prev));
+    }
+  }, [propertyType]);
+
   // Get the pricing row matching current client_type (prefers exact match over 'all')
   const getActivePricingRow = useCallback((serviceId: number): ServicePricing | null => {
     const rows = pricing.filter(p =>
