@@ -35,10 +35,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Database not initialized' }, { status: 503 });
     }
 
-    // Find user by email or username
+    // Find user by email, username, or phone number
     let user;
     try {
-      user = await db.prepare('SELECT * FROM users WHERE email = ? OR username = ?').bind(identifier, identifier).first();
+      user = await db.prepare('SELECT * FROM users WHERE email = ? OR username = ? OR phone = ?').bind(identifier, identifier, identifier).first();
     } catch (dbError) {
       console.error('Database error during user lookup:', dbError);
       return NextResponse.json(
