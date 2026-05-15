@@ -109,8 +109,8 @@ export async function POST(request: NextRequest) {
     const refreshed = await db.prepare('SELECT password_needs_reset, login_count FROM users WHERE id = ?').bind(user.id).first();
     (user as any).password_needs_reset = (refreshed as any)?.password_needs_reset ?? user.password_needs_reset;
     (user as any).login_count = (refreshed as any)?.login_count ?? user.login_count;
-    // Block if password must be reset and user already logged in 3+ times with temp password
-    if ((user as any).password_needs_reset === 1 && ((user as any).login_count ?? 0) >= 3) {
+    // Block if password must be reset and user already logged in 2+ times with temp password
+    if ((user as any).password_needs_reset === 1 && ((user as any).login_count ?? 0) >= 2) {
       return NextResponse.json({ success: false, error: 'Password change required', mustChangePassword: true }, { status: 403 });
     }
 
@@ -173,7 +173,7 @@ export async function POST(request: NextRequest) {
       username: (user as any).username || user.email,
       user_id: String(user.id),
       paysheet_code: (user as any).paysheet_code || '',
-      mustChangePassword: (user as any)?.password_needs_reset === 1 && ((user as any)?.login_count ?? 0) === 2,
+      mustChangePassword: (user as any)?.password_needs_reset === 1 && ((user as any)?.login_count ?? 0) === 1,
       user: {
         id: user.id,
         email: user.email,
