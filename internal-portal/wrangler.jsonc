@@ -38,6 +38,12 @@
 			"bucket_name": "cleaner-photos"
 		}
 	],
+	"routes": [
+		{
+			"pattern": "portal.scratchsolidsolutions.org/*",
+			"zone_name": "scratchsolidsolutions.org"
+		}
+	],
 	"vars": {
 		"ALLOWED_ORIGINS": "https://portal.scratchsolidsolutions.org"
 	},
@@ -46,6 +52,12 @@
 	},
 	"env": {
 		"staging": {
+			"routes": [
+				{
+					"pattern": "portal-staging.scratchsolidsolutions.org/*",
+					"zone_name": "scratchsolidsolutions.org"
+				}
+			],
 			"d1_databases": [
 				{
 					"binding": "scratchsolid_db",
