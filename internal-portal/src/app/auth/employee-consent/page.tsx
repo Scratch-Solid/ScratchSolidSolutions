@@ -311,21 +311,21 @@ export default function EmployeeConsentPage() {
           <div className="border-t pt-6 text-center">
             <h2 className="text-xl font-bold mb-4">Consent & Authorisation</h2>
             <div className="text-sm leading-relaxed space-y-2">
-              <p className="text-left">
+              <p>
                 I, the undersigned, hereby give written, informed consent to
                 Scratch Solid Solutions to conduct background checks relevant to
                 my application for employment.
               </p>
-              <p className="text-left">
+              <p>
                 I understand that these checks may include:
               </p>
-              <ul className="list-disc list-inside ml-4 space-y-1 text-left">
+              <ul className="list-disc list-inside ml-4 space-y-1">
                 <li>Identity verification</li>
                 <li>Criminal record check (where relevant to the position)</li>
                 <li>Reference and employment history checks</li>
               </ul>
-              <p className="text-left">I acknowledge that:</p>
-              <ul className="list-disc list-inside ml-4 space-y-1 text-left">
+              <p>I acknowledge that:</p>
+              <ul className="list-disc list-inside ml-4 space-y-1">
                 <li>
                   All information will be processed in accordance with the
                   Protection of Personal Information Act (POPIA)
@@ -343,7 +343,7 @@ export default function EmployeeConsentPage() {
                   writing
                 </li>
               </ul>
-              <p className="font-semibold text-left">
+              <p className="font-semibold">
                 I confirm that the information I have provided is true and
                 correct.
               </p>
