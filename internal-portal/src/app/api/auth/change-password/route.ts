@@ -20,16 +20,29 @@ export async function POST(request: NextRequest) {
     const body = await request.json() as { currentPassword?: string; newPassword?: string };
     const { currentPassword, newPassword } = body;
 
+    console.log('[CHANGE-PASSWORD] User ID:', user.id);
+    console.log('[CHANGE-PASSWORD] Current password provided:', currentPassword);
+    console.log('[CHANGE-PASSWORD] Current password length:', currentPassword?.length);
+
     if (!currentPassword || !newPassword) {
       return withSecurityHeaders(NextResponse.json({ error: 'Current and new password required' }, { status: 400 }), traceId);
     }
 
-    const existing = await db.prepare('SELECT password_hash FROM users WHERE id = ?').bind(user.id).first();
+    const existing = await db.prepare('SELECT password_hash, phone FROM users WHERE id = ?').bind(user.id).first();
     if (!existing) {
       return withSecurityHeaders(NextResponse.json({ error: 'User not found' }, { status: 404 }), traceId);
     }
 
-    const matches = await bcrypt.compare(currentPassword, (existing as any).password_hash);
+    console.log('[CHANGE-PASSWORD] Stored phone from DB:', (existing as any).phone);
+    console.log('[CHANGE-PASSWORD] Stored phone digits:', (existing as any).phone?.replace(/\D/g, ''));
+
+    // Normalize current password to digits only (matching how it was stored)
+    const normalizedCurrentPassword = currentPassword.replace(/\D/g, '');
+    console.log('[CHANGE-PASSWORD] Normalized current password:', normalizedCurrentPassword);
+
+    const matches = await bcrypt.compare(normalizedCurrentPassword, (existing as any).password_hash);
+    console.log('[CHANGE-PASSWORD] Password match result:', matches);
+
     if (!matches) {
       return withSecurityHeaders(NextResponse.json({ error: 'Invalid current password' }, { status: 401 }), traceId);
     }
