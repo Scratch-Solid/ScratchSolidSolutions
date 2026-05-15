@@ -384,6 +384,19 @@ export default function ClientDashboard() {
           }
         }
       }
+
+      // Fetch GPS coordinates for real-time tracking
+      const activeBooking = bookings.find(b => b.status === 'confirmed' || b.status === 'in_progress');
+      if (activeBooking) {
+        const trackingResponse = await fetch(`/api/tracking?booking_id=${activeBooking.id}`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` }
+        });
+        if (trackingResponse.ok) {
+          const trackingData = await trackingResponse.json();
+          // Store GPS data in state or use it for map display
+          console.log('GPS Tracking Data:', trackingData);
+        }
+      }
     } catch (error) {
       console.error('Failed to fetch cleaner status:', error);
     }

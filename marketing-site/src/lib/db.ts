@@ -313,6 +313,20 @@ export async function createEmployee(db: D1Database, data: Record<string, any>) 
 }
 
 // Booking operations
+
+/**
+ * Generate a unique tracking token for bookings
+ * Format: 12-character alphanumeric string
+ */
+function generateTrackingToken(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // No I, O, 1, 0 to avoid confusion
+  let token = '';
+  for (let i = 0; i < 12; i++) {
+    token += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return token;
+}
+
 export async function createBooking(db: D1Database, data: {
   client_id: number;
   client_name: string;
@@ -328,9 +342,12 @@ export async function createBooking(db: D1Database, data: {
   cleaner_id?: number;
   status?: string;
 }) {
+  // Generate unique tracking token
+  const trackingToken = generateTrackingToken();
+  
   const result = await db.prepare(
-    `INSERT INTO bookings (client_id, client_name, location, service_type, booking_date, booking_time, special_instructions, booking_type, cleaning_type, payment_method, loyalty_discount, cleaner_id, status)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`
+    `INSERT INTO bookings (client_id, client_name, location, service_type, booking_date, booking_time, special_instructions, booking_type, cleaning_type, payment_method, loyalty_discount, cleaner_id, status, tracking_token)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`
   ).bind(
     data.client_id, 
     data.client_name, 
@@ -344,7 +361,8 @@ export async function createBooking(db: D1Database, data: {
     data.payment_method || 'cash',
     data.loyalty_discount || 0,
     data.cleaner_id || null,
-    data.status || 'pending'
+    data.status || 'pending',
+    trackingToken
   ).first();
   return result;
 }

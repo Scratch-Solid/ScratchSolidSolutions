@@ -1,6 +1,12 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import LogoWatermark from '@/components/LogoWatermark';
+import {
+  calculateQuote,
+  getAvailableAreas,
+  type QuoteRequest,
+  type QuoteResult as PricingQuoteResult
+} from '@/lib/pricing-engine';
 
 interface Service {
   id: number;
@@ -69,6 +75,9 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [clientType, setClientType] = useState<'individual' | 'business'>('individual');
   const [selectedServiceId, setSelectedServiceId] = useState<number | null>(initialServiceId || null);
+  const [propertyType, setPropertyType] = useState<'residential' | 'office' | 'commercial' | 'post-construction' | 'short-term-stay'>('residential');
+  const [area, setArea] = useState('Durbanville');
+  const [quantity, setQuantity] = useState(3); // bedrooms or m²
   const [promoInput, setPromoInput] = useState('');
   const [promoResult, setPromoResult] = useState<PromoResult | null>(null);
   const [promoLoading, setPromoLoading] = useState(false);
@@ -80,6 +89,9 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
   const [submitError, setSubmitError] = useState('');
   const [actionLoading, setActionLoading] = useState<'accept' | 'decline' | null>(null);
   const [quoteDeclined, setQuoteDeclined] = useState(false);
+  const [pricingCalculation, setPricingCalculation] = useState<PricingQuoteResult | null>(null);
+  const [loyaltyPoints, setLoyaltyPoints] = useState(0);
+  const availableAreas = getAvailableAreas();
   
   // Quote history state
   const [quotes, setQuotes] = useState<any[]>([]);
@@ -90,6 +102,61 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
   useEffect(() => {
     if (initialServiceId) setSelectedServiceId(initialServiceId);
   }, [initialServiceId]);
+
+  // Get the pricing row matching current client_type (prefers exact match over 'all')
+  const getActivePricingRow = useCallback((serviceId: number): ServicePricing | null => {
+    const rows = pricing.filter(p =>
+      p.service_id === serviceId &&
+      (p.client_type === clientType || p.client_type === 'all')
+    );
+    // Prefer exact client_type match over 'all'
+    const exactMatch = rows.find(r => r.client_type === clientType);
+    return exactMatch || rows[0] || null;
+  }, [pricing, clientType]);
+
+  // Calculate pricing using the new pricing engine
+  useEffect(() => {
+    if (selectedServiceId) {
+      const request: QuoteRequest = {
+        serviceId: selectedServiceId,
+        propertyType,
+        area,
+        quantity,
+        promoCode: promoResult?.valid ? promoInput.trim() : undefined,
+        clientId: userEmail ? 1 : undefined, // TODO: Get actual client ID
+        bookingDate: undefined // User can select booking date later
+      };
+
+      const specialPricing = (() => {
+        const row = getActivePricingRow(selectedServiceId);
+        if (!row?.special_price) return undefined;
+        return {
+          specialPrice: row.special_price,
+          specialLabel: row.special_label,
+          specialValidFrom: row.special_valid_from || undefined,
+          specialValidUntil: row.special_valid_until || undefined
+        };
+      })();
+
+      const promoData = promoResult?.valid ? {
+        discountType: promoResult.discount_type || 'percentage',
+        discountValue: promoResult.discount_value || 0,
+        minAmount: undefined,
+        validFrom: undefined,
+        validUntil: promoResult.valid_until || undefined,
+      } : undefined;
+
+      try {
+        const result = calculateQuote(request, specialPricing, promoData, loyaltyPoints);
+        setPricingCalculation(result);
+      } catch (error) {
+        console.error('Pricing calculation error:', error);
+        setPricingCalculation(null);
+      }
+    } else {
+      setPricingCalculation(null);
+    }
+  }, [selectedServiceId, propertyType, area, quantity, promoResult, promoInput, loyaltyPoints, userEmail, getActivePricingRow]);
 
   // Fetch quote history when modal opens and user is authenticated
   useEffect(() => {
@@ -133,6 +200,9 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
     if (!isOpen) {
       setStep(1);
       setClientType('individual');
+      setPropertyType('residential');
+      setArea('Durbanville');
+      setQuantity(3);
       setPromoInput('');
       setPromoResult(null);
       setName('');
@@ -143,20 +213,11 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
       setSubmitError('');
       setActionLoading(null);
       setQuoteDeclined(false);
+      setPricingCalculation(null);
       setQuotes([]);
       setQuotesError('');
     }
   }, [isOpen]);
-
-  // Get the pricing row matching current client_type (prefers exact match over 'all')
-  const getActivePricingRow = useCallback((serviceId: number): ServicePricing | null => {
-    const rows = pricing.filter(p =>
-      p.service_id === serviceId &&
-      (p.client_type === clientType || p.client_type === 'all')
-    );
-    // Prefer exact client_type match over 'all'
-    return rows.find(r => r.client_type === clientType) || rows[0] || null;
-  }, [pricing, clientType]);
 
   const getBaselinePrice = useCallback((serviceId: number): number => {
     return getActivePricingRow(serviceId)?.price || 0;
@@ -215,18 +276,10 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
   };
 
   const handleSubmit = async () => {
-    if (!name.trim() || !selectedServiceId) return;
+    if (!name.trim() || !selectedServiceId || !pricingCalculation) return;
     setSubmitting(true);
     setSubmitError('');
     try {
-      const row = getActivePricingRow(selectedServiceId);
-      const baseline = row?.price || 0;
-      const specialDisc = getSpecialDiscount(selectedServiceId);
-      const priceAfterSpecial = Math.max(0, baseline - specialDisc);
-      const promoDisc = getPromoDiscount(priceAfterSpecial);
-      const discountAmt = specialDisc + promoDisc;
-      const finalPrice = Math.max(0, baseline - discountAmt);
-
       const res = await fetch('/api/quote', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -236,13 +289,18 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
           phone: phone.trim(),
           service_id: selectedServiceId,
           service_name: selectedService?.name || '',
-          quantity: 1,
-          baseline_price: baseline,
+          quantity: quantity,
+          baseline_price: pricingCalculation.basePrice,
+          transport_fee: pricingCalculation.transportFee,
+          property_type: propertyType,
+          area: area,
           promo_code: promoResult?.valid ? promoInput.trim() : '',
           discount_type: promoResult?.valid ? promoResult.discount_type : '',
           discount_value: promoResult?.valid ? promoResult.discount_value : 0,
-          discount_amount: discountAmt,
-          final_price: finalPrice,
+          discount_amount: pricingCalculation.specialDiscount + pricingCalculation.promoDiscount + pricingCalculation.loyaltyDiscount,
+          after_hours_surcharge: pricingCalculation.afterHoursSurcharge,
+          demand_multiplier: pricingCalculation.demandMultiplier,
+          final_price: pricingCalculation.finalPrice,
         }),
       });
       const data = await res.json() as QuoteResult & { error?: string };
@@ -439,7 +497,7 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
               </div>
             )}
 
-            {/* ── STEP 1: Service + Promo ── */}
+            {/* ── STEP 1: Service + Details ── */}
             {step === 1 && (
               <>
                 <div>
@@ -469,43 +527,97 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
                 </div>
 
                 <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Property Type <span className="text-red-500">*</span></label>
+                  <select
+                    value={propertyType}
+                    onChange={(e) => setPropertyType(e.target.value as any)}
+                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  >
+                    <option value="residential">🏠 Residential</option>
+                    <option value="office">🏢 Office</option>
+                    <option value="commercial">🏗️ Commercial</option>
+                    <option value="post-construction">🔨 Post-Construction</option>
+                    <option value="short-term-stay">🏨 Short-Term Stay</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Area <span className="text-red-500">*</span></label>
+                  <select
+                    value={area}
+                    onChange={(e) => setArea(e.target.value)}
+                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  >
+                    <option value="Durbanville">Durbanville (Transport: R50)</option>
+                    <option value="Bellville">Bellville (Transport: R45)</option>
+                    <option value="Brackenfell">Brackenfell (Transport: R55)</option>
+                    <option value="Plattekloof">Plattekloof (Transport: R50)</option>
+                    <option value="Tygervalley">Tygervalley (Transport: R45)</option>
+                    <option value="Parow">Parow (Transport: R40)</option>
+                    <option value="Goodwood">Goodwood (Transport: R40)</option>
+                    <option value="Kuils River">Kuils River (Transport: R60)</option>
+                    <option value="Kraaifontein">Kraaifontein (Transport: R65)</option>
+                    <option value="Stellenbosch">Stellenbosch (Transport: R70)</option>
+                    <option value="Paarl">Paarl (Transport: R80)</option>
+                    <option value="Wellington">Wellington (Transport: R85)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    {propertyType === 'residential' || propertyType === 'short-term-stay' ? 'Number of Bedrooms' : 'Size (m²)'} <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    value={quantity}
+                    onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                    min={propertyType === 'residential' || propertyType === 'short-term-stay' ? 1 : 50}
+                    max={propertyType === 'residential' || propertyType === 'short-term-stay' ? 10 : 2000}
+                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    {propertyType === 'residential' || propertyType === 'short-term-stay' ? '1-10 bedrooms' : '50-2000 m²'}
+                  </p>
+                </div>
+
+                <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Select Service <span className="text-red-500">*</span></label>
                   {services.filter(s => s.is_active).length === 0 ? (
                     <p className="text-red-500 text-sm">No services available. Please try again later.</p>
                   ) : (
                     <div className="space-y-2">
-                      {services.filter(s => s.is_active).map(service => (
-                        <button
-                          key={service.id}
-                          onClick={() => setSelectedServiceId(service.id)}
-                          className={`w-full text-left px-4 py-3 rounded-xl border-2 transition-all ${
-                            selectedServiceId === service.id
-                              ? 'border-blue-500 bg-blue-50'
-                              : 'border-gray-200 hover:border-blue-200 bg-white'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2">
-                            {service.icon && <span className="text-xl">{service.icon}</span>}
-                            <div className="flex-1">
-                              <p className="font-semibold text-sm text-gray-800">{service.name}</p>
-                              {(() => {
-                                const row = getActivePricingRow(service.id);
-                                if (!row) return null;
-                                const sd = getSpecialDiscount(service.id);
-                                return sd > 0 ? (
+                      {services.filter(s => s.is_active).map(service => {
+                        const row = getActivePricingRow(service.id);
+                        const sd = row ? getSpecialDiscount(service.id) : 0;
+                        return (
+                          <button
+                            key={service.id}
+                            onClick={() => setSelectedServiceId(service.id)}
+                            className={`w-full text-left px-4 py-3 rounded-xl border-2 transition-all ${
+                              selectedServiceId === service.id
+                                ? 'border-blue-500 bg-blue-50'
+                                : 'border-gray-200 hover:border-blue-200 bg-white'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              {service.icon && <span className="text-xl">{service.icon}</span>}
+                              <div className="flex-1">
+                                <p className="font-semibold text-sm text-gray-800">{service.name}</p>
+                                {row && sd > 0 && (
                                   <p className="text-xs font-medium">
                                     <span className="line-through text-gray-400">R{row.price.toFixed(2)}</span>
                                     <span className="text-green-600 ml-1">R{(row.price - sd).toFixed(2)}</span>
                                     <span className="ml-1 bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">{row.special_label || 'Special'}</span>
                                   </p>
-                                ) : row.price > 0 ? (
+                                )}
+                                {row && sd === 0 && row.price > 0 && (
                                   <p className="text-xs text-blue-600 font-medium">From R{row.price.toFixed(2)}</p>
-                                ) : null;
-                              })()}
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        </button>
-                      ))}
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -538,39 +650,65 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
                 </div>
 
                 {/* Live price breakdown */}
-                {selectedServiceId && baseline > 0 && (() => {
-                  const activeRow = getActivePricingRow(selectedServiceId);
-                  const sd = getSpecialDiscount(selectedServiceId);
-                  const priceAfterSpecial = Math.max(0, baseline - sd);
-                  const pd = getPromoDiscount(priceAfterSpecial);
-                  return (
-                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-4 border border-blue-100">
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Price Breakdown</p>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Base Price</span>
-                          <span className="font-medium">R{baseline.toFixed(2)}</span>
+                {pricingCalculation && (
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-4 border border-blue-100">
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Price Breakdown</p>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Base Price</span>
+                        <span className="font-medium">R{pricingCalculation.basePrice.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Transport Fee</span>
+                        <span className="font-medium">R{pricingCalculation.transportFee.toFixed(2)}</span>
+                      </div>
+                      {pricingCalculation.specialDiscount > 0 && (
+                        <div className="flex justify-between text-green-700">
+                          <span>{pricingCalculation.specialLabel || 'Special'}</span>
+                          <span className="font-medium">− R{pricingCalculation.specialDiscount.toFixed(2)}</span>
                         </div>
-                        {sd > 0 && (
-                          <div className="flex justify-between text-green-700">
-                            <span>{activeRow?.special_label || 'Special'}</span>
-                            <span className="font-medium">− R{sd.toFixed(2)}</span>
-                          </div>
-                        )}
-                        {pd > 0 && (
-                          <div className="flex justify-between text-green-700">
-                            <span>Promo ({promoResult?.code})</span>
-                            <span className="font-medium">− R{pd.toFixed(2)}</span>
-                          </div>
-                        )}
-                        <div className="flex justify-between border-t border-blue-200 pt-2">
-                          <span className="font-bold text-blue-700">Total</span>
-                          <span className="font-bold text-blue-700 text-base">R{finalPrice.toFixed(2)}</span>
+                      )}
+                      {pricingCalculation.promoDiscount > 0 && (
+                        <div className="flex justify-between text-green-700">
+                          <span>Promo ({promoResult?.code})</span>
+                          <span className="font-medium">− R{pricingCalculation.promoDiscount.toFixed(2)}</span>
                         </div>
+                      )}
+                      {pricingCalculation.loyaltyDiscount > 0 && (
+                        <div className="flex justify-between text-green-700">
+                          <span>Loyalty Discount</span>
+                          <span className="font-medium">− R{pricingCalculation.loyaltyDiscount.toFixed(2)}</span>
+                        </div>
+                      )}
+                      {pricingCalculation.afterHoursSurcharge > 0 && (
+                        <div className="flex justify-between text-orange-700">
+                          <span>After-Hours Surcharge</span>
+                          <span className="font-medium">+ R{pricingCalculation.afterHoursSurcharge.toFixed(2)}</span>
+                        </div>
+                      )}
+                      {pricingCalculation.demandMultiplier > 1 && (
+                        <div className="flex justify-between text-orange-700">
+                          <span>Peak Hours</span>
+                          <span className="font-medium">+ R{pricingCalculation.breakdown.surcharges.demand.toFixed(2)}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between border-t border-blue-200 pt-2">
+                        <span className="font-bold text-blue-700">Total</span>
+                        <span className="font-bold text-blue-700 text-base">R{pricingCalculation.finalPrice.toFixed(2)}</span>
                       </div>
                     </div>
-                  );
-                })()}
+                    {/* Loyalty points preview */}
+                    {loyaltyPoints > 0 && (
+                      <div className="mt-3 pt-3 border-t border-blue-200">
+                        <p className="text-xs text-gray-600">
+                          🎁 You have <span className="font-bold text-blue-700">{loyaltyPoints}</span> loyalty points
+                          {loyaltyPoints >= 1000 && loyaltyPoints < 5000 && ' (Silver tier - 5% discount)'}
+                          {loyaltyPoints >= 5000 && ' (Gold tier - 10% discount)'}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <button
                   onClick={() => setStep(2)}
@@ -619,11 +757,16 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
                 </div>
 
                 {/* Summary recap */}
-                <div className="bg-gray-50 rounded-xl p-3 text-sm space-y-1 border border-gray-200">
-                  <p className="font-semibold text-gray-700">{selectedService?.icon} {selectedService?.name}</p>
-                  <p className="text-gray-500">Base: R{baseline.toFixed(2)}{discountAmt > 0 ? ` → Discount: −R${discountAmt.toFixed(2)}` : ''}</p>
-                  <p className="font-bold text-blue-700">Total: R{finalPrice.toFixed(2)}</p>
-                </div>
+                {pricingCalculation && (
+                  <div className="bg-gray-50 rounded-xl p-3 text-sm space-y-1 border border-gray-200">
+                    <p className="font-semibold text-gray-700">{selectedService?.icon} {selectedService?.name}</p>
+                    <p className="text-gray-500">Base: R{pricingCalculation.basePrice.toFixed(2)} + Transport: R{pricingCalculation.transportFee.toFixed(2)}</p>
+                    {(pricingCalculation.specialDiscount + pricingCalculation.promoDiscount + pricingCalculation.loyaltyDiscount) > 0 && (
+                      <p className="text-green-600">Discount: −R{(pricingCalculation.specialDiscount + pricingCalculation.promoDiscount + pricingCalculation.loyaltyDiscount).toFixed(2)}</p>
+                    )}
+                    <p className="font-bold text-blue-700">Total: R{pricingCalculation.finalPrice.toFixed(2)}</p>
+                  </div>
+                )}
 
                 {submitError && <p className="text-sm text-red-500">{submitError}</p>}
 

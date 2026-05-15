@@ -7,6 +7,7 @@ import React, { useEffect, useState } from "react";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import DashboardLayout from "@/components/DashboardLayout";
 import ServicesManagement from "./AdminDashboard/services-management";
+import CleanerVisibility from "./AdminDashboard/cleaner-visibility";
 
 export default function AdminDashboard() {
   useSessionTimeout(true);
@@ -355,6 +356,12 @@ export default function AdminDashboard() {
           Services & Banking
         </button>
         <button
+          onClick={() => setActiveTab("cleaners")}
+          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTab === "cleaners" ? "bg-white/20 text-white" : "bg-white/10 text-white/70 hover:bg-white/15"}`}
+        >
+          Cleaners
+        </button>
+        <button
           onClick={() => setActiveTab("content")}
           className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTab === "content" ? "bg-white/20 text-white" : "bg-white/10 text-white/70 hover:bg-white/15"}`}
         >
@@ -542,6 +549,8 @@ export default function AdminDashboard() {
         </div>
       ) : activeTab === "services-banking" ? (
         <ServicesManagement />
+      ) : activeTab === "cleaners" ? (
+        <CleanerVisibility />
       ) : activeTab === "content" ? (
         <ContentManagement />
       ) : null}

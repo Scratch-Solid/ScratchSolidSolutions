@@ -21,12 +21,21 @@
 		{
 			"binding": "RATE_LIMIT_KV",
 			"id": "859744ffa6fc44caa84edaaa1e481800"
+		},
+		{
+			"binding": "GPS_KV",
+			"id": "426d4889e6da4594a4afc972d5184146",
+			"preview_id": "ac5c54b821e543cbd7e3a44559aea8c"
 		}
 	],
 	"r2_buckets": [
 		{
 			"binding": "UPLOADS_BUCKET",
 			"bucket_name": "scratchsolid-uploads"
+		},
+		{
+			"binding": "CLEANER_PHOTOS_BUCKET",
+			"bucket_name": "cleaner-photos"
 		}
 	],
 	"vars": {
@@ -48,12 +57,20 @@
 				{
 					"binding": "RATE_LIMIT_KV",
 					"id": "918298e91aec470ba7f8d800b2f8f124"
+				},
+				{
+					"binding": "GPS_KV",
+					"id": "1cada668d188498eb560ad5c8b9e368c"
 				}
 			],
 			"r2_buckets": [
 				{
 					"binding": "UPLOADS_BUCKET",
 					"bucket_name": "scratchsolid-uploads-portal-staging"
+				},
+				{
+					"binding": "CLEANER_PHOTOS_BUCKET",
+					"bucket_name": "cleaner-photos-staging"
 				}
 			],
 			"vars": {

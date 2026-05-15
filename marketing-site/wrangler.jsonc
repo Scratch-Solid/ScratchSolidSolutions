@@ -25,12 +25,32 @@
 		{
 			"binding": "RATE_LIMIT_KV",
 			"id": "859744ffa6fc44caa84edaaa1e481800"
+		},
+		{
+			"binding": "GPS_KV",
+			"id": "426d4889e6da4594a4afc972d5184146",
+			"remote": true
+		},
+		{
+			"binding": "PUSH_KV",
+			"id": "51a970d0a8d746d48fbe98ee270a74ea",
+			"remote": true
 		}
 	],
 	"r2_buckets": [
 		{
 			"binding": "UPLOADS_BUCKET",
 			"bucket_name": "scratchsolid-uploads"
+		},
+		{
+			"bucket_name": "cleaner-photos",
+			"binding": "cleaner_photos",
+			"remote": true
+		},
+		{
+			"bucket_name": "cleaner-photos-staging",
+			"binding": "cleaner_photos_staging",
+			"remote": true
 		}
 	],
 	"routes": [
@@ -70,6 +90,16 @@
 				{
 					"binding": "RATE_LIMIT_KV",
 					"id": "7555bd20132346a8a9bf3cf67ea9a949"
+				},
+				{
+					"binding": "GPS_KV",
+					"id": "1cada668d188498eb560ad5c8b9e368c",
+					"remote": true
+				},
+				{
+					"binding": "PUSH_KV",
+					"id": "ced0052698894bccbf023cff381d6175",
+					"remote": true
 				}
 			],
 			"r2_buckets": [
