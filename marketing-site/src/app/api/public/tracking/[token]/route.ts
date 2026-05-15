@@ -7,10 +7,10 @@ export const dynamic = "force-dynamic";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { token: string } }
+  { params }: { params: Promise<{ token: string }> }
 ) {
   const traceId = withTracing(request);
-  const { token } = params;
+  const { token } = await params;
 
   try {
     const db = await getDb();
