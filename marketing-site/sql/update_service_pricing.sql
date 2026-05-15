@@ -93,7 +93,7 @@ SELECT
   sp.unit,
   CASE 
     WHEN sp.unit_price > 0 THEN 
-      'Formula: ' || sp.price || ' + ((quantity - 1) × ' || sp.unit_price || ')'
+      'Formula: ' || sp.price || ' + ((quantity - 1) x ' || sp.unit_price || ')'
     ELSE 
       'Formula: ' || sp.price || ' (flat rate)'
   END as pricing_formula

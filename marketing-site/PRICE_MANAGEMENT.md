@@ -53,17 +53,17 @@ The `service_pricing` table contains:
 ### Pricing Formula
 For residential services (bedrooms):
 ```
-Total Price = base_price + ((quantity - 1) × unit_price)
+Total Price = base_price + ((quantity - 1) x unit_price)
 ```
 
 Examples:
-- 1 bedroom: R350 + (0 × R100) = R350
-- 2 bedrooms: R350 + (1 × R100) = R450
-- 3 bedrooms: R350 + (2 × R100) = R550
+- 1 bedroom: R350 + (0 x R100) = R350
+- 2 bedrooms: R350 + (1 x R100) = R450
+- 3 bedrooms: R350 + (2 x R100) = R550
 
 For commercial services (m²):
 ```
-Total Price = base_price + (quantity × unit_price)
+Total Price = base_price + (quantity x unit_price)
 ```
 
 ### Current Pricing
