@@ -2,7 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { validatePhone, validateSaIdNumber, validateSaPassport } from "@/lib/validation";
+import {
+  validatePhone,
+  validateSaIdNumber,
+  validateSaPassport,
+} from "@/lib/validation";
 
 type Department = "Scratch" | "Solid" | "Trans";
 
@@ -28,32 +32,40 @@ export default function EmployeeConsentPage() {
         if (storedConsent) {
           const consent = JSON.parse(storedConsent);
           // Check status via API
-          const response = await fetch(`/api/pending-contracts/check?contactNumber=${consent.contactNumber}&idPassportNumber=${consent.idPassportNumber}`);
+          const response = await fetch(
+            `/api/pending-contracts/check?contactNumber=${consent.contactNumber}&idPassportNumber=${consent.idPassportNumber}`,
+          );
           if (response.ok) {
-            const data = await response.json() as { status?: string };
-            if (data.status === 'rejected') {
-              setExistingStatus('rejected');
-              setError('Your previous application was rejected. Please contact administration for more information.');
-            } else if (data.status === 'approved') {
-              setExistingStatus('approved');
+            const data = (await response.json()) as { status?: string };
+            if (data.status === "rejected") {
+              setExistingStatus("rejected");
+              setError(
+                "Your previous application was rejected. Please contact administration for more information.",
+              );
+            } else if (data.status === "approved") {
+              setExistingStatus("approved");
               // Redirect to profile creation
-              router.push('/auth/create-profile');
+              router.push("/auth/create-profile");
             }
           }
         }
       } catch (err) {
-        console.error('Error checking existing contract:', err);
+        console.error("Error checking existing contract:", err);
       }
     };
     checkExistingContract();
   }, [router]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLSelectElement>) => {
+  const handleChange = (
+    e:
+      | React.ChangeEvent<HTMLInputElement>
+      | React.ChangeEvent<HTMLSelectElement>,
+  ) => {
     const { name, value } = e.target;
     const { type, checked } = e.target as HTMLInputElement;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value
+      [name]: type === "checkbox" ? checked : value,
     }));
   };
 
@@ -61,7 +73,9 @@ export default function EmployeeConsentPage() {
     const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     let suffix = "";
     for (let i = 0; i < 6; i++) {
-      suffix += characters.charAt(Math.floor(Math.random() * characters.length));
+      suffix += characters.charAt(
+        Math.floor(Math.random() * characters.length),
+      );
     }
     return department + suffix;
   };
@@ -83,9 +97,10 @@ export default function EmployeeConsentPage() {
     if (!formData.idPassportNumber.trim()) {
       newFieldErrors.idPassportNumber = "ID or passport number is required";
     } else {
-      const idPassportResult = formData.idPassportNumber.replace(/\D/g, '').length === 13
-        ? validateSaIdNumber(formData.idPassportNumber)
-        : validateSaPassport(formData.idPassportNumber);
+      const idPassportResult =
+        formData.idPassportNumber.replace(/\D/g, "").length === 13
+          ? validateSaIdNumber(formData.idPassportNumber)
+          : validateSaPassport(formData.idPassportNumber);
       if (!idPassportResult.valid) {
         newFieldErrors.idPassportNumber = idPassportResult.errors.join(", ");
       }
@@ -140,8 +155,11 @@ export default function EmployeeConsentPage() {
         // Redirect to Consent Submitted page
         router.push("/auth/consent-submitted");
       } else {
-        const data = await response.json() as { error?: string };
-        setError(data.error || "Submission failed. Please review highlighted fields and try again.");
+        const data = (await response.json()) as { error?: string };
+        setError(
+          data.error ||
+            "Submission failed. Please review highlighted fields and try again.",
+        );
       }
     } catch (err) {
       setError("Network or server error. Please try again.");
@@ -153,14 +171,29 @@ export default function EmployeeConsentPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-10" style={{ background: 'linear-gradient(135deg, #f8fafc, #eef3ff)' }}>
+    <div className="center-container px-4 py-10">
       {/* Glassified consent form */}
-      <div className="glass-panel max-w-3xl w-full p-8" style={{ boxShadow: '0 20px 50px rgba(9,23,42,0.12)' }}>
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--text-h)' }}>Scratch Solid Solutions</h1>
-          <p className="text-lg font-medium" style={{ color: 'var(--text)' }}>
-            Employee Background Check Consent Form
-          </p>
+      <div
+        className="glass-panel max-w-3xl w-full p-8"
+        style={{ boxShadow: "0 20px 50px rgba(9,23,42,0.12)" }}
+      >
+        <div className="text-center mb-8 flex flex-col items-center gap-3">
+          <img
+            src="/logo-scratch-solid.png"
+            alt="Scratch Solid"
+            style={{ width: 96, height: 96, objectFit: "contain" }}
+          />
+          <div>
+            <h1
+              className="text-3xl font-bold mb-1"
+              style={{ color: "var(--text-h)" }}
+            >
+              Internal Portal
+            </h1>
+            <p className="text-lg font-medium" style={{ color: "var(--text)" }}>
+              Employee Background Check Consent Form
+            </p>
+          </div>
         </div>
 
         {error && (
@@ -184,14 +217,16 @@ export default function EmployeeConsentPage() {
               required
               placeholder="Enter position applied for"
             />
-            {fieldErrors.positionAppliedFor && <p className="text-red-500 text-xs mt-1">{fieldErrors.positionAppliedFor}</p>}
+            {fieldErrors.positionAppliedFor && (
+              <p className="text-red-500 text-xs mt-1">
+                {fieldErrors.positionAppliedFor}
+              </p>
+            )}
           </div>
 
           {/* Department Selection */}
           <div>
-            <label className="block text-sm font-bold mb-2">
-              Department
-            </label>
+            <label className="block text-sm font-bold mb-2">Department</label>
             <select
               name="department"
               value={formData.department}
@@ -223,7 +258,11 @@ export default function EmployeeConsentPage() {
                   required
                   placeholder="Enter full name"
                 />
-                {fieldErrors.fullName && <p className="text-red-500 text-xs mt-1">{fieldErrors.fullName}</p>}
+                {fieldErrors.fullName && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {fieldErrors.fullName}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -239,7 +278,11 @@ export default function EmployeeConsentPage() {
                   required
                   placeholder="Enter ID (13 digits) or passport number"
                 />
-                {fieldErrors.idPassportNumber && <p className="text-red-500 text-xs mt-1">{fieldErrors.idPassportNumber}</p>}
+                {fieldErrors.idPassportNumber && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {fieldErrors.idPassportNumber}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -255,7 +298,11 @@ export default function EmployeeConsentPage() {
                   required
                   placeholder="+27XXXXXXXXX or 0XXXXXXXXX or XXXXXXXXXX (10 digits)"
                 />
-                {fieldErrors.contactNumber && <p className="text-red-500 text-xs mt-1">{fieldErrors.contactNumber}</p>}
+                {fieldErrors.contactNumber && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {fieldErrors.contactNumber}
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -265,7 +312,9 @@ export default function EmployeeConsentPage() {
             <h2 className="text-xl font-bold mb-4">Consent & Authorisation</h2>
             <div className="text-sm leading-relaxed space-y-2">
               <p className="text-left">
-                I, the undersigned, hereby give written, informed consent to Scratch Solid Solutions to conduct background checks relevant to my application for employment.
+                I, the undersigned, hereby give written, informed consent to
+                Scratch Solid Solutions to conduct background checks relevant to
+                my application for employment.
               </p>
               <p className="text-left">
                 I understand that these checks may include:
@@ -275,17 +324,28 @@ export default function EmployeeConsentPage() {
                 <li>Criminal record check (where relevant to the position)</li>
                 <li>Reference and employment history checks</li>
               </ul>
-              <p className="text-left">
-                I acknowledge that:
-              </p>
+              <p className="text-left">I acknowledge that:</p>
               <ul className="list-disc list-inside ml-4 space-y-1 text-left">
-                <li>All information will be processed in accordance with the Protection of Personal Information Act (POPIA)</li>
-                <li>Information collected will only be used for employment-related purposes</li>
-                <li>My personal information will be stored securely and confidentially</li>
-                <li>I may request access to my information or withdraw consent in writing</li>
+                <li>
+                  All information will be processed in accordance with the
+                  Protection of Personal Information Act (POPIA)
+                </li>
+                <li>
+                  Information collected will only be used for employment-related
+                  purposes
+                </li>
+                <li>
+                  My personal information will be stored securely and
+                  confidentially
+                </li>
+                <li>
+                  I may request access to my information or withdraw consent in
+                  writing
+                </li>
               </ul>
               <p className="font-semibold text-left">
-                I confirm that the information I have provided is true and correct.
+                I confirm that the information I have provided is true and
+                correct.
               </p>
             </div>
           </div>
@@ -302,11 +362,20 @@ export default function EmployeeConsentPage() {
                 className="mt-1 mr-3 w-5 h-5"
               />
               <div>
-                <label htmlFor="applicantSignature" className="block text-sm font-bold">
+                <label
+                  htmlFor="applicantSignature"
+                  className="block text-sm font-bold"
+                >
                   Applicant Signature (Tick to confirm signature)
                 </label>
-                <p className="text-xs text-gray-600">By ticking this box, I confirm my electronic signature</p>
-                {fieldErrors.applicantSignature && <p className="text-red-500 text-xs mt-1">{fieldErrors.applicantSignature}</p>}
+                <p className="text-xs text-gray-600">
+                  By ticking this box, I confirm my electronic signature
+                </p>
+                {fieldErrors.applicantSignature && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {fieldErrors.applicantSignature}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -314,7 +383,9 @@ export default function EmployeeConsentPage() {
               <label className="block text-sm font-bold mb-2">
                 Date: {new Date().toLocaleString()}
               </label>
-              <p className="text-xs text-gray-600">Date and time captured by the system</p>
+              <p className="text-xs text-gray-600">
+                Date and time captured by the system
+              </p>
             </div>
 
             <div>
@@ -326,10 +397,7 @@ export default function EmployeeConsentPage() {
 
           {/* Action Buttons */}
           <div className="flex gap-4 pt-6 border-t">
-            <button
-              type="submit"
-              className="flex-1 primary-button"
-            >
+            <button type="submit" className="flex-1 primary-button">
               Submit Consent
             </button>
             <button
