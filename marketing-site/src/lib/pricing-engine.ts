@@ -344,7 +344,8 @@ export function calculateQuote(
     usedCount?: number;
   },
   loyaltyPoints?: number,
-  baseServicePrice?: number // Use database price instead of hardcoded values
+  baseServicePrice?: number, // Use database price instead of hardcoded values
+  unitPrice?: number // Use database unit price for quantity-based pricing
 ): QuoteResult {
   // Determine service type from property type (needed for after-hours surcharge)
   const serviceTypeMap: Record<string, string> = {
@@ -359,8 +360,15 @@ export function calculateQuote(
   // Use database price if provided, otherwise fall back to hardcoded pricing
   let basePrice: number;
   if (baseServicePrice !== undefined && baseServicePrice > 0) {
-    // Use database pricing - flat rate per service
-    basePrice = baseServicePrice;
+    // Use database pricing with quantity-based calculation
+    if (unitPrice && unitPrice > 0) {
+      // Calculate: basePrice + (quantity * unitPrice)
+      // For residential: quantity = bedrooms, so 1 bedroom = basePrice, 2 bedrooms = basePrice + unitPrice
+      basePrice = baseServicePrice + ((request.quantity - 1) * unitPrice);
+    } else {
+      // Flat rate pricing (no unit price)
+      basePrice = baseServicePrice;
+    }
   } else {
     // Fallback to hardcoded pricing (for backward compatibility)
     basePrice = calculateBasePrice(serviceType, request.quantity);

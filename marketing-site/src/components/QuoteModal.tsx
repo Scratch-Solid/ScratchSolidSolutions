@@ -150,6 +150,7 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
 
       // Pass the actual service price from database to pricing engine
       const baseServicePrice = row?.price || 0;
+      const unitPrice = row?.unit_price || 0;
 
       const promoData = promoResult?.valid ? {
         discountType: promoResult.discount_type || 'percentage',
@@ -160,7 +161,7 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
       } : undefined;
 
       try {
-        const result = calculateQuote(request, specialPricing, promoData, loyaltyPoints, baseServicePrice);
+        const result = calculateQuote(request, specialPricing, promoData, loyaltyPoints, baseServicePrice, unitPrice);
         setPricingCalculation(result);
       } catch (error) {
         console.error('Pricing calculation error:', error);
