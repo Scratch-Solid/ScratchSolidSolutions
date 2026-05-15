@@ -343,9 +343,10 @@ export function calculateQuote(
     maxUses?: number;
     usedCount?: number;
   },
-  loyaltyPoints?: number
+  loyaltyPoints?: number,
+  baseServicePrice?: number // Use database price instead of hardcoded values
 ): QuoteResult {
-  // Determine service type from property type
+  // Determine service type from property type (needed for after-hours surcharge)
   const serviceTypeMap: Record<string, string> = {
     'residential': 'residential-standard',
     'office': 'commercial',
@@ -353,11 +354,17 @@ export function calculateQuote(
     'post-construction': 'post-construction',
     'short-term-stay': 'short-term-stay'
   };
-
   const serviceType = serviceTypeMap[request.propertyType] || 'residential-standard';
 
-  // Calculate base price
-  let basePrice = calculateBasePrice(serviceType, request.quantity);
+  // Use database price if provided, otherwise fall back to hardcoded pricing
+  let basePrice: number;
+  if (baseServicePrice !== undefined && baseServicePrice > 0) {
+    // Use database pricing - flat rate per service
+    basePrice = baseServicePrice;
+  } else {
+    // Fallback to hardcoded pricing (for backward compatibility)
+    basePrice = calculateBasePrice(serviceType, request.quantity);
+  }
 
   // Add laundry fee for short-term stay
   if (request.propertyType === 'short-term-stay') {

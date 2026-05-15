@@ -136,8 +136,9 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
         bookingDate: undefined // User can select booking date later
       };
 
+      const row = getActivePricingRow(selectedServiceId);
+
       const specialPricing = (() => {
-        const row = getActivePricingRow(selectedServiceId);
         if (!row?.special_price) return undefined;
         return {
           specialPrice: row.special_price,
@@ -146,6 +147,9 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
           specialValidUntil: row.special_valid_until || undefined
         };
       })();
+
+      // Pass the actual service price from database to pricing engine
+      const baseServicePrice = row?.price || 0;
 
       const promoData = promoResult?.valid ? {
         discountType: promoResult.discount_type || 'percentage',
@@ -156,7 +160,7 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
       } : undefined;
 
       try {
-        const result = calculateQuote(request, specialPricing, promoData, loyaltyPoints);
+        const result = calculateQuote(request, specialPricing, promoData, loyaltyPoints, baseServicePrice);
         setPricingCalculation(result);
       } catch (error) {
         console.error('Pricing calculation error:', error);
