@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { logSessionActivity } from '@/lib/session-activity-logger';
 import { getGeolocation } from '@/lib/geolocation-tracker';
 import { generateDeviceFingerprint, parseUserAgent } from '@/lib/device-fingerprint';

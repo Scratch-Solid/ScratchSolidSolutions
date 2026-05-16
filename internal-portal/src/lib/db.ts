@@ -2,7 +2,7 @@
 // Both marketing-site and internal-portal use this same pattern
 
 import { D1Database } from '@cloudflare/workers-types';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 
