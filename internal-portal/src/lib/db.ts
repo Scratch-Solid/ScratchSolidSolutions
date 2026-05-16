@@ -226,13 +226,85 @@ export async function createCleanerProfile(db: D1Database, data: {
   return result;
 }
 
+// Initialize cleaner_profiles table if it doesn't exist
+export async function initializeCleanerProfilesTable(db: D1Database) {
+  try {
+    await db.prepare(`
+      CREATE TABLE IF NOT EXISTS cleaner_profiles (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        username TEXT NOT NULL UNIQUE,
+        paysheet_code TEXT,
+        first_name TEXT,
+        last_name TEXT,
+        department TEXT DEFAULT 'cleaning',
+        status TEXT DEFAULT 'idle',
+        profile_picture TEXT,
+        bio TEXT,
+        specialties TEXT,
+        phone TEXT,
+        address TEXT,
+        residential_address TEXT,
+        cellphone TEXT,
+        tax_number TEXT,
+        emergency_contact1_name TEXT,
+        emergency_contact1_phone TEXT,
+        emergency_contact2_name TEXT,
+        emergency_contact2_phone TEXT,
+        gps_lat REAL,
+        gps_long REAL,
+        weekday_rate REAL DEFAULT 150,
+        weekend_rate REAL DEFAULT 225,
+        deductions REAL DEFAULT 0,
+        updated_at TEXT,
+        created_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )
+    `).run();
+    return true;
+  } catch (error) {
+    console.error('Failed to initialize cleaner_profiles table:', error);
+    return false;
+  }
+}
+
 export async function updateCleanerProfile(db: D1Database, username: string, data: Record<string, any>) {
-  const ALLOWED_FIELDS = ['first_name', 'last_name', 'department', 'paysheet_code', 'profile_picture', 'bio', 'specialties', 'phone', 'address'];
-  const fields = Object.keys(data).filter(k => ALLOWED_FIELDS.includes(k));
+  // Map frontend field names to database column names
+  const fieldMap: Record<string, string> = {
+    'firstName': 'first_name',
+    'lastName': 'last_name',
+    'cellphoneNumber': 'cellphone',
+    'taxNumber': 'tax_number',
+    'emergencyContact1': 'emergency_contact1',
+    'emergencyContact2': 'emergency_contact2'
+  };
+
+  const ALLOWED_FIELDS = ['first_name', 'last_name', 'department', 'paysheet_code', 'profile_picture', 'bio', 'specialties', 'phone', 'address', 'residential_address', 'cellphone', 'tax_number', 'emergency_contact1_name', 'emergency_contact1_phone', 'emergency_contact2_name', 'emergency_contact2_phone'];
+  
+  // Map frontend field names to database column names and filter
+  const mappedData: Record<string, any> = {};
+  Object.keys(data).forEach(key => {
+    const dbKey = fieldMap[key] || key;
+    if (ALLOWED_FIELDS.includes(dbKey)) {
+      mappedData[dbKey] = data[key];
+    }
+  });
+
+  // Handle emergency contact objects
+  if (data.emergencyContact1 && typeof data.emergencyContact1 === 'object') {
+    mappedData.emergency_contact1_name = data.emergencyContact1.name;
+    mappedData.emergency_contact1_phone = data.emergencyContact1.number;
+  }
+  if (data.emergencyContact2 && typeof data.emergencyContact2 === 'object') {
+    mappedData.emergency_contact2_name = data.emergencyContact2.name;
+    mappedData.emergency_contact2_phone = data.emergencyContact2.number;
+  }
+
+  const fields = Object.keys(mappedData);
   if (fields.length === 0) return null;
   
   const setClause = fields.map(f => `${f} = ?`).join(', ');
-  const values = fields.map(f => data[f]);
+  const values = fields.map(f => mappedData[f]);
   values.push(username);
   
   const result = await db.prepare(
