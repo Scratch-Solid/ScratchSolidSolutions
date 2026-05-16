@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, revokeAllUserSessions, logAuditEvent } from '@/lib/db';
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 import { withAuth, withTracing, withSecurityHeaders, withRateLimit } from '@/lib/middleware';
 
 export async function POST(request: NextRequest) {

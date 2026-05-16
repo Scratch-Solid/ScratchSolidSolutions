@@ -4,7 +4,7 @@ import { getDb, getPendingContracts, createPendingContract, updatePendingContrac
 import { withAuth, withSecurityHeaders, withTracing, withRateLimit, withCsrf } from "../../../lib/middleware";
 import { validatePhone, validateSaIdNumber, validateSaPassport } from "../../../lib/validation";
 import { sanitizeRequestBody } from '@/lib/sanitization';
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 
 export async function GET(request: NextRequest) {
   const traceId = withTracing(request);

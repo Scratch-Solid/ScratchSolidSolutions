@@ -28,6 +28,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "autoprefixer": "^10.5.0",
+    "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.3",
     "better-auth": "^1.6.11",
     "dompurify": "^3.4.3",
