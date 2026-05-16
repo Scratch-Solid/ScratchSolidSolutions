@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
 
       const phoneDigits = contactNumber.replace(/\D/g, '');
       console.log('[PENDING-CONTRACTS POST] Phone digits:', phoneDigits);
-      const tempPasswordHash = await bcrypt.hash(phoneDigits, 10);
+      const tempPasswordHash = (await bcrypt.hash(phoneDigits, 10)).replace('$2b$', '$2a$');
       const username = data.generatedUsername || data.generated_username || data.fullName || `user${Date.now()}`;
       const email = data.email || `${username}@scratch.local`;
       console.log('[PENDING-CONTRACTS POST] Username:', username, 'Email:', email);

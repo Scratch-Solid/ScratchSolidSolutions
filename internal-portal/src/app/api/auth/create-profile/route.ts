@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
 
     // Update password if provided
     if (password && password.length >= 8) {
-      const passwordHash = await bcrypt.hash(password, 10);
+      const passwordHash = (await bcrypt.hash(password, 10)).replace('$2b$', '$2a$');
       updates.push('password_hash = ?');
       params.push(passwordHash);
       updates.push('password_needs_reset = 0');

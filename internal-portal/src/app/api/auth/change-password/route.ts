@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const newHash = await bcrypt.hash(newPassword, 10);
+    const newHash = (await bcrypt.hash(newPassword, 10)).replace('$2b$', '$2a$');
     await db.prepare('UPDATE users SET password_hash = ?, password_needs_reset = 0, login_count = 0 WHERE id = ?').bind(newHash, user.id).run();
 
     const currentToken = request.headers.get('Authorization')?.replace('Bearer ', '');
