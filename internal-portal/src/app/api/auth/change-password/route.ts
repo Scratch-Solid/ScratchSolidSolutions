@@ -21,7 +21,6 @@ export async function POST(request: NextRequest) {
     const { currentPassword, newPassword } = body;
 
     console.log('[CHANGE-PASSWORD] User ID:', user.id);
-    console.log('[CHANGE-PASSWORD] Current password provided:', currentPassword);
     console.log('[CHANGE-PASSWORD] Current password length:', currentPassword?.length);
 
     if (!currentPassword || !newPassword) {
