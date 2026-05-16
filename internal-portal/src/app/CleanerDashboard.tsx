@@ -325,7 +325,7 @@ export default function CleanerDashboard() {
                   className="w-full"
                 />
                 {profileData.profilePicture && (
-                  <img src={profileData.profilePicture} alt="Profile" className="w-24 h-24 rounded-full border mt-2" style={{ borderColor: 'var(--border)' }} />
+                  <img src={profileData.profilePicture} alt="Profile" className="w-12 h-12 rounded-full border mt-2" style={{ borderColor: 'var(--border)' }} />
                 )}
               </div>
 
@@ -422,7 +422,7 @@ export default function CleanerDashboard() {
             <div className="space-y-3">
               <div className="flex items-center gap-4">
                 {profileData.profilePicture && (
-                  <img src={profileData.profilePicture} alt="Profile" className="w-24 h-24 rounded-full border" style={{ borderColor: 'var(--border)' }} />
+                  <img src={profileData.profilePicture} alt="Profile" className="w-12 h-12 rounded-full border" style={{ borderColor: 'var(--border)' }} />
                 )}
                 <div>
                   <div className="text-xl font-bold" style={{ color: 'var(--text-h)' }}>{profileData.firstName} {profileData.lastName}</div>
