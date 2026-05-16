@@ -224,56 +224,61 @@ export default function CleanerDashboard() {
     window.location.href = '/auth/login';
   };
 
-  if (loading) return <DashboardLayout title="Cleaner Dashboard" role="cleaner"><div className="text-white">Loading...</div></DashboardLayout>;
-  if (error) return <DashboardLayout title="Cleaner Dashboard" role="cleaner"><div className="error-msg text-white">{error}</div></DashboardLayout>;
-  if (!cleaner) return <DashboardLayout title="Cleaner Dashboard" role="cleaner"><div className="text-white">No data found.</div></DashboardLayout>;
+  if (loading) return <DashboardLayout title="Cleaner Dashboard" role="cleaner"><div className="glass-panel text-center" style={{ color: 'var(--text)' }}>Loading...</div></DashboardLayout>;
+  if (error) return <DashboardLayout title="Cleaner Dashboard" role="cleaner"><div className="error-msg">{error}</div></DashboardLayout>;
+  if (!cleaner) return <DashboardLayout title="Cleaner Dashboard" role="cleaner"><div className="glass-panel text-center" style={{ color: 'var(--text)' }}>No data found.</div></DashboardLayout>;
 
   return (
     <DashboardLayout title="Cleaner Dashboard" role="cleaner">
       {mustChangePassword && (
-        <div className="mb-4 bg-yellow-100 text-yellow-900 px-4 py-3 rounded border border-yellow-300">
-          <div className="font-bold">Action required</div>
-          <div>Please update your password to continue using the portal.</div>
+        <div className="mb-4 glass-panel" style={{ background: 'rgba(254, 249, 195, 0.9)', borderColor: 'rgba(234, 179, 8, 0.4)' }}>
+          <div className="font-bold" style={{ color: '#854d0e' }}>Action required</div>
+          <div style={{ color: '#854d0e' }}>Please update your password to continue using the portal.</div>
           <button className="mt-2 primary-button" onClick={() => window.location.href = '/auth/change-password'}>
             Change Password
           </button>
         </div>
       )}
       {/* Tile Navigation */}
-      <div className="mb-6 flex space-x-2 border-b border-white/20 pb-2">
+      <div className="mb-6 flex space-x-2 border-b pb-2" style={{ borderColor: 'rgba(12, 37, 74, 0.12)' }}>
         <button
           onClick={() => setActiveTile("profile")}
-          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTile === "profile" ? "bg-white/20 text-white" : "bg-white/10 text-white/70 hover:bg-white/15"}`}
+          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTile === "profile" ? "bg-white/20" : "bg-white/10 hover:bg-white/15"}`}
+          style={{ color: activeTile === "profile" ? '#09172a' : '#0e223a' }}
         >
           Personal Details
         </button>
         <button
           onClick={() => setActiveTile("status")}
-          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTile === "status" ? "bg-white/20 text-white" : "bg-white/10 text-white/70 hover:bg-white/15"}`}
+          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTile === "status" ? "bg-white/20" : "bg-white/10 hover:bg-white/15"}`}
+          style={{ color: activeTile === "status" ? '#09172a' : '#0e223a' }}
         >
           Status
         </button>
         <button
           onClick={() => setActiveTile("tasks")}
-          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTile === "tasks" ? "bg-white/20 text-white" : "bg-white/10 text-white/70 hover:bg-white/15"}`}
+          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTile === "tasks" ? "bg-white/20" : "bg-white/10 hover:bg-white/15"}`}
+          style={{ color: activeTile === "tasks" ? '#09172a' : '#0e223a' }}
         >
           Tasks
         </button>
         <button
           onClick={() => setActiveTile("earnings")}
-          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTile === "earnings" ? "bg-white/20 text-white" : "bg-white/10 text-white/70 hover:bg-white/15"}`}
+          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTile === "earnings" ? "bg-white/20" : "bg-white/10 hover:bg-white/15"}`}
+          style={{ color: activeTile === "earnings" ? '#09172a' : '#0e223a' }}
         >
           Earnings
         </button>
       </div>
 
       {activeTile === "profile" && (
-        <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
+        <div className="glass-card p-6">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="font-bold text-lg text-white">Personal Details</h3>
+            <h3 className="font-bold text-lg" style={{ color: 'var(--text-h)' }}>Personal Details</h3>
             <button
               onClick={() => setEditingProfile(!editingProfile)}
-              className="bg-white/20 hover:bg-white/30 text-white px-3 py-1 text-sm rounded border border-white/30 transition-all"
+              className="bg-white/20 hover:bg-white/30 px-3 py-1 text-sm rounded border transition-all"
+              style={{ color: 'var(--text)', borderColor: 'rgba(12, 37, 74, 0.12)' }}
             >
               {editingProfile ? "Cancel" : "Edit Profile"}
             </button>
@@ -283,7 +288,7 @@ export default function CleanerDashboard() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold mb-2">First Name</label>
+                  <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--text)' }}>First Name</label>
                   <input
                     type="text"
                     value={profileData.firstName}
@@ -292,7 +297,7 @@ export default function CleanerDashboard() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold mb-2">Last Name</label>
+                  <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--text)' }}>Last Name</label>
                   <input
                     type="text"
                     value={profileData.lastName}
@@ -303,7 +308,7 @@ export default function CleanerDashboard() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold mb-2">Profile Picture</label>
+                <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--text)' }}>Profile Picture</label>
                 <input
                   type="file"
                   accept="image/*"
@@ -320,12 +325,12 @@ export default function CleanerDashboard() {
                   className="w-full"
                 />
                 {profileData.profilePicture && (
-                  <img src={profileData.profilePicture} alt="Profile" className="w-24 h-24 rounded-full border mt-2" />
+                  <img src={profileData.profilePicture} alt="Profile" className="w-24 h-24 rounded-full border mt-2" style={{ borderColor: 'var(--border)' }} />
                 )}
               </div>
 
               <div>
-                <label className="block text-sm font-semibold mb-2">Address</label>
+                <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--text)' }}>Address</label>
                 <input
                   type="text"
                   value={profileData.address}
@@ -335,7 +340,7 @@ export default function CleanerDashboard() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold mb-2">Cellphone Number</label>
+                <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--text)' }}>Cellphone Number</label>
                 <input
                   type="tel"
                   value={profileData.cellphoneNumber}
@@ -345,7 +350,7 @@ export default function CleanerDashboard() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold mb-2">Tax Number</label>
+                <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--text)' }}>Tax Number</label>
                 <input
                   type="text"
                   value={profileData.taxNumber}
@@ -355,7 +360,7 @@ export default function CleanerDashboard() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold mb-2">Emergency Contact 1 - Name</label>
+                <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--text)' }}>Emergency Contact 1 - Name</label>
                 <input
                   type="text"
                   value={profileData.emergencyContact1.name}
@@ -368,7 +373,7 @@ export default function CleanerDashboard() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold mb-2">Emergency Contact 1 - Number</label>
+                <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--text)' }}>Emergency Contact 1 - Number</label>
                 <input
                   type="tel"
                   value={profileData.emergencyContact1.number}
@@ -381,7 +386,7 @@ export default function CleanerDashboard() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold mb-2">Emergency Contact 2 - Name</label>
+                <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--text)' }}>Emergency Contact 2 - Name</label>
                 <input
                   type="text"
                   value={profileData.emergencyContact2.name}
@@ -394,7 +399,7 @@ export default function CleanerDashboard() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold mb-2">Emergency Contact 2 - Number</label>
+                <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--text)' }}>Emergency Contact 2 - Number</label>
                 <input
                   type="tel"
                   value={profileData.emergencyContact2.number}
@@ -417,26 +422,26 @@ export default function CleanerDashboard() {
             <div className="space-y-3">
               <div className="flex items-center gap-4">
                 {profileData.profilePicture && (
-                  <img src={profileData.profilePicture} alt="Profile" className="w-24 h-24 rounded-full border" />
+                  <img src={profileData.profilePicture} alt="Profile" className="w-24 h-24 rounded-full border" style={{ borderColor: 'var(--border)' }} />
                 )}
                 <div>
-                  <div className="text-xl font-bold">{profileData.firstName} {profileData.lastName}</div>
-                  <div className="text-sm text-gray-600">@{username}</div>
+                  <div className="text-xl font-bold" style={{ color: 'var(--text-h)' }}>{profileData.firstName} {profileData.lastName}</div>
+                  <div className="text-sm" style={{ color: 'var(--text)', opacity: 0.6 }}>@{username}</div>
                 </div>
               </div>
-              <div><b>Address:</b> {profileData.address || "Not provided"}</div>
-              <div><b>Cellphone:</b> {profileData.cellphoneNumber || "Not provided"}</div>
-              <div><b>Tax Number:</b> {profileData.taxNumber || "Not provided"}</div>
-              <div><b>Emergency Contact 1:</b> {profileData.emergencyContact1.name || "Not provided"} - {profileData.emergencyContact1.number || "Not provided"}</div>
-              <div><b>Emergency Contact 2:</b> {profileData.emergencyContact2.name || "Not provided"} - {profileData.emergencyContact2.number || "Not provided"}</div>
+              <div style={{ color: 'var(--text)' }}><b>Address:</b> {profileData.address || "Not provided"}</div>
+              <div style={{ color: 'var(--text)' }}><b>Cellphone:</b> {profileData.cellphoneNumber || "Not provided"}</div>
+              <div style={{ color: 'var(--text)' }}><b>Tax Number:</b> {profileData.taxNumber || "Not provided"}</div>
+              <div style={{ color: 'var(--text)' }}><b>Emergency Contact 1:</b> {profileData.emergencyContact1.name || "Not provided"} - {profileData.emergencyContact1.number || "Not provided"}</div>
+              <div style={{ color: 'var(--text)' }}><b>Emergency Contact 2:</b> {profileData.emergencyContact2.name || "Not provided"} - {profileData.emergencyContact2.number || "Not provided"}</div>
             </div>
           )}
         </div>
       )}
 
       {activeTile === "status" && (
-        <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
-          <h3 className="font-bold text-lg text-white mb-4">Current Status</h3>
+        <div className="glass-card p-6">
+          <h3 className="font-bold text-lg mb-4" style={{ color: 'var(--text-h)' }}>Current Status</h3>
           <div className="mb-4">
             <span className={`px-4 py-2 rounded-full text-lg font-semibold ${
               cleanerStatus === 'idle' ? 'bg-gray-100 text-gray-800' :
@@ -451,7 +456,7 @@ export default function CleanerDashboard() {
                cleanerStatus === 'completed' ? 'Completed' : 'Unknown'}
             </span>
           </div>
-          <h4 className="font-semibold mb-2 text-white">Update Status</h4>
+          <h4 className="font-semibold mb-2" style={{ color: 'var(--text)' }}>Update Status</h4>
           <div className="space-y-2">
             <button
               onClick={() => updateCleanerStatus('idle')}
@@ -486,23 +491,24 @@ export default function CleanerDashboard() {
       )}
 
       {activeTile === "tasks" && (
-        <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
-          <h3 className="font-bold text-lg text-white mb-4">Tasks</h3>
+        <div className="glass-card p-6">
+          <h3 className="font-bold text-lg mb-4" style={{ color: 'var(--text-h)' }}>Tasks</h3>
           {tasks.length === 0 ? (
-            <p className="text-white/60">No tasks assigned.</p>
+            <p style={{ color: 'var(--text)', opacity: 0.6 }}>No tasks assigned.</p>
           ) : (
             <ul className="space-y-2">
               {tasks.map((task: any) => (
-                <li key={task.id} className="border border-white/10 rounded p-3 bg-white/5 text-white">
-                  <div><b className="text-white">Customer:</b> {task.customer}</div>
-                  <div><b className="text-white">Date:</b> {task.date}</div>
-                  <div><b className="text-white">Time:</b> {task.time}</div>
-                  <div><b className="text-white">Address:</b> {task.address}</div>
-                  <div><b className="text-white">Status:</b> {task.status}</div>
+                <li key={task.id} className="border rounded p-3 bg-white/5" style={{ borderColor: 'var(--border)' }}>
+                  <div style={{ color: 'var(--text)' }}><b>Customer:</b> {task.customer}</div>
+                  <div style={{ color: 'var(--text)' }}><b>Date:</b> {task.date}</div>
+                  <div style={{ color: 'var(--text)' }}><b>Time:</b> {task.time}</div>
+                  <div style={{ color: 'var(--text)' }}><b>Address:</b> {task.address}</div>
+                  <div style={{ color: 'var(--text)' }}><b>Status:</b> {task.status}</div>
                   {task.status !== 'completed' && (
                     <button
                       onClick={() => updateBookingStatus(task.id.toString(), 'completed')}
-                      className="mt-2 bg-green-500/20 hover:bg-green-500/30 text-green-200 px-3 py-1 rounded border border-green-500/30 transition-all"
+                      className="mt-2 bg-green-500/20 hover:bg-green-500/30 px-3 py-1 rounded border transition-all"
+                      style={{ color: '#15803d', borderColor: 'rgba(22, 163, 74, 0.3)' }}
                     >
                       Mark Complete
                     </button>
@@ -515,12 +521,12 @@ export default function CleanerDashboard() {
       )}
 
       {activeTile === "earnings" && (
-        <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
-          <h3 className="font-bold text-lg text-white mb-4">Earnings</h3>
-          <div className="text-white">
+        <div className="glass-card p-6">
+          <h3 className="font-bold text-lg mb-4" style={{ color: 'var(--text-h)' }}>Earnings</h3>
+          <div style={{ color: 'var(--text)' }}>
             <p className="text-2xl font-bold">R{cleaner?.totalEarnings || 0}</p>
-            <p className="text-white/60">Total Earnings</p>
-            <p className="mt-2 text-white/60">{cleaner?.completedJobs || 0} jobs completed</p>
+            <p style={{ opacity: 0.6 }}>Total Earnings</p>
+            <p className="mt-2" style={{ opacity: 0.6 }}>{cleaner?.completedJobs || 0} jobs completed</p>
           </div>
         </div>
       )}

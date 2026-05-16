@@ -63,33 +63,32 @@ export default function DashboardLayout({ children, title, role = 'admin' }: Das
   const navItems = getNavItems();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div className="min-h-screen" style={{ background: 'var(--bg)', backgroundAttachment: 'fixed' }}>
       {/* Glassified Header */}
-      <header className="bg-white/10 backdrop-blur-lg border-b border-white/20 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-white">{title}</h1>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="bg-red-500/20 hover:bg-red-500/30 text-red-200 px-4 py-2 rounded-lg border border-red-500/30 transition-all duration-200 backdrop-blur-sm"
-            >
-              Logout
-            </button>
+      <header className="app-header">
+        <div className="app-header-inner">
+          <div className="flex items-center">
+            <h1 className="text-2xl font-bold" style={{ color: 'var(--text-h)' }}>{title}</h1>
           </div>
+          <button
+            onClick={handleLogout}
+            className="secondary-button"
+          >
+            Logout
+          </button>
         </div>
       </header>
 
       {/* Glassified Navigation */}
-      <nav className="bg-white/5 backdrop-blur-lg border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-4 py-3">
+      <nav className="glass-panel mb-6">
+        <div className="app-header-inner py-3">
+          <div className="flex space-x-4">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="text-white/80 hover:text-white hover:bg-white/10 px-3 py-2 rounded-lg transition-all duration-200 backdrop-blur-sm"
+                className="px-3 py-2 rounded-lg transition-all duration-200 hover:bg-white/10"
+                style={{ color: 'var(--text)' }}
               >
                 {item.label}
               </Link>
@@ -99,18 +98,16 @@ export default function DashboardLayout({ children, title, role = 'admin' }: Das
       </nav>
 
       {/* Glassified Content Area */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 shadow-2xl p-6">
+      <main className="app-main">
+        <div className="glass-panel">
           {children}
         </div>
       </main>
 
       {/* Glassified Footer */}
-      <footer className="bg-white/5 backdrop-blur-lg border-t border-white/10 mt-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <p className="text-center text-white/60 text-sm">
-            © 2024 Scratch Solid Solutions. All rights reserved.
-          </p>
+      <footer className="glass-panel mt-8">
+        <div className="text-center py-4" style={{ color: 'var(--text)', opacity: 0.6 }}>
+          © 2024 Scratch Solid Solutions. All rights reserved.
         </div>
       </footer>
     </div>
