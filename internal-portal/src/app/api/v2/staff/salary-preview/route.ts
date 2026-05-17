@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuth } from '@/lib/auth-middleware';
+import { checkAuthAndRole } from '@/lib/auth-middleware';
 
 export async function GET(request: NextRequest) {
-  const user = await withAuth(request);
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const auth = await checkAuthAndRole(request);
+  if (!auth.authenticated) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
-    const staffId = user.id;
+    const staffId = auth.user.id;
     const erpnextUrl = `${process.env.ERPNEXT_URL}/api/resource/Salary Slip?fields=["gross_pay","total_deductions","net_pay","start_date","end_date"]&filters=[["employee","=",${staffId}],["docstatus","=","Submitted"]]&order_by=creation desc&limit=1`;
 
     const response = await fetch(erpnextUrl, {

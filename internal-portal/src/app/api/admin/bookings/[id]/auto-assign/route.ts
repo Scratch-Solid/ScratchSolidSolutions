@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuth } from '@/lib/auth-middleware';
+import { checkAuthAndRole } from '@/lib/auth-middleware';
 import { autoAssignBooking, determinePoolFromServiceType, isValidTimeSlot } from '@/lib/pool-management/pool-assignment';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const user = await withAuth(request);
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const auth = await checkAuthAndRole(request, 'admin');
+  if (!auth.authenticated || !auth.authorized) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const bookingId = parseInt(params.id);
   if (isNaN(bookingId)) {
