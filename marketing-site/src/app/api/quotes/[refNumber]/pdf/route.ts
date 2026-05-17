@@ -4,6 +4,7 @@ import { getDb } from '@/lib/db';
 import { withAuth, withRateLimit, rateLimits } from '@/lib/middleware';
 import jwt from 'jsonwebtoken';
 import { getJWTSecret } from '@/lib/env';
+import { getEstimatePdf } from '@/lib/zoho';
 
 export async function GET(
   request: NextRequest,
@@ -66,7 +67,27 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized - you can only access your own quotes' }, { status: 403 });
     }
 
-    // Generate HTML for PDF
+    // Use Zoho PDF if estimate exists, otherwise fall back to custom HTML
+    const zohoEstimateId = (q.zoho_estimate_id as string) || '';
+    if (zohoEstimateId) {
+      try {
+        const zohoPdf = await getEstimatePdf(zohoEstimateId);
+        const pdfBuffer = await zohoPdf.arrayBuffer();
+        
+        return new NextResponse(pdfBuffer, {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': `attachment; filename="Tax-Invoice-${refNumber}.pdf"`,
+          },
+        });
+      } catch (zohoError) {
+        console.error('Zoho PDF fetch failed, falling back to custom HTML:', zohoError);
+        // Fall back to custom HTML if Zoho fails
+      }
+    }
+
+    // Fallback: Generate HTML for PDF
     const html = generateQuoteHTML(q);
 
     // Return HTML that can be converted to PDF

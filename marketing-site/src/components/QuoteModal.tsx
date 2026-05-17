@@ -94,6 +94,10 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
   const [loyaltyPoints, setLoyaltyPoints] = useState(0);
   const availableAreas = getAvailableAreas();
   
+  // VAT registration state for business users
+  const [vatRegistered, setVatRegistered] = useState(false);
+  const [vatNumber, setVatNumber] = useState('');
+  
   // Quote history state
   const [quotes, setQuotes] = useState<any[]>([]);
   const [quotesLoading, setQuotesLoading] = useState(false);
@@ -316,6 +320,9 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
           after_hours_surcharge: pricingCalculation.afterHoursSurcharge,
           demand_multiplier: pricingCalculation.demandMultiplier,
           final_price: pricingCalculation.finalPrice,
+          client_type: clientType,
+          vat_registered: vatRegistered,
+          vat_number: vatNumber,
         }),
       });
       const data = await res.json() as QuoteResult & { error?: string };
@@ -540,6 +547,39 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
                     </button>
                   </div>
                 </div>
+
+                {/* VAT registration for business users */}
+                {clientType === 'business' && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                    <div className="flex items-center gap-3 mb-3">
+                      <input
+                        type="checkbox"
+                        id="vatRegistered"
+                        checked={vatRegistered}
+                        onChange={(e) => setVatRegistered(e.target.checked)}
+                        className="w-5 h-5 text-blue-600 rounded focus:ring-blue-400"
+                      />
+                      <label htmlFor="vatRegistered" className="text-sm font-semibold text-gray-700">
+                        Business registered for VAT?
+                      </label>
+                    </div>
+                    {vatRegistered && (
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-1">VAT Registration Number</label>
+                        <input
+                          type="text"
+                          value={vatNumber}
+                          onChange={(e) => setVatNumber(e.target.value.toUpperCase())}
+                          placeholder="e.g., 1234567890"
+                          className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          15% VAT will be added to generate a legal Tax Invoice
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Property Type <span className="text-red-500">*</span></label>

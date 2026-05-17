@@ -5,6 +5,7 @@ import { withRateLimit, rateLimits } from '@/lib/middleware';
 import { sanitizeText, sanitizeEmail, sanitizePhone } from '@/lib/sanitization';
 import { validateEmail } from '@/lib/validation';
 import { logAuditEvent } from '@/lib/audit';
+import { findOrCreateContact, createEstimate } from '@/lib/zoho';
 
 export async function POST(request: NextRequest) {
   // Rate limiting - prevent abuse
@@ -36,10 +37,22 @@ export async function POST(request: NextRequest) {
       service_id?: number;
       quantity?: number;
       promo_code?: string;
+      client_type?: string;
+      vat_registered?: boolean;
+      vat_number?: string;
+      property_type?: string;
+      area?: string;
+      baseline_price?: number;
+      transport_fee?: number;
+      after_hours_surcharge?: number;
+      demand_multiplier?: number;
+      special_discount?: number;
+      promo_discount?: number;
+      loyalty_discount?: number;
     };
 
     const {
-      name, email, phone, service_id, quantity, promo_code
+      name, email, phone, service_id, quantity, promo_code, client_type, vat_registered, vat_number, property_type, area, baseline_price, transport_fee, after_hours_surcharge, demand_multiplier, special_discount, promo_discount, loyalty_discount
     } = body;
 
     // Validate required fields
@@ -140,14 +153,17 @@ export async function POST(request: NextRequest) {
           `INSERT INTO quote_requests
             (ref_number, name, email, phone, service_id, service_name, quantity,
              baseline_price, promo_code, discount_type, discount_value, discount_amount,
-             final_price, status, valid_until, created_at, updated_at, client_type)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'), 'individual')`
+             final_price, status, valid_until, created_at, updated_at, client_type, vat_registered, vat_number)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'), ?, ?, ?)`
         ).bind(
           refNumber,
           sanitizedName, sanitizedEmail, sanitizedPhone,
           service_id, serviceName, sanitizedQuantity,
           baseline_price, sanitizedPromoCode, discount_type || '', discount_value || 0,
-          discount_amount || 0, final_price, 'pending', validUntil
+          discount_amount || 0, final_price, 'pending', validUntil,
+          client_type || 'individual',
+          vat_registered ? 1 : 0,
+          vat_number || ''
         ).run();
 
         quoteId = result.meta.last_row_id;
@@ -174,6 +190,37 @@ export async function POST(request: NextRequest) {
       ).bind(sanitizedPromoCode).run();
     }
 
+    // Create Zoho estimate (non-blocking - quote creation succeeds even if Zoho fails)
+    let zohoEstimateId = '';
+    let zohoEstimateNumber = '';
+    try {
+      const contactId = await findOrCreateContact(sanitizedName, sanitizedEmail, sanitizedPhone);
+      if (contactId) {
+        const zohoResult = await createEstimate({
+          contactId,
+          serviceName,
+          baselinePrice: baseline_price || 0,
+          discountAmount: discount_amount || 0,
+          finalPrice: final_price || 0,
+          promoCode: sanitizedPromoCode,
+          refNumber,
+          expiryDays: 30
+        });
+        if (zohoResult.estimate) {
+          zohoEstimateId = zohoResult.estimate.estimate_id;
+          zohoEstimateNumber = zohoResult.estimate.estimate_number;
+          // Update quote with Zoho estimate info
+          await db.prepare(
+            `UPDATE quote_requests SET zoho_estimate_id = ?, zoho_estimate_number = ?, updated_at = datetime('now')
+             WHERE id = ?`
+          ).bind(zohoEstimateId, zohoEstimateNumber, quoteId).run();
+        }
+      }
+    } catch (zohoError) {
+      console.error('Zoho estimate creation failed (non-blocking):', zohoError);
+      // Continue - quote creation succeeded
+    }
+
     // Log audit event for quote creation
     const clientIp = request.headers.get('x-forwarded-for') || request.headers.get('cf-connecting-ip') || '';
     await logAuditEvent({
@@ -194,7 +241,8 @@ export async function POST(request: NextRequest) {
       },
       metadata: {
         quantity: sanitizedQuantity,
-        client_type: 'individual',
+        client_type: client_type || 'individual',
+        vat_registered: vat_registered || false,
       },
     });
 
@@ -202,7 +250,7 @@ export async function POST(request: NextRequest) {
       success: true,
       id: quoteId,
       ref_number: refNumber,
-      zoho_estimate_number: '',
+      zoho_estimate_number: zohoEstimateNumber,
       name: sanitizedName,
       email: sanitizedEmail,
       phone: sanitizedPhone,
@@ -213,6 +261,8 @@ export async function POST(request: NextRequest) {
       discount_value: discount_value || 0,
       discount_amount: discount_amount || 0,
       final_price,
+      client_type: client_type || 'individual',
+      vat_registered: vat_registered || false,
     }, { status: 201 });
   } catch (error) {
     console.error('Error creating quote:', error);
