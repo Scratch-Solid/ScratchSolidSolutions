@@ -41,33 +41,35 @@ jobs:
     name: Deploy Internal Portal to Staging
     runs-on: ubuntu-latest
     environment: staging
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-    
+
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '22'
-        cache: 'npm'
+        node-version: 20
+        cache: npm
         cache-dependency-path: internal-portal/package-lock.json
-    
+
     - name: Install dependencies
       working-directory: ./internal-portal
-      run: npm ci
-    
-    - name: Build
+      run: npm ci --legacy-peer-deps
+
+    - name: Build with OpenNext
       working-directory: ./internal-portal
-      run: npm run cloudflare-build
-    
+      run: npx opennextjs-cloudflare build
+      env:
+        CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
     - name: Deploy to Cloudflare Workers (Staging)
-      uses: cloudflare/wrangler-action@v3
-      with:
-        apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        command: deploy --env staging
-        workingDirectory: internal-portal
-        wranglerVersion: 4.91.0
+      working-directory: ./internal-portal
+      run: npx wrangler deploy --env staging
+      env:
+        CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
   deploy-backend-worker-staging:
     name: Deploy Backend Worker to Staging
