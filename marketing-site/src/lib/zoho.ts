@@ -134,3 +134,40 @@ export async function getEstimatePdf(estimateId: string): Promise<Response> {
     },
   });
 }
+
+export async function getCustomerStatementPdf(contactId: string): Promise<Response> {
+  const token = await getZohoToken();
+  return fetch(`https://books.zoho.com/api/v3/contacts/${contactId}/statements?accept=pdf`, {
+    headers: {
+      'Authorization': `Zoho-oauthtoken ${token}`,
+      'X-com-zoho-books-organizationid': ZOHO_ORG_ID,
+    },
+  });
+}
+
+export async function getCustomerStatement(contactId: string, startDate?: string, endDate?: string) {
+  const token = await getZohoToken();
+  let url = `https://books.zoho.com/api/v3/contacts/${contactId}/statements`;
+  const params = new URLSearchParams();
+  if (startDate) params.append('start_date', startDate);
+  if (endDate) params.append('end_date', endDate);
+  if (params.toString()) url += `?${params.toString()}`;
+  
+  const response = await fetch(url, {
+    headers: {
+      'Authorization': `Zoho-oauthtoken ${token}`,
+      'X-com-zoho-books-organizationid': ZOHO_ORG_ID,
+    },
+  });
+  return response.json();
+}
+
+export async function getInvoicePdf(invoiceId: string): Promise<Response> {
+  const token = await getZohoToken();
+  return fetch(`https://books.zoho.com/api/v3/invoices/${invoiceId}?accept=pdf`, {
+    headers: {
+      'Authorization': `Zoho-oauthtoken ${token}`,
+      'X-com-zoho-books-organizationid': ZOHO_ORG_ID,
+    },
+  });
+}
