@@ -382,7 +382,13 @@ export default function BusinessDashboard() {
               {/* Assigned Cleaner Profile */}
               {assignedCleaner && (
                 <div className="bg-white rounded-lg p-6 border border-gray-200">
-                  <h3 className="font-semibold text-lg text-gray-800 mb-4">Your Assigned Cleaner</h3>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold text-lg text-gray-800">Your Assigned Cleaner</h3>
+                    <div className="flex items-center gap-2 px-3 py-1 bg-green-50 border border-green-200 rounded-full">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span className="text-xs font-medium text-green-700">POPIA Compliant</span>
+                    </div>
+                  </div>
                   <div className="flex items-start space-x-6">
                     <div className="flex-shrink-0">
                       {assignedCleaner.image_url ? (
@@ -453,6 +459,19 @@ export default function BusinessDashboard() {
                 </div>
               )}
               
+              {/* POPIA Compliance Notice */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <div className="text-blue-600 text-xl">🔒</div>
+                  <div>
+                    <h4 className="font-semibold text-blue-800 mb-1">Privacy Protected</h4>
+                    <p className="text-sm text-blue-700">
+                      Your cleaner's personal information (surname, contact details, address) is protected under POPIA. Only their first name, profile picture, and rating are displayed for your safety and privacy.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               {/* Booking Options */}
               <div className="p-4 bg-blue-50 rounded-lg">
                 <h3 className="font-semibold text-lg text-blue-700 mb-2">Book Cleaning Service</h3>

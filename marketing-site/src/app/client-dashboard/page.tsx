@@ -29,8 +29,8 @@ export default function ClientDashboard() {
   const [paymentError, setPaymentError] = useState(false);
   const [cleanerUnavailable, setCleanerUnavailable] = useState(false);
   
-  // New features state - POPIA compliant
-  const [assignedCleaner, setAssignedCleaner] = useState<{ profilePicture?: string; fullName?: string; address?: string; cellphoneNumber?: string; [key: string]: any } | null>(null);
+  // New features state - POPIA compliant (only first name, profile picture, rating displayed)
+  const [assignedCleaner, setAssignedCleaner] = useState<{ profilePicture?: string; firstName?: string; rating?: number; specialties?: string[]; status?: string; [key: string]: any } | null>(null);
   const [zohoStatements, setZohoStatements] = useState<any[]>([]);
   const [zohoInvoices, setZohoInvoices] = useState<any[]>([]);
   const [reviewImages, setReviewImages] = useState<string[]>([]);
@@ -92,7 +92,7 @@ export default function ClientDashboard() {
           const cleanersData = await cleanersRes.json() as any[];
           setAvailableCleaners(cleanersData.map((c: any) => ({
             id: c.user_id,
-            name: `${c.first_name || ''} ${c.last_name || ''}`.trim() || c.username,
+            name: c.first_name || c.username, // POPIA compliance: only first name
             rating: c.rating || 0,
             specialties: JSON.parse(c.specialties || '[]'),
             available: c.status === 'idle'
@@ -495,7 +495,13 @@ export default function ClientDashboard() {
               {/* Assigned Cleaner Profile - MOVED TO TOP */}
               {assignedCleaner && (
                 <div className="bg-white rounded-lg p-6 border border-gray-200">
-                  <h3 className="font-semibold text-lg text-gray-800 mb-4">Your Assigned Cleaner</h3>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold text-lg text-gray-800">Your Assigned Cleaner</h3>
+                    <div className="flex items-center gap-2 px-3 py-1 bg-green-50 border border-green-200 rounded-full">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span className="text-xs font-medium text-green-700">POPIA Compliant</span>
+                    </div>
+                  </div>
                   <div className="flex items-start space-x-6">
                     <div className="flex-shrink-0">
                       <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
@@ -539,6 +545,19 @@ export default function ClientDashboard() {
                   </div>
                 </div>
               )}
+
+              {/* POPIA Compliance Notice */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <div className="text-blue-600 text-xl">🔒</div>
+                  <div>
+                    <h4 className="font-semibold text-blue-800 mb-1">Privacy Protected</h4>
+                    <p className="text-sm text-blue-700">
+                      Your cleaner's personal information (surname, contact details, address) is protected under POPIA. Only their first name, profile picture, and rating are displayed for your safety and privacy.
+                    </p>
+                  </div>
+                </div>
+              </div>
 
               {/* Stats Overview */}
               <div className="grid grid-cols-1 md:grid-cols-1 gap-4">

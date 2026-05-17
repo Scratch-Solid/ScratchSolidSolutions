@@ -9,6 +9,462 @@ import DashboardLayout from "@/components/DashboardLayout";
 import ServicesManagement from "./AdminDashboard/services-management";
 import CleanerVisibility from "./AdminDashboard/cleaner-visibility";
 
+function ProxyObserver() {
+  const [activeSession, setActiveSession] = useState<any>(null);
+  const [targetUserId, setTargetUserId] = useState('');
+  const [targetUserRole, setTargetUserRole] = useState<'client' | 'cleaner' | 'business'>('client');
+  const [sessionHistory, setSessionHistory] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    fetchSessionHistory();
+  }, []);
+
+  const fetchSessionHistory = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch('/api/admin/proxy-observer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ action: 'view' })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setSessionHistory(data.history || []);
+      }
+    } catch (error) {
+      setMessage('Failed to fetch session history');
+    }
+  };
+
+  const handleStartSession = async () => {
+    if (!targetUserId) {
+      setMessage('Please select a target user');
+      return;
+    }
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch('/api/admin/proxy-observer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          action: 'start',
+          targetUserId: parseInt(targetUserId)
+        })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setActiveSession(data.session);
+        setMessage('Proxy session started');
+        fetchSessionHistory();
+      } else {
+        setMessage('Failed to start proxy session');
+      }
+    } catch (error) {
+      setMessage('Failed to start proxy session');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEndSession = async () => {
+    if (!activeSession) return;
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch('/api/admin/proxy-observer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          action: 'end',
+          sessionId: activeSession.sessionId
+        })
+      });
+      if (response.ok) {
+        setActiveSession(null);
+        setMessage('Proxy session ended');
+        fetchSessionHistory();
+      } else {
+        setMessage('Failed to end proxy session');
+      }
+    } catch (error) {
+      setMessage('Failed to end proxy session');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-white">Proxy Observer State Engine</h2>
+        {message && (
+          <div className={`px-4 py-2 rounded-lg ${message.includes('success') || message.includes('started') || message.includes('ended') ? 'bg-green-500/20 text-green-200' : 'bg-red-500/20 text-red-200'}`}>
+            {message}
+          </div>
+        )}
+      </div>
+
+      {/* Session Control Panel */}
+      <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
+        <h3 className="text-lg font-bold text-white mb-4">Dashboard Projection Matrix</h3>
+        <div className="grid grid-cols-3 gap-4 mb-4">
+          <div>
+            <label className="block text-white/80 text-sm mb-2">Target User Role</label>
+            <select
+              value={targetUserRole}
+              onChange={(e) => setTargetUserRole(e.target.value as any)}
+              className="w-full bg-white/20 border border-white/30 rounded px-3 py-2 text-white"
+            >
+              <option value="client">Client</option>
+              <option value="business">Business</option>
+              <option value="cleaner">Cleaner</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-white/80 text-sm mb-2">Target User ID</label>
+            <input
+              type="text"
+              value={targetUserId}
+              onChange={(e) => setTargetUserId(e.target.value)}
+              placeholder="Enter user ID"
+              className="w-full bg-white/20 border border-white/30 rounded px-3 py-2 text-white placeholder-white/50"
+            />
+          </div>
+          <div className="flex items-end gap-2">
+            {!activeSession ? (
+              <button
+                onClick={handleStartSession}
+                disabled={loading || !targetUserId}
+                className="flex-1 bg-blue-500/20 hover:bg-blue-500/30 text-blue-200 px-4 py-2 rounded-lg border border-blue-500/30 transition-all disabled:opacity-50"
+              >
+                {loading ? 'Starting...' : 'Start View As'}
+              </button>
+            ) : (
+              <button
+                onClick={handleEndSession}
+                disabled={loading}
+                className="flex-1 bg-red-500/20 hover:bg-red-500/30 text-red-200 px-4 py-2 rounded-lg border border-red-500/30 transition-all disabled:opacity-50"
+              >
+                {loading ? 'Ending...' : 'End Session'}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Active Session Display */}
+        {activeSession && (
+          <div className="mt-4 p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-green-200 font-semibold">Active Session</span>
+              <span className="text-green-200/60 text-sm">Started: {new Date(activeSession.startedAt).toLocaleString()}</span>
+            </div>
+            <div className="text-white/80 text-sm">
+              Viewing as: {activeSession.targetUserId} ({targetUserRole})
+            </div>
+            <div className="mt-3 p-3 bg-white/5 rounded border border-white/10">
+              <div className="text-white/60 text-xs mb-2">READ-ONLY VIEW</div>
+              <div className="text-white/80 text-sm">
+                This is a simulated view of the target user's dashboard. Actual dashboard rendering would require iframe integration.
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Session History */}
+      <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
+        <h3 className="text-lg font-bold text-white mb-4">Session History (Audit Log)</h3>
+        {sessionHistory.length === 0 ? (
+          <p className="text-white/60">No proxy sessions recorded.</p>
+        ) : (
+          <div className="space-y-2">
+            {sessionHistory.map((session: any) => (
+              <div key={session.id} className="border border-white/10 rounded p-3 bg-white/5">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="text-white font-semibold">Session ID: {session.sessionId}</div>
+                    <div className="text-white/70 text-sm">Target: {session.targetUserId} ({session.targetRole})</div>
+                    <div className="text-white/60 text-xs">Started: {new Date(session.startedAt).toLocaleString()}</div>
+                    {session.endedAt && (
+                      <div className="text-white/60 text-xs">Ended: {new Date(session.endedAt).toLocaleString()}</div>
+                    )}
+                  </div>
+                  <div className={`px-2 py-1 rounded text-xs ${session.status === 'active' ? 'bg-green-500/20 text-green-200' : 'bg-white/10 text-white/60'}`}>
+                    {session.status}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* POPIA Compliance Notice */}
+      <div className="bg-yellow-500/10 backdrop-blur-sm rounded-lg border border-yellow-500/30 p-4">
+        <div className="flex items-start gap-3">
+          <div className="text-yellow-200 text-2xl">⚠️</div>
+          <div>
+            <h4 className="text-yellow-200 font-semibold mb-1">POPIA Compliance Notice</h4>
+            <p className="text-white/70 text-sm">
+              All proxy observer sessions are logged for audit purposes. Access to user data through this feature is monitored and requires proper authorization.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PricingConfiguration() {
+  const [pricingMatrix, setPricingMatrix] = useState<any[]>([]);
+  const [transportFees, setTransportFees] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState('');
+  const [editingCell, setEditingCell] = useState<{id: string, field: string} | null>(null);
+  const [editValue, setEditValue] = useState('');
+
+  useEffect(() => {
+    fetchPricingData();
+  }, []);
+
+  const fetchPricingData = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch('/api/v2/pricing/matrix', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setPricingMatrix(data.pricing || []);
+        setTransportFees(data.transport || []);
+      }
+    } catch (error) {
+      setMessage('Failed to load pricing data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCellEdit = (id: string, field: string, value: string) => {
+    setEditingCell({ id, field });
+    setEditValue(value);
+  };
+
+  const handleCellSave = async () => {
+    if (!editingCell) return;
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch('/api/v2/pricing/matrix', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          serviceType: editingCell.id,
+          [editingCell.field]: parseFloat(editValue)
+        })
+      });
+      if (response.ok) {
+        setMessage('Pricing updated successfully');
+        fetchPricingData();
+      } else {
+        setMessage('Failed to update pricing');
+      }
+    } catch (error) {
+      setMessage('Failed to update pricing');
+    } finally {
+      setEditingCell(null);
+      setEditValue('');
+      setTimeout(() => setMessage(''), 3000);
+    }
+  };
+
+  if (loading) return <div className="text-white animate-pulse">Loading pricing configuration...</div>;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-white">Dynamic Pricing Matrix</h2>
+        {message && (
+          <div className={`px-4 py-2 rounded-lg ${message.includes('success') ? 'bg-green-500/20 text-green-200' : 'bg-red-500/20 text-red-200'}`}>
+            {message}
+          </div>
+        )}
+      </div>
+
+      {/* Pricing Configuration Grid */}
+      <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
+        <h3 className="text-lg font-bold text-white mb-4">Service Pricing Configuration</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-white">
+            <thead>
+              <tr className="border-b border-white/20">
+                <th className="text-left py-3 px-4">Service Type</th>
+                <th className="text-left py-3 px-4">Base Price (R)</th>
+                <th className="text-left py-3 px-4">Transport Fee (R)</th>
+                <th className="text-left py-3 px-4">Weekend Surcharge (%)</th>
+                <th className="text-left py-3 px-4">Holiday Surcharge (%)</th>
+                <th className="text-left py-3 px-4">Rush Surcharge (%)</th>
+                <th className="text-left py-3 px-4">Last Updated</th>
+              </tr>
+            </thead>
+            <tbody>
+              {pricingMatrix.map((item: any) => (
+                <tr key={item.serviceType} className="border-b border-white/10 hover:bg-white/5">
+                  <td className="py-3 px-4 font-semibold">{item.serviceType}</td>
+                  <td className="py-3 px-4">
+                    {editingCell?.id === item.serviceType && editingCell?.field === 'basePrice' ? (
+                      <input
+                        type="number"
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        onBlur={handleCellSave}
+                        onKeyDown={(e) => e.key === 'Enter' && handleCellSave()}
+                        className="bg-white/20 border border-white/30 rounded px-2 py-1 w-24 text-white"
+                        autoFocus
+                      />
+                    ) : (
+                      <span
+                        className="cursor-pointer hover:text-blue-300"
+                        onClick={() => handleCellEdit(item.serviceType, 'basePrice', item.basePrice?.toString() || '')}
+                      >
+                        R{item.basePrice?.toFixed(2) || '0.00'}
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-3 px-4">
+                    {editingCell?.id === item.serviceType && editingCell?.field === 'transportFee' ? (
+                      <input
+                        type="number"
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        onBlur={handleCellSave}
+                        onKeyDown={(e) => e.key === 'Enter' && handleCellSave()}
+                        className="bg-white/20 border border-white/30 rounded px-2 py-1 w-24 text-white"
+                        autoFocus
+                      />
+                    ) : (
+                      <span
+                        className="cursor-pointer hover:text-blue-300"
+                        onClick={() => handleCellEdit(item.serviceType, 'transportFee', item.transportFee?.toString() || '')}
+                      >
+                        R{item.transportFee?.toFixed(2) || '0.00'}
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-3 px-4">
+                    {editingCell?.id === item.serviceType && editingCell?.field === 'weekendSurcharge' ? (
+                      <input
+                        type="number"
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        onBlur={handleCellSave}
+                        onKeyDown={(e) => e.key === 'Enter' && handleCellSave()}
+                        className="bg-white/20 border border-white/30 rounded px-2 py-1 w-20 text-white"
+                        autoFocus
+                      />
+                    ) : (
+                      <span
+                        className="cursor-pointer hover:text-blue-300"
+                        onClick={() => handleCellEdit(item.serviceType, 'weekendSurcharge', item.weekendSurcharge?.toString() || '')}
+                      >
+                        {item.weekendSurcharge || 0}%
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-3 px-4">
+                    {editingCell?.id === item.serviceType && editingCell?.field === 'holidaySurcharge' ? (
+                      <input
+                        type="number"
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        onBlur={handleCellSave}
+                        onKeyDown={(e) => e.key === 'Enter' && handleCellSave()}
+                        className="bg-white/20 border border-white/30 rounded px-2 py-1 w-20 text-white"
+                        autoFocus
+                      />
+                    ) : (
+                      <span
+                        className="cursor-pointer hover:text-blue-300"
+                        onClick={() => handleCellEdit(item.serviceType, 'holidaySurcharge', item.holidaySurcharge?.toString() || '')}
+                      >
+                        {item.holidaySurcharge || 0}%
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-3 px-4">
+                    {editingCell?.id === item.serviceType && editingCell?.field === 'rushSurcharge' ? (
+                      <input
+                        type="number"
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        onBlur={handleCellSave}
+                        onKeyDown={(e) => e.key === 'Enter' && handleCellSave()}
+                        className="bg-white/20 border border-white/30 rounded px-2 py-1 w-20 text-white"
+                        autoFocus
+                      />
+                    ) : (
+                      <span
+                        className="cursor-pointer hover:text-blue-300"
+                        onClick={() => handleCellEdit(item.serviceType, 'rushSurcharge', item.rushSurcharge?.toString() || '')}
+                      >
+                        {item.rushSurcharge || 0}%
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-3 px-4 text-white/60 text-sm">
+                    {item.lastUpdated ? new Date(item.lastUpdated).toLocaleString() : 'Never'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="mt-4 text-sm text-white/60">
+          Click on any value to edit. Changes are saved immediately and cached for 5 minutes.
+        </div>
+      </div>
+
+      {/* Transport Fees Grid */}
+      <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
+        <h3 className="text-lg font-bold text-white mb-4">Suburb Transport Fees</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-white">
+            <thead>
+              <tr className="border-b border-white/20">
+                <th className="text-left py-3 px-4">Area Name</th>
+                <th className="text-left py-3 px-4">Base Transport Fee (R)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {transportFees.map((item: any) => (
+                <tr key={item.areaName} className="border-b border-white/10 hover:bg-white/5">
+                  <td className="py-3 px-4 font-semibold">{item.areaName}</td>
+                  <td className="py-3 px-4">R{item.baseTransportFee?.toFixed(2) || '0.00'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminDashboard() {
   useSessionTimeout(true);
   const [users, setUsers] = useState([]);
@@ -367,6 +823,18 @@ export default function AdminDashboard() {
         >
           Content
         </button>
+        <button
+          onClick={() => setActiveTab("pricing")}
+          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTab === "pricing" ? "bg-white/20 text-white" : "bg-white/10 text-white/70 hover:bg-white/15"}`}
+        >
+          Pricing
+        </button>
+        <button
+          onClick={() => setActiveTab("proxy-observer")}
+          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTab === "proxy-observer" ? "bg-white/20 text-white" : "bg-white/10 text-white/70 hover:bg-white/15"}`}
+        >
+          Proxy Observer
+        </button>
       </div>
 
       {activeTab === "overview" ? (
@@ -553,6 +1021,10 @@ export default function AdminDashboard() {
         <CleanerVisibility />
       ) : activeTab === "content" ? (
         <ContentManagement />
+      ) : activeTab === "pricing" ? (
+        <PricingConfiguration />
+      ) : activeTab === "proxy-observer" ? (
+        <ProxyObserver />
       ) : null}
     </DashboardLayout>
   );

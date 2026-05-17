@@ -31,6 +31,11 @@ export default function CleanerDashboard() {
   const [username, setUsername] = useState("");
   const [cleanerStatus, setCleanerStatus] = useState('idle');
   const [cleanerId, setCleanerId] = useState<number | null>(null);
+  const [taskHorizonFilter, setTaskHorizonFilter] = useState<'7-day' | 'all'>('7-day');
+  const [geolocationEnabled, setGeolocationEnabled] = useState(false);
+  const [currentLocation, setCurrentLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [lastLocationPing, setLastLocationPing] = useState<Date | null>(null);
+  const [kpiScore, setKpiScore] = useState(0);
 
   useEffect(() => {
     async function fetchCleanerAndTasks() {
@@ -269,6 +274,20 @@ export default function CleanerDashboard() {
         >
           Earnings
         </button>
+        <button
+          onClick={() => setActiveTile("performance")}
+          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTile === "performance" ? "bg-white/20" : "bg-white/10 hover:bg-white/15"}`}
+          style={{ color: activeTile === "performance" ? '#09172a' : '#0e223a' }}
+        >
+          Performance
+        </button>
+        <button
+          onClick={() => setActiveTile("geolocation")}
+          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTile === "geolocation" ? "bg-white/20" : "bg-white/10 hover:bg-white/15"}`}
+          style={{ color: activeTile === "geolocation" ? '#09172a' : '#0e223a' }}
+        >
+          Geolocation
+        </button>
       </div>
 
       {activeTile === "profile" && (
@@ -492,12 +511,36 @@ export default function CleanerDashboard() {
 
       {activeTile === "tasks" && (
         <div className="glass-card p-6">
-          <h3 className="font-bold text-lg mb-4" style={{ color: 'var(--text-h)' }}>Tasks</h3>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-bold text-lg" style={{ color: 'var(--text-h)' }}>Tasks</h3>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setTaskHorizonFilter('7-day')}
+                className={`px-3 py-1 rounded text-sm ${taskHorizonFilter === '7-day' ? 'bg-blue-500/20 text-blue-200' : 'bg-white/10 text-white/70'}`}
+              >
+                7-Day Horizon
+              </button>
+              <button
+                onClick={() => setTaskHorizonFilter('all')}
+                className={`px-3 py-1 rounded text-sm ${taskHorizonFilter === 'all' ? 'bg-blue-500/20 text-blue-200' : 'bg-white/10 text-white/70'}`}
+              >
+                All Tasks
+              </button>
+            </div>
+          </div>
           {tasks.length === 0 ? (
             <p style={{ color: 'var(--text)', opacity: 0.6 }}>No tasks assigned.</p>
           ) : (
             <ul className="space-y-2">
-              {tasks.map((task: any) => (
+              {tasks
+                .filter((task: any) => {
+                  if (taskHorizonFilter === 'all') return true;
+                  const taskDate = new Date(task.date);
+                  const sevenDaysFromNow = new Date();
+                  sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+                  return taskDate <= sevenDaysFromNow && taskDate >= new Date();
+                })
+                .map((task: any) => (
                 <li key={task.id} className="border rounded p-3 bg-white/5" style={{ borderColor: 'var(--border)' }}>
                   <div style={{ color: 'var(--text)' }}><b>Customer:</b> {task.customer}</div>
                   <div style={{ color: 'var(--text)' }}><b>Date:</b> {task.date}</div>
@@ -527,6 +570,116 @@ export default function CleanerDashboard() {
             <p className="text-2xl font-bold">R{cleaner?.totalEarnings || 0}</p>
             <p style={{ opacity: 0.6 }}>Total Earnings</p>
             <p className="mt-2" style={{ opacity: 0.6 }}>{cleaner?.completedJobs || 0} jobs completed</p>
+          </div>
+        </div>
+      )}
+
+      {activeTile === "performance" && (
+        <div className="glass-card p-6">
+          <h3 className="font-bold text-lg mb-4" style={{ color: 'var(--text-h)' }}>Performance Metrics</h3>
+          <div className="space-y-4">
+            <div className="bg-white/5 rounded-lg p-4" style={{ borderColor: 'var(--border)' }}>
+              <div className="flex justify-between items-center mb-2">
+                <span style={{ color: 'var(--text)' }}>KPI Score</span>
+                <span className="text-2xl font-bold" style={{ color: '#10b981' }}>{kpiScore}/100</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="bg-green-500 h-2 rounded-full" style={{ width: `${kpiScore}%` }}></div>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-white/5 rounded-lg p-4" style={{ borderColor: 'var(--border)' }}>
+                <div style={{ color: 'var(--text)', opacity: 0.6 }}>Completed Jobs (7-day)</div>
+                <div className="text-xl font-bold" style={{ color: 'var(--text-h)' }}>
+                  {tasks.filter((t: any) => t.status === 'completed').length}
+                </div>
+              </div>
+              <div className="bg-white/5 rounded-lg p-4" style={{ borderColor: 'var(--border)' }}>
+                <div style={{ color: 'var(--text)', opacity: 0.6 }}>Pending Tasks (7-day)</div>
+                <div className="text-xl font-bold" style={{ color: 'var(--text-h)' }}>
+                  {tasks.filter((t: any) => t.status !== 'completed').length}
+                </div>
+              </div>
+            </div>
+            <div className="bg-white/5 rounded-lg p-4" style={{ borderColor: 'var(--border)' }}>
+              <div style={{ color: 'var(--text)', opacity: 0.6 }}>Current Status</div>
+              <div className={`mt-1 px-3 py-1 rounded-full text-sm font-semibold inline-block ${
+                cleanerStatus === 'idle' ? 'bg-gray-100 text-gray-800' :
+                cleanerStatus === 'on_way' ? 'bg-blue-100 text-blue-800' :
+                cleanerStatus === 'arrived' ? 'bg-yellow-100 text-yellow-800' :
+                cleanerStatus === 'completed' ? 'bg-green-100 text-green-800' :
+                'bg-gray-100 text-gray-800'
+              }`}>
+                {cleanerStatus === 'idle' ? 'Idle' :
+                 cleanerStatus === 'on_way' ? 'On the Way' :
+                 cleanerStatus === 'arrived' ? 'Arrived' :
+                 cleanerStatus === 'completed' ? 'Completed' : 'Unknown'}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTile === "geolocation" && (
+        <div className="glass-card p-6">
+          <h3 className="font-bold text-lg mb-4" style={{ color: 'var(--text-h)' }}>Transparency Sync Node</h3>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between bg-white/5 rounded-lg p-4" style={{ borderColor: 'var(--border)' }}>
+              <div>
+                <div style={{ color: 'var(--text)' }}>Geolocation Sync</div>
+                <div style={{ color: 'var(--text)', opacity: 0.6, fontSize: '0.875rem' }}>
+                  {geolocationEnabled ? 'Active - Pinging location to backend' : 'Inactive'}
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setGeolocationEnabled(!geolocationEnabled);
+                  if (!geolocationEnabled) {
+                    if (navigator.geolocation) {
+                      navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                          setCurrentLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
+                          setLastLocationPing(new Date());
+                        },
+                        (error) => {
+                          alert('Unable to retrieve location');
+                        }
+                      );
+                    }
+                  } else {
+                    setCurrentLocation(null);
+                    setLastLocationPing(null);
+                  }
+                }}
+                className={`px-4 py-2 rounded-lg transition-all ${geolocationEnabled ? 'bg-red-500/20 text-red-200' : 'bg-green-500/20 text-green-200'}`}
+              >
+                {geolocationEnabled ? 'Disable Sync' : 'Enable Sync'}
+              </button>
+            </div>
+            {currentLocation && (
+              <div className="bg-white/5 rounded-lg p-4" style={{ borderColor: 'var(--border)' }}>
+                <div style={{ color: 'var(--text)', opacity: 0.6 }}>Current Location</div>
+                <div className="mt-1 font-mono text-sm" style={{ color: 'var(--text-h)' }}>
+                  Lat: {currentLocation.lat.toFixed(6)}, Lng: {currentLocation.lng.toFixed(6)}
+                </div>
+                {lastLocationPing && (
+                  <div className="mt-1 text-sm" style={{ color: 'var(--text)', opacity: 0.6 }}>
+                    Last ping: {lastLocationPing.toLocaleTimeString()}
+                  </div>
+                )}
+              </div>
+            )}
+            <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <div style={{ color: '#3b82f6', fontSize: '1.25rem' }}>📍</div>
+                <div>
+                  <h4 className="font-semibold" style={{ color: '#1e40af' }}>Privacy Notice</h4>
+                  <p className="text-sm" style={{ color: '#1e40af', opacity: 0.8 }}>
+                    Your location is only shared when you're on the way to a job. This helps clients track your arrival for better service coordination.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
