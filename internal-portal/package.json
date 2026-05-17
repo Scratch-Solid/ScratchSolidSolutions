@@ -20,7 +20,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@better-auth/infra": "^0.2.6",
+    "@better-auth/infra": "^0.2.8",
     "@better-auth/sso": "^1.6.11",
     "@opennextjs/cloudflare": "^1.19.4",
     "@tailwindcss/postcss": "^4.3.0",
