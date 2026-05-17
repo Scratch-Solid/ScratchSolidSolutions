@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getDb } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
-    const db = (request as any).db;
+    const db = await getDb();
 
     const result = await db.prepare(`
       SELECT service_type, base_price, transport_fee, weekend_surcharge, holiday_surcharge, rush_surcharge
@@ -44,7 +45,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const db = (request as any).db;
+    const db = await getDb();
 
     await db.prepare(`
       INSERT INTO pricing_config (service_type, base_price, transport_fee, weekend_surcharge, holiday_surcharge, rush_surcharge, effective_from, updated_by)

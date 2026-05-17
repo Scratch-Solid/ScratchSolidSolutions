@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkAuthAndRole } from '@/lib/auth-middleware';
 import { autoAssignBooking, determinePoolFromServiceType, isValidTimeSlot } from '@/lib/pool-management/pool-assignment';
+import { getDb } from '@/lib/db';
 
 export async function POST(
   request: NextRequest,
@@ -32,9 +33,8 @@ export async function POST(
       return NextResponse.json({ error: 'Invalid time slot' }, { status: 400 });
     }
 
-    // Get database from context (assuming it's available)
-    // This would need to be adapted based on your database setup
-    const db = (request as any).db;
+    // Get database
+    const db = await getDb();
 
     const result = await autoAssignBooking(
       db,

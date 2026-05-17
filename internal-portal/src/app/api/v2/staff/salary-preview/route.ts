@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkAuthAndRole } from '@/lib/auth-middleware';
+import { getDb } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   const auth = await checkAuthAndRole(request);

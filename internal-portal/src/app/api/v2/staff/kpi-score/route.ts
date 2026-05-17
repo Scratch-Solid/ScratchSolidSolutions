@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkAuthAndRole } from '@/lib/auth-middleware';
+import { getDb } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   const auth = await checkAuthAndRole(request);
@@ -7,7 +8,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const staffId = auth.user.id;
-    const db = (request as any).db;
+    const db = await getDb();
 
     const result = await db.prepare(`
       SELECT 

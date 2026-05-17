@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getDb } from '@/lib/db';
 
 export async function GET(
   request: NextRequest,
@@ -6,7 +7,7 @@ export async function GET(
 ) {
   try {
     const contentKey = params.content_key;
-    const db = (request as any).db;
+    const db = await getDb();
 
     const result = await db.prepare(`
       SELECT content, content_type, updated_at
@@ -47,7 +48,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Missing content' }, { status: 400 });
     }
 
-    const db = (request as any).db;
+    const db = await getDb();
 
     await db.prepare(`
       INSERT INTO marketing_cms (content_key, content, content_type, is_active, created_at, updated_at, updated_by)
