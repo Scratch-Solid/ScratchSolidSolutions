@@ -26,6 +26,14 @@
 			"binding": "GPS_KV",
 			"id": "426d4889e6da4594a4afc972d5184146",
 			"preview_id": "ac5c54b821e543cbd7e3a44559aea8c"
+		},
+		{
+			"binding": "PUSH_KV",
+			"id": "426d4889e6da4594a4afc972d5184146"
+		},
+		{
+			"binding": "STATUS_KV",
+			"id": "859744ffa6fc44caa84edaaa1e481800"
 		}
 	],
 	"r2_buckets": [
@@ -73,6 +81,14 @@
 				{
 					"binding": "GPS_KV",
 					"id": "1cada668d188498eb560ad5c8b9e368c"
+				},
+				{
+					"binding": "PUSH_KV",
+					"id": "1cada668d188498eb560ad5c8b9e368c"
+				},
+				{
+					"binding": "STATUS_KV",
+					"id": "918298e91aec470ba7f8d800b2f8f124"
 				}
 			],
 			"r2_buckets": [

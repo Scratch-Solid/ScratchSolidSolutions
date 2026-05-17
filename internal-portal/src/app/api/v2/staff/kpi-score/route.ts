@@ -7,41 +7,44 @@ export async function GET(request: NextRequest) {
   if (!auth.authenticated) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
-    const staffId = auth.user.id;
+    // Accept explicit staffId query param (cleaner dashboard passes user_id)
+    const { searchParams } = new URL(request.url);
+    const staffId = searchParams.get('staffId') ? parseInt(searchParams.get('staffId')!) : auth.user.id;
+
     const db = await getDb();
+    if (!db) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 
     const result = await db.prepare(`
       SELECT 
-        AVG(overall_score) as average_kpi,
-        COUNT(*) as total_reviews,
-        AVG(punctuality_score) as punctuality_avg,
-        AVG(quality_score) as quality_avg,
-        AVG(communication_score) as communication_avg
+        AVG(adherence_score)          AS average_kpi,
+        AVG(client_rating)            AS client_rating_avg,
+        COUNT(*)                      AS total_reviews,
+        AVG(adherence_score)          AS punctuality_avg,
+        AVG(adherence_score)          AS quality_avg,
+        AVG(adherence_score)          AS communication_avg,
+        AVG(adherence_score)          AS adherence_avg
       FROM job_performance_metrics
       WHERE staff_id = ?
-    `).bind(staffId).first<{
+    `).bind(String(staffId)).first<{
       average_kpi: number;
+      client_rating_avg: number;
       total_reviews: number;
       punctuality_avg: number;
       quality_avg: number;
       communication_avg: number;
+      adherence_avg: number;
     }>();
 
-    if (!result) {
-      return NextResponse.json({ 
-        message: "No performance metrics found for this staff member" 
-      }, { status: 404 });
-    }
-
+    // Return flat structure matching CleanerDashboard expectations
     const payload = {
-      overallKpi: result.average_kpi || 0,
-      totalReviews: result.total_reviews || 0,
-      breakdown: {
-        punctuality: result.punctuality_avg || 0,
-        quality: result.quality_avg || 0,
-        communication: result.communication_avg || 0
-      },
-      lastUpdated: new Date().toISOString()
+      averageScore:   result?.average_kpi    ?? 0,
+      totalReviews:   result?.total_reviews  ?? 0,
+      punctuality:    result?.punctuality_avg ?? 0,
+      quality:        result?.quality_avg     ?? 0,
+      communication:  result?.communication_avg ?? 0,
+      adherence:      result?.adherence_avg   ?? 0,
+      clientRating:   result?.client_rating_avg ?? 0,
+      lastUpdated:    new Date().toISOString(),
     };
 
     return NextResponse.json(payload);

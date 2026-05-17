@@ -36,6 +36,9 @@ export default function CleanerDashboard() {
   const [currentLocation, setCurrentLocation] = useState<{lat: number, lng: number} | null>(null);
   const [lastLocationPing, setLastLocationPing] = useState<Date | null>(null);
   const [kpiScore, setKpiScore] = useState(0);
+  const [kpiBreakdown, setKpiBreakdown] = useState<{ punctuality: number; quality: number; communication: number } | null>(null);
+  const [salaryData, setSalaryData] = useState<{ grossEarnings: number; uifDeductions: number; takeHomePay: number; payPeriod: string } | null>(null);
+  const [salaryLoading, setSalaryLoading] = useState(false);
 
   useEffect(() => {
     async function fetchCleanerAndTasks() {
@@ -72,6 +75,18 @@ export default function CleanerDashboard() {
             const earningsData = await earningsRes.json() as any[];
             const totalEarnings = earningsData.reduce((sum: number, item: any) => sum + (item.earnings || 0), 0);
             setCleaner(prev => prev ? { ...prev, totalEarnings, completedJobs: earningsData.length } : prev);
+          }
+
+            // Fetch live KPI score
+          const kpiRes = await fetch(`/api/v2/staff/kpi-score?staffId=${storedUserId}`);
+          if (kpiRes.ok) {
+            const kpiData = await kpiRes.json() as any;
+            setKpiScore(Math.round((kpiData.averageScore ?? 0) * 10)); // convert 0-10 → 0-100
+            setKpiBreakdown({
+              punctuality:   Math.round((kpiData.punctuality   ?? 0) * 10),
+              quality:       Math.round((kpiData.quality       ?? 0) * 10),
+              communication: Math.round((kpiData.communication ?? 0) * 10),
+            });
           }
 
           // Fetch bookings for tasks
@@ -564,12 +579,68 @@ export default function CleanerDashboard() {
       )}
 
       {activeTile === "earnings" && (
-        <div className="glass-card p-6">
-          <h3 className="font-bold text-lg mb-4" style={{ color: 'var(--text-h)' }}>Earnings</h3>
-          <div style={{ color: 'var(--text)' }}>
-            <p className="text-2xl font-bold">R{cleaner?.totalEarnings || 0}</p>
-            <p style={{ opacity: 0.6 }}>Total Earnings</p>
-            <p className="mt-2" style={{ opacity: 0.6 }}>{cleaner?.completedJobs || 0} jobs completed</p>
+        <div className="glass-card p-6 space-y-6">
+          <h3 className="font-bold text-lg" style={{ color: 'var(--text-h)' }}>Earnings</h3>
+
+          {/* Task earnings summary */}
+          <div className="bg-white/5 rounded-lg p-4 border" style={{ borderColor: 'var(--border)' }}>
+            <p className="text-2xl font-bold" style={{ color: 'var(--text-h)' }}>R{(cleaner as any)?.totalEarnings || 0}</p>
+            <p style={{ color: 'var(--text)', opacity: 0.6 }}>Total Task Earnings</p>
+            <p className="mt-1 text-sm" style={{ color: 'var(--text)', opacity: 0.6 }}>{(cleaner as any)?.completedJobs || 0} jobs completed</p>
+          </div>
+
+          {/* Salary Preview */}
+          <div>
+            <div className="flex justify-between items-center mb-3">
+              <h4 className="font-semibold" style={{ color: 'var(--text-h)' }}>Estimated Salary Preview</h4>
+              <button
+                onClick={async () => {
+                  const userId = localStorage.getItem('user_id');
+                  if (!userId) return;
+                  setSalaryLoading(true);
+                  try {
+                    const res = await fetch(`/api/v2/staff/salary-preview?staffId=${userId}`);
+                    if (res.ok) {
+                      const data = await res.json() as any;
+                      setSalaryData(data);
+                    }
+                  } catch (e) {
+                    console.error('Salary fetch error', e);
+                  } finally {
+                    setSalaryLoading(false);
+                  }
+                }}
+                className="px-3 py-1 rounded bg-blue-500/20 text-sm hover:bg-blue-500/30 transition-all"
+                style={{ color: '#1d4ed8' }}
+              >
+                {salaryLoading ? 'Loading…' : 'View Salary'}
+              </button>
+            </div>
+
+            {salaryData ? (
+              <div className="bg-white/5 rounded-lg p-4 border space-y-3" style={{ borderColor: 'var(--border)' }}>
+                <div className="flex justify-between">
+                  <span style={{ color: 'var(--text)', opacity: 0.7 }}>Pay Period</span>
+                  <span className="font-medium" style={{ color: 'var(--text-h)' }}>{salaryData.payPeriod}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span style={{ color: 'var(--text)', opacity: 0.7 }}>Gross Earnings</span>
+                  <span className="font-medium" style={{ color: 'var(--text-h)' }}>R{salaryData.grossEarnings?.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span style={{ color: 'var(--text)', opacity: 0.7 }}>UIF Deduction</span>
+                  <span className="font-medium text-red-500">- R{salaryData.uifDeductions?.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between border-t pt-3" style={{ borderColor: 'var(--border)' }}>
+                  <span className="font-bold" style={{ color: 'var(--text-h)' }}>Take-Home Pay</span>
+                  <span className="text-xl font-bold" style={{ color: '#10b981' }}>R{salaryData.takeHomePay?.toFixed(2)}</span>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white/5 rounded-lg p-4 border text-center" style={{ borderColor: 'var(--border)' }}>
+                <p className="text-sm" style={{ color: 'var(--text)', opacity: 0.6 }}>Click "View Salary" to load your estimated pay slip from payroll.</p>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -578,41 +649,77 @@ export default function CleanerDashboard() {
         <div className="glass-card p-6">
           <h3 className="font-bold text-lg mb-4" style={{ color: 'var(--text-h)' }}>Performance Metrics</h3>
           <div className="space-y-4">
-            <div className="bg-white/5 rounded-lg p-4" style={{ borderColor: 'var(--border)' }}>
+            {/* KPI Score bar */}
+            <div className="bg-white/5 rounded-lg p-4 border" style={{ borderColor: 'var(--border)' }}>
               <div className="flex justify-between items-center mb-2">
-                <span style={{ color: 'var(--text)' }}>KPI Score</span>
+                <span style={{ color: 'var(--text)' }}>Overall KPI Score</span>
                 <span className="text-2xl font-bold" style={{ color: '#10b981' }}>{kpiScore}/100</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="bg-green-500 h-2 rounded-full" style={{ width: `${kpiScore}%` }}></div>
+              <div className="w-full bg-gray-200 rounded-full h-3 mb-3">
+                <div className="bg-green-500 h-3 rounded-full transition-all duration-500" style={{ width: `${kpiScore}%` }}></div>
+              </div>
+              {kpiBreakdown && (
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  {(['punctuality', 'quality', 'communication'] as const).map(key => (
+                    <div key={key} className="text-center">
+                      <div style={{ color: 'var(--text)', opacity: 0.6, textTransform: 'capitalize' }}>{key}</div>
+                      <div className="font-semibold" style={{ color: 'var(--text-h)' }}>{kpiBreakdown[key]}/100</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* 13th Check Eligibility */}
+            <div className={`rounded-lg p-4 border ${
+              kpiScore >= 80
+                ? 'bg-green-500/10 border-green-500/40'
+                : 'bg-yellow-500/10 border-yellow-500/40'
+            }`}>
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">{kpiScore >= 80 ? '🏆' : '📈'}</span>
+                <div>
+                  <div className="font-semibold" style={{ color: kpiScore >= 80 ? '#15803d' : '#92400e' }}>
+                    {kpiScore >= 80 ? 'Eligible for 13th Cheque Bonus' : 'Not yet eligible for 13th Cheque'}
+                  </div>
+                  <div className="text-sm" style={{ color: kpiScore >= 80 ? '#166534' : '#78350f', opacity: 0.8 }}>
+                    {kpiScore >= 80
+                      ? 'Your KPI score qualifies you for the annual performance bonus.'
+                      : `Reach a score of 80/100 to qualify. Current: ${kpiScore}/100.`}
+                  </div>
+                </div>
               </div>
             </div>
+
+            {/* Job counts */}
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-white/5 rounded-lg p-4" style={{ borderColor: 'var(--border)' }}>
-                <div style={{ color: 'var(--text)', opacity: 0.6 }}>Completed Jobs (7-day)</div>
+                <div style={{ color: 'var(--text)', opacity: 0.6 }}>Completed (7-day)</div>
                 <div className="text-xl font-bold" style={{ color: 'var(--text-h)' }}>
                   {tasks.filter((t: any) => t.status === 'completed').length}
                 </div>
               </div>
               <div className="bg-white/5 rounded-lg p-4" style={{ borderColor: 'var(--border)' }}>
-                <div style={{ color: 'var(--text)', opacity: 0.6 }}>Pending Tasks (7-day)</div>
+                <div style={{ color: 'var(--text)', opacity: 0.6 }}>Pending (7-day)</div>
                 <div className="text-xl font-bold" style={{ color: 'var(--text-h)' }}>
                   {tasks.filter((t: any) => t.status !== 'completed').length}
                 </div>
               </div>
             </div>
+
+            {/* Current status badge */}
             <div className="bg-white/5 rounded-lg p-4" style={{ borderColor: 'var(--border)' }}>
               <div style={{ color: 'var(--text)', opacity: 0.6 }}>Current Status</div>
               <div className={`mt-1 px-3 py-1 rounded-full text-sm font-semibold inline-block ${
-                cleanerStatus === 'idle' ? 'bg-gray-100 text-gray-800' :
-                cleanerStatus === 'on_way' ? 'bg-blue-100 text-blue-800' :
-                cleanerStatus === 'arrived' ? 'bg-yellow-100 text-yellow-800' :
+                cleanerStatus === 'idle'      ? 'bg-gray-100 text-gray-800' :
+                cleanerStatus === 'on_way'    ? 'bg-blue-100 text-blue-800' :
+                cleanerStatus === 'arrived'   ? 'bg-yellow-100 text-yellow-800' :
                 cleanerStatus === 'completed' ? 'bg-green-100 text-green-800' :
                 'bg-gray-100 text-gray-800'
               }`}>
-                {cleanerStatus === 'idle' ? 'Idle' :
-                 cleanerStatus === 'on_way' ? 'On the Way' :
-                 cleanerStatus === 'arrived' ? 'Arrived' :
+                {cleanerStatus === 'idle'      ? 'Idle' :
+                 cleanerStatus === 'on_way'    ? 'On the Way' :
+                 cleanerStatus === 'arrived'   ? 'Arrived' :
                  cleanerStatus === 'completed' ? 'Completed' : 'Unknown'}
               </div>
             </div>

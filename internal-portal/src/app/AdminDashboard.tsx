@@ -835,6 +835,18 @@ export default function AdminDashboard() {
         >
           Proxy Observer
         </button>
+        <button
+          onClick={() => setActiveTab("pool-management")}
+          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTab === "pool-management" ? "bg-white/20 text-white" : "bg-white/10 text-white/70 hover:bg-white/15"}`}
+        >
+          Pool Management
+        </button>
+        <button
+          onClick={() => setActiveTab("staff-reviews")}
+          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTab === "staff-reviews" ? "bg-white/20 text-white" : "bg-white/10 text-white/70 hover:bg-white/15"}`}
+        >
+          Staff Reviews
+        </button>
       </div>
 
       {activeTab === "overview" ? (
@@ -1025,6 +1037,10 @@ export default function AdminDashboard() {
         <PricingConfiguration />
       ) : activeTab === "proxy-observer" ? (
         <ProxyObserver />
+      ) : activeTab === "pool-management" ? (
+        <PoolManagement />
+      ) : activeTab === "staff-reviews" ? (
+        <StaffReviews />
       ) : null}
     </DashboardLayout>
   );
@@ -1806,6 +1822,203 @@ function ContentManagement() {
               </div>
             ))}
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Pool Management ─────────────────────────────────────────────────────────
+function PoolManagement() {
+  const [cleaners, setCleaners] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    fetch('/api/admin/cleaners', { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json()).then((data: any) => { setCleaners(Array.isArray(data) ? data : []); })
+      .catch(() => setMessage('Failed to load cleaners'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const togglePool = async (cleanerId: number, currentPool: string) => {
+    const newPool = currentPool === 'INDIVIDUAL' ? 'BUSINESS' : 'INDIVIDUAL';
+    const token = localStorage.getItem('authToken');
+    try {
+      const res = await fetch('/api/v2/staff/pool-transition', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ staff_id: cleanerId, new_pool: newPool, reason: 'Admin manual reassignment' }),
+      });
+      if (res.ok) {
+        setCleaners(prev => prev.map(c => c.id === cleanerId ? { ...c, pool_type: newPool } : c));
+        setMessage(`Cleaner moved to ${newPool} pool`);
+        setTimeout(() => setMessage(''), 3000);
+      } else {
+        setMessage('Failed to update pool');
+      }
+    } catch {
+      setMessage('Network error');
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-white">Pool Management</h2>
+        {message && <div className="px-4 py-2 rounded-lg bg-blue-500/20 text-blue-200 text-sm">{message}</div>}
+      </div>
+      <p className="text-white/60 text-sm">Toggle cleaners between INDIVIDUAL (auto-assigned residential) and BUSINESS (manually allocated commercial) pools.</p>
+
+      {loading ? <p className="text-white/60">Loading cleaners…</p> : (
+        <div className="space-y-3">
+          {cleaners.map((c: any) => (
+            <div key={c.id} className="flex items-center justify-between bg-white/5 border border-white/10 rounded-lg p-4">
+              <div>
+                <div className="font-semibold text-white">{c.first_name} {c.last_name}</div>
+                <div className="text-sm text-white/60">{c.email || c.username}</div>
+              </div>
+              <div className="flex items-center gap-4">
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                  (c.pool_type || 'INDIVIDUAL') === 'INDIVIDUAL'
+                    ? 'bg-blue-500/20 text-blue-200 border border-blue-500/30'
+                    : 'bg-purple-500/20 text-purple-200 border border-purple-500/30'
+                }`}>
+                  {c.pool_type || 'INDIVIDUAL'}
+                </span>
+                <button
+                  onClick={() => togglePool(c.id, c.pool_type || 'INDIVIDUAL')}
+                  className="px-3 py-1 rounded bg-white/10 text-white/80 hover:bg-white/20 text-sm transition-all border border-white/20"
+                >
+                  Switch to {(c.pool_type || 'INDIVIDUAL') === 'INDIVIDUAL' ? 'BUSINESS' : 'INDIVIDUAL'}
+                </button>
+              </div>
+            </div>
+          ))}
+          {cleaners.length === 0 && <p className="text-white/50 text-sm">No cleaners found.</p>}
+        </div>
+      )}
+
+      <div className="mt-4 bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+        <div className="font-semibold text-blue-200 mb-1">Pool Definitions</div>
+        <ul className="text-sm text-white/70 space-y-1">
+          <li><b className="text-blue-200">INDIVIDUAL</b> — Residential bookings. Auto-assigned on booking creation.</li>
+          <li><b className="text-purple-200">BUSINESS</b> — Commercial/office jobs. Requires manual allocation by admin.</li>
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+// ── Staff Reviews (Monthly KPI Input) ────────────────────────────────────────
+function StaffReviews() {
+  const [cleaners, setCleaners] = useState<any[]>([]);
+  const [selected, setSelected] = useState<any | null>(null);
+  const [form, setForm] = useState({ attendance_score: 5, company_values_score: 5, client_rating: 4, punctuality_score: 7, quality_score: 7, communication_score: 7, notes: '' });
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    fetch('/api/admin/cleaners', { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json()).then((data: any) => setCleaners(Array.isArray(data) ? data : []))
+      .catch(() => setMessage('Failed to load staff'));
+  }, []);
+
+  const submitReview = async () => {
+    if (!selected) return;
+    setLoading(true);
+    const token = localStorage.getItem('authToken');
+    try {
+      const res = await fetch('/api/admin/staff-reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ staff_id: selected.id, ...form }),
+      });
+      if (res.ok) {
+        setMessage(`Review submitted for ${selected.first_name}. KPI will be recalculated.`);
+        // Trigger KPI sync
+        await fetch(`/api/v2/staff/${selected.id}/sync-kpi`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setForm({ attendance_score: 5, company_values_score: 5, client_rating: 4, punctuality_score: 7, quality_score: 7, communication_score: 7, notes: '' });
+        setSelected(null);
+        setTimeout(() => setMessage(''), 4000);
+      } else {
+        setMessage('Failed to submit review');
+      }
+    } catch {
+      setMessage('Network error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const ScoreInput = ({ label, field, min = 0, max = 10 }: { label: string; field: keyof typeof form; min?: number; max?: number }) => (
+    <div>
+      <label className="block text-white/70 text-sm mb-1">{label} ({min}–{max})</label>
+      <input
+        type="number" min={min} max={max} step="0.5"
+        value={form[field] as number}
+        onChange={e => setForm(prev => ({ ...prev, [field]: parseFloat(e.target.value) }))}
+        className="w-full bg-white/10 border border-white/20 rounded px-3 py-2 text-white text-sm"
+      />
+    </div>
+  );
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-white">Monthly Staff Reviews</h2>
+        {message && <div className="px-4 py-2 rounded-lg bg-green-500/20 text-green-200 text-sm">{message}</div>}
+      </div>
+      <p className="text-white/60 text-sm">Enter monthly scores for attendance, company values, and quality. Scores feed the KPI engine and determine 13th cheque eligibility.</p>
+
+      {/* Staff selector */}
+      <div>
+        <label className="text-white/70 text-sm block mb-2">Select Staff Member</label>
+        <select
+          className="w-full bg-white/10 border border-white/20 rounded px-3 py-2 text-white text-sm"
+          value={selected?.id || ''}
+          onChange={e => setSelected(cleaners.find(c => c.id === parseInt(e.target.value)) || null)}
+        >
+          <option value="">— Choose a staff member —</option>
+          {cleaners.map((c: any) => (
+            <option key={c.id} value={c.id}>{c.first_name} {c.last_name}</option>
+          ))}
+        </select>
+      </div>
+
+      {selected && (
+        <div className="bg-white/5 border border-white/10 rounded-lg p-5 space-y-4">
+          <h3 className="text-white font-semibold">Review for {selected.first_name} {selected.last_name}</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <ScoreInput label="Client Rating (1–5 stars)" field="client_rating" min={1} max={5} />
+            <ScoreInput label="Attendance Score (0–10)" field="attendance_score" />
+            <ScoreInput label="Company Values Score (0–10)" field="company_values_score" />
+            <ScoreInput label="Punctuality Score (0–10)" field="punctuality_score" />
+            <ScoreInput label="Quality Score (0–10)" field="quality_score" />
+            <ScoreInput label="Communication Score (0–10)" field="communication_score" />
+          </div>
+          <div>
+            <label className="block text-white/70 text-sm mb-1">Notes</label>
+            <textarea
+              rows={3}
+              value={form.notes}
+              onChange={e => setForm(prev => ({ ...prev, notes: e.target.value }))}
+              className="w-full bg-white/10 border border-white/20 rounded px-3 py-2 text-white text-sm"
+              placeholder="Optional review notes…"
+            />
+          </div>
+          <button
+            onClick={submitReview}
+            disabled={loading}
+            className="w-full py-2 rounded bg-blue-500/20 text-blue-200 hover:bg-blue-500/30 border border-blue-500/30 transition-all disabled:opacity-50"
+          >
+            {loading ? 'Submitting…' : 'Submit Review & Sync KPI'}
+          </button>
         </div>
       )}
     </div>

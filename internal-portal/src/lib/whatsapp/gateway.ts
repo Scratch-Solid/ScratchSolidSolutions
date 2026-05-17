@@ -42,7 +42,15 @@ export class WhatsAppGateway {
     this.registerCommand({
       keyword: 'help',
       handler: async () => {
-        return 'Available commands: help, status, bookings, profile';
+        return (
+          '📋 *Scratch Solid – Status Commands*\n\n' +
+          'Reply with one of these words to update your booking status:\n\n' +
+          '▶️  *START* – On my way to the client\n' +
+          '📍  *HERE*  – I have arrived at the location\n' +
+          '✅  *DONE*  – Job completed\n\n' +
+          'Other commands (prefix with /):\n' +
+          '/help, /status, /bookings, /profile'
+        );
       },
       description: 'Show available commands'
     });
@@ -50,7 +58,7 @@ export class WhatsAppGateway {
     this.registerCommand({
       keyword: 'status',
       handler: async (message) => {
-        return `Your account is active. Phone: ${message.from}`;
+        return `Your account is active. Registered number: ${message.from}\nReply with START, HERE or DONE to update today's booking status.`;
       },
       description: 'Check account status'
     });
@@ -58,7 +66,7 @@ export class WhatsAppGateway {
     this.registerCommand({
       keyword: 'bookings',
       handler: async () => {
-        return 'Your upcoming bookings will be displayed here.';
+        return 'View your bookings on the portal: https://portal.scratchsolidsolutions.org\nOr reply START, HERE, or DONE to update today\'s booking.';
       },
       description: 'View upcoming bookings'
     });
@@ -66,7 +74,7 @@ export class WhatsAppGateway {
     this.registerCommand({
       keyword: 'profile',
       handler: async () => {
-        return 'Your profile information will be displayed here.';
+        return 'Update your profile on the portal: https://portal.scratchsolidsolutions.org';
       },
       description: 'View profile information'
     });
@@ -79,11 +87,7 @@ export class WhatsAppGateway {
     const body = message.body.trim();
     
     if (!body.startsWith('/')) {
-      return this.registerCommand({
-        keyword: 'default',
-        handler: async () => 'Send /help for available commands',
-        description: 'Default response'
-      }).handler(message, []);
+      return 'Reply with START, HERE, or DONE to update your booking status.\nSend /help for all available commands.';
     }
 
     const parts = body.substring(1).split(' ');

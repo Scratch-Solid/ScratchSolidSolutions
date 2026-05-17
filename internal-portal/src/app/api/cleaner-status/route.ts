@@ -12,7 +12,8 @@ export async function PUT(request: NextRequest) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['cleaner', 'admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
-  const { db, env } = authResult;
+  const { db } = authResult;
+  const env = (authResult as any).env;
 
   try {
     const body = await request.json() as {
@@ -135,6 +136,48 @@ export async function PUT(request: NextRequest) {
       }
     }
 
+    // Auto-calculate adherence score on ARRIVED transition
+    if (status === 'arrived') {
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        const assignment = await db.prepare(`
+          SELECT ba.id, ba.booking_id, b.booking_time AS time_slot
+          FROM booking_assignments ba
+          JOIN bookings b ON b.id = ba.booking_id
+          WHERE ba.staff_id = ?
+            AND b.booking_date = ?
+            AND ba.assignment_status NOT IN ('completed', 'cancelled')
+          ORDER BY b.booking_time ASC
+          LIMIT 1
+        `).bind(cleaner_id, today).first() as any;
+
+        if (assignment?.time_slot) {
+          const now = new Date();
+          const actualTime = now.toTimeString().substring(0, 5); // HH:MM
+          const scheduledTime = assignment.time_slot; // e.g. "08:00"
+
+          // Calculate minutes difference (negative = early, positive = late)
+          const [sH, sM] = scheduledTime.split(':').map(Number);
+          const [aH, aM] = actualTime.split(':').map(Number);
+          const diffMinutes = (aH * 60 + aM) - (sH * 60 + sM);
+
+          // Score: 10 = on time or early, decreasing by 1 per 5 minutes late, min 0
+          const adherenceScore = Math.max(0, Math.min(10, 10 - Math.floor(Math.max(0, diffMinutes) / 5)));
+
+          // Insert adherence record into job_performance_metrics
+          await db.prepare(`
+            INSERT INTO job_performance_metrics
+              (staff_id, booking_id, scheduled_time, actual_arrival_time, adherence_score, created_at)
+            VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+          `).bind(String(cleaner_id), String(assignment.booking_id), scheduledTime, actualTime, adherenceScore).run();
+
+          logger.info(`Adherence scored ${adherenceScore}/10 for cleaner ${cleaner_id} (${diffMinutes > 0 ? diffMinutes + ' min late' : 'on time'})`);
+        }
+      } catch (adherenceErr) {
+        logger.warn('Adherence calculation failed', adherenceErr);
+      }
+    }
+
     // Battery level alerts
     if (battery_level !== undefined && battery_level <= 20) {
       const alertType = battery_level <= 10 ? 'critical' : 'low';
@@ -188,11 +231,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Cleaner not found' }, { status: 404 });
     }
 
-    return NextResponse.json(cleaner);
+    const response = NextResponse.json(cleaner);
     response.headers.set('Cache-Control', 'private, max-age=10');
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch cleaner status' }, { status: 500 });
+    const response = NextResponse.json({ error: 'Failed to fetch cleaner status' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }
