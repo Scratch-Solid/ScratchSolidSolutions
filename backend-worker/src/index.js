@@ -7,8 +7,19 @@ import { Router } from 'itty-router';
 import { sha256 } from '@noble/hashes/sha256';
 import jwt from '@tsndr/cloudflare-worker-jwt';
 import bcrypt from 'bcryptjs';
+import DataRetentionCleanup from './data-retention.js';
 
 const router = Router();
+
+// Helper function to get database session for read operations
+function getReadSession(env) {
+  return env.DB.withSession("first-unconstrained");
+}
+
+// Helper function to get database session for consistent reads
+function getConsistentReadSession(env) {
+  return env.DB.withSession("first-primary");
+}
 
 // Email helper function using Resend API
 async function sendEmail(env, { to, subject, html, replyTo }) {
@@ -361,7 +372,8 @@ router.get('/api/auth/me', async (request, env) => {
     });
   }
   
-  const user = await env.DB.prepare('SELECT id, name, email, role FROM users WHERE id = ?')
+  const db = getReadSession(env);
+  const user = await db.prepare('SELECT id, name, email, role FROM users WHERE id = ?')
     .bind(parseInt(payload.sub)).first();
     
   return new Response(JSON.stringify(user), {
@@ -413,7 +425,8 @@ router.get('/api/bookings', async (request, env) => {
   const url = new URL(request.url);
   const userId = url.searchParams.get('user_id') || payload.sub;
   
-  const bookings = await env.DB.prepare(`
+  const db = getReadSession(env);
+  const bookings = await db.prepare(`
     SELECT * FROM bookings WHERE user_id = ? ORDER BY created_at DESC
   `).bind(userId).all();
     
@@ -434,7 +447,8 @@ router.delete('/api/bookings/:id', async (request, env) => {
   const { id } = request.params;
   
   // Verify booking belongs to user
-  const booking = await env.DB.prepare('SELECT * FROM bookings WHERE id = ? AND user_id = ?')
+  const db = getReadSession(env);
+  const booking = await db.prepare('SELECT * FROM bookings WHERE id = ? AND user_id = ?')
     .bind(id, payload.sub).first();
     
   if (!booking) {
@@ -493,7 +507,8 @@ router.get('/api/templates', async (request, env) => {
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
     });
   }
-  const templates = await env.DB.prepare('SELECT * FROM templates ORDER BY created_at DESC').all();
+  const db = getReadSession(env);
+  const templates = await db.prepare('SELECT * FROM templates ORDER BY created_at DESC').all();
   
   return new Response(JSON.stringify(templates.results || templates), {
     headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
@@ -514,7 +529,8 @@ router.post('/api/contracts', async (request, env) => {
     const { business_id, duration, template_id } = await request.json();
     
     // Get template content for contract
-    const template = await env.DB.prepare('SELECT content FROM templates WHERE id = ?').bind(template_id).first();
+    const db = getReadSession(env);
+  const template = await db.prepare('SELECT content FROM templates WHERE id = ?').bind(template_id).first();
     
     const result = await env.DB.prepare(`
       INSERT INTO contracts (business_id, duration, rate, template_id, immutable, created_at)
@@ -550,7 +566,8 @@ router.get('/api/contracts/:id', async (request, env) => {
   
   try {
     const { id } = request.params;
-    const contract = await env.DB.prepare(`
+    const db = getReadSession(env);
+    const contract = await db.prepare(`
       SELECT c.*, t.name as template_name, t.content as template_content
       FROM contracts c
       LEFT JOIN templates t ON c.template_id = t.id
@@ -616,7 +633,8 @@ router.get('/api/contracts/:id/export', async (request, env) => {
   
   try {
     const { id } = request.params;
-    const contract = await env.DB.prepare(`
+    const db = getReadSession(env);
+    const contract = await db.prepare(`
       SELECT c.*, t.name as template_name, t.content as template_content
       FROM contracts c
       LEFT JOIN templates t ON c.template_id = t.id
@@ -771,7 +789,8 @@ router.get('/api/weekend-requests', async (request, env) => {
   }
   
   try {
-    const requests = await env.DB.prepare(`
+    const db = getReadSession(env);
+    const requests = await db.prepare(`
       SELECT * FROM weekend_requests 
       WHERE business_id = ? 
       ORDER BY created_at DESC
@@ -969,7 +988,8 @@ router.post('/auth/reset-password', async (request, env) => {
     }
     
     // Find valid token
-    const resetToken = await env.DB.prepare(`
+    const db = getReadSession(env);
+    const resetToken = await db.prepare(`
       SELECT * FROM password_reset_tokens 
       WHERE token = ? AND expires_at > datetime('now') 
       ORDER BY created_at DESC 
@@ -985,8 +1005,8 @@ router.post('/auth/reset-password', async (request, env) => {
       });
     }
     
-    // Get user
-    const user = await env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(resetToken.user_id).first();
+    // Get user (reuse the same db session)
+    const user = await db.prepare('SELECT * FROM users WHERE id = ?').bind(resetToken.user_id).first();
     
     if (!user) {
       return new Response(JSON.stringify({ 
@@ -1118,7 +1138,8 @@ router.get('/business-events', async (request, env) => {
   }
   
   try {
-    const events = await env.DB.prepare(`
+    const db = getReadSession(env);
+    const events = await db.prepare(`
       SELECT * FROM business_events 
       WHERE business_id = ? 
       ORDER BY created_at DESC
@@ -1138,7 +1159,8 @@ router.get('/business-events', async (request, env) => {
 // Pricing endpoints
 router.get('/pricing', async (request, env) => {
   try {
-    const pricing = await env.DB.prepare('SELECT * FROM pricing ORDER BY created_at DESC').all();
+    const db = getReadSession(env);
+    const pricing = await db.prepare('SELECT * FROM pricing ORDER BY created_at DESC').all();
     
     return new Response(JSON.stringify(pricing.results || pricing), {
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
@@ -1194,5 +1216,13 @@ router.all('*', (request) => {
 export default {
   async fetch(request, env, ctx) {
     return router.handle(request, env, ctx);
+  },
+  async scheduled(event, env, ctx) {
+    // Data retention cleanup task
+    // Runs daily at midnight UTC
+    const cleanup = new DataRetentionCleanup(env);
+    await cleanup.runAllCleanup();
+    
+    console.log('Data retention cleanup completed');
   },
 };

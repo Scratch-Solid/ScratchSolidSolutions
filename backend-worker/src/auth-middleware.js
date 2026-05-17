@@ -6,6 +6,16 @@
 
 import jwt from '@tsndr/cloudflare-worker-jwt';
 
+// Helper function to get database session for read operations
+function getReadSession(env) {
+  return env.DB.withSession("first-unconstrained");
+}
+
+// Helper function to get database session for consistent reads
+function getConsistentReadSession(env) {
+  return env.DB.withSession("first-primary");
+}
+
 // Existing JWT authentication (maintained for backward compatibility)
 async function verifyJWTToken(request, env) {
   const authHeader = request.headers.get('Authorization');
@@ -32,7 +42,8 @@ async function verifyBetterAuthSession(request, env) {
   try {
     // Query Better Auth session from D1
     // Handle case where table doesn't exist yet
-    const session = await env.DB.prepare(`
+    const db = getReadSession(env);
+    const session = await db.prepare(`
       SELECT s.*, u.id as user_id, u.email, u.role, u.name
       FROM better_auth_sessions s
       JOIN users u ON s.user_id = u.id
@@ -62,7 +73,8 @@ export async function authenticateUser(request, env, requiredRole = null) {
     // Check 2FA requirement for sensitive operations
     if (requiredRole && requiredRole !== 'client') {
       try {
-        const user = await env.DB.prepare('SELECT two_factor_enabled FROM users WHERE id = ?')
+        const db = getReadSession(env);
+        const user = await db.prepare('SELECT two_factor_enabled FROM users WHERE id = ?')
           .bind(betterAuthResult.payload.user_id).first();
         
         if (user && user.two_factor_enabled) {
@@ -94,7 +106,8 @@ export async function authenticateUser(request, env, requiredRole = null) {
   const jwtResult = await verifyJWTToken(request, env);
   if (jwtResult) {
     // Get user details from database
-    const user = await env.DB.prepare('SELECT * FROM users WHERE id = ?')
+    const db = getReadSession(env);
+    const user = await db.prepare('SELECT * FROM users WHERE id = ?')
       .bind(parseInt(jwtResult.payload.sub)).first();
     
     if (user) {

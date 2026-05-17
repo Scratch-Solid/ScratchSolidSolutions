@@ -5,7 +5,7 @@ import QRCode from 'qrcode';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const db = await getDb();
@@ -13,7 +13,8 @@ export async function GET(
       return NextResponse.json({ error: 'Database not available' }, { status: 500 });
     }
 
-    const promoId = parseInt(params.id);
+    const { id } = await params;
+    const promoId = parseInt(id);
     if (isNaN(promoId)) {
       return NextResponse.json({ error: 'Invalid promo code ID' }, { status: 400 });
     }

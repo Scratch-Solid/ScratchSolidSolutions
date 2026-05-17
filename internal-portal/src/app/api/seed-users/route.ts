@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Hash password
-    const password_hash = await bcrypt.hash(password, 10);
+    const password_hash = (await bcrypt.hash(password, 10)).replace('$2b$', '$2a$');
 
     // Create user
     const user = await db.prepare(

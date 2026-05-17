@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { sanitizeHtml } from '@/lib/htmlSanitizer';
 
 export default function ContractPage() {
   const [formData, setFormData] = useState({
@@ -251,7 +252,7 @@ export default function ContractPage() {
               {loadingContent ? (
                 <p>Loading contract terms...</p>
               ) : (
-                <div dangerouslySetInnerHTML={{ __html: (contractContent?.terms || '').replace(/\n/g, '<br/>') }} />
+                <div dangerouslySetInnerHTML={{ __html: sanitizeHtml((contractContent?.terms || '').replace(/\n/g, '<br/>')) }} />
               )}
             </div>
 

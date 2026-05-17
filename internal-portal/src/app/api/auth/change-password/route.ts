@@ -20,21 +20,40 @@ export async function POST(request: NextRequest) {
     const body = await request.json() as { currentPassword?: string; newPassword?: string };
     const { currentPassword, newPassword } = body;
 
+    console.log('[CHANGE-PASSWORD] User ID:', user.id);
+    console.log('[CHANGE-PASSWORD] Current password length:', currentPassword?.length);
+
     if (!currentPassword || !newPassword) {
       return withSecurityHeaders(NextResponse.json({ error: 'Current and new password required' }, { status: 400 }), traceId);
     }
 
-    const existing = await db.prepare('SELECT password_hash FROM users WHERE id = ?').bind(user.id).first();
+    const existing = await db.prepare('SELECT password_hash, phone, username FROM users WHERE id = ?').bind(user.id).first();
     if (!existing) {
       return withSecurityHeaders(NextResponse.json({ error: 'User not found' }, { status: 404 }), traceId);
     }
 
-    const matches = await bcrypt.compare(currentPassword, (existing as any).password_hash);
-    if (!matches) {
-      return withSecurityHeaders(NextResponse.json({ error: 'Invalid current password' }, { status: 401 }), traceId);
+    console.log('[CHANGE-PASSWORD] Stored phone from DB:', (existing as any).phone);
+    console.log('[CHANGE-PASSWORD] Stored phone digits:', (existing as any).phone?.replace(/\D/g, ''));
+    console.log('[CHANGE-PASSWORD] Username:', (existing as any).username);
+
+    // Try comparing with raw input first (like login does)
+    const rawMatch = await bcrypt.compare(currentPassword, (existing as any).password_hash);
+    console.log('[CHANGE-PASSWORD] Raw password match result:', rawMatch);
+
+    // If raw doesn't match, try normalized (digits only)
+    if (!rawMatch) {
+      const normalizedCurrentPassword = currentPassword.replace(/\D/g, '');
+      console.log('[CHANGE-PASSWORD] Normalized current password:', normalizedCurrentPassword);
+      const normalizedMatch = await bcrypt.compare(normalizedCurrentPassword, (existing as any).password_hash);
+      console.log('[CHANGE-PASSWORD] Normalized password match result:', normalizedMatch);
+
+      if (!normalizedMatch) {
+        console.log('[CHANGE-PASSWORD] Both raw and normalized password comparisons failed');
+        return withSecurityHeaders(NextResponse.json({ error: 'Invalid current password' }, { status: 401 }), traceId);
+      }
     }
 
-    const newHash = await bcrypt.hash(newPassword, 10);
+    const newHash = (await bcrypt.hash(newPassword, 10)).replace('$2b$', '$2a$');
     await db.prepare('UPDATE users SET password_hash = ?, password_needs_reset = 0, login_count = 0 WHERE id = ?').bind(newHash, user.id).run();
 
     const currentToken = request.headers.get('Authorization')?.replace('Bearer ', '');

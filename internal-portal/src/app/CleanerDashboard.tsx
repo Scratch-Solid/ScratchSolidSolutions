@@ -31,6 +31,14 @@ export default function CleanerDashboard() {
   const [username, setUsername] = useState("");
   const [cleanerStatus, setCleanerStatus] = useState('idle');
   const [cleanerId, setCleanerId] = useState<number | null>(null);
+  const [taskHorizonFilter, setTaskHorizonFilter] = useState<'7-day' | 'all'>('7-day');
+  const [geolocationEnabled, setGeolocationEnabled] = useState(false);
+  const [currentLocation, setCurrentLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [lastLocationPing, setLastLocationPing] = useState<Date | null>(null);
+  const [kpiScore, setKpiScore] = useState(0);
+  const [kpiBreakdown, setKpiBreakdown] = useState<{ punctuality: number; quality: number; communication: number } | null>(null);
+  const [salaryData, setSalaryData] = useState<{ grossEarnings: number; uifDeductions: number; takeHomePay: number; payPeriod: string } | null>(null);
+  const [salaryLoading, setSalaryLoading] = useState(false);
 
   useEffect(() => {
     async function fetchCleanerAndTasks() {
@@ -67,6 +75,18 @@ export default function CleanerDashboard() {
             const earningsData = await earningsRes.json() as any[];
             const totalEarnings = earningsData.reduce((sum: number, item: any) => sum + (item.earnings || 0), 0);
             setCleaner(prev => prev ? { ...prev, totalEarnings, completedJobs: earningsData.length } : prev);
+          }
+
+            // Fetch live KPI score
+          const kpiRes = await fetch(`/api/v2/staff/kpi-score?staffId=${storedUserId}`);
+          if (kpiRes.ok) {
+            const kpiData = await kpiRes.json() as any;
+            setKpiScore(Math.round((kpiData.averageScore ?? 0) * 10)); // convert 0-10 → 0-100
+            setKpiBreakdown({
+              punctuality:   Math.round((kpiData.punctuality   ?? 0) * 10),
+              quality:       Math.round((kpiData.quality       ?? 0) * 10),
+              communication: Math.round((kpiData.communication ?? 0) * 10),
+            });
           }
 
           // Fetch bookings for tasks
@@ -224,56 +244,75 @@ export default function CleanerDashboard() {
     window.location.href = '/auth/login';
   };
 
-  if (loading) return <DashboardLayout title="Cleaner Dashboard" role="cleaner"><div className="text-white">Loading...</div></DashboardLayout>;
-  if (error) return <DashboardLayout title="Cleaner Dashboard" role="cleaner"><div className="error-msg text-white">{error}</div></DashboardLayout>;
-  if (!cleaner) return <DashboardLayout title="Cleaner Dashboard" role="cleaner"><div className="text-white">No data found.</div></DashboardLayout>;
+  if (loading) return <DashboardLayout title="Cleaner Dashboard" role="cleaner"><div className="glass-panel text-center" style={{ color: 'var(--text)' }}>Loading...</div></DashboardLayout>;
+  if (error) return <DashboardLayout title="Cleaner Dashboard" role="cleaner"><div className="error-msg">{error}</div></DashboardLayout>;
+  if (!cleaner) return <DashboardLayout title="Cleaner Dashboard" role="cleaner"><div className="glass-panel text-center" style={{ color: 'var(--text)' }}>No data found.</div></DashboardLayout>;
 
   return (
     <DashboardLayout title="Cleaner Dashboard" role="cleaner">
       {mustChangePassword && (
-        <div className="mb-4 bg-yellow-100 text-yellow-900 px-4 py-3 rounded border border-yellow-300">
-          <div className="font-bold">Action required</div>
-          <div>Please update your password to continue using the portal.</div>
+        <div className="mb-4 glass-panel" style={{ background: 'rgba(254, 249, 195, 0.9)', borderColor: 'rgba(234, 179, 8, 0.4)' }}>
+          <div className="font-bold" style={{ color: '#854d0e' }}>Action required</div>
+          <div style={{ color: '#854d0e' }}>Please update your password to continue using the portal.</div>
           <button className="mt-2 primary-button" onClick={() => window.location.href = '/auth/change-password'}>
             Change Password
           </button>
         </div>
       )}
       {/* Tile Navigation */}
-      <div className="mb-6 flex space-x-2 border-b border-white/20 pb-2">
+      <div className="mb-6 flex space-x-2 border-b pb-2" style={{ borderColor: 'rgba(12, 37, 74, 0.12)' }}>
         <button
           onClick={() => setActiveTile("profile")}
-          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTile === "profile" ? "bg-white/20 text-white" : "bg-white/10 text-white/70 hover:bg-white/15"}`}
+          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTile === "profile" ? "bg-white/20" : "bg-white/10 hover:bg-white/15"}`}
+          style={{ color: activeTile === "profile" ? '#09172a' : '#0e223a' }}
         >
           Personal Details
         </button>
         <button
           onClick={() => setActiveTile("status")}
-          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTile === "status" ? "bg-white/20 text-white" : "bg-white/10 text-white/70 hover:bg-white/15"}`}
+          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTile === "status" ? "bg-white/20" : "bg-white/10 hover:bg-white/15"}`}
+          style={{ color: activeTile === "status" ? '#09172a' : '#0e223a' }}
         >
           Status
         </button>
         <button
           onClick={() => setActiveTile("tasks")}
-          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTile === "tasks" ? "bg-white/20 text-white" : "bg-white/10 text-white/70 hover:bg-white/15"}`}
+          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTile === "tasks" ? "bg-white/20" : "bg-white/10 hover:bg-white/15"}`}
+          style={{ color: activeTile === "tasks" ? '#09172a' : '#0e223a' }}
         >
           Tasks
         </button>
         <button
           onClick={() => setActiveTile("earnings")}
-          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTile === "earnings" ? "bg-white/20 text-white" : "bg-white/10 text-white/70 hover:bg-white/15"}`}
+          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTile === "earnings" ? "bg-white/20" : "bg-white/10 hover:bg-white/15"}`}
+          style={{ color: activeTile === "earnings" ? '#09172a' : '#0e223a' }}
         >
           Earnings
+        </button>
+        <button
+          onClick={() => setActiveTile("performance")}
+          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTile === "performance" ? "bg-white/20" : "bg-white/10 hover:bg-white/15"}`}
+          style={{ color: activeTile === "performance" ? '#09172a' : '#0e223a' }}
+        >
+          Performance
+        </button>
+        <button
+          onClick={() => setActiveTile("geolocation")}
+          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTile === "geolocation" ? "bg-white/20" : "bg-white/10 hover:bg-white/15"}`}
+          style={{ color: activeTile === "geolocation" ? '#09172a' : '#0e223a' }}
+        >
+          Geolocation
         </button>
       </div>
 
       {activeTile === "profile" && (
-        <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
+        <div className="glass-card p-6">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="font-bold text-lg text-white">Personal Details</h3>
+            <h3 className="font-bold text-lg" style={{ color: 'var(--text-h)' }}>Personal Details</h3>
             <button
               onClick={() => setEditingProfile(!editingProfile)}
-              className="bg-white/20 hover:bg-white/30 text-white px-3 py-1 text-sm rounded border border-white/30 transition-all"
+              className="bg-white/20 hover:bg-white/30 px-3 py-1 text-sm rounded border transition-all"
+              style={{ color: 'var(--text)', borderColor: 'rgba(12, 37, 74, 0.12)' }}
             >
               {editingProfile ? "Cancel" : "Edit Profile"}
             </button>
@@ -283,7 +322,7 @@ export default function CleanerDashboard() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold mb-2">First Name</label>
+                  <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--text)' }}>First Name</label>
                   <input
                     type="text"
                     value={profileData.firstName}
@@ -292,7 +331,7 @@ export default function CleanerDashboard() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold mb-2">Last Name</label>
+                  <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--text)' }}>Last Name</label>
                   <input
                     type="text"
                     value={profileData.lastName}
@@ -303,7 +342,7 @@ export default function CleanerDashboard() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold mb-2">Profile Picture</label>
+                <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--text)' }}>Profile Picture</label>
                 <input
                   type="file"
                   accept="image/*"
@@ -320,12 +359,12 @@ export default function CleanerDashboard() {
                   className="w-full"
                 />
                 {profileData.profilePicture && (
-                  <img src={profileData.profilePicture} alt="Profile" className="w-24 h-24 rounded-full border mt-2" />
+                  <img src={profileData.profilePicture} alt="Profile" className="w-12 h-12 rounded-full border mt-2" style={{ borderColor: 'var(--border)' }} />
                 )}
               </div>
 
               <div>
-                <label className="block text-sm font-semibold mb-2">Address</label>
+                <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--text)' }}>Address</label>
                 <input
                   type="text"
                   value={profileData.address}
@@ -335,7 +374,7 @@ export default function CleanerDashboard() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold mb-2">Cellphone Number</label>
+                <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--text)' }}>Cellphone Number</label>
                 <input
                   type="tel"
                   value={profileData.cellphoneNumber}
@@ -345,7 +384,7 @@ export default function CleanerDashboard() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold mb-2">Tax Number</label>
+                <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--text)' }}>Tax Number</label>
                 <input
                   type="text"
                   value={profileData.taxNumber}
@@ -355,7 +394,7 @@ export default function CleanerDashboard() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold mb-2">Emergency Contact 1 - Name</label>
+                <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--text)' }}>Emergency Contact 1 - Name</label>
                 <input
                   type="text"
                   value={profileData.emergencyContact1.name}
@@ -368,7 +407,7 @@ export default function CleanerDashboard() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold mb-2">Emergency Contact 1 - Number</label>
+                <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--text)' }}>Emergency Contact 1 - Number</label>
                 <input
                   type="tel"
                   value={profileData.emergencyContact1.number}
@@ -381,7 +420,7 @@ export default function CleanerDashboard() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold mb-2">Emergency Contact 2 - Name</label>
+                <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--text)' }}>Emergency Contact 2 - Name</label>
                 <input
                   type="text"
                   value={profileData.emergencyContact2.name}
@@ -394,7 +433,7 @@ export default function CleanerDashboard() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold mb-2">Emergency Contact 2 - Number</label>
+                <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--text)' }}>Emergency Contact 2 - Number</label>
                 <input
                   type="tel"
                   value={profileData.emergencyContact2.number}
@@ -417,26 +456,26 @@ export default function CleanerDashboard() {
             <div className="space-y-3">
               <div className="flex items-center gap-4">
                 {profileData.profilePicture && (
-                  <img src={profileData.profilePicture} alt="Profile" className="w-24 h-24 rounded-full border" />
+                  <img src={profileData.profilePicture} alt="Profile" className="w-12 h-12 rounded-full border" style={{ borderColor: 'var(--border)' }} />
                 )}
                 <div>
-                  <div className="text-xl font-bold">{profileData.firstName} {profileData.lastName}</div>
-                  <div className="text-sm text-gray-600">@{username}</div>
+                  <div className="text-xl font-bold" style={{ color: 'var(--text-h)' }}>{profileData.firstName} {profileData.lastName}</div>
+                  <div className="text-sm" style={{ color: 'var(--text)', opacity: 0.6 }}>@{username}</div>
                 </div>
               </div>
-              <div><b>Address:</b> {profileData.address || "Not provided"}</div>
-              <div><b>Cellphone:</b> {profileData.cellphoneNumber || "Not provided"}</div>
-              <div><b>Tax Number:</b> {profileData.taxNumber || "Not provided"}</div>
-              <div><b>Emergency Contact 1:</b> {profileData.emergencyContact1.name || "Not provided"} - {profileData.emergencyContact1.number || "Not provided"}</div>
-              <div><b>Emergency Contact 2:</b> {profileData.emergencyContact2.name || "Not provided"} - {profileData.emergencyContact2.number || "Not provided"}</div>
+              <div style={{ color: 'var(--text)' }}><b>Address:</b> {profileData.address || "Not provided"}</div>
+              <div style={{ color: 'var(--text)' }}><b>Cellphone:</b> {profileData.cellphoneNumber || "Not provided"}</div>
+              <div style={{ color: 'var(--text)' }}><b>Tax Number:</b> {profileData.taxNumber || "Not provided"}</div>
+              <div style={{ color: 'var(--text)' }}><b>Emergency Contact 1:</b> {profileData.emergencyContact1.name || "Not provided"} - {profileData.emergencyContact1.number || "Not provided"}</div>
+              <div style={{ color: 'var(--text)' }}><b>Emergency Contact 2:</b> {profileData.emergencyContact2.name || "Not provided"} - {profileData.emergencyContact2.number || "Not provided"}</div>
             </div>
           )}
         </div>
       )}
 
       {activeTile === "status" && (
-        <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
-          <h3 className="font-bold text-lg text-white mb-4">Current Status</h3>
+        <div className="glass-card p-6">
+          <h3 className="font-bold text-lg mb-4" style={{ color: 'var(--text-h)' }}>Current Status</h3>
           <div className="mb-4">
             <span className={`px-4 py-2 rounded-full text-lg font-semibold ${
               cleanerStatus === 'idle' ? 'bg-gray-100 text-gray-800' :
@@ -451,7 +490,7 @@ export default function CleanerDashboard() {
                cleanerStatus === 'completed' ? 'Completed' : 'Unknown'}
             </span>
           </div>
-          <h4 className="font-semibold mb-2 text-white">Update Status</h4>
+          <h4 className="font-semibold mb-2" style={{ color: 'var(--text)' }}>Update Status</h4>
           <div className="space-y-2">
             <button
               onClick={() => updateCleanerStatus('idle')}
@@ -486,23 +525,48 @@ export default function CleanerDashboard() {
       )}
 
       {activeTile === "tasks" && (
-        <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
-          <h3 className="font-bold text-lg text-white mb-4">Tasks</h3>
+        <div className="glass-card p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-bold text-lg" style={{ color: 'var(--text-h)' }}>Tasks</h3>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setTaskHorizonFilter('7-day')}
+                className={`px-3 py-1 rounded text-sm ${taskHorizonFilter === '7-day' ? 'bg-blue-500/20 text-blue-200' : 'bg-white/10 text-white/70'}`}
+              >
+                7-Day Horizon
+              </button>
+              <button
+                onClick={() => setTaskHorizonFilter('all')}
+                className={`px-3 py-1 rounded text-sm ${taskHorizonFilter === 'all' ? 'bg-blue-500/20 text-blue-200' : 'bg-white/10 text-white/70'}`}
+              >
+                All Tasks
+              </button>
+            </div>
+          </div>
           {tasks.length === 0 ? (
-            <p className="text-white/60">No tasks assigned.</p>
+            <p style={{ color: 'var(--text)', opacity: 0.6 }}>No tasks assigned.</p>
           ) : (
             <ul className="space-y-2">
-              {tasks.map((task: any) => (
-                <li key={task.id} className="border border-white/10 rounded p-3 bg-white/5 text-white">
-                  <div><b className="text-white">Customer:</b> {task.customer}</div>
-                  <div><b className="text-white">Date:</b> {task.date}</div>
-                  <div><b className="text-white">Time:</b> {task.time}</div>
-                  <div><b className="text-white">Address:</b> {task.address}</div>
-                  <div><b className="text-white">Status:</b> {task.status}</div>
+              {tasks
+                .filter((task: any) => {
+                  if (taskHorizonFilter === 'all') return true;
+                  const taskDate = new Date(task.date);
+                  const sevenDaysFromNow = new Date();
+                  sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+                  return taskDate <= sevenDaysFromNow && taskDate >= new Date();
+                })
+                .map((task: any) => (
+                <li key={task.id} className="border rounded p-3 bg-white/5" style={{ borderColor: 'var(--border)' }}>
+                  <div style={{ color: 'var(--text)' }}><b>Customer:</b> {task.customer}</div>
+                  <div style={{ color: 'var(--text)' }}><b>Date:</b> {task.date}</div>
+                  <div style={{ color: 'var(--text)' }}><b>Time:</b> {task.time}</div>
+                  <div style={{ color: 'var(--text)' }}><b>Address:</b> {task.address}</div>
+                  <div style={{ color: 'var(--text)' }}><b>Status:</b> {task.status}</div>
                   {task.status !== 'completed' && (
                     <button
                       onClick={() => updateBookingStatus(task.id.toString(), 'completed')}
-                      className="mt-2 bg-green-500/20 hover:bg-green-500/30 text-green-200 px-3 py-1 rounded border border-green-500/30 transition-all"
+                      className="mt-2 bg-green-500/20 hover:bg-green-500/30 px-3 py-1 rounded border transition-all"
+                      style={{ color: '#15803d', borderColor: 'rgba(22, 163, 74, 0.3)' }}
                     >
                       Mark Complete
                     </button>
@@ -515,12 +579,214 @@ export default function CleanerDashboard() {
       )}
 
       {activeTile === "earnings" && (
-        <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
-          <h3 className="font-bold text-lg text-white mb-4">Earnings</h3>
-          <div className="text-white">
-            <p className="text-2xl font-bold">R{cleaner?.totalEarnings || 0}</p>
-            <p className="text-white/60">Total Earnings</p>
-            <p className="mt-2 text-white/60">{cleaner?.completedJobs || 0} jobs completed</p>
+        <div className="glass-card p-6 space-y-6">
+          <h3 className="font-bold text-lg" style={{ color: 'var(--text-h)' }}>Earnings</h3>
+
+          {/* Task earnings summary */}
+          <div className="bg-white/5 rounded-lg p-4 border" style={{ borderColor: 'var(--border)' }}>
+            <p className="text-2xl font-bold" style={{ color: 'var(--text-h)' }}>R{(cleaner as any)?.totalEarnings || 0}</p>
+            <p style={{ color: 'var(--text)', opacity: 0.6 }}>Total Task Earnings</p>
+            <p className="mt-1 text-sm" style={{ color: 'var(--text)', opacity: 0.6 }}>{(cleaner as any)?.completedJobs || 0} jobs completed</p>
+          </div>
+
+          {/* Salary Preview */}
+          <div>
+            <div className="flex justify-between items-center mb-3">
+              <h4 className="font-semibold" style={{ color: 'var(--text-h)' }}>Estimated Salary Preview</h4>
+              <button
+                onClick={async () => {
+                  const userId = localStorage.getItem('user_id');
+                  if (!userId) return;
+                  setSalaryLoading(true);
+                  try {
+                    const res = await fetch(`/api/v2/staff/salary-preview?staffId=${userId}`);
+                    if (res.ok) {
+                      const data = await res.json() as any;
+                      setSalaryData(data);
+                    }
+                  } catch (e) {
+                    console.error('Salary fetch error', e);
+                  } finally {
+                    setSalaryLoading(false);
+                  }
+                }}
+                className="px-3 py-1 rounded bg-blue-500/20 text-sm hover:bg-blue-500/30 transition-all"
+                style={{ color: '#1d4ed8' }}
+              >
+                {salaryLoading ? 'Loading…' : 'View Salary'}
+              </button>
+            </div>
+
+            {salaryData ? (
+              <div className="bg-white/5 rounded-lg p-4 border space-y-3" style={{ borderColor: 'var(--border)' }}>
+                <div className="flex justify-between">
+                  <span style={{ color: 'var(--text)', opacity: 0.7 }}>Pay Period</span>
+                  <span className="font-medium" style={{ color: 'var(--text-h)' }}>{salaryData.payPeriod}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span style={{ color: 'var(--text)', opacity: 0.7 }}>Gross Earnings</span>
+                  <span className="font-medium" style={{ color: 'var(--text-h)' }}>R{salaryData.grossEarnings?.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span style={{ color: 'var(--text)', opacity: 0.7 }}>UIF Deduction</span>
+                  <span className="font-medium text-red-500">- R{salaryData.uifDeductions?.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between border-t pt-3" style={{ borderColor: 'var(--border)' }}>
+                  <span className="font-bold" style={{ color: 'var(--text-h)' }}>Take-Home Pay</span>
+                  <span className="text-xl font-bold" style={{ color: '#10b981' }}>R{salaryData.takeHomePay?.toFixed(2)}</span>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white/5 rounded-lg p-4 border text-center" style={{ borderColor: 'var(--border)' }}>
+                <p className="text-sm" style={{ color: 'var(--text)', opacity: 0.6 }}>Click "View Salary" to load your estimated pay slip from payroll.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {activeTile === "performance" && (
+        <div className="glass-card p-6">
+          <h3 className="font-bold text-lg mb-4" style={{ color: 'var(--text-h)' }}>Performance Metrics</h3>
+          <div className="space-y-4">
+            {/* KPI Score bar */}
+            <div className="bg-white/5 rounded-lg p-4 border" style={{ borderColor: 'var(--border)' }}>
+              <div className="flex justify-between items-center mb-2">
+                <span style={{ color: 'var(--text)' }}>Overall KPI Score</span>
+                <span className="text-2xl font-bold" style={{ color: '#10b981' }}>{kpiScore}/100</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-3 mb-3">
+                <div className="bg-green-500 h-3 rounded-full transition-all duration-500" style={{ width: `${kpiScore}%` }}></div>
+              </div>
+              {kpiBreakdown && (
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  {(['punctuality', 'quality', 'communication'] as const).map(key => (
+                    <div key={key} className="text-center">
+                      <div style={{ color: 'var(--text)', opacity: 0.6, textTransform: 'capitalize' }}>{key}</div>
+                      <div className="font-semibold" style={{ color: 'var(--text-h)' }}>{kpiBreakdown[key]}/100</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* 13th Check Eligibility */}
+            <div className={`rounded-lg p-4 border ${
+              kpiScore >= 80
+                ? 'bg-green-500/10 border-green-500/40'
+                : 'bg-yellow-500/10 border-yellow-500/40'
+            }`}>
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">{kpiScore >= 80 ? '🏆' : '📈'}</span>
+                <div>
+                  <div className="font-semibold" style={{ color: kpiScore >= 80 ? '#15803d' : '#92400e' }}>
+                    {kpiScore >= 80 ? 'Eligible for 13th Cheque Bonus' : 'Not yet eligible for 13th Cheque'}
+                  </div>
+                  <div className="text-sm" style={{ color: kpiScore >= 80 ? '#166534' : '#78350f', opacity: 0.8 }}>
+                    {kpiScore >= 80
+                      ? 'Your KPI score qualifies you for the annual performance bonus.'
+                      : `Reach a score of 80/100 to qualify. Current: ${kpiScore}/100.`}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Job counts */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-white/5 rounded-lg p-4" style={{ borderColor: 'var(--border)' }}>
+                <div style={{ color: 'var(--text)', opacity: 0.6 }}>Completed (7-day)</div>
+                <div className="text-xl font-bold" style={{ color: 'var(--text-h)' }}>
+                  {tasks.filter((t: any) => t.status === 'completed').length}
+                </div>
+              </div>
+              <div className="bg-white/5 rounded-lg p-4" style={{ borderColor: 'var(--border)' }}>
+                <div style={{ color: 'var(--text)', opacity: 0.6 }}>Pending (7-day)</div>
+                <div className="text-xl font-bold" style={{ color: 'var(--text-h)' }}>
+                  {tasks.filter((t: any) => t.status !== 'completed').length}
+                </div>
+              </div>
+            </div>
+
+            {/* Current status badge */}
+            <div className="bg-white/5 rounded-lg p-4" style={{ borderColor: 'var(--border)' }}>
+              <div style={{ color: 'var(--text)', opacity: 0.6 }}>Current Status</div>
+              <div className={`mt-1 px-3 py-1 rounded-full text-sm font-semibold inline-block ${
+                cleanerStatus === 'idle'      ? 'bg-gray-100 text-gray-800' :
+                cleanerStatus === 'on_way'    ? 'bg-blue-100 text-blue-800' :
+                cleanerStatus === 'arrived'   ? 'bg-yellow-100 text-yellow-800' :
+                cleanerStatus === 'completed' ? 'bg-green-100 text-green-800' :
+                'bg-gray-100 text-gray-800'
+              }`}>
+                {cleanerStatus === 'idle'      ? 'Idle' :
+                 cleanerStatus === 'on_way'    ? 'On the Way' :
+                 cleanerStatus === 'arrived'   ? 'Arrived' :
+                 cleanerStatus === 'completed' ? 'Completed' : 'Unknown'}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTile === "geolocation" && (
+        <div className="glass-card p-6">
+          <h3 className="font-bold text-lg mb-4" style={{ color: 'var(--text-h)' }}>Transparency Sync Node</h3>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between bg-white/5 rounded-lg p-4" style={{ borderColor: 'var(--border)' }}>
+              <div>
+                <div style={{ color: 'var(--text)' }}>Geolocation Sync</div>
+                <div style={{ color: 'var(--text)', opacity: 0.6, fontSize: '0.875rem' }}>
+                  {geolocationEnabled ? 'Active - Pinging location to backend' : 'Inactive'}
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setGeolocationEnabled(!geolocationEnabled);
+                  if (!geolocationEnabled) {
+                    if (navigator.geolocation) {
+                      navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                          setCurrentLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
+                          setLastLocationPing(new Date());
+                        },
+                        (error) => {
+                          alert('Unable to retrieve location');
+                        }
+                      );
+                    }
+                  } else {
+                    setCurrentLocation(null);
+                    setLastLocationPing(null);
+                  }
+                }}
+                className={`px-4 py-2 rounded-lg transition-all ${geolocationEnabled ? 'bg-red-500/20 text-red-200' : 'bg-green-500/20 text-green-200'}`}
+              >
+                {geolocationEnabled ? 'Disable Sync' : 'Enable Sync'}
+              </button>
+            </div>
+            {currentLocation && (
+              <div className="bg-white/5 rounded-lg p-4" style={{ borderColor: 'var(--border)' }}>
+                <div style={{ color: 'var(--text)', opacity: 0.6 }}>Current Location</div>
+                <div className="mt-1 font-mono text-sm" style={{ color: 'var(--text-h)' }}>
+                  Lat: {currentLocation.lat.toFixed(6)}, Lng: {currentLocation.lng.toFixed(6)}
+                </div>
+                {lastLocationPing && (
+                  <div className="mt-1 text-sm" style={{ color: 'var(--text)', opacity: 0.6 }}>
+                    Last ping: {lastLocationPing.toLocaleTimeString()}
+                  </div>
+                )}
+              </div>
+            )}
+            <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <div style={{ color: '#3b82f6', fontSize: '1.25rem' }}>📍</div>
+                <div>
+                  <h4 className="font-semibold" style={{ color: '#1e40af' }}>Privacy Notice</h4>
+                  <p className="text-sm" style={{ color: '#1e40af', opacity: 0.8 }}>
+                    Your location is only shared when you're on the way to a job. This helps clients track your arrival for better service coordination.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

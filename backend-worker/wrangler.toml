@@ -2,8 +2,14 @@ name = "cleaning-service-backend"
 main = "src/index.js"
 compatibility_date = "2026-04-19"
 
+[triggers]
+crons = ["0 0 * * *"]
+
 [env.production]
 name = "cleaning-service-backend-prod"
+
+[env.staging]
+name = "cleaning-service-backend-staging"
 
 # D1 Database binding
 [[d1_databases]]
@@ -27,6 +33,25 @@ ENVIRONMENT = "production"
 NEXT_PUBLIC_BASE_URL = "https://scratchsolidsolutions.org"
 NEXT_PUBLIC_API_URL = "https://api.scratchsolidsolutions.org/api"
 
+# Staging environment configuration
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "scratchsolid-db-backend-staging"
+database_id = "67e66542-486a-442b-bbf6-9c3d4a503f4c"
+
+[[env.staging.kv_namespaces]]
+binding = "RATE_LIMIT_KV"
+id = "f077cd7dd76843e680853ffe41bdbdaa"
+
+[[env.staging.r2_buckets]]
+binding = "UPLOADS_BUCKET"
+bucket_name = "scratchsolid-uploads-backend-staging"
+
+[env.staging.vars]
+ENVIRONMENT = "staging"
+NEXT_PUBLIC_BASE_URL = "https://staging.scratchsolidsolutions.org"
+NEXT_PUBLIC_API_URL = "https://api-staging.scratchsolidsolutions.org/api"
+
 # Secrets (must be set via: wrangler secret put <SECRET_NAME>)
 # Required secrets:
 # - JWT_SECRET
@@ -35,4 +60,3 @@ NEXT_PUBLIC_API_URL = "https://api.scratchsolidsolutions.org/api"
 # - ZOHO_CLIENT_SECRET
 # - ZOHO_ORG_ID
 # - ZOHO_REFRESH_TOKEN
-

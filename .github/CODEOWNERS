@@ -1,0 +1,23 @@
+# Default code owner for all files
+* @jason
+
+# Backend worker specific
+backend-worker/* @jason
+
+# Marketing site specific
+marketing-site/* @jason
+
+# Internal portal specific
+internal-portal/* @jason
+
+# Security sensitive files
+*secrets* @jason
+*wrangler* @jason
+
+# Configuration files
+*.json @jason
+*.toml @jason
+*.jsonc @jason
+
+# Database migrations
+migrations/* @jason

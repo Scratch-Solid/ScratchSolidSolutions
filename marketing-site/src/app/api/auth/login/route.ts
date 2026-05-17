@@ -89,6 +89,14 @@ export async function POST(request: NextRequest) {
     }, { status: 200 });
   } catch (error) {
     logger.error('Error during login', error as Error);
-    return NextResponse.json({ error: 'An unexpected error occurred. Please try again.' }, { status: 500 });
+    console.error('Login error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : 'No stack trace',
+      name: error instanceof Error ? error.name : 'Unknown error type'
+    });
+    return NextResponse.json({ 
+      error: 'An unexpected error occurred. Please try again.',
+      debug: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : 'Unknown error') : undefined
+    }, { status: 500 });
   }
 }

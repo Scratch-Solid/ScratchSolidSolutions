@@ -4,9 +4,9 @@
  * Deploys as a Cloudflare Worker in front of both marketing-site and internal-portal
  */
 
-const MARKETING_ORIGIN = 'https://scratchsolid.com';
-const PORTAL_ORIGIN = 'https://portal.scratchsolid.com';
-const API_ORIGIN = 'https://api.scratchsolid.com';
+const MARKETING_ORIGIN = 'https://scratchsolidsolutions.org';
+const PORTAL_ORIGIN = 'https://portal.scratchsolidsolutions.org';
+const API_ORIGIN = 'https://api.scratchsolidsolutions.org';
 
 const CACHEABLE_PATHS = [
   { pattern: /^\/api\/content\//, ttl: 300, type: 'public' },

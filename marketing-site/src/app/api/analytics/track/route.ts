@@ -4,7 +4,15 @@ import { getDb } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const body = await request.json() as {
+      eventType?: string;
+      promoCode?: string;
+      promoCodeId?: number;
+      referrer?: string;
+      userAgent?: string;
+      url?: string;
+      timestamp?: string;
+    };
     const { eventType, promoCode, promoCodeId, referrer, userAgent, url, timestamp } = body;
 
     if (!eventType) {

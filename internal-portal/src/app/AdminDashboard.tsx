@@ -7,6 +7,463 @@ import React, { useEffect, useState } from "react";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import DashboardLayout from "@/components/DashboardLayout";
 import ServicesManagement from "./AdminDashboard/services-management";
+import CleanerVisibility from "./AdminDashboard/cleaner-visibility";
+
+function ProxyObserver() {
+  const [activeSession, setActiveSession] = useState<any>(null);
+  const [targetUserId, setTargetUserId] = useState('');
+  const [targetUserRole, setTargetUserRole] = useState<'client' | 'cleaner' | 'business'>('client');
+  const [sessionHistory, setSessionHistory] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    fetchSessionHistory();
+  }, []);
+
+  const fetchSessionHistory = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch('/api/admin/proxy-observer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ action: 'view' })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setSessionHistory(data.history || []);
+      }
+    } catch (error) {
+      setMessage('Failed to fetch session history');
+    }
+  };
+
+  const handleStartSession = async () => {
+    if (!targetUserId) {
+      setMessage('Please select a target user');
+      return;
+    }
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch('/api/admin/proxy-observer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          action: 'start',
+          targetUserId: parseInt(targetUserId)
+        })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setActiveSession(data.session);
+        setMessage('Proxy session started');
+        fetchSessionHistory();
+      } else {
+        setMessage('Failed to start proxy session');
+      }
+    } catch (error) {
+      setMessage('Failed to start proxy session');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEndSession = async () => {
+    if (!activeSession) return;
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch('/api/admin/proxy-observer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          action: 'end',
+          sessionId: activeSession.sessionId
+        })
+      });
+      if (response.ok) {
+        setActiveSession(null);
+        setMessage('Proxy session ended');
+        fetchSessionHistory();
+      } else {
+        setMessage('Failed to end proxy session');
+      }
+    } catch (error) {
+      setMessage('Failed to end proxy session');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-white">Proxy Observer State Engine</h2>
+        {message && (
+          <div className={`px-4 py-2 rounded-lg ${message.includes('success') || message.includes('started') || message.includes('ended') ? 'bg-green-500/20 text-green-200' : 'bg-red-500/20 text-red-200'}`}>
+            {message}
+          </div>
+        )}
+      </div>
+
+      {/* Session Control Panel */}
+      <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
+        <h3 className="text-lg font-bold text-white mb-4">Dashboard Projection Matrix</h3>
+        <div className="grid grid-cols-3 gap-4 mb-4">
+          <div>
+            <label className="block text-white/80 text-sm mb-2">Target User Role</label>
+            <select
+              value={targetUserRole}
+              onChange={(e) => setTargetUserRole(e.target.value as any)}
+              className="w-full bg-white/20 border border-white/30 rounded px-3 py-2 text-white"
+            >
+              <option value="client">Client</option>
+              <option value="business">Business</option>
+              <option value="cleaner">Cleaner</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-white/80 text-sm mb-2">Target User ID</label>
+            <input
+              type="text"
+              value={targetUserId}
+              onChange={(e) => setTargetUserId(e.target.value)}
+              placeholder="Enter user ID"
+              className="w-full bg-white/20 border border-white/30 rounded px-3 py-2 text-white placeholder-white/50"
+            />
+          </div>
+          <div className="flex items-end gap-2">
+            {!activeSession ? (
+              <button
+                onClick={handleStartSession}
+                disabled={loading || !targetUserId}
+                className="flex-1 bg-blue-500/20 hover:bg-blue-500/30 text-blue-200 px-4 py-2 rounded-lg border border-blue-500/30 transition-all disabled:opacity-50"
+              >
+                {loading ? 'Starting...' : 'Start View As'}
+              </button>
+            ) : (
+              <button
+                onClick={handleEndSession}
+                disabled={loading}
+                className="flex-1 bg-red-500/20 hover:bg-red-500/30 text-red-200 px-4 py-2 rounded-lg border border-red-500/30 transition-all disabled:opacity-50"
+              >
+                {loading ? 'Ending...' : 'End Session'}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Active Session Display */}
+        {activeSession && (
+          <div className="mt-4 p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-green-200 font-semibold">Active Session</span>
+              <span className="text-green-200/60 text-sm">Started: {new Date(activeSession.startedAt).toLocaleString()}</span>
+            </div>
+            <div className="text-white/80 text-sm">
+              Viewing as: {activeSession.targetUserId} ({targetUserRole})
+            </div>
+            <div className="mt-3 p-3 bg-white/5 rounded border border-white/10">
+              <div className="text-white/60 text-xs mb-2">READ-ONLY VIEW</div>
+              <div className="text-white/80 text-sm">
+                This is a simulated view of the target user's dashboard. Actual dashboard rendering would require iframe integration.
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Session History */}
+      <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
+        <h3 className="text-lg font-bold text-white mb-4">Session History (Audit Log)</h3>
+        {sessionHistory.length === 0 ? (
+          <p className="text-white/60">No proxy sessions recorded.</p>
+        ) : (
+          <div className="space-y-2">
+            {sessionHistory.map((session: any) => (
+              <div key={session.id} className="border border-white/10 rounded p-3 bg-white/5">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="text-white font-semibold">Session ID: {session.sessionId}</div>
+                    <div className="text-white/70 text-sm">Target: {session.targetUserId} ({session.targetRole})</div>
+                    <div className="text-white/60 text-xs">Started: {new Date(session.startedAt).toLocaleString()}</div>
+                    {session.endedAt && (
+                      <div className="text-white/60 text-xs">Ended: {new Date(session.endedAt).toLocaleString()}</div>
+                    )}
+                  </div>
+                  <div className={`px-2 py-1 rounded text-xs ${session.status === 'active' ? 'bg-green-500/20 text-green-200' : 'bg-white/10 text-white/60'}`}>
+                    {session.status}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* POPIA Compliance Notice */}
+      <div className="bg-yellow-500/10 backdrop-blur-sm rounded-lg border border-yellow-500/30 p-4">
+        <div className="flex items-start gap-3">
+          <div className="text-yellow-200 text-2xl">⚠️</div>
+          <div>
+            <h4 className="text-yellow-200 font-semibold mb-1">POPIA Compliance Notice</h4>
+            <p className="text-white/70 text-sm">
+              All proxy observer sessions are logged for audit purposes. Access to user data through this feature is monitored and requires proper authorization.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PricingConfiguration() {
+  const [pricingMatrix, setPricingMatrix] = useState<any[]>([]);
+  const [transportFees, setTransportFees] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState('');
+  const [editingCell, setEditingCell] = useState<{id: string, field: string} | null>(null);
+  const [editValue, setEditValue] = useState('');
+
+  useEffect(() => {
+    fetchPricingData();
+  }, []);
+
+  const fetchPricingData = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch('/api/v2/pricing/matrix', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setPricingMatrix(data.pricing || []);
+        setTransportFees(data.transport || []);
+      }
+    } catch (error) {
+      setMessage('Failed to load pricing data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCellEdit = (id: string, field: string, value: string) => {
+    setEditingCell({ id, field });
+    setEditValue(value);
+  };
+
+  const handleCellSave = async () => {
+    if (!editingCell) return;
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch('/api/v2/pricing/matrix', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          serviceType: editingCell.id,
+          [editingCell.field]: parseFloat(editValue)
+        })
+      });
+      if (response.ok) {
+        setMessage('Pricing updated successfully');
+        fetchPricingData();
+      } else {
+        setMessage('Failed to update pricing');
+      }
+    } catch (error) {
+      setMessage('Failed to update pricing');
+    } finally {
+      setEditingCell(null);
+      setEditValue('');
+      setTimeout(() => setMessage(''), 3000);
+    }
+  };
+
+  if (loading) return <div className="text-white animate-pulse">Loading pricing configuration...</div>;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-white">Dynamic Pricing Matrix</h2>
+        {message && (
+          <div className={`px-4 py-2 rounded-lg ${message.includes('success') ? 'bg-green-500/20 text-green-200' : 'bg-red-500/20 text-red-200'}`}>
+            {message}
+          </div>
+        )}
+      </div>
+
+      {/* Pricing Configuration Grid */}
+      <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
+        <h3 className="text-lg font-bold text-white mb-4">Service Pricing Configuration</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-white">
+            <thead>
+              <tr className="border-b border-white/20">
+                <th className="text-left py-3 px-4">Service Type</th>
+                <th className="text-left py-3 px-4">Base Price (R)</th>
+                <th className="text-left py-3 px-4">Transport Fee (R)</th>
+                <th className="text-left py-3 px-4">Weekend Surcharge (%)</th>
+                <th className="text-left py-3 px-4">Holiday Surcharge (%)</th>
+                <th className="text-left py-3 px-4">Rush Surcharge (%)</th>
+                <th className="text-left py-3 px-4">Last Updated</th>
+              </tr>
+            </thead>
+            <tbody>
+              {pricingMatrix.map((item: any) => (
+                <tr key={item.serviceType} className="border-b border-white/10 hover:bg-white/5">
+                  <td className="py-3 px-4 font-semibold">{item.serviceType}</td>
+                  <td className="py-3 px-4">
+                    {editingCell?.id === item.serviceType && editingCell?.field === 'basePrice' ? (
+                      <input
+                        type="number"
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        onBlur={handleCellSave}
+                        onKeyDown={(e) => e.key === 'Enter' && handleCellSave()}
+                        className="bg-white/20 border border-white/30 rounded px-2 py-1 w-24 text-white"
+                        autoFocus
+                      />
+                    ) : (
+                      <span
+                        className="cursor-pointer hover:text-blue-300"
+                        onClick={() => handleCellEdit(item.serviceType, 'basePrice', item.basePrice?.toString() || '')}
+                      >
+                        R{item.basePrice?.toFixed(2) || '0.00'}
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-3 px-4">
+                    {editingCell?.id === item.serviceType && editingCell?.field === 'transportFee' ? (
+                      <input
+                        type="number"
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        onBlur={handleCellSave}
+                        onKeyDown={(e) => e.key === 'Enter' && handleCellSave()}
+                        className="bg-white/20 border border-white/30 rounded px-2 py-1 w-24 text-white"
+                        autoFocus
+                      />
+                    ) : (
+                      <span
+                        className="cursor-pointer hover:text-blue-300"
+                        onClick={() => handleCellEdit(item.serviceType, 'transportFee', item.transportFee?.toString() || '')}
+                      >
+                        R{item.transportFee?.toFixed(2) || '0.00'}
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-3 px-4">
+                    {editingCell?.id === item.serviceType && editingCell?.field === 'weekendSurcharge' ? (
+                      <input
+                        type="number"
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        onBlur={handleCellSave}
+                        onKeyDown={(e) => e.key === 'Enter' && handleCellSave()}
+                        className="bg-white/20 border border-white/30 rounded px-2 py-1 w-20 text-white"
+                        autoFocus
+                      />
+                    ) : (
+                      <span
+                        className="cursor-pointer hover:text-blue-300"
+                        onClick={() => handleCellEdit(item.serviceType, 'weekendSurcharge', item.weekendSurcharge?.toString() || '')}
+                      >
+                        {item.weekendSurcharge || 0}%
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-3 px-4">
+                    {editingCell?.id === item.serviceType && editingCell?.field === 'holidaySurcharge' ? (
+                      <input
+                        type="number"
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        onBlur={handleCellSave}
+                        onKeyDown={(e) => e.key === 'Enter' && handleCellSave()}
+                        className="bg-white/20 border border-white/30 rounded px-2 py-1 w-20 text-white"
+                        autoFocus
+                      />
+                    ) : (
+                      <span
+                        className="cursor-pointer hover:text-blue-300"
+                        onClick={() => handleCellEdit(item.serviceType, 'holidaySurcharge', item.holidaySurcharge?.toString() || '')}
+                      >
+                        {item.holidaySurcharge || 0}%
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-3 px-4">
+                    {editingCell?.id === item.serviceType && editingCell?.field === 'rushSurcharge' ? (
+                      <input
+                        type="number"
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        onBlur={handleCellSave}
+                        onKeyDown={(e) => e.key === 'Enter' && handleCellSave()}
+                        className="bg-white/20 border border-white/30 rounded px-2 py-1 w-20 text-white"
+                        autoFocus
+                      />
+                    ) : (
+                      <span
+                        className="cursor-pointer hover:text-blue-300"
+                        onClick={() => handleCellEdit(item.serviceType, 'rushSurcharge', item.rushSurcharge?.toString() || '')}
+                      >
+                        {item.rushSurcharge || 0}%
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-3 px-4 text-white/60 text-sm">
+                    {item.lastUpdated ? new Date(item.lastUpdated).toLocaleString() : 'Never'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="mt-4 text-sm text-white/60">
+          Click on any value to edit. Changes are saved immediately and cached for 5 minutes.
+        </div>
+      </div>
+
+      {/* Transport Fees Grid */}
+      <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
+        <h3 className="text-lg font-bold text-white mb-4">Suburb Transport Fees</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-white">
+            <thead>
+              <tr className="border-b border-white/20">
+                <th className="text-left py-3 px-4">Area Name</th>
+                <th className="text-left py-3 px-4">Base Transport Fee (R)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {transportFees.map((item: any) => (
+                <tr key={item.areaName} className="border-b border-white/10 hover:bg-white/5">
+                  <td className="py-3 px-4 font-semibold">{item.areaName}</td>
+                  <td className="py-3 px-4">R{item.baseTransportFee?.toFixed(2) || '0.00'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function AdminDashboard() {
   useSessionTimeout(true);
@@ -355,10 +812,40 @@ export default function AdminDashboard() {
           Services & Banking
         </button>
         <button
+          onClick={() => setActiveTab("cleaners")}
+          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTab === "cleaners" ? "bg-white/20 text-white" : "bg-white/10 text-white/70 hover:bg-white/15"}`}
+        >
+          Cleaners
+        </button>
+        <button
           onClick={() => setActiveTab("content")}
           className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTab === "content" ? "bg-white/20 text-white" : "bg-white/10 text-white/70 hover:bg-white/15"}`}
         >
           Content
+        </button>
+        <button
+          onClick={() => setActiveTab("pricing")}
+          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTab === "pricing" ? "bg-white/20 text-white" : "bg-white/10 text-white/70 hover:bg-white/15"}`}
+        >
+          Pricing
+        </button>
+        <button
+          onClick={() => setActiveTab("proxy-observer")}
+          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTab === "proxy-observer" ? "bg-white/20 text-white" : "bg-white/10 text-white/70 hover:bg-white/15"}`}
+        >
+          Proxy Observer
+        </button>
+        <button
+          onClick={() => setActiveTab("pool-management")}
+          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTab === "pool-management" ? "bg-white/20 text-white" : "bg-white/10 text-white/70 hover:bg-white/15"}`}
+        >
+          Pool Management
+        </button>
+        <button
+          onClick={() => setActiveTab("staff-reviews")}
+          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTab === "staff-reviews" ? "bg-white/20 text-white" : "bg-white/10 text-white/70 hover:bg-white/15"}`}
+        >
+          Staff Reviews
         </button>
       </div>
 
@@ -542,8 +1029,18 @@ export default function AdminDashboard() {
         </div>
       ) : activeTab === "services-banking" ? (
         <ServicesManagement />
+      ) : activeTab === "cleaners" ? (
+        <CleanerVisibility />
       ) : activeTab === "content" ? (
         <ContentManagement />
+      ) : activeTab === "pricing" ? (
+        <PricingConfiguration />
+      ) : activeTab === "proxy-observer" ? (
+        <ProxyObserver />
+      ) : activeTab === "pool-management" ? (
+        <PoolManagement />
+      ) : activeTab === "staff-reviews" ? (
+        <StaffReviews />
       ) : null}
     </DashboardLayout>
   );
@@ -1325,6 +1822,203 @@ function ContentManagement() {
               </div>
             ))}
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Pool Management ─────────────────────────────────────────────────────────
+function PoolManagement() {
+  const [cleaners, setCleaners] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    fetch('/api/admin/cleaners', { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json()).then((data: any) => { setCleaners(Array.isArray(data) ? data : []); })
+      .catch(() => setMessage('Failed to load cleaners'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const togglePool = async (cleanerId: number, currentPool: string) => {
+    const newPool = currentPool === 'INDIVIDUAL' ? 'BUSINESS' : 'INDIVIDUAL';
+    const token = localStorage.getItem('authToken');
+    try {
+      const res = await fetch('/api/v2/staff/pool-transition', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ staff_id: cleanerId, new_pool: newPool, reason: 'Admin manual reassignment' }),
+      });
+      if (res.ok) {
+        setCleaners(prev => prev.map(c => c.id === cleanerId ? { ...c, pool_type: newPool } : c));
+        setMessage(`Cleaner moved to ${newPool} pool`);
+        setTimeout(() => setMessage(''), 3000);
+      } else {
+        setMessage('Failed to update pool');
+      }
+    } catch {
+      setMessage('Network error');
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-white">Pool Management</h2>
+        {message && <div className="px-4 py-2 rounded-lg bg-blue-500/20 text-blue-200 text-sm">{message}</div>}
+      </div>
+      <p className="text-white/60 text-sm">Toggle cleaners between INDIVIDUAL (auto-assigned residential) and BUSINESS (manually allocated commercial) pools.</p>
+
+      {loading ? <p className="text-white/60">Loading cleaners…</p> : (
+        <div className="space-y-3">
+          {cleaners.map((c: any) => (
+            <div key={c.id} className="flex items-center justify-between bg-white/5 border border-white/10 rounded-lg p-4">
+              <div>
+                <div className="font-semibold text-white">{c.first_name} {c.last_name}</div>
+                <div className="text-sm text-white/60">{c.email || c.username}</div>
+              </div>
+              <div className="flex items-center gap-4">
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                  (c.pool_type || 'INDIVIDUAL') === 'INDIVIDUAL'
+                    ? 'bg-blue-500/20 text-blue-200 border border-blue-500/30'
+                    : 'bg-purple-500/20 text-purple-200 border border-purple-500/30'
+                }`}>
+                  {c.pool_type || 'INDIVIDUAL'}
+                </span>
+                <button
+                  onClick={() => togglePool(c.id, c.pool_type || 'INDIVIDUAL')}
+                  className="px-3 py-1 rounded bg-white/10 text-white/80 hover:bg-white/20 text-sm transition-all border border-white/20"
+                >
+                  Switch to {(c.pool_type || 'INDIVIDUAL') === 'INDIVIDUAL' ? 'BUSINESS' : 'INDIVIDUAL'}
+                </button>
+              </div>
+            </div>
+          ))}
+          {cleaners.length === 0 && <p className="text-white/50 text-sm">No cleaners found.</p>}
+        </div>
+      )}
+
+      <div className="mt-4 bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+        <div className="font-semibold text-blue-200 mb-1">Pool Definitions</div>
+        <ul className="text-sm text-white/70 space-y-1">
+          <li><b className="text-blue-200">INDIVIDUAL</b> — Residential bookings. Auto-assigned on booking creation.</li>
+          <li><b className="text-purple-200">BUSINESS</b> — Commercial/office jobs. Requires manual allocation by admin.</li>
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+// ── Staff Reviews (Monthly KPI Input) ────────────────────────────────────────
+function StaffReviews() {
+  const [cleaners, setCleaners] = useState<any[]>([]);
+  const [selected, setSelected] = useState<any | null>(null);
+  const [form, setForm] = useState({ attendance_score: 5, company_values_score: 5, client_rating: 4, punctuality_score: 7, quality_score: 7, communication_score: 7, notes: '' });
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    fetch('/api/admin/cleaners', { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json()).then((data: any) => setCleaners(Array.isArray(data) ? data : []))
+      .catch(() => setMessage('Failed to load staff'));
+  }, []);
+
+  const submitReview = async () => {
+    if (!selected) return;
+    setLoading(true);
+    const token = localStorage.getItem('authToken');
+    try {
+      const res = await fetch('/api/admin/staff-reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ staff_id: selected.id, ...form }),
+      });
+      if (res.ok) {
+        setMessage(`Review submitted for ${selected.first_name}. KPI will be recalculated.`);
+        // Trigger KPI sync
+        await fetch(`/api/v2/staff/${selected.id}/sync-kpi`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setForm({ attendance_score: 5, company_values_score: 5, client_rating: 4, punctuality_score: 7, quality_score: 7, communication_score: 7, notes: '' });
+        setSelected(null);
+        setTimeout(() => setMessage(''), 4000);
+      } else {
+        setMessage('Failed to submit review');
+      }
+    } catch {
+      setMessage('Network error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const ScoreInput = ({ label, field, min = 0, max = 10 }: { label: string; field: keyof typeof form; min?: number; max?: number }) => (
+    <div>
+      <label className="block text-white/70 text-sm mb-1">{label} ({min}–{max})</label>
+      <input
+        type="number" min={min} max={max} step="0.5"
+        value={form[field] as number}
+        onChange={e => setForm(prev => ({ ...prev, [field]: parseFloat(e.target.value) }))}
+        className="w-full bg-white/10 border border-white/20 rounded px-3 py-2 text-white text-sm"
+      />
+    </div>
+  );
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-white">Monthly Staff Reviews</h2>
+        {message && <div className="px-4 py-2 rounded-lg bg-green-500/20 text-green-200 text-sm">{message}</div>}
+      </div>
+      <p className="text-white/60 text-sm">Enter monthly scores for attendance, company values, and quality. Scores feed the KPI engine and determine 13th cheque eligibility.</p>
+
+      {/* Staff selector */}
+      <div>
+        <label className="text-white/70 text-sm block mb-2">Select Staff Member</label>
+        <select
+          className="w-full bg-white/10 border border-white/20 rounded px-3 py-2 text-white text-sm"
+          value={selected?.id || ''}
+          onChange={e => setSelected(cleaners.find(c => c.id === parseInt(e.target.value)) || null)}
+        >
+          <option value="">— Choose a staff member —</option>
+          {cleaners.map((c: any) => (
+            <option key={c.id} value={c.id}>{c.first_name} {c.last_name}</option>
+          ))}
+        </select>
+      </div>
+
+      {selected && (
+        <div className="bg-white/5 border border-white/10 rounded-lg p-5 space-y-4">
+          <h3 className="text-white font-semibold">Review for {selected.first_name} {selected.last_name}</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <ScoreInput label="Client Rating (1–5 stars)" field="client_rating" min={1} max={5} />
+            <ScoreInput label="Attendance Score (0–10)" field="attendance_score" />
+            <ScoreInput label="Company Values Score (0–10)" field="company_values_score" />
+            <ScoreInput label="Punctuality Score (0–10)" field="punctuality_score" />
+            <ScoreInput label="Quality Score (0–10)" field="quality_score" />
+            <ScoreInput label="Communication Score (0–10)" field="communication_score" />
+          </div>
+          <div>
+            <label className="block text-white/70 text-sm mb-1">Notes</label>
+            <textarea
+              rows={3}
+              value={form.notes}
+              onChange={e => setForm(prev => ({ ...prev, notes: e.target.value }))}
+              className="w-full bg-white/10 border border-white/20 rounded px-3 py-2 text-white text-sm"
+              placeholder="Optional review notes…"
+            />
+          </div>
+          <button
+            onClick={submitReview}
+            disabled={loading}
+            className="w-full py-2 rounded bg-blue-500/20 text-blue-200 hover:bg-blue-500/30 border border-blue-500/30 transition-all disabled:opacity-50"
+          >
+            {loading ? 'Submitting…' : 'Submit Review & Sync KPI'}
+          </button>
         </div>
       )}
     </div>

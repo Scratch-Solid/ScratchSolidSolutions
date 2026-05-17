@@ -100,12 +100,12 @@ export default function ConsentSubmittedPage() {
                   </p>
                   <div className="space-y-2 text-left">
                     <div>
-                      <p className="text-xs text-gray-500">Paysheet Code / Username:</p>
+                      <p className="text-xs text-gray-500">Username / Paysheet Code:</p>
                       <p className="font-mono font-bold text-lg">{consentData.generatedUsername}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500">Login with:</p>
-                      <p className="text-sm">Paysheet Code OR Phone Number</p>
+                      <p className="text-xs text-gray-500">Password:</p>
+                      <p className="text-sm">Your registered cellphone number</p>
                       <p className="text-sm font-mono">{consentData.contactNumber}</p>
                     </div>
                   </div>

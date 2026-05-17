@@ -1,10 +1,11 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuth } from '@/lib/middleware';
+import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 
 export async function GET(request: NextRequest) {
+  const traceId = withTracing(request);
   const authResult = await withAuth(request, ['admin']);
-  if (authResult instanceof NextResponse) return authResult;
+  if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
 
   try {
@@ -12,7 +13,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
 
     let query = `
-      SELECT cp.*, u.email, u.role, u.deleted as user_deleted
+      SELECT cp.*, u.email, u.role, u.deleted as user_deleted, u.first_name, u.last_name
       FROM cleaner_profiles cp
       JOIN users u ON cp.user_id = u.id
     `;
@@ -26,18 +27,19 @@ export async function GET(request: NextRequest) {
     query += ' ORDER BY cp.created_at DESC';
 
     const cleaners = await db.prepare(query).bind(...params).all();
-    return NextResponse.json(cleaners.results || []);
-    response.headers.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300, s-maxage=60');
-    return response;
+    const response = NextResponse.json(cleaners.results || []);
+    response.headers.set('Cache-Control', 'private, max-age=10');
+    return withSecurityHeaders(response, traceId);
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch cleaners' }, { status: 500 });
-    return response;
+    const response = NextResponse.json({ error: 'Failed to fetch cleaners' }, { status: 500 });
+    return withSecurityHeaders(response, traceId);
   }
 }
 
 export async function PUT(request: NextRequest) {
+  const traceId = withTracing(request);
   const authResult = await withAuth(request, ['admin']);
-  if (authResult instanceof NextResponse) return authResult;
+  if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
 
   try {
@@ -45,7 +47,8 @@ export async function PUT(request: NextRequest) {
     const { cleaner_id, blocked, status } = body;
 
     if (!cleaner_id) {
-      return NextResponse.json({ error: 'Missing cleaner_id' }, { status: 400 });
+      const response = NextResponse.json({ error: 'Missing cleaner_id' }, { status: 400 });
+      return withSecurityHeaders(response, traceId);
     }
 
     const updates: string[] = [];
@@ -61,7 +64,8 @@ export async function PUT(request: NextRequest) {
     }
 
     if (updates.length === 0) {
-      return NextResponse.json({ error: 'No fields to update' }, { status: 400 });
+      const response = NextResponse.json({ error: 'No fields to update' }, { status: 400 });
+      return withSecurityHeaders(response, traceId);
     }
 
     updates.push('updated_at = datetime("now")');
@@ -71,9 +75,10 @@ export async function PUT(request: NextRequest) {
       `UPDATE cleaner_profiles SET ${updates.join(', ')} WHERE user_id = ?`
     ).bind(...values).run();
 
-    return NextResponse.json({ success: true });
+    const response = NextResponse.json({ success: true });
+    return withSecurityHeaders(response, traceId);
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to update cleaner' }, { status: 500 });
-    return response;
+    const response = NextResponse.json({ error: 'Failed to update cleaner' }, { status: 500 });
+    return withSecurityHeaders(response, traceId);
   }
 }

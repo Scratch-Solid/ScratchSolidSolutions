@@ -8,16 +8,20 @@
     "deploy": "wrangler deploy",
     "deploy:prod": "node deploy.js",
     "setup:d1": "node setup-d1.js",
-    "build": "echo 'No build step required for Workers'"
+    "build": "echo 'No build step required for Workers'",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   },
   "dependencies": {
-    "itty-router": "^4.0.25",
     "@noble/hashes": "^1.3.3",
     "@tsndr/cloudflare-worker-jwt": "^2.4.1",
-    "bcryptjs": "^2.4.3"
+    "bcryptjs": "^3.0.3",
+    "itty-router": "^4.0.25"
   },
   "devDependencies": {
-    "wrangler": "^3.114.17",
-    "@cloudflare/workers-types": "^4.20240512.0"
+    "@cloudflare/workers-types": "^4.20260511.1",
+    "jest": "^30.4.2",
+    "wrangler": "^4.91.0"
   }
 }

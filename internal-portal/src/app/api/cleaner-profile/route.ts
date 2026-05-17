@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
-import { getDb, getCleanerProfileByUsername, updateCleanerProfile, logAuditEvent } from "../../../lib/db";
+import { getDb, getCleanerProfileByUsername, updateCleanerProfile, logAuditEvent, initializeCleanerProfilesTable } from "../../../lib/db";
 import { withAuth, withTracing, withSecurityHeaders, withCsrf } from "../../../lib/middleware";
 
 export async function GET(request: NextRequest) {
@@ -9,17 +9,20 @@ export async function GET(request: NextRequest) {
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
 
+  // Initialize table if it doesn't exist
+  await initializeCleanerProfilesTable(db);
+
   const { searchParams } = new URL(request.url);
   const username = searchParams.get("username");
   
   if (username) {
     const profile = await getCleanerProfileByUsername(db, username);
     if (profile) {
-      return NextResponse.json(profile);
+      const response = NextResponse.json(profile);
       response.headers.set('Cache-Control', 'private, max-age=60');
       return withSecurityHeaders(response, traceId);
     }
-    return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+    const response = NextResponse.json({ error: "Profile not found" }, { status: 404 });
     return withSecurityHeaders(response, traceId);
   }
   
@@ -35,7 +38,7 @@ export async function GET(request: NextRequest) {
   const countResult = await db.prepare('SELECT COUNT(*) as total FROM cleaner_profiles').first();
   const total = (countResult as any)?.total || 0;
 
-  return NextResponse.json({
+  const response = NextResponse.json({
     data: profiles.results,
     pagination: {
       page,
@@ -57,7 +60,10 @@ export async function POST(request: NextRequest) {
   const csrfResponse = await withCsrf(request);
   if (csrfResponse) return withSecurityHeaders(csrfResponse, traceId);
 
-  const data = await request.json();
+  // Initialize table if it doesn't exist
+  await initializeCleanerProfilesTable(db);
+
+  const data = await request.json() as Record<string, any>;
   
   // Check if profile already exists by username
   const existing = await getCleanerProfileByUsername(db, data.username);
@@ -66,8 +72,15 @@ export async function POST(request: NextRequest) {
     // Update existing profile
     const updated = await updateCleanerProfile(db, data.username, data);
     if (updated) {
-      await logAuditEvent(db, (user as any).id, 'update_cleaner_profile', 'cleaner_profile', (updated as any).id, JSON.stringify({ username: data.username }), request.headers.get('x-forwarded-for') || '');
-      return NextResponse.json(updated, { status: 200 });
+      await logAuditEvent(db, {
+        user_id: (user as any).id,
+        action: 'update_cleaner_profile',
+        resource: 'cleaner_profile',
+        resource_id: String((updated as any).id),
+        details: JSON.stringify({ username: data.username }),
+        ip_address: request.headers.get('x-forwarded-for') || ''
+      });
+      const response = NextResponse.json(updated, { status: 200 });
       return withSecurityHeaders(response, traceId);
     }
   } else {
@@ -78,12 +91,19 @@ export async function POST(request: NextRequest) {
     ).bind(data.username, data.username, data.department || 'cleaning', data.first_name || '', data.last_name || '').first();
     
     if (result) {
-      await logAuditEvent(db, (user as any).id, 'create_cleaner_profile', 'cleaner_profile', (result as any).id, JSON.stringify({ username: data.username }), request.headers.get('x-forwarded-for') || '');
-      return NextResponse.json(result, { status: 201 });
+      await logAuditEvent(db, {
+        user_id: (user as any).id,
+        action: 'create_cleaner_profile',
+        resource: 'cleaner_profile',
+        resource_id: String((result as any).id),
+        details: JSON.stringify({ username: data.username }),
+        ip_address: request.headers.get('x-forwarded-for') || ''
+      });
+      const response = NextResponse.json(result, { status: 201 });
       return withSecurityHeaders(response, traceId);
     }
   }
-  return NextResponse.json({ error: "Failed to create/update profile" }, { status: 500 });
+  const response = NextResponse.json({ error: "Failed to create/update profile" }, { status: 500 });
   return withSecurityHeaders(response, traceId);
 }
 
@@ -96,22 +116,33 @@ export async function PUT(request: NextRequest) {
   const csrfResponse = await withCsrf(request);
   if (csrfResponse) return withSecurityHeaders(csrfResponse, traceId);
 
-  const data = await request.json();
+  // Initialize table if it doesn't exist
+  await initializeCleanerProfilesTable(db);
+
+  const data = await request.json() as Record<string, any>;
   const { username } = data;
   
   if (!username) {
-    return NextResponse.json({ error: "Username required" }, { status: 400 });
+    const response = NextResponse.json({ error: "Username required" }, { status: 400 });
+    return withSecurityHeaders(response, traceId);
   }
   
   const updated = await updateCleanerProfile(db, username, data);
   if (updated) {
     if ((user as any).role === 'admin') {
-      await logAuditEvent(db, (user as any).id, 'update_cleaner_profile', 'cleaner_profile', (updated as any).id, JSON.stringify({ username }), request.headers.get('x-forwarded-for') || '');
+      await logAuditEvent(db, {
+        user_id: (user as any).id,
+        action: 'update_cleaner_profile',
+        resource: 'cleaner_profile',
+        resource_id: String((updated as any).id),
+        details: JSON.stringify({ username }),
+        ip_address: request.headers.get('x-forwarded-for') || ''
+      });
     }
-    return NextResponse.json(updated);
+    const response = NextResponse.json(updated);
     return withSecurityHeaders(response, traceId);
   }
   
-  return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+  const response = NextResponse.json({ error: "Profile not found" }, { status: 404 });
   return withSecurityHeaders(response, traceId);
 }
