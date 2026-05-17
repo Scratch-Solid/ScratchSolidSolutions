@@ -33,8 +33,32 @@ export async function POST(
     // Calculate weighted KPI
     const weightedKPI = calculateWeightedKPI(clientScores);
 
-    // Update ERPNext (placeholder - would need actual ERPNext API call)
-    // await updateERPNextKPI(staffId, weightedKPI);
+    // Update ERPNext with KPI data
+    try {
+      const erpnextUrl = `${process.env.ERPNEXT_URL}/api/resource/Employee/${staffId}`;
+      const response = await fetch(erpnextUrl, {
+        method: "PUT",
+        headers: {
+          "Authorization": `token ${process.env.ERPNEXT_API_KEY}:${process.env.ERPNEXT_API_SECRET}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          custom_kpi_score: weightedKPI.overall,
+          custom_client_satisfaction: weightedKPI.clientSatisfaction,
+          custom_punctuality: weightedKPI.punctuality,
+          custom_quality: weightedKPI.quality,
+          custom_communication: weightedKPI.communication
+        })
+      });
+      
+      if (!response.ok) {
+        console.error('ERPNext KPI sync failed:', await response.text());
+        // Continue - local DB update is the primary requirement
+      }
+    } catch (erpnextError) {
+      console.error('ERPNext KPI sync error:', erpnextError);
+      // Continue - local DB update is the primary requirement
+    }
 
     // Update local database (staff_monthly_reviews schema: staff_id, review_month, attendance_score, company_values_score, notes, reviewed_by)
     await db.prepare(`
