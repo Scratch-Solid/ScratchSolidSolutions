@@ -1,6 +1,7 @@
 // Pricing Engine Configuration
 // World-class pricing calculation logic for quote system
 // Phase 2: Pricing Engine & Quote Logic
+// Note: unit_price column added via migration 003 - enables quantity-based pricing
 
 export interface PricingConfig {
   basePrice: number;
