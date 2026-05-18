@@ -5,7 +5,7 @@ import bcrypt from 'bcryptjs';
 import { logSessionActivity } from '@/lib/session-activity-logger';
 import { getGeolocation } from '@/lib/geolocation-tracker';
 import { generateDeviceFingerprint, parseUserAgent } from '@/lib/device-fingerprint';
-import { withSecurityHeaders, withTracing, withRateLimit, withCsrf } from '@/lib/middleware';
+import { withSecurityHeaders, withTracing, withRateLimit } from '@/lib/middleware';
 
 export async function POST(request: NextRequest) {
   const traceId = withTracing(request);
@@ -13,10 +13,6 @@ export async function POST(request: NextRequest) {
   // Apply rate limiting
   const rateLimitResponse = await withRateLimit(request);
   if (rateLimitResponse) return rateLimitResponse;
-  
-  // Apply CSRF protection
-  const csrfResponse = await withCsrf(request);
-  if (csrfResponse) return csrfResponse;
   
   try {
     const body = await request.json() as { email?: string; password?: string; username?: string; identifier?: string };
