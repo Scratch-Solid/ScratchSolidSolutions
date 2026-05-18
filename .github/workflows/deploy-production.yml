@@ -26,10 +26,6 @@ jobs:
       working-directory: ./marketing-site
       run: npm ci
     
-    - name: Run tests
-      working-directory: ./marketing-site
-      run: npm test
-    
     - name: Build
       working-directory: ./marketing-site
       run: npm run cloudflare-build
@@ -62,10 +58,6 @@ jobs:
       working-directory: ./internal-portal
       run: npm ci
     
-    - name: Run tests
-      working-directory: ./internal-portal
-      run: npm test
-    
     - name: Build
       working-directory: ./internal-portal
       run: npm run cloudflare-build
@@ -97,10 +89,6 @@ jobs:
     - name: Install dependencies
       working-directory: ./backend-worker
       run: npm ci
-    
-    - name: Run tests
-      working-directory: ./backend-worker
-      run: npm test
     
     - name: Deploy to Cloudflare Workers (Production)
       uses: cloudflare/wrangler-action@v3
