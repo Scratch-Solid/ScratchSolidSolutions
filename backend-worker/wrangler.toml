@@ -2,6 +2,8 @@ name = "cleaning-service-backend"
 main = "src/index.js"
 compatibility_date = "2026-04-19"
 
+# Deploy trigger: Update to apply new scratchsolid-backend-db configuration
+
 [triggers]
 crons = ["0 0 * * *"]
 
