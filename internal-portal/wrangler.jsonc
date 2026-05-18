@@ -6,6 +6,7 @@
 	"compatibility_flags": [
 		"nodejs_compat"
 	],
+	// Deploy trigger: Update to apply new scratchsolid-portal-db configuration
 	"assets": {
 		"directory": ".open-next/assets",
 		"binding": "ASSETS"
@@ -13,8 +14,8 @@
 	"d1_databases": [
 		{
 			"binding": "scratchsolid_db",
-			"database_name": "scratchsolid-db",
-			"database_id": "b4f175df-b233-47dd-ab41-99455bf990b8"
+			"database_name": "scratchsolid-portal-db",
+			"database_id": "a08f16f5-9d75-47f9-973c-35bade106b47"
 		}
 	],
 	"kv_namespaces": [

@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "@better-auth/infra": "^0.2.6"
+    "@better-auth/infra": "^0.2.6",
+    "better-auth": "^1.6.11"
   }
 }

@@ -2,6 +2,8 @@ name = "cleaning-service-backend"
 main = "src/index.js"
 compatibility_date = "2026-04-19"
 
+# Deploy trigger: Update to apply new scratchsolid-backend-db configuration
+
 [triggers]
 crons = ["0 0 * * *"]
 
@@ -14,8 +16,8 @@ name = "cleaning-service-backend-staging"
 # D1 Database binding
 [[d1_databases]]
 binding = "DB"
-database_name = "scratchsolid-db"
-database_id = "b4f175df-b233-47dd-ab41-99455bf990b8"
+database_name = "scratchsolid-backend-db"
+database_id = "2a0b1e08-443e-46c4-8184-86ea180d4024"
 
 # KV Namespace bindings
 [[kv_namespaces]]

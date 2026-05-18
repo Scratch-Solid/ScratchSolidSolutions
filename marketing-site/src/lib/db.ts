@@ -9,13 +9,27 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 // Helper to get the D1 database from the OpenNext Cloudflare context
 export async function getDb(): Promise<D1Database | null> {
   try {
-    // OpenNext on Workers: use getCloudflareContext
-    const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
-    if (env?.scratchsolid_db) {
-      return env.scratchsolid_db as D1Database;
+    // Use globalThis.env for Cloudflare Workers context
+    const cloudflareContext = globalThis as any;
+    const env = cloudflareContext?.env;
+    const envAny = env as any;
+    const db = envAny?.scratchsolid_db || envAny?.scratchsolidDb || envAny?.DB || envAny?.db || envAny?.database;
+    if (db) {
+      return db as D1Database;
     }
+    // As a last resort, scan env for a D1-like binding (has prepare method)
+    const candidateKey = Object.keys(envAny || {}).find((k) => {
+      const val = (envAny as any)[k];
+      return val && typeof val === 'object' && typeof (val as any).prepare === 'function';
+    });
+    if (candidateKey) {
+      logger.warn(`D1 binding not found under expected names; using candidate binding '${candidateKey}'`);
+      return (envAny as any)[candidateKey] as D1Database;
+    }
+    logger.error('D1 binding missing: expected scratchsolid_db or DB');
+    logger.error('Available env keys:', Object.keys(envAny || {}));
   } catch (error) {
-    logger.error('Error getting database from OpenNext context', error as Error);
+    logger.error('Error getting database from globalThis context', error as Error);
   }
   return null;
 }
