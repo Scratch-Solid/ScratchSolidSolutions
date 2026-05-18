@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
 import { withAuth, withTracing, withSecurityHeaders, withCsrf } from "@/lib/middleware";
-import { getCloudflareContext } from '@opennextjs/cloudflare';
 
 export const dynamic = "force-dynamic";
 
@@ -25,8 +24,8 @@ export async function POST(req: NextRequest) {
   // Get R2 bucket from Cloudflare context
   let bucket: any;
   try {
-    const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
-    bucket = env?.UPLOADS_BUCKET;
+    const cloudflareContext = globalThis as any;
+    bucket = cloudflareContext?.env?.UPLOADS_BUCKET;
     if (!bucket) {
       return withSecurityHeaders(NextResponse.json({ error: 'R2 bucket binding not found' }, { status: 500 }), traceId);
     }
