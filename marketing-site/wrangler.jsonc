@@ -12,8 +12,8 @@
 	"d1_databases": [
 		{
 			"binding": "scratchsolid_db",
-			"database_name": "scratchsolid-db",
-			"database_id": "b4f175df-b233-47dd-ab41-99455bf990b8"
+			"database_name": "scratchsolid-marketing-db",
+			"database_id": "4c282c8f-8991-49bd-9dc6-e3eab31a4869"
 		}
 	],
 	"kv_namespaces": [
