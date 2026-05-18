@@ -37,14 +37,14 @@ export default function TransportDashboard() {
   return (
     <DashboardLayout title="Transport Dashboard" role="transport">
       <PasswordBanner />
-      <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
-        <h3 className="font-bold text-lg text-white mb-4">Deliveries</h3>
+      <div className="glass-card">
+        <h3 className="font-bold text-lg mb-4" style={{ color: 'var(--text-h)' }}>Deliveries</h3>
         <ul className="space-y-2">
           {deliveries.map((delivery: any) => (
-            <li key={delivery.id} className="border border-white/10 rounded p-4 bg-white/5 text-white">
-              <div><b className="text-white">Destination:</b> {delivery.destination}</div>
-              <div><b className="text-white">Status:</b> {delivery.status}</div>
-              <div><b className="text-white">Driver:</b> {delivery.driver}</div>
+            <li key={delivery.id} className="glass-card">
+              <div><b style={{ color: 'var(--text-h)' }}>Destination:</b> <span style={{ color: 'var(--text)' }}>{delivery.destination}</span></div>
+              <div><b style={{ color: 'var(--text-h)' }}>Status:</b> <span className={`badge badge-info`}>{delivery.status}</span></div>
+              <div><b style={{ color: 'var(--text-h)' }}>Driver:</b> <span style={{ color: 'var(--text)' }}>{delivery.driver}</span></div>
             </li>
           ))}
         </ul>

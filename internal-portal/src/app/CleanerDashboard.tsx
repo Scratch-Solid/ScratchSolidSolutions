@@ -477,13 +477,13 @@ export default function CleanerDashboard() {
         <div className="glass-card p-6">
           <h3 className="font-bold text-lg mb-4" style={{ color: 'var(--text-h)' }}>Current Status</h3>
           <div className="mb-4">
-            <span className={`px-4 py-2 rounded-full text-lg font-semibold ${
-              cleanerStatus === 'idle' ? 'bg-gray-100 text-gray-800' :
-              cleanerStatus === 'on_way' ? 'bg-blue-100 text-blue-800' :
-              cleanerStatus === 'arrived' ? 'bg-yellow-100 text-yellow-800' :
-              cleanerStatus === 'completed' ? 'bg-green-100 text-green-800' :
-              'bg-gray-100 text-gray-800'
-            }`}>
+            <span className={`badge ${
+              cleanerStatus === 'idle' ? 'badge-info' :
+              cleanerStatus === 'on_way' ? 'badge-warning' :
+              cleanerStatus === 'arrived' ? 'badge-warning' :
+              cleanerStatus === 'completed' ? 'badge-success' :
+              'badge-info'
+            }`} style={{ padding: '12px 24px', fontSize: '1rem' }}>
               {cleanerStatus === 'idle' ? 'Idle' :
                cleanerStatus === 'on_way' ? 'On the Way' :
                cleanerStatus === 'arrived' ? 'Arrived' :
@@ -495,28 +495,32 @@ export default function CleanerDashboard() {
             <button
               onClick={() => updateCleanerStatus('idle')}
               disabled={cleanerStatus === 'idle'}
-              className="w-full px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:text-gray-400"
+              className="secondary-button w-full"
+              style={{ opacity: cleanerStatus === 'idle' ? 0.5 : 1 }}
             >
               Set Idle
             </button>
             <button
               onClick={() => updateCleanerStatus('on_way')}
               disabled={cleanerStatus === 'on_way'}
-              className="w-full px-4 py-2 rounded bg-blue-500 text-white hover:bg-blue-600 disabled:bg-blue-100 disabled:text-blue-400"
+              className="primary-button w-full"
+              style={{ opacity: cleanerStatus === 'on_way' ? 0.5 : 1 }}
             >
               On the Way
             </button>
             <button
               onClick={() => updateCleanerStatus('arrived')}
               disabled={cleanerStatus === 'arrived'}
-              className="w-full px-4 py-2 rounded bg-yellow-500 text-white hover:bg-yellow-600 disabled:bg-yellow-100 disabled:text-yellow-400"
+              className="primary-button w-full"
+              style={{ opacity: cleanerStatus === 'arrived' ? 0.5 : 1 }}
             >
               Arrived
             </button>
             <button
               onClick={() => updateCleanerStatus('completed')}
               disabled={cleanerStatus === 'completed'}
-              className="w-full px-4 py-2 rounded bg-green-500 text-white hover:bg-green-600 disabled:bg-green-100 disabled:text-green-400"
+              className="primary-button w-full"
+              style={{ opacity: cleanerStatus === 'completed' ? 0.5 : 1 }}
             >
               Completed
             </button>
@@ -528,23 +532,23 @@ export default function CleanerDashboard() {
         <div className="glass-card p-6">
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-bold text-lg" style={{ color: 'var(--text-h)' }}>Tasks</h3>
-            <div className="flex gap-2">
+            <div className="tabs" style={{ marginBottom: 0 }}>
               <button
                 onClick={() => setTaskHorizonFilter('7-day')}
-                className={`px-3 py-1 rounded text-sm ${taskHorizonFilter === '7-day' ? 'bg-blue-500/20 text-blue-200' : 'bg-white/10 text-white/70'}`}
+                className={`tab ${taskHorizonFilter === '7-day' ? 'active' : ''}`}
               >
                 7-Day Horizon
               </button>
               <button
                 onClick={() => setTaskHorizonFilter('all')}
-                className={`px-3 py-1 rounded text-sm ${taskHorizonFilter === 'all' ? 'bg-blue-500/20 text-blue-200' : 'bg-white/10 text-white/70'}`}
+                className={`tab ${taskHorizonFilter === 'all' ? 'active' : ''}`}
               >
                 All Tasks
               </button>
             </div>
           </div>
           {tasks.length === 0 ? (
-            <p style={{ color: 'var(--text)', opacity: 0.6 }}>No tasks assigned.</p>
+            <p style={{ color: 'var(--text-light)' }}>No tasks assigned.</p>
           ) : (
             <ul className="space-y-2">
               {tasks
@@ -556,17 +560,17 @@ export default function CleanerDashboard() {
                   return taskDate <= sevenDaysFromNow && taskDate >= new Date();
                 })
                 .map((task: any) => (
-                <li key={task.id} className="border rounded p-3 bg-white/5" style={{ borderColor: 'var(--border)' }}>
-                  <div style={{ color: 'var(--text)' }}><b>Customer:</b> {task.customer}</div>
-                  <div style={{ color: 'var(--text)' }}><b>Date:</b> {task.date}</div>
-                  <div style={{ color: 'var(--text)' }}><b>Time:</b> {task.time}</div>
-                  <div style={{ color: 'var(--text)' }}><b>Address:</b> {task.address}</div>
-                  <div style={{ color: 'var(--text)' }}><b>Status:</b> {task.status}</div>
+                <li key={task.id} className="glass-card">
+                  <div style={{ color: 'var(--text)' }}><b style={{ color: 'var(--text-h)' }}>Customer:</b> {task.customer}</div>
+                  <div style={{ color: 'var(--text)' }}><b style={{ color: 'var(--text-h)' }}>Date:</b> {task.date}</div>
+                  <div style={{ color: 'var(--text)' }}><b style={{ color: 'var(--text-h)' }}>Time:</b> {task.time}</div>
+                  <div style={{ color: 'var(--text)' }}><b style={{ color: 'var(--text-h)' }}>Address:</b> {task.address}</div>
+                  <div style={{ color: 'var(--text)' }}><b style={{ color: 'var(--text-h)' }}>Status:</b> <span className={`badge badge-info`}>{task.status}</span></div>
                   {task.status !== 'completed' && (
                     <button
                       onClick={() => updateBookingStatus(task.id.toString(), 'completed')}
-                      className="mt-2 bg-green-500/20 hover:bg-green-500/30 px-3 py-1 rounded border transition-all"
-                      style={{ color: '#15803d', borderColor: 'rgba(22, 163, 74, 0.3)' }}
+                      className="primary-button mt-2"
+                      style={{ padding: '8px 16px', fontSize: '0.875rem', background: 'var(--success)' }}
                     >
                       Mark Complete
                     </button>
@@ -583,10 +587,10 @@ export default function CleanerDashboard() {
           <h3 className="font-bold text-lg" style={{ color: 'var(--text-h)' }}>Earnings</h3>
 
           {/* Task earnings summary */}
-          <div className="bg-white/5 rounded-lg p-4 border" style={{ borderColor: 'var(--border)' }}>
-            <p className="text-2xl font-bold" style={{ color: 'var(--text-h)' }}>R{(cleaner as any)?.totalEarnings || 0}</p>
-            <p style={{ color: 'var(--text)', opacity: 0.6 }}>Total Task Earnings</p>
-            <p className="mt-1 text-sm" style={{ color: 'var(--text)', opacity: 0.6 }}>{(cleaner as any)?.completedJobs || 0} jobs completed</p>
+          <div className="stats-card">
+            <div className="stats-value">R{(cleaner as any)?.totalEarnings || 0}</div>
+            <div className="stats-label">Total Task Earnings</div>
+            <p className="mt-1 text-sm" style={{ color: 'var(--text-light)' }}>{(cleaner as any)?.completedJobs || 0} jobs completed</p>
           </div>
 
           {/* Salary Preview */}
@@ -610,17 +614,17 @@ export default function CleanerDashboard() {
                     setSalaryLoading(false);
                   }
                 }}
-                className="px-3 py-1 rounded bg-blue-500/20 text-sm hover:bg-blue-500/30 transition-all"
-                style={{ color: '#1d4ed8' }}
+                className="secondary-button"
+                style={{ padding: '8px 16px', fontSize: '0.875rem' }}
               >
                 {salaryLoading ? 'Loading…' : 'View Salary'}
               </button>
             </div>
 
             {salaryData ? (
-              <div className="bg-white/5 rounded-lg p-4 border space-y-3" style={{ borderColor: 'var(--border)' }}>
+              <div className="glass-card space-y-3">
                 <div className="flex justify-between">
-                  <span style={{ color: 'var(--text)', opacity: 0.7 }}>Pay Period</span>
+                  <span style={{ color: 'var(--text-light)' }}>Pay Period</span>
                   <span className="font-medium" style={{ color: 'var(--text-h)' }}>{salaryData.payPeriod}</span>
                 </div>
                 <div className="flex justify-between">
@@ -633,12 +637,12 @@ export default function CleanerDashboard() {
                 </div>
                 <div className="flex justify-between border-t pt-3" style={{ borderColor: 'var(--border)' }}>
                   <span className="font-bold" style={{ color: 'var(--text-h)' }}>Take-Home Pay</span>
-                  <span className="text-xl font-bold" style={{ color: '#10b981' }}>R{salaryData.takeHomePay?.toFixed(2)}</span>
+                  <span className="text-xl font-bold" style={{ color: 'var(--success)' }}>R{salaryData.takeHomePay?.toFixed(2)}</span>
                 </div>
               </div>
             ) : (
-              <div className="bg-white/5 rounded-lg p-4 border text-center" style={{ borderColor: 'var(--border)' }}>
-                <p className="text-sm" style={{ color: 'var(--text)', opacity: 0.6 }}>Click "View Salary" to load your estimated pay slip from payroll.</p>
+              <div className="glass-card text-center">
+                <p className="text-sm" style={{ color: 'var(--text-light)' }}>Click "View Salary" to load your estimated pay slip from payroll.</p>
               </div>
             )}
           </div>
@@ -650,19 +654,19 @@ export default function CleanerDashboard() {
           <h3 className="font-bold text-lg mb-4" style={{ color: 'var(--text-h)' }}>Performance Metrics</h3>
           <div className="space-y-4">
             {/* KPI Score bar */}
-            <div className="bg-white/5 rounded-lg p-4 border" style={{ borderColor: 'var(--border)' }}>
+            <div className="glass-card">
               <div className="flex justify-between items-center mb-2">
                 <span style={{ color: 'var(--text)' }}>Overall KPI Score</span>
-                <span className="text-2xl font-bold" style={{ color: '#10b981' }}>{kpiScore}/100</span>
+                <span className="text-2xl font-bold" style={{ color: 'var(--success)' }}>{kpiScore}/100</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-3 mb-3">
-                <div className="bg-green-500 h-3 rounded-full transition-all duration-500" style={{ width: `${kpiScore}%` }}></div>
+              <div className="progress-bar mb-3">
+                <div className="progress-fill" style={{ width: `${kpiScore}%` }}></div>
               </div>
               {kpiBreakdown && (
-                <div className="grid grid-cols-3 gap-2 text-xs">
+                <div className="responsive-grid grid-cols-3 text-xs">
                   {(['punctuality', 'quality', 'communication'] as const).map(key => (
                     <div key={key} className="text-center">
-                      <div style={{ color: 'var(--text)', opacity: 0.6, textTransform: 'capitalize' }}>{key}</div>
+                      <div style={{ color: 'var(--text-light)', textTransform: 'capitalize' }}>{key}</div>
                       <div className="font-semibold" style={{ color: 'var(--text-h)' }}>{kpiBreakdown[key]}/100</div>
                     </div>
                   ))}
@@ -671,18 +675,18 @@ export default function CleanerDashboard() {
             </div>
 
             {/* 13th Check Eligibility */}
-            <div className={`rounded-lg p-4 border ${
+            <div className={`glass-card ${
               kpiScore >= 80
-                ? 'bg-green-500/10 border-green-500/40'
-                : 'bg-yellow-500/10 border-yellow-500/40'
+                ? 'border-green-500/40'
+                : 'border-yellow-500/40'
             }`}>
               <div className="flex items-center gap-3">
                 <span className="text-2xl">{kpiScore >= 80 ? '🏆' : '📈'}</span>
                 <div>
-                  <div className="font-semibold" style={{ color: kpiScore >= 80 ? '#15803d' : '#92400e' }}>
+                  <div className="font-semibold" style={{ color: kpiScore >= 80 ? 'var(--success)' : 'var(--warning)' }}>
                     {kpiScore >= 80 ? 'Eligible for 13th Cheque Bonus' : 'Not yet eligible for 13th Cheque'}
                   </div>
-                  <div className="text-sm" style={{ color: kpiScore >= 80 ? '#166534' : '#78350f', opacity: 0.8 }}>
+                  <div className="text-sm" style={{ color: kpiScore >= 80 ? 'var(--success)' : 'var(--warning)', opacity: 0.8 }}>
                     {kpiScore >= 80
                       ? 'Your KPI score qualifies you for the annual performance bonus.'
                       : `Reach a score of 80/100 to qualify. Current: ${kpiScore}/100.`}
@@ -692,15 +696,15 @@ export default function CleanerDashboard() {
             </div>
 
             {/* Job counts */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white/5 rounded-lg p-4" style={{ borderColor: 'var(--border)' }}>
-                <div style={{ color: 'var(--text)', opacity: 0.6 }}>Completed (7-day)</div>
+            <div className="responsive-grid grid-cols-2">
+              <div className="stats-card">
+                <div style={{ color: 'var(--text-light)' }}>Completed (7-day)</div>
                 <div className="text-xl font-bold" style={{ color: 'var(--text-h)' }}>
                   {tasks.filter((t: any) => t.status === 'completed').length}
                 </div>
               </div>
-              <div className="bg-white/5 rounded-lg p-4" style={{ borderColor: 'var(--border)' }}>
-                <div style={{ color: 'var(--text)', opacity: 0.6 }}>Pending (7-day)</div>
+              <div className="stats-card">
+                <div style={{ color: 'var(--text-light)' }}>Pending (7-day)</div>
                 <div className="text-xl font-bold" style={{ color: 'var(--text-h)' }}>
                   {tasks.filter((t: any) => t.status !== 'completed').length}
                 </div>
@@ -708,14 +712,14 @@ export default function CleanerDashboard() {
             </div>
 
             {/* Current status badge */}
-            <div className="bg-white/5 rounded-lg p-4" style={{ borderColor: 'var(--border)' }}>
-              <div style={{ color: 'var(--text)', opacity: 0.6 }}>Current Status</div>
-              <div className={`mt-1 px-3 py-1 rounded-full text-sm font-semibold inline-block ${
-                cleanerStatus === 'idle'      ? 'bg-gray-100 text-gray-800' :
-                cleanerStatus === 'on_way'    ? 'bg-blue-100 text-blue-800' :
-                cleanerStatus === 'arrived'   ? 'bg-yellow-100 text-yellow-800' :
-                cleanerStatus === 'completed' ? 'bg-green-100 text-green-800' :
-                'bg-gray-100 text-gray-800'
+            <div className="glass-card">
+              <div style={{ color: 'var(--text-light)' }}>Current Status</div>
+              <div className={`mt-1 badge ${
+                cleanerStatus === 'idle'      ? 'badge-info' :
+                cleanerStatus === 'on_way'    ? 'badge-warning' :
+                cleanerStatus === 'arrived'   ? 'badge-warning' :
+                cleanerStatus === 'completed' ? 'badge-success' :
+                'badge-info'
               }`}>
                 {cleanerStatus === 'idle'      ? 'Idle' :
                  cleanerStatus === 'on_way'    ? 'On the Way' :

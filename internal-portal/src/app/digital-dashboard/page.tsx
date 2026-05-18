@@ -37,14 +37,14 @@ export default function DigitalDashboard() {
   return (
     <DashboardLayout title="Digital Marketing Dashboard" role="digital">
       <PasswordBanner />
-      <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
-        <h3 className="font-bold text-lg text-white mb-4">Tasks</h3>
+      <div className="glass-card">
+        <h3 className="font-bold text-lg mb-4" style={{ color: 'var(--text-h)' }}>Tasks</h3>
         <ul className="space-y-2">
           {tasks.map((task: any) => (
-            <li key={task.id} className="border border-white/10 rounded p-4 bg-white/5 text-white">
-              <div><b className="text-white">Title:</b> {task.title}</div>
-              <div><b className="text-white">Status:</b> {task.status}</div>
-              <div><b className="text-white">Priority:</b> {task.priority}</div>
+            <li key={task.id} className="glass-card">
+              <div><b style={{ color: 'var(--text-h)' }}>Title:</b> <span style={{ color: 'var(--text)' }}>{task.title}</span></div>
+              <div><b style={{ color: 'var(--text-h)' }}>Status:</b> <span className={`badge badge-info`}>{task.status}</span></div>
+              <div><b style={{ color: 'var(--text-h)' }}>Priority:</b> <span className={`badge badge-warning`}>{task.priority}</span></div>
             </li>
           ))}
         </ul>

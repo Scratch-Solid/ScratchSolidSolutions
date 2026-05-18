@@ -87,7 +87,7 @@ export default function DashboardLayout({ children, title, role = 'admin' }: Das
               <Link
                 key={item.href}
                 href={item.href}
-                className="px-3 py-2 rounded-lg transition-all duration-200 hover:bg-white/10"
+                className="px-4 py-2 rounded-lg transition-all duration-200 hover:bg-white/10 font-medium"
                 style={{ color: 'var(--text)' }}
               >
                 {item.label}
@@ -99,14 +99,14 @@ export default function DashboardLayout({ children, title, role = 'admin' }: Das
 
       {/* Glassified Content Area */}
       <main className="app-main">
-        <div className="glass-panel">
+        <div className="glass-panel p-6">
           {children}
         </div>
       </main>
 
       {/* Glassified Footer */}
       <footer className="glass-panel mt-8">
-        <div className="text-center py-4" style={{ color: 'var(--text)', opacity: 0.6 }}>
+        <div className="text-center py-4" style={{ color: 'var(--text-secondary)', opacity: 0.7 }}>
           © 2024 Scratch Solid Solutions. All rights reserved.
         </div>
       </footer>

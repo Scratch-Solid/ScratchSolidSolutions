@@ -786,64 +786,64 @@ export default function AdminDashboard() {
     }
   };
 
-  if (loading) return <DashboardLayout title="Admin Dashboard" role="admin"><div className="animate-pulse space-y-6"><div className="grid grid-cols-4 gap-4">{[1,2,3,4].map(i=><div key={i} className="border rounded-lg p-6 bg-white/20"><div className="h-4 bg-white/30 rounded w-1/2 mb-3"/><div className="h-8 bg-white/30 rounded w-3/4"/></div>)}</div></div></DashboardLayout>;
+  if (loading) return <DashboardLayout title="Admin Dashboard" role="admin"><div className="animate-pulse space-y-6"><div className="responsive-grid">{[1,2,3,4].map(i=><div key={i} className="glass-card"><div className="h-4 bg-white/30 rounded w-1/2 mb-3"/><div className="h-8 bg-white/30 rounded w-3/4"/></div>)}</div></div></DashboardLayout>;
   if (error) return <DashboardLayout title="Admin Dashboard" role="admin"><div className="error-msg">{error}</div></DashboardLayout>;
 
   return (
     <DashboardLayout title="Admin Dashboard" role="admin">
       {/* Tab Navigation */}
-      <div className="mb-6 flex space-x-2 border-b border-white/20 pb-2">
+      <div className="tabs mb-6">
         <button
           onClick={() => setActiveTab("overview")}
-          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTab === "overview" ? "bg-white/20 text-white" : "bg-white/10 text-white/70 hover:bg-white/15"}`}
+          className={`tab ${activeTab === "overview" ? "active" : ""}`}
         >
           Overview
         </button>
         <button
           onClick={() => setActiveTab("employees")}
-          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTab === "employees" ? "bg-white/20 text-white" : "bg-white/10 text-white/70 hover:bg-white/15"}`}
+          className={`tab ${activeTab === "employees" ? "active" : ""}`}
         >
           Employees
         </button>
         <button
           onClick={() => setActiveTab("services-banking")}
-          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTab === "services-banking" ? "bg-white/20 text-white" : "bg-white/10 text-white/70 hover:bg-white/15"}`}
+          className={`tab ${activeTab === "services-banking" ? "active" : ""}`}
         >
           Services & Banking
         </button>
         <button
           onClick={() => setActiveTab("cleaners")}
-          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTab === "cleaners" ? "bg-white/20 text-white" : "bg-white/10 text-white/70 hover:bg-white/15"}`}
+          className={`tab ${activeTab === "cleaners" ? "active" : ""}`}
         >
           Cleaners
         </button>
         <button
           onClick={() => setActiveTab("content")}
-          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTab === "content" ? "bg-white/20 text-white" : "bg-white/10 text-white/70 hover:bg-white/15"}`}
+          className={`tab ${activeTab === "content" ? "active" : ""}`}
         >
           Content
         </button>
         <button
           onClick={() => setActiveTab("pricing")}
-          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTab === "pricing" ? "bg-white/20 text-white" : "bg-white/10 text-white/70 hover:bg-white/15"}`}
+          className={`tab ${activeTab === "pricing" ? "active" : ""}`}
         >
           Pricing
         </button>
         <button
           onClick={() => setActiveTab("proxy-observer")}
-          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTab === "proxy-observer" ? "bg-white/20 text-white" : "bg-white/10 text-white/70 hover:bg-white/15"}`}
+          className={`tab ${activeTab === "proxy-observer" ? "active" : ""}`}
         >
           Proxy Observer
         </button>
         <button
           onClick={() => setActiveTab("pool-management")}
-          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTab === "pool-management" ? "bg-white/20 text-white" : "bg-white/10 text-white/70 hover:bg-white/15"}`}
+          className={`tab ${activeTab === "pool-management" ? "active" : ""}`}
         >
           Pool Management
         </button>
         <button
           onClick={() => setActiveTab("staff-reviews")}
-          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTab === "staff-reviews" ? "bg-white/20 text-white" : "bg-white/10 text-white/70 hover:bg-white/15"}`}
+          className={`tab ${activeTab === "staff-reviews" ? "active" : ""}`}
         >
           Staff Reviews
         </button>
@@ -852,36 +852,37 @@ export default function AdminDashboard() {
       {activeTab === "overview" ? (
         <>
           {/* Stats Widget */}
-          <div className="mb-6 grid grid-cols-4 gap-4">
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
-              <h3 className="font-bold text-white">Total Bookings</h3>
-              <p className="text-2xl text-white">{stats.totalBookings}</p>
+          <div className="responsive-grid mb-6">
+            <div className="stats-card">
+              <div className="stats-value">{stats.totalBookings}</div>
+              <div className="stats-label">Total Bookings</div>
             </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
-              <h3 className="font-bold text-white">Total Revenue</h3>
-              <p className="text-2xl text-white">R{stats.totalRevenue?.toFixed(2) ?? "0.00"}</p>
+            <div className="stats-card">
+              <div className="stats-value">R{(stats.totalRevenue || 0).toFixed(2)}</div>
+              <div className="stats-label">Total Revenue</div>
             </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
-              <h3 className="font-bold text-white">Active Cleaners</h3>
-              <p className="text-2xl text-white">{stats.activeCleaners}</p>
+            <div className="stats-card">
+              <div className="stats-value">{stats.activeCleaners}</div>
+              <div className="stats-label">Active Cleaners</div>
             </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
-              <h3 className="font-bold text-white">Weekend Assignments</h3>
-              <p className="text-2xl text-white">{stats.pendingWeekendAssignments}</p>
+            <div className="stats-card">
+              <div className="stats-value">{stats.pendingWeekendAssignments}</div>
+              <div className="stats-label">Weekend Assignments</div>
             </div>
           </div>
 
           {/* Weekend Assignment Notifications */}
           {notifications.length > 0 && (
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6 mb-6">
-              <h3 className="font-bold text-lg text-white mb-2">Pending Weekend Assignments</h3>
+            <div className="glass-card mb-6">
+              <h3 className="font-bold text-lg mb-4" style={{ color: 'var(--text-h)' }}>Pending Weekend Assignments</h3>
               <ul className="space-y-2">
                 {notifications.map((notif: any) => (
-                  <li key={notif.id} className="border border-white/10 rounded p-2 bg-white/5">
-                    <div className="text-white"><b className="text-white">Booking #{notif.booking_id}</b> - {notif.message}</div>
+                  <li key={notif.id} className="glass-card" style={{ marginBottom: '12px' }}>
+                    <div style={{ color: 'var(--text)' }}><b style={{ color: 'var(--text-h)' }}>Booking #{notif.booking_id}</b> - {notif.message}</div>
                     <button
                       onClick={() => assignCleaner(notif.booking_id, "")}
-                      className="mt-2 bg-white/20 hover:bg-white/30 text-white px-2 py-1 text-sm rounded border border-white/30 transition-all"
+                      className="secondary-button mt-2"
+                      style={{ padding: '8px 16px', fontSize: '0.875rem' }}
                     >
                       Assign Cleaner
                     </button>
@@ -892,24 +893,24 @@ export default function AdminDashboard() {
           )}
 
           {/* Users Widget */}
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6 mb-6">
-            <h3 className="font-bold text-lg text-white mb-2">Users</h3>
-            <ul className="space-y-1">
+          <div className="glass-card mb-6">
+            <h3 className="font-bold text-lg mb-4" style={{ color: 'var(--text-h)' }}>Users</h3>
+            <ul className="space-y-2">
               {users.map((u: any) => (
-                <li key={u.id} className="border border-white/10 rounded p-2 bg-white/5 text-white">
-                  <b>{u.name}</b> ({u.role}) - {u.email}
+                <li key={u.id} className="glass-card" style={{ marginBottom: '8px' }}>
+                  <b style={{ color: 'var(--text-h)' }}>{u.name}</b> <span style={{ color: 'var(--text-secondary)' }}>({u.role})</span> - <span style={{ color: 'var(--text)' }}>{u.email}</span>
                 </li>
               ))}
             </ul>
           </div>
 
           {/* Bookings Widget */}
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6 mb-6">
-            <h3 className="font-bold text-lg text-white mb-2">Bookings</h3>
-            <ul className="space-y-1">
+          <div className="glass-card mb-6">
+            <h3 className="font-bold text-lg mb-4" style={{ color: 'var(--text-h)' }}>Bookings</h3>
+            <ul className="space-y-2">
               {bookings.map((b: any) => (
-                <li key={b.id} className="border border-white/10 rounded p-2 bg-white/5 text-white">
-                  <b>{b.client_name}</b> - {b.booking_date} {b.booking_time} - {b.status}
+                <li key={b.id} className="glass-card" style={{ marginBottom: '8px' }}>
+                  <b style={{ color: 'var(--text-h)' }}>{b.client_name}</b> - <span style={{ color: 'var(--text)' }}>{b.booking_date} {b.booking_time}</span> - <span className={`badge badge-info`}>{b.status}</span>
                 </li>
               ))}
             </ul>
@@ -917,35 +918,36 @@ export default function AdminDashboard() {
         </>
       ) : activeTab === "employees" ? (
         <div className="space-y-4">
-          <div className="flex space-x-2">
-            <button onClick={() => setEmployeeSubTab('new')} className={`px-3 py-2 rounded ${employeeSubTab === 'new' ? 'bg-white/20 text-white' : 'bg-white/10 text-white/70 hover:bg-white/15'}`}>New Joiners</button>
-            <button onClick={() => setEmployeeSubTab('existing')} className={`px-3 py-2 rounded ${employeeSubTab === 'existing' ? 'bg-white/20 text-white' : 'bg-white/10 text-white/70 hover:bg-white/15'}`}>Employee Details</button>
+          <div className="tabs">
+            <button onClick={() => setEmployeeSubTab('new')} className={`tab ${employeeSubTab === 'new' ? 'active' : ''}`}>New Joiners</button>
+            <button onClick={() => setEmployeeSubTab('existing')} className={`tab ${employeeSubTab === 'existing' ? 'active' : ''}`}>Employee Details</button>
           </div>
 
           {employeeSubTab === 'new' ? (
             <>
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
-                <h3 className="font-bold text-lg text-white mb-4">New Joiners - Pending Approval</h3>
+              <div className="glass-card">
+                <h3 className="font-bold text-lg mb-4" style={{ color: 'var(--text-h)' }}>New Joiners - Pending Approval</h3>
                 {newJoiners.length === 0 ? (
-                  <p className="text-white/60">No pending new joiners.</p>
+                  <p style={{ color: 'var(--text-light)' }}>No pending new joiners.</p>
                 ) : (
                   <div className="space-y-3">
                     {newJoiners.map((joiner: any) => (
-                      <div key={joiner.id} className="border border-white/10 rounded p-4 bg-white/5">
+                      <div key={joiner.id} className="glass-card">
                         <div className="flex justify-between items-start mb-2">
                           <div>
-                            <p className="font-bold text-lg text-white">{joiner.fullName}</p>
-                            <p className="text-sm text-white/60">ID/Passport: {joiner.idPassportNumber}</p>
-                            <p className="text-sm text-white/60">Contact: {joiner.contactNumber}</p>
-                            <p className="text-sm text-white/60">Position: {joiner.positionAppliedFor}</p>
-                            <p className="text-sm text-white/60">Department: {joiner.department}</p>
-                            <p className="text-sm text-white/60">Username: {joiner.generatedUsername}</p>
-                            <p className="text-sm text-white/60">Submitted: {new Date(joiner.submittedAt).toLocaleString()}</p>
+                            <p className="font-bold text-lg" style={{ color: 'var(--text-h)' }}>{joiner.fullName}</p>
+                            <p className="text-sm" style={{ color: 'var(--text-light)' }}>ID/Passport: {joiner.idPassportNumber}</p>
+                            <p className="text-sm" style={{ color: 'var(--text-light)' }}>Contact: {joiner.contactNumber}</p>
+                            <p className="text-sm" style={{ color: 'var(--text-light)' }}>Position: {joiner.positionAppliedFor}</p>
+                            <p className="text-sm" style={{ color: 'var(--text-light)' }}>Department: {joiner.department}</p>
+                            <p className="text-sm" style={{ color: 'var(--text-light)' }}>Username: {joiner.generatedUsername}</p>
+                            <p className="text-sm" style={{ color: 'var(--text-light)' }}>Submitted: {new Date(joiner.submittedAt).toLocaleString()}</p>
                           </div>
                           <div className="flex gap-2">
                             <button
                               onClick={() => setSelectedJoiner(joiner)}
-                              className="bg-white/20 hover:bg-white/30 text-white px-3 py-1 text-sm rounded border border-white/30 transition-all"
+                              className="secondary-button"
+                              style={{ padding: '8px 16px', fontSize: '0.875rem' }}
                             >
                               View Consent
                             </button>
@@ -958,34 +960,36 @@ export default function AdminDashboard() {
               </div>
 
               {selectedJoiner && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                  <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 max-w-2xl w-full max-h-[80vh] overflow-y-auto p-6">
-                    <h3 className="font-bold text-xl text-white mb-4">Consent Form Details</h3>
-                    <div className="space-y-3 text-sm text-white/80">
-                      <p><b className="text-white">Full Name:</b> {selectedJoiner.fullName}</p>
-                      <p><b className="text-white">ID/Passport:</b> {selectedJoiner.idPassportNumber}</p>
-                      <p><b className="text-white">Contact:</b> {selectedJoiner.contactNumber}</p>
-                      <p><b className="text-white">Position:</b> {selectedJoiner.positionAppliedFor}</p>
-                      <p><b className="text-white">Department:</b> {selectedJoiner.department}</p>
-                      <p><b className="text-white">Username:</b> {selectedJoiner.generatedUsername}</p>
-                      <p><b className="text-white">Submitted:</b> {new Date(selectedJoiner.submittedAt).toLocaleString()}</p>
+                <div className="glass-overlay">
+                  <div className="glass-panel max-w-2xl w-full max-h-[80vh] overflow-y-auto p-6">
+                    <h3 className="font-bold text-xl mb-4" style={{ color: 'var(--text-h)' }}>Consent Form Details</h3>
+                    <div className="space-y-3 text-sm" style={{ color: 'var(--text)' }}>
+                      <p><b style={{ color: 'var(--text-h)' }}>Full Name:</b> {selectedJoiner.fullName}</p>
+                      <p><b style={{ color: 'var(--text-h)' }}>ID/Passport:</b> {selectedJoiner.idPassportNumber}</p>
+                      <p><b style={{ color: 'var(--text-h)' }}>Contact:</b> {selectedJoiner.contactNumber}</p>
+                      <p><b style={{ color: 'var(--text-h)' }}>Position:</b> {selectedJoiner.positionAppliedFor}</p>
+                      <p><b style={{ color: 'var(--text-h)' }}>Department:</b> {selectedJoiner.department}</p>
+                      <p><b style={{ color: 'var(--text-h)' }}>Username:</b> {selectedJoiner.generatedUsername}</p>
+                      <p><b style={{ color: 'var(--text-h)' }}>Submitted:</b> {new Date(selectedJoiner.submittedAt).toLocaleString()}</p>
                     </div>
                     <div className="flex gap-4 mt-6">
                       <button
                         onClick={() => handleApproveJoiner(selectedJoiner)}
-                        className="flex-1 bg-green-500/20 hover:bg-green-500/30 text-green-200 px-4 py-2 rounded-lg border border-green-500/30 transition-all"
+                        className="primary-button flex-1"
+                        style={{ background: 'var(--success)', border: 'none' }}
                       >
                         Approve
                       </button>
                       <button
                         onClick={() => handleRejectJoiner(selectedJoiner)}
-                        className="flex-1 bg-red-500/20 hover:bg-red-500/30 text-red-200 px-4 py-2 rounded-lg border border-red-500/30 transition-all"
+                        className="primary-button flex-1"
+                        style={{ background: 'var(--error)', border: 'none' }}
                       >
                         Reject
                       </button>
                       <button
                         onClick={() => setSelectedJoiner(null)}
-                        className="flex-1 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg border border-white/30 transition-all"
+                        className="secondary-button flex-1"
                       >
                         Close
                       </button>
@@ -995,34 +999,35 @@ export default function AdminDashboard() {
               )}
             </>
           ) : (
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
-              <h3 className="font-bold text-lg text-white mb-2">Employees</h3>
+            <div className="glass-card">
+              <h3 className="font-bold text-lg mb-4" style={{ color: 'var(--text-h)' }}>Employee Details</h3>
               {employees.length === 0 ? (
-                <div className="text-white/60">No employees found.</div>
+                <p style={{ color: 'var(--text-light)' }}>No employees found.</p>
               ) : (
-                <ul className="space-y-4">
-                  {employees.map((emp: any) => (
-                    <li key={emp.id} className="border border-white/10 rounded p-4 bg-white/5">
-                      <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <p className="text-white"><b className="text-white">Full Name:</b> {emp.fullName}</p>
-                            <p className="text-white"><b className="text-white">Position Applied For:</b> {emp.positionAppliedFor}</p>
-                            <p className="text-white"><b className="text-white">ID/Passport:</b> {emp.idPassportNumber}</p>
-                            <p className="text-white"><b className="text-white">Username:</b> {emp.username}</p>
-                            <p className="text-white"><b className="text-white">Department:</b> {emp.department}</p>
-                          </div>
-                          <div>
-                            <p className="text-white"><b className="text-white">Contact Number:</b> {emp.contactNumber}</p>
-                            <p className="text-white"><b className="text-white">Status:</b> {emp.status}</p>
-                            <p className="text-white"><b className="text-white">Consent Date:</b> {new Date(emp.consentDate).toLocaleString()}</p>
-                          </div>
-                        </div>
-                        <div className="mt-2 pt-2 border-t border-white/10">
-                          <p className="text-sm text-white/60"><b className="text-white">Signature Confirmed:</b> {emp.applicantSignature ? "Yes" : "No"}</p>
-                        </div>
-                      </li>
-                    ))}
-                </ul>
+                <div className="overflow-x-auto">
+                  <table className="glass-table">
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {employees.map((emp: any) => (
+                        <tr key={emp.id}>
+                          <td style={{ color: 'var(--text)' }}>{emp.name}</td>
+                          <td style={{ color: 'var(--text)' }}>{emp.email}</td>
+                          <td><span className={`badge badge-info`}>{emp.role}</span></td>
+                          <td>
+                            <button className="secondary-button" style={{ padding: '6px 12px', fontSize: '0.875rem' }}>Edit</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
           )}
