@@ -295,20 +295,45 @@ export default function ClientDashboard() {
   };
 
   // Review upload functions
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [uploadingImages, setUploadingImages] = useState(false);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length > 3) {
       setError('Maximum 3 images allowed');
       return;
     }
 
-    const imageUrls: string[] = [];
-    files.forEach((file, index) => {
-      const url = URL.createObjectURL(file);
-      imageUrls.push(url);
-    });
+    setUploadingImages(true);
+    const uploadedUrls: string[] = [];
 
-    setReviewImages(prev => [...prev, ...imageUrls]);
+    try {
+      for (const file of files) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('folder', 'review-images');
+
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const error = await response.json() as { error?: string };
+          throw new Error(error.error || 'Failed to upload image');
+        }
+
+        const data = await response.json() as { publicUrl: string };
+        uploadedUrls.push(data.publicUrl);
+      }
+
+      setReviewImages(prev => [...prev, ...uploadedUrls]);
+    } catch (err) {
+      console.error('Image upload error:', err);
+      setError('Failed to upload images. Please try again.');
+    } finally {
+      setUploadingImages(false);
+    }
   };
 
   const handleReviewSubmit = async () => {

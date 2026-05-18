@@ -53,7 +53,8 @@
 		}
 	],
 	"vars": {
-		"ALLOWED_ORIGINS": "https://portal.scratchsolidsolutions.org"
+		"ALLOWED_ORIGINS": "https://portal.scratchsolidsolutions.org",
+		"R2_PUBLIC_BASE": "https://uploads.scratchsolidsolutions.org"
 	},
 	"observability": {
 		"enabled": true
@@ -103,7 +104,8 @@
 			],
 			"vars": {
 				"ALLOWED_ORIGINS": "https://portal-staging.scratchsolidsolutions.org",
-				"NODE_ENV": "staging"
+				"NODE_ENV": "staging",
+				"R2_PUBLIC_BASE": "https://uploads-staging.scratchsolidsolutions.org"
 			}
 		}
 	}

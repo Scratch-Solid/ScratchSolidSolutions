@@ -26,8 +26,38 @@ export default function CleanerDashboard() {
     cellphoneNumber: "",
     taxNumber: "",
     emergencyContact1: { name: "", number: "" },
-    emergencyContact2: { name: "", number: "" },
+    emergencyContact2: { name: "", number: "" }
   });
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  const handleImageUpload = async (file: File) => {
+    setUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('folder', 'profile-pictures');
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json() as { error?: string };
+        throw new Error(error.error || 'Failed to upload image');
+      }
+
+      const data = await response.json() as { publicUrl: string };
+      setProfileData(prev => ({ ...prev, profilePicture: data.publicUrl }));
+      return data.publicUrl;
+    } catch (err) {
+      console.error('Image upload error:', err);
+      alert('Failed to upload image. Please try again.');
+      return null;
+    } finally {
+      setUploadingImage(false);
+    }
+  };
   const [username, setUsername] = useState("");
   const [cleanerStatus, setCleanerStatus] = useState('idle');
   const [cleanerId, setCleanerId] = useState<number | null>(null);
@@ -345,21 +375,29 @@ export default function CleanerDashboard() {
                 <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--text)' }}>Profile Picture</label>
                 <input
                   type="file"
-                  accept="image/*"
-                  onChange={(e) => {
+                  accept="image/jpeg,image/png,image/gif,image/webp"
+                  onChange={async (e) => {
                     const file = e.target.files?.[0];
                     if (file) {
-                      const reader = new FileReader();
-                      reader.onloadend = () => {
-                        setProfileData(prev => ({ ...prev, profilePicture: reader.result as string }));
-                      };
-                      reader.readAsDataURL(file);
+                      await handleImageUpload(file);
                     }
                   }}
                   className="w-full"
+                  disabled={uploadingImage}
                 />
+                {uploadingImage && <p style={{ color: 'var(--text-light)', marginTop: '8px' }}>Uploading image...</p>}
                 {profileData.profilePicture && (
-                  <img src={profileData.profilePicture} alt="Profile" className="w-12 h-12 rounded-full border mt-2" style={{ borderColor: 'var(--border)' }} />
+                  <img 
+                    src={profileData.profilePicture} 
+                    alt="Profile" 
+                    className="rounded-full border mt-2" 
+                    style={{ 
+                      borderColor: 'var(--border)',
+                      width: '48px',
+                      height: '48px',
+                      objectFit: 'cover'
+                    }} 
+                  />
                 )}
               </div>
 
@@ -456,11 +494,21 @@ export default function CleanerDashboard() {
             <div className="space-y-3">
               <div className="flex items-center gap-4">
                 {profileData.profilePicture && (
-                  <img src={profileData.profilePicture} alt="Profile" className="w-12 h-12 rounded-full border" style={{ borderColor: 'var(--border)' }} />
+                  <img 
+                    src={profileData.profilePicture} 
+                    alt="Profile" 
+                    className="rounded-full border" 
+                    style={{ 
+                      borderColor: 'var(--border)',
+                      width: '48px',
+                      height: '48px',
+                      objectFit: 'cover'
+                    }} 
+                  />
                 )}
                 <div>
                   <div className="text-xl font-bold" style={{ color: 'var(--text-h)' }}>{profileData.firstName} {profileData.lastName}</div>
-                  <div className="text-sm" style={{ color: 'var(--text)', opacity: 0.6 }}>@{username}</div>
+                  <div className="text-sm" style={{ color: 'var(--text-light)' }}>@{username}</div>
                 </div>
               </div>
               <div style={{ color: 'var(--text)' }}><b>Address:</b> {profileData.address || "Not provided"}</div>
