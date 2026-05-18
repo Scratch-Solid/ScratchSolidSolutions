@@ -21,58 +21,33 @@ const PORTAL_DB = 'scratchsolid-portal-db';
 const MARKETING_DB = 'scratchsolid-marketing-db';
 const BACKEND_DB = 'scratchsolid-backend-db';
 
-// Table distribution
+// Table distribution - based on actual tables in old database
 const SHARED_TABLES = ['users', 'sessions', 'bookings'];
 
 const PORTAL_TABLES = [
   'cleaner_profiles', 'staff', 'booking_assignments',
-  'payroll', 'payroll_adjustments', 'payroll_periods',
-  'leave_requests', 'leave_balances',
-  'notifications', 'notification_settings',
-  'audit_logs', 'activity_logs',
-  'departments', 'teams', 'team_members',
-  'schedules', 'schedule_assignments',
-  'time_tracking', 'time_off_requests',
-  'performance_reviews', 'staff_monthly_reviews', 'job_performance_metrics',
-  'documents', 'document_versions',
-  'incident_reports',
-  'compliance_checks', 'training_records', 'certifications',
+  'employees', 'contracts', 'pending_contracts',
+  'task_completions', 'audit_logs', 'notifications',
   'roles', 'permissions', 'role_permissions', 'admin_permissions',
   'consent_form_content', 'contract_content',
-  'loyalty_points', 'loyalty_transactions', 'referrals',
-  'voice_notes', 'sms_fallback_logs',
-  'cleaning_checklists', 'checklist_items',
-  'client_preferences_extended',
-  'battery_alerts', 'gps_tracking_history', 'travel_time_history',
-  'cleaning_feedback', 'cleaning_photos', 'push_subscriptions',
-  'data_deletion_requests', 'gps_consent',
   'staff_pool_transitions',
+  'job_performance_metrics', 'staff_monthly_reviews',
   'data_access_audit', 'proxy_access_audit'
 ];
 
 const MARKETING_TABLES = [
-  'services', 'service_categories', 'service_pricing', 'service_areas',
-  'promo_codes', 'promotions', 'referral_rewards',
-  'promo_distribution_tracking', 'short_urls', 'promo_scans',
-  'quote_requests', 'quotes', 'quote_logs',
-  'leaders', 'about_us_content', 'testimonials', 'reviews', 'faq',
-  'blog_posts', 'blog_categories',
-  'contact_submissions',
-  'newsletters', 'campaigns', 'campaign_recipients', 'email_templates',
-  'locations', 'cleaner_photos', 'client_feedback',
-  'cleaning_checklist', 'geofences', 'client_preferences',
-  'analytics_events', 'page_views'
+  'services', 'service_pricing',
+  'promo_codes', 'promo_scans', 'promo_distribution',
+  'short_urls',
+  'quote_requests',
+  'leaders', 'about_us_content', 'reviews',
+  'content_pages', 'background_images', 'content', 'marketing_cms'
 ];
 
 const BACKEND_TABLES = [
-  'booking_services', 'booking_status_history',
-  'payments', 'payment_methods',
-  'invoices', 'invoice_items', 'transactions',
-  'stripe_customers', 'stripe_events',
-  'webhook_events', 'api_keys', 'api_rate_limits',
-  'integration_logs',
-  'system_config', 'feature_flags',
-  'migrations', 'health_checks'
+  'payments', 'pricing', 'pricing_config',
+  'weekend_requests', 'password_reset_tokens',
+  'business_events', 'templates', 'ai_responses'
 ];
 
 // Execute wrangler command and return result
