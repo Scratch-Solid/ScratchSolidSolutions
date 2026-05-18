@@ -13,8 +13,9 @@ export interface Env {
 // Helper to get the D1 database from the OpenNext Cloudflare context
 export async function getDb(): Promise<D1Database | null> {
   try {
-    // OpenNext on Workers: use getCloudflareContext
-    const { env } = await getCloudflareContext({ async: true });
+    // Use globalThis.env for Cloudflare Workers context
+    const cloudflareContext = globalThis as any;
+    const env = cloudflareContext?.env;
     const envAny = env as any;
     const db = envAny?.scratchsolid_db || envAny?.scratchsolidDb || envAny?.DB || envAny?.db || envAny?.database;
     if (db) {
@@ -32,7 +33,7 @@ export async function getDb(): Promise<D1Database | null> {
     console.error('D1 binding missing: expected scratchsolid_db or DB');
     console.error('Available env keys:', Object.keys(envAny || {}));
   } catch (error) {
-    console.error('Error getting database from OpenNext context', error);
+    console.error('Error getting database from globalThis context', error);
   }
   return null;
 }

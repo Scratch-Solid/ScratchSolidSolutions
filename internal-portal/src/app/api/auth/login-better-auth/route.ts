@@ -5,34 +5,45 @@ import bcrypt from 'bcryptjs';
 import { logSessionActivity } from '@/lib/session-activity-logger';
 import { getGeolocation } from '@/lib/geolocation-tracker';
 import { generateDeviceFingerprint, parseUserAgent } from '@/lib/device-fingerprint';
+import { withSecurityHeaders, withTracing, withRateLimit, withCsrf } from '@/lib/middleware';
 
 export async function POST(request: NextRequest) {
+  const traceId = withTracing(request);
+  
+  // Apply rate limiting
+  const rateLimitResponse = await withRateLimit(request);
+  if (rateLimitResponse) return rateLimitResponse;
+  
+  // Apply CSRF protection
+  const csrfResponse = await withCsrf(request);
+  if (csrfResponse) return csrfResponse;
+  
   try {
     const body = await request.json() as { email?: string; password?: string; username?: string; identifier?: string };
     const identifier = body.identifier || body.username || body.email;
     const password = body.password;
 
     if (!identifier || !password) {
-      return NextResponse.json(
+      return withSecurityHeaders(NextResponse.json(
         { success: false, error: 'Email/username and password required' },
         { status: 400 }
-      );
+      ), traceId);
     }
 
     const db = await getDb();
     if (!db) {
       console.error('Database binding missing (expected scratchsolid_db or DB)');
-      return NextResponse.json(
+      return withSecurityHeaders(NextResponse.json(
         { success: false, error: 'Database unavailable' },
         { status: 503 }
-      );
+      ), traceId);
     }
 
     // Ensure users table exists to avoid opaque errors
     const usersTable = await db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='users'").first();
     if (!usersTable) {
       console.error('Database schema missing users table. Run migrations on D1.');
-      return NextResponse.json({ success: false, error: 'Database not initialized' }, { status: 503 });
+      return withSecurityHeaders(NextResponse.json({ success: false, error: 'Database not initialized' }, { status: 503 }), traceId);
     }
 
     // Find user by email or username
@@ -41,10 +52,10 @@ export async function POST(request: NextRequest) {
       user = await db.prepare('SELECT * FROM users WHERE email = ? OR username = ?').bind(identifier, identifier).first();
     } catch (dbError) {
       console.error('Database error during user lookup:', dbError);
-      return NextResponse.json(
+      return withSecurityHeaders(NextResponse.json(
         { success: false, error: 'Database unavailable' },
         { status: 503 }
-      );
+      ), traceId);
     }
     
     if (!user) {
@@ -63,10 +74,10 @@ export async function POST(request: NextRequest) {
         status_code: 401
       }, request);
       
-      return NextResponse.json(
+      return withSecurityHeaders(NextResponse.json(
         { success: false, error: 'Invalid credentials' },
         { status: 401 }
-      );
+      ), traceId);
     }
 
     // Verify password
@@ -88,10 +99,10 @@ export async function POST(request: NextRequest) {
         status_code: 401
       }, request);
       
-      return NextResponse.json(
+      return withSecurityHeaders(NextResponse.json(
         { success: false, error: 'Invalid credentials' },
         { status: 401 }
-      );
+      ), traceId);
     }
 
     // Ensure columns exist (idempotent — errors silently if column already present)
@@ -111,7 +122,7 @@ export async function POST(request: NextRequest) {
     (user as any).login_count = (refreshed as any)?.login_count ?? user.login_count;
     // Block if password must be reset and user already logged in 2+ times with temp password
     if ((user as any).password_needs_reset === 1 && ((user as any).login_count ?? 0) >= 2) {
-      return NextResponse.json({ success: false, error: 'Password change required', mustChangePassword: true }, { status: 403 });
+      return withSecurityHeaders(NextResponse.json({ success: false, error: 'Password change required', mustChangePassword: true }, { status: 403 }), traceId);
     }
 
     // Enforce 2FA for privileged roles
@@ -124,12 +135,12 @@ export async function POST(request: NextRequest) {
         await db.prepare(
           `INSERT INTO sessions (user_id, token, expires_at) VALUES (?, ?, datetime('now', '+5 minutes'))`
         ).bind(user.id, 'pre:' + preAuthToken).run();
-        return NextResponse.json({
+        return withSecurityHeaders(NextResponse.json({
           success: false,
           require2FA: true,
           preAuthToken,
           message: '2FA verification required'
-        }, { status: 202 });
+        }, { status: 202 }), traceId);
       }
     }
 
@@ -166,7 +177,7 @@ export async function POST(request: NextRequest) {
       console.error('[Geolocation Error]', err);
     });
     
-    return NextResponse.json({
+    return withSecurityHeaders(NextResponse.json({
       success: true,
       token: sessionToken,
       role: user.role,
@@ -180,12 +191,12 @@ export async function POST(request: NextRequest) {
         name: user.name,
         role: user.role,
       }
-    });
+    }), traceId);
   } catch (error) {
     console.error('Login error:', error);
-    return NextResponse.json(
+    return withSecurityHeaders(NextResponse.json(
       { success: false, error: 'Login failed' },
       { status: 500 }
-    );
+    ), traceId);
   }
 }
