@@ -20,7 +20,10 @@ export async function POST(
   const { refNumber } = await params;
 
   try {
-    const db = getDb();
+    const db = await getDb();
+    if (!db) {
+      return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
+    }
 
     // Get quote request details
     const quote = await db.prepare(
@@ -67,7 +70,7 @@ export async function POST(
             rate: quote.final_price,
             quantity: 1,
           }]
-        );
+        ) as { invoice?: { invoice_id: string; invoice_number: string } };
         
         if (invoiceResult.invoice) {
           zohoInvoiceId = invoiceResult.invoice.invoice_id;
