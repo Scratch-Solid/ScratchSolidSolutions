@@ -21,7 +21,8 @@ const PORTAL_DB = 'scratchsolid-portal-db';
 const MARKETING_DB = 'scratchsolid-marketing-db';
 const BACKEND_DB = 'scratchsolid-backend-db';
 
-// Table distribution - based on actual tables in old database
+// Table distribution - based on actual 48 tables in old scratchsolid-db
+// Excluding: _cf_KV, sqlite_sequence (system tables)
 const SHARED_TABLES = ['users', 'sessions', 'bookings'];
 
 const PORTAL_TABLES = [
@@ -32,7 +33,8 @@ const PORTAL_TABLES = [
   'consent_form_content', 'contract_content',
   'staff_pool_transitions',
   'job_performance_metrics', 'staff_monthly_reviews',
-  'data_access_audit', 'proxy_access_audit'
+  'data_access_audit', 'proxy_access_audit',
+  'staff_public_profiles'
 ];
 
 const MARKETING_TABLES = [
@@ -49,6 +51,9 @@ const BACKEND_TABLES = [
   'weekend_requests', 'password_reset_tokens',
   'business_events', 'templates', 'ai_responses'
 ];
+
+// Tables to skip (system tables)
+const SKIP_TABLES = ['_cf_KV', 'sqlite_sequence', 'schema_migrations'];
 
 // Execute wrangler command and return result
 function wranglerQuery(db, query) {
@@ -80,6 +85,7 @@ function exportTable(db, table) {
       }
     }).filter(row => row !== null);
     
+    console.log(`  Exported ${data.length} rows from ${table}`);
     return data;
   } catch (error) {
     console.error(`Failed to export ${table}:`, error.message);
