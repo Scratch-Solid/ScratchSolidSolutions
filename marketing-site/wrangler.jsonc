@@ -14,11 +14,6 @@
 			"binding": "scratchsolid_db",
 			"database_name": "scratchsolid-db",
 			"database_id": "b4f175df-b233-47dd-ab41-99455bf990b8"
-		},
-		{
-			"binding": "scratchsolid_db_local",
-			"database_name": "scratchsolid-db-local",
-			"database_id": "5d72d761-c7c5-43d3-b336-56c7abdf4abd"
 		}
 	],
 	"kv_namespaces": [
@@ -79,11 +74,6 @@
 					"binding": "scratchsolid_db",
 					"database_name": "scratchsolid-db-staging",
 					"database_id": "6b6f139b-7a19-4d44-9e21-b85c0c0da42b"
-				},
-				{
-					"binding": "scratchsolid_db_local",
-					"database_name": "scratchsolid-db-local",
-					"database_id": "5d72d761-c7c5-43d3-b336-56c7abdf4abd"
 				}
 			],
 			"kv_namespaces": [
