@@ -22,7 +22,10 @@ export async function GET(
   const { refNumber } = await params;
 
   try {
-    const db = getDb();
+    const db = await getDb();
+    if (!db) {
+      return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
+    }
 
     // Get quote request with invoice details
     const quote = await db.prepare(
@@ -45,7 +48,7 @@ export async function GET(
     // Get invoice status from Zoho
     let invoiceStatus = 'unknown';
     try {
-      const statusResult = await getInvoiceStatus(quote.zoho_invoice_id);
+      const statusResult = await getInvoiceStatus(quote.zoho_invoice_id) as { invoice?: { status: string } };
       if (statusResult.invoice) {
         invoiceStatus = statusResult.invoice.status;
       }
