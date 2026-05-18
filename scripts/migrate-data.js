@@ -75,15 +75,9 @@ function exportTable(db, table) {
   try {
     const result = wranglerQuery(db, `SELECT * FROM ${table}`);
     
-    // Parse the output to get JSON data
-    const lines = result.split('\n').filter(line => line.trim());
-    const data = lines.map(line => {
-      try {
-        return JSON.parse(line);
-      } catch {
-        return null;
-      }
-    }).filter(row => row !== null);
+    // Parse D1 API response: { "result": [{ "results": [...rows...], "meta": {...} }] }
+    const response = JSON.parse(result);
+    const data = response.result?.[0]?.results || [];
     
     console.log(`  Exported ${data.length} rows from ${table}`);
     return data;
