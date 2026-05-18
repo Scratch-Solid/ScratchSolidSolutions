@@ -17,7 +17,7 @@ export async function getDb(): Promise<D1Database | null> {
     const cloudflareContext = globalThis as any;
     const env = cloudflareContext?.env;
     const envAny = env as any;
-    const db = envAny?.scratchsolid_db || envAny?.scratchsolidDb || envAny?.DB || envAny?.db || envAny?.database;
+    const db = envAny?.scratchsolid_db || envAny?.scratchsolidDb || envAny?.scratchsolid_db_portal_staging || envAny?.DB || envAny?.db || envAny?.database;
     if (db) {
       return db as D1Database;
     }
@@ -30,7 +30,7 @@ export async function getDb(): Promise<D1Database | null> {
       console.warn(`D1 binding not found under expected names; using candidate binding '${candidateKey}'`);
       return (envAny as any)[candidateKey] as D1Database;
     }
-    console.error('D1 binding missing: expected scratchsolid_db or DB');
+    console.error('D1 binding missing: expected scratchsolid_db, scratchsolid-db-portal-staging, or DB');
     console.error('Available env keys:', Object.keys(envAny || {}));
   } catch (error) {
     console.error('Error getting database from globalThis context', error);
