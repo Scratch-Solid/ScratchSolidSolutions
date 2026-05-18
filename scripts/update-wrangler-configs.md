@@ -1,109 +1,60 @@
 # Wrangler Configuration Update Instructions
 
-After creating the new production databases, update the wrangler configurations as follows:
+**Status:** COMPLETED - All wrangler configurations have been updated with new database IDs
 
-## 1. Internal Portal
+## Database IDs
 
+- **scratchsolid-portal-db:** a08f16f5-9d75-47f9-973c-35bade106b47
+- **scratchsolid-marketing-db:** 4c282c8f-8991-49bd-9dc6-e3eab31a4869
+- **scratchsolid-backend-db:** 2a0b1e08-443e-46c4-8184-86ea180d4024
+
+## Updated Configurations
+
+### 1. Internal Portal (COMPLETED)
 **File:** `internal-portal/wrangler.jsonc`
+- Production: scratchsolid-portal-db (a08f16f5-9d75-47f9-973c-35bade106b47)
+- Staging: scratchsolid-db-portal-staging (cc0bb727-585b-40c9-8afa-77947e725813)
 
-**Production (lines 13-18):**
-```jsonc
-"d1_databases": [
-	{
-		"binding": "scratchsolid_db",
-		"database_name": "scratchsolid-portal-db",
-		"database_id": "<INSERT_PORTAL_DB_ID_HERE>"
-	}
-],
-```
-
-**Staging (lines 77-82):**
-```jsonc
-"d1_databases": [
-	{
-		"binding": "scratchsolid_db",
-		"database_name": "scratchsolid-db-portal-staging",
-		"database_id": "cc0bb727-585b-40c9-8afa-77947e725813"
-	}
-],
-```
-
-## 2. Marketing Site
-
+### 2. Marketing Site (COMPLETED)
 **File:** `marketing-site/wrangler.jsonc`
+- Production: scratchsolid-marketing-db (4c282c8f-8991-49bd-9dc6-e3eab31a4869)
+- Staging: scratchsolid-db-staging (6b6f139b-7a19-4d44-9e21-b85c0c0da42b)
 
-**Production (lines 12-17):**
-```jsonc
-"d1_databases": [
-	{
-		"binding": "scratchsolid_db",
-		"database_name": "scratchsolid-marketing-db",
-		"database_id": "<INSERT_MARKETING_DB_ID_HERE>"
-	}
-],
-```
-
-**Staging (lines 72-77):**
-```jsonc
-"d1_databases": [
-	{
-		"binding": "scratchsolid_db",
-		"database_name": "scratchsolid-marketing-db-staging",
-		"database_id": "<INSERT_MARKETING_STAGING_DB_ID_HERE>"
-	}
-],
-```
-
-## 3. Backend Worker
-
+### 3. Backend Worker (COMPLETED)
 **File:** `backend-worker/wrangler.toml`
+- Production: scratchsolid-backend-db (2a0b1e08-443e-46c4-8184-86ea180d4024)
+- Staging: scratchsolid-db-backend-staging (67e66542-486a-442b-bbf6-9c3d4a503f4c)
 
-**Production (lines 14-18):**
-```toml
-[[d1_databases]]
-binding = "DB"
-database_name = "scratchsolid-backend-db"
-database_id = "<INSERT_BACKEND_DB_ID_HERE>"
+## Next Steps
+
+### Step 1: Run Migrations on New Production Databases
+
+```bash
+# Portal migrations
+cd internal-portal
+npx wrangler d1 migrations apply scratchsolid-portal-db --remote
+
+# Marketing migrations
+cd ../marketing-site
+npx wrangler d1 migrations apply scratchsolid-marketing-db --remote
+
+# Backend migrations
+cd ../backend-worker
+npx wrangler d1 migrations apply scratchsolid-backend-db --remote
 ```
 
-**Staging (lines 37-40):**
-```toml
-[[env.staging.d1_databases]]
-binding = "DB"
-database_name = "scratchsolid-db-backend-staging"
-database_id = "67e66542-486a-442b-bbf6-9c3d4a503f4c"
-```
+### Step 2: Migrate Data from Current Shared Database
 
-## Steps to Execute
+Export data from current `scratchsolid-db` and import into new isolated databases using the scripts in `scripts/` directory.
 
-1. Create the 3 new production databases:
-   ```bash
-   npx wrangler d1 create scratchsolid-portal-db
-   npx wrangler d1 create scratchsolid-marketing-db
-   npx wrangler d1 create scratchsolid-backend-db
-   ```
+### Step 3: Deploy Applications
 
-2. Copy the database IDs from the output and update the wrangler configurations above
+Deploy all three applications with the new database configurations.
 
-3. Run migrations on the new databases:
-   ```bash
-   # Portal
-   cd internal-portal
-   npx wrangler d1 migrations apply scratchsolid-portal-db --remote --config=./wrangler.jsonc
-   
-   # Marketing
-   cd ../marketing-site
-   npx wrangler d1 migrations apply scratchsolid-marketing-db --remote --config=./wrangler.jsonc
-   
-   # Backend
-   cd ../backend-worker
-   npx wrangler d1 migrations apply scratchsolid-backend-db --remote --config=./wrangler.toml
-   ```
+### Step 4: Test All Applications
 
-4. Migrate data from the current shared database to the new isolated databases
+Verify that all applications work correctly with the isolated databases.
 
-5. Deploy the updated configurations
+### Step 5: Delete Old Shared Database
 
-6. Test all applications
-
-7. Delete the old shared database after verification
+After verification, delete the old shared `scratchsolid-db` database.
