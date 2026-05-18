@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     };
 
     const {
-      name, email, phone, service_id, quantity, promo_code, client_type, vat_registered, vat_number, property_type, area, baseline_price, transport_fee, after_hours_surcharge, demand_multiplier, special_discount, promo_discount, loyalty_discount
+      name, email, phone, service_id, quantity, promo_code, client_type, vat_registered, vat_number, property_type, area, transport_fee, after_hours_surcharge, demand_multiplier, special_discount, promo_discount, loyalty_discount
     } = body;
 
     // Validate required fields
