@@ -7,7 +7,7 @@
  * - Audit logs: Keep for 5 years
  */
 
-import { getDb, setDbInstance } from '../lib/db';
+import { getDb, setDbInstance } from './lib/db';
 
 const RETENTION_POLICIES = {
   reviews: { days: 730, description: '2 years' }, // 2 years
@@ -137,10 +137,4 @@ export async function handleRetentionPolicies() {
   }
 }
 
-// Cloudflare Worker entry point
-export default {
-  async scheduled(event: any, env: any, ctx: any) {
-    setDbInstance(env.DB);
-    await handleRetentionPolicies();
-  }
-};
+// handler moved to index.ts

@@ -4,8 +4,8 @@
  * Creates credit notes for future bookings when cancellation occurs
  */
 
-import { getDb, setDbInstance } from '../lib/db';
-import { setEnvInstance, cancelOverdueInvoice, createCreditNote, applyCreditNoteToInvoice } from '../lib/zoho';
+import { getDb, setDbInstance } from './lib/db';
+import { setEnvInstance, cancelOverdueInvoice, createCreditNote, applyCreditNoteToInvoice } from './lib/zoho';
 
 interface Invoice {
   id: string;
@@ -99,11 +99,4 @@ export async function handleOverdueCancellations() {
   }
 }
 
-// Cloudflare Worker entry point
-export default {
-  async scheduled(event: any, env: any, ctx: any) {
-    setDbInstance(env.DB);
-    setEnvInstance(env);
-    await handleOverdueCancellations();
-  }
-};
+// handler moved to index.ts

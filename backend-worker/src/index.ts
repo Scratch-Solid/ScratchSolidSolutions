@@ -5,11 +5,22 @@
 
 import { Router } from 'itty-router';
 import { sha256 } from '@noble/hashes/sha256';
+import { bytesToHex } from '@noble/hashes/utils';
 import jwt from '@tsndr/cloudflare-worker-jwt';
 import bcrypt from 'bcryptjs';
-import DataRetentionCleanup from './data-retention.js';
+import DataRetentionCleanup from './data-retention';
+import { handleHardDeleteAccounts } from './hard-delete-accounts';
+import { handleOverdueCancellations } from './overdue-cancellation';
+import { handleRetentionPolicies } from './retention-policies';
+import { queueHandler } from './queue-consumer';
+import { setDbInstance } from './lib/db';
+import { setEnvInstance } from './lib/zoho';
 
 const router = Router();
+
+// ... existing helper functions and routes ...
+// (I will use multi_edit or a large edit for this)
+
 
 // Helper function to get database session for read operations
 function getReadSession(env) {
@@ -255,8 +266,8 @@ async function verifyPassword(password, storedHash) {
   if (!storedHash.startsWith('$2a$') && !storedHash.startsWith('$2b$')) {
     const encoder = new TextEncoder();
     const data = encoder.encode(password + 'salt');
-    const hashBuffer = await sha256(data);
-    const legacyHash = Array.from(hashBuffer).map(b => b.toString(16).padStart(2, '0')).join('');
+    const hashBuffer = sha256(data);
+    const legacyHash = bytesToHex(hashBuffer);
     return legacyHash === storedHash;
   }
   // Use bcrypt for new hashes
@@ -1218,11 +1229,26 @@ export default {
     return router.handle(request, env, ctx);
   },
   async scheduled(event, env, ctx) {
-    // Data retention cleanup task
-    // Runs daily at midnight UTC
+    // Set global instances for shared modules
+    setDbInstance(env.DB);
+    setEnvInstance(env);
+
+    // 1. Data retention cleanup task (existing)
     const cleanup = new DataRetentionCleanup(env);
     await cleanup.runAllCleanup();
     
-    console.log('Data retention cleanup completed');
+    // 2. Hard delete accounts (30-day grace period)
+    await handleHardDeleteAccounts();
+
+    // 3. Overdue cancellations and credits
+    await handleOverdueCancellations();
+
+    // 4. Detailed retention policies
+    await handleRetentionPolicies();
+    
+    console.log('All scheduled tasks completed');
   },
+  async queue(batch, env, ctx) {
+    return queueHandler.queue(batch, env, ctx);
+  }
 };

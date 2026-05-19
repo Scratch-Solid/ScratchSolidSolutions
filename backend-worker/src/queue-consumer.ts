@@ -12,7 +12,7 @@ export interface WriteMessage {
   timestamp: string;
 }
 
-export default {
+export const queueHandler = {
   async queue(batch: MessageBatch<WriteMessage>, env: Env, ctx: ExecutionContext) {
     // Group messages by type for batch inserts
     const auditLogs: WriteMessage[] = [];
