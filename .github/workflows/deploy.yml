@@ -4,6 +4,12 @@ on:
   push:
     branches: [main, staging]
 
+env:
+  DEPLOY_ENV: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
+  MARKETING_BASE_URL: ${{ github.ref == 'refs/heads/main' && 'https://scratchsolidsolutions.org' || 'https://staging.scratchsolidsolutions.org' }}
+  MARKETING_API_URL: ${{ github.ref == 'refs/heads/main' && 'https://api.scratchsolidsolutions.org' || 'https://api-staging.scratchsolidsolutions.org' }}
+  PORTAL_BASE_URL: ${{ github.ref == 'refs/heads/main' && 'https://portal.scratchsolidsolutions.org' || 'https://portal-staging.scratchsolidsolutions.org' }}
+
 jobs:
   deploy-marketing:
     runs-on: ubuntu-latest
@@ -26,10 +32,10 @@ jobs:
 
       - run: npm ci --legacy-peer-deps
       - name: Build and deploy with OpenNext
-        run: npx opennextjs-cloudflare build && npx opennextjs-cloudflare deploy
+        run: npx opennextjs-cloudflare build && npx wrangler pages deploy .open-next --env ${{ env.DEPLOY_ENV }}
         env:
-          NEXT_PUBLIC_BASE_URL: https://scratchsolidsolutions.org
-          NEXT_PUBLIC_API_URL: https://scratchsolidsolutions.org
+          NEXT_PUBLIC_BASE_URL: ${{ env.MARKETING_BASE_URL }}
+          NEXT_PUBLIC_API_URL: ${{ env.MARKETING_API_URL }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
@@ -54,8 +60,9 @@ jobs:
 
       - run: npm ci --legacy-peer-deps
       - name: Build and deploy with OpenNext
-        run: npx opennextjs-cloudflare build && npx opennextjs-cloudflare deploy
+        run: npx opennextjs-cloudflare build && npx wrangler pages deploy .open-next --env ${{ env.DEPLOY_ENV }}
         env:
+          NEXT_PUBLIC_BASE_URL: ${{ env.PORTAL_BASE_URL }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
@@ -79,7 +86,7 @@ jobs:
 
       - run: npm ci --legacy-peer-deps
       - name: Deploy with Wrangler
-        run: npx wrangler deploy
+        run: npx wrangler deploy --env ${{ env.DEPLOY_ENV }}
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
