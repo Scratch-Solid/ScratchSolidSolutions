@@ -21,26 +21,26 @@
 	"kv_namespaces": [
 		{
 			"binding": "RATE_LIMIT_KV",
-			"id": "859744ffa6fc44caa84edaaa1e481800"
+			"id": "98a7542aead048e1b5cc965dfc3d0552"
 		},
 		{
 			"binding": "GPS_KV",
-			"id": "426d4889e6da4594a4afc972d5184146",
+			"id": "f10442563c354116976f56e569bd40f6",
 			"preview_id": "ac5c54b821e543cbd7e3a44559aea8c"
 		},
 		{
 			"binding": "PUSH_KV",
-			"id": "426d4889e6da4594a4afc972d5184146"
+			"id": "d297a8eb5c85444997e7cefa43b924dc"
 		},
 		{
 			"binding": "STATUS_KV",
-			"id": "859744ffa6fc44caa84edaaa1e481800"
+			"id": "6ae00113fb454ed2ba046c4f157dffc3"
 		}
 	],
 	"r2_buckets": [
 		{
 			"binding": "UPLOADS_BUCKET",
-			"bucket_name": "scratchsolid-uploads"
+			"bucket_name": "portal-uploads"
 		},
 		{
 			"binding": "CLEANER_PHOTOS_BUCKET",

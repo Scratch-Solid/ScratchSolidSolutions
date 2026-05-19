@@ -22,18 +22,23 @@ database_id = "2a0b1e08-443e-46c4-8184-86ea180d4024"
 # KV Namespace bindings
 [[kv_namespaces]]
 binding = "RATE_LIMIT_KV"
-id = "859744ffa6fc44caa84edaaa1e481800"
+id = "899aa84ac7854b59b17c3058d2926170"
 
 # R2 Bucket bindings
 [[r2_buckets]]
 binding = "UPLOADS_BUCKET"
-bucket_name = "scratchsolid-uploads"
+bucket_name = "backend-uploads"
 
 # Environment variables
 [vars]
 ENVIRONMENT = "production"
 NEXT_PUBLIC_BASE_URL = "https://scratchsolidsolutions.org"
 NEXT_PUBLIC_API_URL = "https://api.scratchsolidsolutions.org/api"
+
+# Route bindings
+[[routes]]
+pattern = "api.scratchsolidsolutions.org/*"
+zone_name = "scratchsolidsolutions.org"
 
 # Staging environment configuration
 [[env.staging.d1_databases]]
@@ -47,12 +52,17 @@ id = "f077cd7dd76843e680853ffe41bdbdaa"
 
 [[env.staging.r2_buckets]]
 binding = "UPLOADS_BUCKET"
-bucket_name = "scratchsolid-uploads-backend-staging"
+bucket_name = "backend-uploads-staging"
 
 [env.staging.vars]
 ENVIRONMENT = "staging"
 NEXT_PUBLIC_BASE_URL = "https://staging.scratchsolidsolutions.org"
 NEXT_PUBLIC_API_URL = "https://api-staging.scratchsolidsolutions.org/api"
+
+# Staging route bindings
+[[env.staging.routes]]
+pattern = "api-staging.scratchsolidsolutions.org/*"
+zone_name = "scratchsolidsolutions.org"
 
 # Secrets (must be set via: wrangler secret put <SECRET_NAME>)
 # Required secrets:

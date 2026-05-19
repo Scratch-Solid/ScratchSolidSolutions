@@ -33,7 +33,7 @@ export default {
     if (auditLogs.length > 0) {
       const placeholders = auditLogs.map(() => '(?, ?, ?, ?, ?, ?)').join(', ');
       const values = auditLogs.flatMap(m => [
-        m.payload.admin_id || null,
+        m.payload.admin_id || m.payload.user_id || null,
         m.payload.action,
         m.payload.resource_type,
         m.payload.resource_id || null,
@@ -41,7 +41,7 @@ export default {
         m.payload.ip_address || ''
       ]);
       await env.DB.prepare(
-        `INSERT INTO audit_logs (admin_id, action, resource_type, resource_id, details, ip_address) VALUES ${placeholders}`
+        `INSERT INTO audit_logs (user_id, action, resource_type, resource_id, details, ip_address) VALUES ${placeholders}`
       ).bind(...values).run();
     }
 

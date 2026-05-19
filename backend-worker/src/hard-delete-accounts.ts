@@ -3,7 +3,7 @@
  * Runs via Cloudflare Cron to permanently delete accounts after 30-day grace period
  */
 
-import { getDb } from '../lib/db';
+import { getDb, setDbInstance } from '../lib/db';
 
 const GRACE_PERIOD_DAYS = 30;
 
@@ -82,6 +82,7 @@ export async function handleHardDeleteAccounts() {
 // Cloudflare Worker entry point
 export default {
   async scheduled(event: any, env: any, ctx: any) {
+    setDbInstance(env.DB);
     await handleHardDeleteAccounts();
   }
 };
