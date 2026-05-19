@@ -80,14 +80,14 @@
 ## Data Count Audit
 
 ### Production Databases
-- **scratchsolid-portal-db:** 0 users
-- **scratchsolid-marketing-db:** 0 users
-- **scratchsolid-backend-db:** 0 users
+- **scratchsolid-portal-db:** 8 users, 22 sessions, 3 audit_logs, 2 consent_form_content, 1 contract_content, 1 pending_contracts
+- **scratchsolid-marketing-db:** 9 service_pricing, 5 services, 5 marketing_cms, 3 quote_requests, 1 leaders
+- **scratchsolid-backend-db:** 41 ai_responses, 5 pricing_config, 1 password_reset_tokens
 
 ### Staging Databases
-- **scratchsolid-db-portal-staging:** 3 users
-- **scratchsolid-db-staging:** 0 users
-- **scratchsolid-db-backend-staging:** (pending count)
+- **scratchsolid-db-portal-staging:** 3 users (incorrect schema - marketing tables)
+- **scratchsolid-db-staging:** 0 users (marketing schema - correct)
+- **scratchsolid-db-backend-staging:** (pending count - incorrect schema - mixed tables)
 
 ## Issues Found
 
@@ -111,17 +111,20 @@
 ## Recommendations
 
 ### Immediate Actions
-1. Run portal migration scripts on scratchsolid-db-portal-staging
-2. Verify scratchsolid-db-backend-staging schema
-3. Run backend migration scripts on scratchsolid-db-backend-staging if needed
+1. Test portal production endpoints
+2. Test marketing production endpoints
+3. Test backend production endpoints
+4. Run portal migration scripts on scratchsolid-db-portal-staging (after testing production)
+5. Run backend migration scripts on scratchsolid-db-backend-staging (after testing production)
+6. Verify scratchsolid-db-staging schema matches production
 
 ### Regression Testing Required
-1. Test portal production endpoints
+1. Test portal production endpoints - IN PROGRESS
 2. Test portal staging endpoints (after migration)
-3. Test marketing production endpoints
+3. Test marketing production endpoints - IN PROGRESS
 4. Test marketing staging endpoints
-5. Test backend production endpoints
-6. Test backend staging endpoints (after verification)
+5. Test backend production endpoints - IN PROGRESS
+6. Test backend staging endpoints (after migration)
 
 ### Data Verification
 1. Verify users table data in all databases
@@ -131,9 +134,9 @@
 
 ## Next Steps
 
-1. Fix staging database schemas
-2. Run migration scripts on staging databases
-3. Test all application endpoints
-4. Verify data isolation
-5. Perform regression testing
+1. Test production applications with new isolated databases
+2. Verify data isolation across all databases
+3. Fix staging database schemas
+4. Run migration scripts on staging databases
+5. Perform regression testing on staging
 6. Update staging database names to match production naming convention
