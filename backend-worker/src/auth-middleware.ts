@@ -43,12 +43,13 @@ async function verifyBetterAuthSession(request, env) {
     // Query Better Auth session from D1
     // Handle case where table doesn't exist yet
     const db = getReadSession(env);
+    const now = Date.now();
     const session = await db.prepare(`
       SELECT s.*, u.id as user_id, u.email, u.role, u.name
       FROM better_auth_sessions s
       JOIN users u ON s.user_id = u.id
-      WHERE s.id = ? AND s.expires_at > datetime('now')
-    `).bind(sessionHeader).first();
+      WHERE s.id = ? AND s.expires_at > ?
+    `).bind(sessionHeader, now).first();
     
     if (session) {
       return { type: 'better-auth', payload: session };

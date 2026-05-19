@@ -28,6 +28,8 @@ jobs:
     - name: Build
       working-directory: ./marketing-site
       run: npm run cloudflare-build
+      env:
+        CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     
     - name: Deploy to Cloudflare Workers (Staging)
       uses: cloudflare/wrangler-action@v3
@@ -36,6 +38,8 @@ jobs:
         command: deploy --env staging
         workingDirectory: marketing-site
         wranglerVersion: 4.91.0
+      env:
+        CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
   deploy-internal-portal-staging:
     name: Deploy Internal Portal to Staging
@@ -60,6 +64,8 @@ jobs:
     - name: Build with OpenNext
       working-directory: ./internal-portal
       run: npm run cloudflare-build
+      env:
+        CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
     - name: Deploy to Cloudflare Workers (Staging)
       uses: cloudflare/wrangler-action@v3
@@ -98,3 +104,5 @@ jobs:
         command: deploy --env staging
         workingDirectory: backend-worker
         wranglerVersion: 4.91.0
+      env:
+        CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

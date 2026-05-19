@@ -8,32 +8,33 @@ compatibility_flags = ["nodejs_compat"]
 [triggers]
 crons = ["0 0 * * *"]
 
-# D1 Database binding
+# Global Bindings (Production / Base)
 [[d1_databases]]
 binding = "DB"
 database_name = "scratchsolid-backend-db"
 database_id = "2a0b1e08-443e-46c4-8184-86ea180d4024"
 
-# KV Namespace bindings
 [[kv_namespaces]]
 binding = "RATE_LIMIT_KV"
 id = "899aa84ac7854b59b17c3058d2926170"
 
-# R2 Bucket bindings
 [[r2_buckets]]
 binding = "UPLOADS_BUCKET"
 bucket_name = "backend-uploads"
 
-# Environment variables
 [vars]
 ENVIRONMENT = "production"
 NEXT_PUBLIC_BASE_URL = "https://scratchsolidsolutions.org"
 NEXT_PUBLIC_API_URL = "https://api.scratchsolidsolutions.org/api"
 
-# Route bindings
 [[routes]]
 pattern = "api.scratchsolidsolutions.org/*"
 zone_name = "scratchsolidsolutions.org"
+
+[[queues.consumers]]
+queue = "backend-writes-queue"
+max_batch_size = 100
+max_batch_timeout = 5
 
 # Staging environment configuration
 [env.staging]
@@ -61,10 +62,14 @@ NEXT_PUBLIC_API_URL = "https://api-staging.scratchsolidsolutions.org/api"
 pattern = "api-staging.scratchsolidsolutions.org/*"
 zone_name = "scratchsolidsolutions.org"
 
-# Production environment configuration (optional override)
+[[env.staging.queues.consumers]]
+queue = "backend-writes-queue-staging"
+max_batch_size = 100
+max_batch_timeout = 5
+
+# Production environment explicit configuration
 [env.production]
 name = "cleaning-service-backend-prod"
-
 
 # Secrets (must be set via: wrangler secret put <SECRET_NAME>)
 # Required secrets:

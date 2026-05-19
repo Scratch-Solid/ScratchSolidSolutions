@@ -77,7 +77,7 @@
 			"kv_namespaces": [
 				{
 					"binding": "RATE_LIMIT_KV",
-					"id": "918298e91aec470ba7f8d800b2f8f124"
+					"id": "7555bd20132346a8a9bf3cf67ea9a949"
 				},
 				{
 					"binding": "GPS_KV",
@@ -85,7 +85,7 @@
 				},
 				{
 					"binding": "PUSH_KV",
-					"id": "1cada668d188498eb560ad5c8b9e368c"
+					"id": "ced0052698894bccbf023cff381d6175"
 				},
 				{
 					"binding": "STATUS_KV",
@@ -103,6 +103,8 @@
 				}
 			],
 			"vars": {
+				"NEXT_PUBLIC_BASE_URL": "https://portal-staging.scratchsolidsolutions.org",
+				"NEXT_PUBLIC_API_URL": "https://api-staging.scratchsolidsolutions.org/api",
 				"ALLOWED_ORIGINS": "https://portal-staging.scratchsolidsolutions.org",
 				"NODE_ENV": "staging"
 			}
