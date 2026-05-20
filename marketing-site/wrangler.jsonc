@@ -2,7 +2,7 @@
 	"$schema": "./node_modules/wrangler/config-schema.json",
 	"name": "scratchsolidsolutions",
 	"main": ".open-next/worker.js",
-	"compatibility_date": "2026-04-23",
+	"compatibility_date": "2024-04-01",
 	"compatibility_flags": [
 		"nodejs_compat"
 	],
@@ -24,13 +24,11 @@
 		},
 		{
 			"binding": "GPS_KV",
-			"id": "00db80ea4fb644fb90208b847f0abf8c",
-			"remote": true
+			"id": "00db80ea4fb644fb90208b847f0abf8c"
 		},
 		{
 			"binding": "PUSH_KV",
-			"id": "3e577da100f048b89f9f37c1eeaf37c9",
-			"remote": true
+			"id": "3e577da100f048b89f9f37c1eeaf37c9"
 		}
 	],
 	"r2_buckets": [
@@ -40,13 +38,11 @@
 		},
 		{
 			"bucket_name": "cleaner-photos",
-			"binding": "cleaner_photos",
-			"remote": true
+			"binding": "cleaner_photos"
 		},
 		{
 			"bucket_name": "cleaner-photos-staging",
-			"binding": "cleaner_photos_staging",
-			"remote": true
+			"binding": "cleaner_photos_staging"
 		}
 	],
 	"routes": [
@@ -80,13 +76,11 @@
 				},
 				{
 					"binding": "GPS_KV",
-					"id": "1cada668d188498eb560ad5c8b9e368c",
-					"remote": true
+					"id": "1cada668d188498eb560ad5c8b9e368c"
 				},
 				{
 					"binding": "PUSH_KV",
-					"id": "ced0052698894bccbf023cff381d6175",
-					"remote": true
+					"id": "ced0052698894bccbf023cff381d6175"
 				}
 			],
 			"r2_buckets": [

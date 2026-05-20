@@ -1,6 +1,6 @@
 name = "cleaning-service-backend"
 main = "src/index.ts"
-compatibility_date = "2026-04-19"
+compatibility_date = "2024-04-01"
 compatibility_flags = ["nodejs_compat"]
 
 # Deploy trigger: Update to apply new scratchsolid-backend-db configuration
@@ -31,11 +31,6 @@ NEXT_PUBLIC_API_URL = "https://api.scratchsolidsolutions.org/api"
 pattern = "api.scratchsolidsolutions.org/*"
 zone_name = "scratchsolidsolutions.org"
 
-[[queues.consumers]]
-queue = "backend-writes-queue"
-max_batch_size = 100
-max_batch_timeout = 5
-
 # Staging environment configuration
 [env.staging]
 name = "cleaning-service-backend-staging"
@@ -61,15 +56,6 @@ NEXT_PUBLIC_API_URL = "https://api-staging.scratchsolidsolutions.org/api"
 [[env.staging.routes]]
 pattern = "api-staging.scratchsolidsolutions.org/*"
 zone_name = "scratchsolidsolutions.org"
-
-[[env.staging.queues.consumers]]
-queue = "backend-writes-queue-staging"
-max_batch_size = 100
-max_batch_timeout = 5
-
-# Production environment explicit configuration
-[env.production]
-name = "cleaning-service-backend-prod"
 
 # Secrets (must be set via: wrangler secret put <SECRET_NAME>)
 # Required secrets:

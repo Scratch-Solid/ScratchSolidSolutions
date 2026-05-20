@@ -2,7 +2,7 @@
 	"$schema": "./node_modules/wrangler/config-schema.json",
 	"main": ".open-next/worker.js",
 	"name": "scratchsolid-portal",
-	"compatibility_date": "2026-04-23",
+	"compatibility_date": "2024-04-01",
 	"compatibility_flags": [
 		"nodejs_compat"
 	],
@@ -25,8 +25,7 @@
 		},
 		{
 			"binding": "GPS_KV",
-			"id": "f10442563c354116976f56e569bd40f6",
-			"preview_id": "ac5c54b821e543cbd7e3a44559aea8c"
+			"id": "f10442563c354116976f56e569bd40f6"
 		},
 		{
 			"binding": "PUSH_KV",
