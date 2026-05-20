@@ -1,12 +1,16 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import { withRateLimit, rateLimits } from '@/lib/middleware';
+import { withRateLimit, rateLimits, withCsrf } from '@/lib/middleware';
 import { sanitizeText, sanitizeEmail, sanitizePhone } from '@/lib/sanitization';
 import { validateEmail } from '@/lib/validation';
 import { logAuditEvent } from '@/lib/audit';
 
 export async function POST(request: NextRequest) {
+  // CSRF protection
+  const csrfResult = await withCsrf(request);
+  if (csrfResult) return csrfResult;
+
   // Rate limiting - prevent abuse
   const rateLimitResult = await withRateLimit(request, { windowMs: 3600000, maxRequests: 5 }); // 5 quotes per hour
   if (rateLimitResult && !rateLimitResult.success) {

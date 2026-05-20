@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
+import { withAuth, withTracing, withSecurityHeaders, withCsrf } from '@/lib/middleware';
 import { logger } from '@/lib/logger';
 
 export const dynamic = "force-dynamic";
@@ -10,6 +10,10 @@ export async function POST(request: NextRequest) {
   const authResult = await withAuth(request, ['client', 'admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db, user } = authResult;
+
+  // CSRF protection
+  const csrfResult = await withCsrf(request);
+  if (csrfResult) return withSecurityHeaders(csrfResult, traceId);
 
   try {
     const body = await request.json() as {

@@ -16,8 +16,13 @@ import {
   createSecurityError,
   createRateLimitError
 } from '@/lib/security-middleware';
+import { withCsrf } from '@/lib/middleware';
 
 export async function POST(request: NextRequest) {
+  // CSRF protection
+  const csrfResult = await withCsrf(request);
+  if (csrfResult) return csrfResult;
+
   // Get client identifier for rate limiting
   const clientId = request.headers.get('x-forwarded-for') || 
                    request.headers.get('x-real-ip') || 
