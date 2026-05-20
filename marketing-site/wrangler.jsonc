@@ -2,7 +2,7 @@
 	"$schema": "./node_modules/wrangler/config-schema.json",
 	"name": "scratchsolidsolutions",
 	"main": ".open-next/worker.js",
-	"compatibility_date": "2024-04-01",
+	"compatibility_date": "2026-05-20",
 	"compatibility_flags": [
 		"nodejs_compat"
 	],
@@ -87,6 +87,14 @@
 				{
 					"binding": "UPLOADS_BUCKET",
 					"bucket_name": "marketing-uploads-staging"
+				},
+				{
+					"binding": "cleaner_photos",
+					"bucket_name": "cleaner-photos"
+				},
+				{
+					"binding": "cleaner_photos_staging",
+					"bucket_name": "cleaner-photos-staging"
 				}
 			],
 			"routes": [

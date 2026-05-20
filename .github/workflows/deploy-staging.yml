@@ -37,7 +37,7 @@ jobs:
         apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         command: deploy --env staging
         workingDirectory: marketing-site
-        wranglerVersion: 4.91.0
+        wranglerVersion: 4.93.0
       env:
         CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
@@ -73,7 +73,7 @@ jobs:
         apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         command: deploy --env staging
         workingDirectory: internal-portal
-        wranglerVersion: 4.91.0
+        wranglerVersion: 4.93.0
       env:
         CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
@@ -103,6 +103,6 @@ jobs:
         apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         command: deploy --env staging
         workingDirectory: backend-worker
-        wranglerVersion: 4.91.0
+        wranglerVersion: 4.93.0
       env:
         CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
