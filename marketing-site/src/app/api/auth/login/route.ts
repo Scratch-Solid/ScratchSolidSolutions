@@ -7,13 +7,9 @@ import jwt from 'jsonwebtoken';
 import { logger } from "@/lib/logger";
 import { getJWTSecret } from "@/lib/env";
 import { validateEmail } from "@/lib/validation";
-import { withRateLimit, rateLimits, withCsrf } from "@/lib/middleware";
+import { withRateLimit, rateLimits } from "@/lib/middleware";
 
 export async function POST(request: NextRequest) {
-  // CSRF protection
-  const csrfResult = await withCsrf(request);
-  if (csrfResult) return csrfResult;
-
   // Rate limiting check
   const rateLimitResult = await withRateLimit(request, rateLimits.auth);
   if (rateLimitResult && !rateLimitResult.success) {

@@ -5,7 +5,7 @@ import { sanitizeEmail, sanitizeText, sanitizePhone } from "@/lib/sanitization";
 import bcrypt from 'bcryptjs';
 import { logger } from "@/lib/logger";
 import { validateEmail, validatePassword } from "@/lib/validation";
-import { withRateLimit, rateLimits, withCsrf } from "@/lib/middleware";
+import { withRateLimit, rateLimits } from "@/lib/middleware";
 
 // Direct Resend API call - bulletproof approach
 async function sendEmailVerificationEmailDirect(to: string, name: string, verifyLink: string) {
@@ -65,10 +65,6 @@ async function sendEmailVerificationEmailDirect(to: string, name: string, verify
 }
 
 export async function POST(request: NextRequest) {
-  // CSRF protection
-  const csrfResult = await withCsrf(request);
-  if (csrfResult) return csrfResult;
-
   // Rate limiting check
   const rateLimitResult = await withRateLimit(request, rateLimits.auth);
   if (rateLimitResult && !rateLimitResult.success) {

@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, getUserByEmail, getUserByPhone, createPasswordResetToken } from "@/lib/db";
 import { sanitizeEmail, sanitizePhone } from "@/lib/sanitization";
-import { withRateLimit, rateLimits, withCsrf } from "@/lib/middleware";
+import { withRateLimit, rateLimits } from "@/lib/middleware";
 
 // Direct Resend API call - bulletproof approach
 async function sendPasswordResetEmail(to: string, resetLink: string) {
@@ -79,10 +79,6 @@ async function sendPasswordResetEmail(to: string, resetLink: string) {
 }
 
 export async function POST(request: NextRequest) {
-  // CSRF protection
-  const csrfResult = await withCsrf(request);
-  if (csrfResult) return csrfResult;
-
   // Rate limiting check
   const rateLimitResult = await withRateLimit(request, rateLimits.auth);
   if (rateLimitResult && !rateLimitResult.success) {
