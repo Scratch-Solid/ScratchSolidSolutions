@@ -13,7 +13,7 @@ export async function getDb(): Promise<D1Database | null> {
     const cloudflareContext = globalThis as any;
     const env = cloudflareContext?.env;
     const envAny = env as any;
-    const db = envAny?.scratchsolid_db || envAny?.scratchsolidDb || envAny?.DB || envAny?.db || envAny?.database;
+    const db = envAny?.scratchsolid_db || envAny?.scratchsolidDb || envAny?.scratchsolid_db_marketing_staging || envAny?.DB || envAny?.db || envAny?.database;
     if (db) {
       return db as D1Database;
     }
