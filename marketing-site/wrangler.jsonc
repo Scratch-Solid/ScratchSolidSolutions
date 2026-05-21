@@ -8,7 +8,8 @@
 	],
 	// Deploy trigger: Update to apply new scratchsolid-marketing-db configuration - restored api.scratchsolidsolutions.org/* route to handle marketing-specific API endpoints
 	"assets": {
-		"directory": ".open-next/assets"
+		"directory": ".open-next/assets",
+		"binding": "ASSETS"
 	},
 	"d1_databases": [
 		{
