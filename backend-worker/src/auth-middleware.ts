@@ -8,12 +8,12 @@ import jwt from '@tsndr/cloudflare-worker-jwt';
 
 // Helper function to get database session for read operations
 function getReadSession(env) {
-  return env.DB.withSession("first-unconstrained");
+  return env.scratchsolid_db.withSession("first-unconstrained");
 }
 
 // Helper function to get database session for consistent reads
 function getConsistentReadSession(env) {
-  return env.DB.withSession("first-primary");
+  return env.scratchsolid_db.withSession("first-primary");
 }
 
 // Existing JWT authentication (maintained for backward compatibility)

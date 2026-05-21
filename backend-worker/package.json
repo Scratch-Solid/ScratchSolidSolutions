@@ -9,6 +9,7 @@
     "deploy:prod": "node deploy.js",
     "setup:d1": "node setup-d1.js",
     "build": "echo 'No build step required for Workers'",
+    "lint": "eslint . --ext .ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"
@@ -25,6 +26,6 @@
     "@types/jest": "^29.5.14",
     "jest": "^30.4.2",
     "typescript": "^5.6.3",
-    "wrangler": "^4.91.0"
+    "wrangler": "^4.93.0"
   }
 }

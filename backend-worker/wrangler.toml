@@ -10,7 +10,7 @@ crons = ["0 0 * * *"]
 
 # Global Bindings (Production / Base)
 [[d1_databases]]
-binding = "DB"
+binding = "scratchsolid_db"
 database_name = "scratchsolid-backend-db"
 database_id = "2a0b1e08-443e-46c4-8184-86ea180d4024"
 
@@ -36,7 +36,7 @@ zone_name = "scratchsolidsolutions.org"
 name = "cleaning-service-backend-staging"
 
 [[env.staging.d1_databases]]
-binding = "DB"
+binding = "scratchsolid_db"
 database_name = "scratchsolid-db-backend-staging"
 database_id = "67e66542-486a-442b-bbf6-9c3d4a503f4c"
 

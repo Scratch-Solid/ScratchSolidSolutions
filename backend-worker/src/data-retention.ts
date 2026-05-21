@@ -10,7 +10,7 @@
 
 // Helper function to get database session for read operations
 function getReadSession(env) {
-  return env.DB.withSession("first-unconstrained");
+  return env.scratchsolid_db.withSession("first-unconstrained");
 }
 
 export class DataRetentionCleanup {
@@ -24,7 +24,7 @@ export class DataRetentionCleanup {
   async cleanupSessions() {
     const cutoffDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     
-    const result = await this.env.DB.prepare(`
+    const result = await this.env.scratchsolid_db.prepare(`
       DELETE FROM sessions 
       WHERE created_at < ?
     `).bind(cutoffDate.toISOString()).run();
@@ -39,7 +39,7 @@ export class DataRetentionCleanup {
   async cleanupRefreshTokens() {
     const cutoffDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     
-    const result = await this.env.DB.prepare(`
+    const result = await this.env.scratchsolid_db.prepare(`
       DELETE FROM refresh_tokens 
       WHERE created_at < ?
     `).bind(cutoffDate.toISOString()).run();
@@ -84,7 +84,7 @@ export class DataRetentionCleanup {
     const ids = logs.results.map(log => log.id);
     const placeholders = ids.map(() => '?').join(',');
     
-    await this.env.DB.prepare(`
+    await this.env.scratchsolid_db.prepare(`
       UPDATE audit_logs 
       SET archived = 1, archived_at = ?
       WHERE id IN (${placeholders})
@@ -99,7 +99,7 @@ export class DataRetentionCleanup {
   async deleteOldAuditLogs() {
     const cutoffDate = new Date(Date.now() - 7 * 365 * 24 * 60 * 60 * 1000);
     
-    const result = await this.env.DB.prepare(`
+    const result = await this.env.scratchsolid_db.prepare(`
       DELETE FROM audit_logs 
       WHERE created_at < ?
     `).bind(cutoffDate.toISOString()).run();
@@ -144,7 +144,7 @@ export class DataRetentionCleanup {
     const ids = bookings.results.map(booking => booking.id);
     const placeholders = ids.map(() => '?').join(',');
     
-    await this.env.DB.prepare(`
+    await this.env.scratchsolid_db.prepare(`
       UPDATE bookings 
       SET archived = 1, archived_at = ?
       WHERE id IN (${placeholders})
@@ -159,7 +159,7 @@ export class DataRetentionCleanup {
   async deleteOldBookings() {
     const cutoffDate = new Date(Date.now() - 7 * 365 * 24 * 60 * 60 * 1000);
     
-    const result = await this.env.DB.prepare(`
+    const result = await this.env.scratchsolid_db.prepare(`
       DELETE FROM bookings 
       WHERE created_at < ?
     `).bind(cutoffDate.toISOString()).run();

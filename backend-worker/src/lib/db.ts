@@ -20,7 +20,7 @@ export function setDbInstance(db: any) {
  */
 export async function getDb() {
   if (!dbInstance) {
-    throw new Error('Database instance not set. Call setDbInstance(env.DB) from the scheduled handler first.');
+    throw new Error('Database instance not set. Call setDbInstance(env.scratchsolid_db) from the scheduled handler first.');
   }
   return dbInstance;
 }
@@ -29,12 +29,12 @@ export async function getDb() {
  * Get read session for unconstrained reads
  */
 export function getReadSession(env: any) {
-  return env.DB.withSession("first-unconstrained");
+  return env.scratchsolid_db.withSession("first-unconstrained");
 }
 
 /**
  * Get consistent read session for primary reads
  */
 export function getConsistentReadSession(env: any) {
-  return env.DB.withSession("first-primary");
+  return env.scratchsolid_db.withSession("first-primary");
 }

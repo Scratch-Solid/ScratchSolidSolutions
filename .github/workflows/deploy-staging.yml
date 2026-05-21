@@ -3,6 +3,7 @@ name: Deploy to Staging
 on:
   push:
     branches: [ staging ]
+  workflow_dispatch:
 
 jobs:
   deploy-marketing-site-staging:
@@ -53,13 +54,13 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: 22
-        cache: npm
+        node-version: '22'
+        cache: 'npm'
         cache-dependency-path: internal-portal/package-lock.json
 
     - name: Install dependencies
       working-directory: ./internal-portal
-      run: npm ci --legacy-peer-deps
+      run: npm ci
 
     - name: Build with OpenNext
       working-directory: ./internal-portal

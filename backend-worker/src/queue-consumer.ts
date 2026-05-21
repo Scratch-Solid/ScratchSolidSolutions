@@ -40,7 +40,7 @@ export const queueHandler = {
         JSON.stringify(m.payload.details || {}),
         m.payload.ip_address || ''
       ]);
-      await env.DB.prepare(
+      await env.scratchsolid_db.prepare(
         `INSERT INTO audit_logs (user_id, action, resource_type, resource_id, details, ip_address) VALUES ${placeholders}`
       ).bind(...values).run();
     }
@@ -55,7 +55,7 @@ export const queueHandler = {
         m.payload.channel,
         m.payload.status || 'pending'
       ]);
-      await env.DB.prepare(
+      await env.scratchsolid_db.prepare(
         `INSERT INTO notifications (user_id, type, message, channel, status) VALUES ${placeholders}`
       ).bind(...values).run();
     }

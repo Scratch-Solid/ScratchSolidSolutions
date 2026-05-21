@@ -24,12 +24,12 @@ const router = Router();
 
 // Helper function to get database session for read operations
 function getReadSession(env) {
-  return env.DB.withSession("first-unconstrained");
+  return env.scratchsolid_db.withSession("first-unconstrained");
 }
 
 // Helper function to get database session for consistent reads
 function getConsistentReadSession(env) {
-  return env.DB.withSession("first-primary");
+  return env.scratchsolid_db.withSession("first-primary");
 }
 
 // Email helper function using Resend API
@@ -315,7 +315,7 @@ router.post('/api/auth/signup', async (request: any, env: any) => {
     const { name, email, password, role, phone, address, business_name, business_info } = await request.json() as any;
     
     // Check if user exists
-    const existingUser = await findUserByEmail(env.DB, email);
+    const existingUser = await findUserByEmail(env.scratchsolid_db, email);
     if (existingUser) {
       return new Response(JSON.stringify({ error: 'Email already registered' }), {
         status: 400,
@@ -324,7 +324,7 @@ router.post('/api/auth/signup', async (request: any, env: any) => {
     }
     
     // Create user
-    const userId = await createUser(env.DB, {
+    const userId = await createUser(env.scratchsolid_db, {
       name, email, password, role, phone, address, business_name, business_info
     });
     
@@ -349,7 +349,7 @@ router.post('/api/auth/login', async (request: any, env: any) => {
   try {
     const { email, password } = await request.json() as any;
     
-    const user = await findUserByEmail(env.DB, email);
+    const user = await findUserByEmail(env.scratchsolid_db, email);
     if (!user || !await verifyPassword(password, user.password_hash)) {
       return new Response(JSON.stringify({ error: 'Invalid credentials' }), {
         status: 401,
@@ -406,7 +406,7 @@ router.post('/api/bookings', async (request: any, env: any) => {
   try {
     const { user_id, booking_type, cleaning_type, payment_method, start_time, end_time, special_instructions } = await request.json() as any;
     
-    const result = await env.DB.prepare(`
+    const result = await env.scratchsolid_db.prepare(`
       INSERT INTO bookings (user_id, booking_type, cleaning_type, payment_method, start_time, end_time, status, created_at)
       VALUES (?, ?, ?, ?, ?, ?, 'pending', datetime('now'))
     `).bind(user_id, booking_type, cleaning_type, payment_method, start_time, end_time).run();
@@ -470,7 +470,7 @@ router.delete('/api/bookings/:id', async (request: any, env: any) => {
     });
   }
   
-  await env.DB.prepare('UPDATE bookings SET status = ? WHERE id = ?')
+  await env.scratchsolid_db.prepare('UPDATE bookings SET status = ? WHERE id = ?')
     .bind('cancelled', id).run();
     
   return new Response(JSON.stringify({ message: 'Booking cancelled' }), {
@@ -491,7 +491,7 @@ router.post('/api/templates', async (request: any, env: any) => {
   try {
     const { name, content } = await request.json() as any;
     
-    const result = await env.DB.prepare(`
+    const result = await env.scratchsolid_db.prepare(`
       INSERT INTO templates (name, content, created_at)
       VALUES (?, ?, datetime('now'))
     `).bind(name, content).run();
@@ -544,7 +544,7 @@ router.post('/api/contracts', async (request: any, env: any) => {
     const db = getReadSession(env);
   const template = await db.prepare('SELECT content FROM templates WHERE id = ?').bind(template_id).first();
     
-    const result = await env.DB.prepare(`
+    const result = await env.scratchsolid_db.prepare(`
       INSERT INTO contracts (business_id, duration, rate, template_id, immutable, created_at)
       VALUES (?, ?, 0, ?, TRUE, datetime('now'))
     `).bind(business_id, duration, template_id).run();
@@ -617,7 +617,7 @@ router.put('/api/contracts/:id/rate', async (request: any, env: any) => {
     const { id } = request.params;
     const { rate } = await request.json() as any;
     
-    const result = await env.DB.prepare('UPDATE contracts SET rate = ? WHERE id = ?').bind(rate, id).run();
+    const result = await env.scratchsolid_db.prepare('UPDATE contracts SET rate = ? WHERE id = ?').bind(rate, id).run();
     
     return new Response(JSON.stringify({ 
       message: 'Contract rate updated successfully',
@@ -697,7 +697,7 @@ router.post('/api/payments', async (request: any, env: any) => {
   try {
     const { booking_id, method, amount } = await request.json() as any;
     
-    const result = await env.DB.prepare(`
+    const result = await env.scratchsolid_db.prepare(`
       INSERT INTO payments (booking_id, method, amount, confirmed, created_at)
       VALUES (?, ?, ?, false, datetime('now'))
     `).bind(booking_id, method, amount).run();
@@ -740,7 +740,7 @@ router.put('/api/payments/:id/confirm', async (request: any, env: any) => {
   try {
     const { id } = request.params;
     
-    const result = await env.DB.prepare('UPDATE payments SET confirmed = TRUE WHERE id = ?').bind(id).run();
+    const result = await env.scratchsolid_db.prepare('UPDATE payments SET confirmed = TRUE WHERE id = ?').bind(id).run();
     
     return new Response(JSON.stringify({ 
       message: 'Payment confirmed successfully',
@@ -770,7 +770,7 @@ router.post('/api/weekend-requests', async (request: any, env: any) => {
   try {
     const { business_id, requested_date, special_instructions } = await request.json() as any;
     
-    const result = await env.DB.prepare(`
+    const result = await env.scratchsolid_db.prepare(`
       INSERT INTO weekend_requests (business_id, requested_date, special_instructions, status, created_at)
       VALUES (?, ?, ?, 'pending', datetime('now'))
     `).bind(business_id, requested_date, special_instructions).run();
@@ -831,7 +831,7 @@ router.delete('/api/weekend-requests/:id', async (request: any, env: any) => {
   try {
     const { id } = request.params;
     
-    const result = await env.DB.prepare('UPDATE weekend_requests SET status = ? WHERE id = ?').bind('cancelled', id).run();
+    const result = await env.scratchsolid_db.prepare('UPDATE weekend_requests SET status = ? WHERE id = ?').bind('cancelled', id).run();
     
     return new Response(JSON.stringify({ 
       message: 'Weekend request cancelled successfully'
@@ -864,7 +864,7 @@ router.post('/api/auth/forgot-password', async (request: any, env: any) => {
     
     if (type === "business") {
       // For businesses, find by email
-      user = await findUserByEmail(env.DB, identifier);
+      user = await findUserByEmail(env.scratchsolid_db, identifier);
       
       if (!user) {
         return new Response(JSON.stringify({ error: "No account found with this email address" }), {
@@ -878,7 +878,7 @@ router.post('/api/auth/forgot-password', async (request: any, env: any) => {
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
       
       // Store token in database
-      await env.DB.prepare(`
+      await env.scratchsolid_db.prepare(`
         INSERT INTO password_reset_tokens (user_id, token, expires_at, created_at)
         VALUES (?, ?, ?, ?)
       `).bind(user.id, resetToken, expiresAt.toISOString()).run();
@@ -963,7 +963,7 @@ router.put('/weekend-requests/:id/assign', async (request: any, env: any) => {
     const { id } = request.params;
     const { assigned_cleaner } = await request.json() as any;
     
-    const result = await env.DB.prepare(`
+    const result = await env.scratchsolid_db.prepare(`
       UPDATE weekend_requests 
       SET status = ?, assigned_cleaner = ?
       WHERE id = ?
@@ -1034,10 +1034,10 @@ router.post('/auth/reset-password', async (request: any, env: any) => {
     const passwordHash = await hashPassword(newPassword);
     
     // Update user password
-    await env.DB.prepare('UPDATE users SET password_hash = ? WHERE id = ?').bind(passwordHash, user.id).run();
+    await env.scratchsolid_db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').bind(passwordHash, user.id).run();
     
     // Delete used token
-    await env.DB.prepare('DELETE FROM password_reset_tokens WHERE id = ?').bind(resetToken.id).run();
+    await env.scratchsolid_db.prepare('DELETE FROM password_reset_tokens WHERE id = ?').bind(resetToken.id).run();
     
     // Send confirmation email
     await sendEmail(env, {
@@ -1120,7 +1120,7 @@ router.post('/business-events', async (request: any, env: any) => {
   try {
     const { business_id, event_type, requested_date, special_instructions } = await request.json() as any;
     
-    const result = await env.DB.prepare(`
+    const result = await env.scratchsolid_db.prepare(`
       INSERT INTO business_events (business_id, event_type, requested_date, special_instructions, created_at)
       VALUES (?, ?, ?, ?, datetime('now'))
     `).bind(business_id, event_type, requested_date, special_instructions).run();
@@ -1197,7 +1197,7 @@ router.post('/pricing', async (request: any, env: any) => {
   try {
     const { service_type, rate, duration } = await request.json() as any;
     
-    const result = await env.DB.prepare(`
+    const result = await env.scratchsolid_db.prepare(`
       INSERT INTO pricing (service_type, rate, duration, created_at)
       VALUES (?, ?, ?, datetime('now'))
     `).bind(service_type, rate, duration).run();
@@ -1231,7 +1231,7 @@ export default {
   },
   async scheduled(event, env, ctx) {
     // Set global instances for shared modules
-    setDbInstance(env.DB);
+    setDbInstance(env.scratchsolid_db);
     setEnvInstance(env);
 
     // 1. Data retention cleanup task (existing)
