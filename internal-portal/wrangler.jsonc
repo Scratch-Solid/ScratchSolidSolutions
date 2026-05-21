@@ -53,6 +53,8 @@
 		}
 	],
 	"vars": {
+		"NEXT_PUBLIC_BASE_URL": "https://portal.scratchsolidsolutions.org",
+		"NEXT_PUBLIC_API_URL": "https://api.scratchsolidsolutions.org/api",
 		"ALLOWED_ORIGINS": "https://portal.scratchsolidsolutions.org"
 	},
 	"observability": {
