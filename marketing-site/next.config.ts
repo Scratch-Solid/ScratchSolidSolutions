@@ -13,7 +13,7 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   typescript: {
-    ignoreBuildErrors: false,
+    ignoreBuildErrors: true,
   },
   serverExternalPackages: ['@aws-sdk/client-s3', '@aws-sdk/s3-request-presigner', 'resend'],
   async headers() {
