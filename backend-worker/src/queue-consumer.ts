@@ -12,7 +12,7 @@ export interface WriteMessage {
   timestamp: string;
 }
 
-export default {
+export const queueHandler = {
   async queue(batch: MessageBatch<WriteMessage>, env: Env, ctx: ExecutionContext) {
     // Group messages by type for batch inserts
     const auditLogs: WriteMessage[] = [];
@@ -33,15 +33,15 @@ export default {
     if (auditLogs.length > 0) {
       const placeholders = auditLogs.map(() => '(?, ?, ?, ?, ?, ?)').join(', ');
       const values = auditLogs.flatMap(m => [
-        m.payload.admin_id || null,
+        m.payload.admin_id || m.payload.user_id || null,
         m.payload.action,
         m.payload.resource_type,
         m.payload.resource_id || null,
         JSON.stringify(m.payload.details || {}),
         m.payload.ip_address || ''
       ]);
-      await env.DB.prepare(
-        `INSERT INTO audit_logs (admin_id, action, resource_type, resource_id, details, ip_address) VALUES ${placeholders}`
+      await env.scratchsolid_db.prepare(
+        `INSERT INTO audit_logs (user_id, action, resource_type, resource_id, details, ip_address) VALUES ${placeholders}`
       ).bind(...values).run();
     }
 
@@ -55,7 +55,7 @@ export default {
         m.payload.channel,
         m.payload.status || 'pending'
       ]);
-      await env.DB.prepare(
+      await env.scratchsolid_db.prepare(
         `INSERT INTO notifications (user_id, type, message, channel, status) VALUES ${placeholders}`
       ).bind(...values).run();
     }

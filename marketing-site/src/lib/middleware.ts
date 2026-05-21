@@ -18,6 +18,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, validateSession } from './db';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
+import { validateCsrfToken } from './csrf';
 
 // ─── Internal helpers ────────────────────────────────────────────────────────
 
@@ -267,4 +268,55 @@ export async function invalidateKVCache(kv: KVNamespace, keyPrefix: string): Pro
   for (const key of list.keys) {
     await kv.delete(key.name);
   }
+}
+
+// ─── CSRF Protection ─────────────────────────────────────────────────────────────
+
+/**
+ * Validates CSRF token for state-changing requests (POST, PUT, DELETE, PATCH).
+ * Skips validation for GET, HEAD, OPTIONS.
+ *
+ * @param request The incoming Next.js request.
+ * @returns A 403 NextResponse if CSRF validation fails; null otherwise.
+ */
+export async function withCsrf(request: NextRequest): Promise<NextResponse | null> {
+  const method = request.method;
+  // Only validate CSRF for state-changing methods
+  if (method !== 'POST' && method !== 'PUT' && method !== 'DELETE' && method !== 'PATCH') {
+    return null;
+  }
+
+  const csrfToken = request.headers.get('X-CSRF-Token') || request.headers.get('x-csrf-token');
+  if (!csrfToken) {
+    return NextResponse.json({ error: 'CSRF token required' }, { status: 403 });
+  }
+
+  if (!validateCsrfToken(csrfToken)) {
+    return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 });
+  }
+
+  return null;
+}
+
+/**
+ * Generates a CSRF token for use on the client side.
+ * Should be called when rendering forms or making state-changing requests from the frontend.
+ */
+export function generateCsrfTokenForClient(): string {
+  const { randomBytes, createHmac } = require('crypto');
+  const CSRF_SECRET = process.env.CSRF_SECRET;
+
+  function getCsrfSecret(): string {
+    if (!CSRF_SECRET) {
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error('CSRF_SECRET environment variable is required in production');
+      }
+      return 'dev-secret-fallback-do-not-use-in-production';
+    }
+    return CSRF_SECRET;
+  }
+
+  const token = randomBytes(32).toString('hex');
+  const hash = createHmac('sha256', getCsrfSecret()).update(token).digest('hex');
+  return `${token}.${hash}`;
 }

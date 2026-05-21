@@ -2,7 +2,7 @@
 	"$schema": "./node_modules/wrangler/config-schema.json",
 	"main": ".open-next/worker.js",
 	"name": "scratchsolid-portal",
-	"compatibility_date": "2026-04-23",
+	"compatibility_date": "2026-05-20",
 	"compatibility_flags": [
 		"nodejs_compat"
 	],
@@ -21,26 +21,25 @@
 	"kv_namespaces": [
 		{
 			"binding": "RATE_LIMIT_KV",
-			"id": "859744ffa6fc44caa84edaaa1e481800"
+			"id": "98a7542aead048e1b5cc965dfc3d0552"
 		},
 		{
 			"binding": "GPS_KV",
-			"id": "426d4889e6da4594a4afc972d5184146",
-			"preview_id": "ac5c54b821e543cbd7e3a44559aea8c"
+			"id": "f10442563c354116976f56e569bd40f6"
 		},
 		{
 			"binding": "PUSH_KV",
-			"id": "426d4889e6da4594a4afc972d5184146"
+			"id": "d297a8eb5c85444997e7cefa43b924dc"
 		},
 		{
 			"binding": "STATUS_KV",
-			"id": "859744ffa6fc44caa84edaaa1e481800"
+			"id": "6ae00113fb454ed2ba046c4f157dffc3"
 		}
 	],
 	"r2_buckets": [
 		{
 			"binding": "UPLOADS_BUCKET",
-			"bucket_name": "scratchsolid-uploads"
+			"bucket_name": "portal-uploads"
 		},
 		{
 			"binding": "CLEANER_PHOTOS_BUCKET",
@@ -54,6 +53,8 @@
 		}
 	],
 	"vars": {
+		"NEXT_PUBLIC_BASE_URL": "https://portal.scratchsolidsolutions.org",
+		"NEXT_PUBLIC_API_URL": "https://api.scratchsolidsolutions.org/api",
 		"ALLOWED_ORIGINS": "https://portal.scratchsolidsolutions.org",
 		"R2_PUBLIC_BASE": "https://uploads.scratchsolidsolutions.org"
 	},
@@ -78,7 +79,7 @@
 			"kv_namespaces": [
 				{
 					"binding": "RATE_LIMIT_KV",
-					"id": "918298e91aec470ba7f8d800b2f8f124"
+					"id": "7555bd20132346a8a9bf3cf67ea9a949"
 				},
 				{
 					"binding": "GPS_KV",
@@ -86,7 +87,7 @@
 				},
 				{
 					"binding": "PUSH_KV",
-					"id": "1cada668d188498eb560ad5c8b9e368c"
+					"id": "ced0052698894bccbf023cff381d6175"
 				},
 				{
 					"binding": "STATUS_KV",
@@ -104,6 +105,8 @@
 				}
 			],
 			"vars": {
+				"NEXT_PUBLIC_BASE_URL": "https://portal-staging.scratchsolidsolutions.org",
+				"NEXT_PUBLIC_API_URL": "https://api-staging.scratchsolidsolutions.org/api",
 				"ALLOWED_ORIGINS": "https://portal-staging.scratchsolidsolutions.org",
 				"NODE_ENV": "staging",
 				"R2_PUBLIC_BASE": "https://uploads-staging.scratchsolidsolutions.org"

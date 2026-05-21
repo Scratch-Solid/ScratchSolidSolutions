@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
+  serverExternalPackages: ['better-auth', '@better-auth/core', '@better-auth/infra'],
 };
 
 export default nextConfig;

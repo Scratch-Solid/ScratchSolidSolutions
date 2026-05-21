@@ -1,7 +1,7 @@
 {
   "name": "cleaning-service-backend",
   "version": "1.0.0",
-  "main": "src/index.js",
+  "main": "src/index.ts",
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
@@ -9,6 +9,7 @@
     "deploy:prod": "node deploy.js",
     "setup:d1": "node setup-d1.js",
     "build": "echo 'No build step required for Workers'",
+    "lint": "eslint . --ext .ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"
@@ -21,7 +22,10 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260511.1",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jest": "^29.5.14",
     "jest": "^30.4.2",
-    "wrangler": "^4.91.0"
+    "typescript": "^5.6.3",
+    "wrangler": "^4.93.0"
   }
 }

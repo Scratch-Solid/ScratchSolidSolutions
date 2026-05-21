@@ -3,8 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb, createBooking, getBookingsByDateRange, getBookingsByCleaner, getBookingsByClient, getUserById } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import { validateString, validateDate, validateNumber, validateRequired } from "@/lib/validation";
-import { withRateLimit, rateLimits } from "@/lib/middleware";
-import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
+import { withRateLimit, rateLimits, withCsrf, withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { addHours, timeOverlap, generateAlternativeTimes } from '@/lib/bookingUtils';
 import { sendBookingConfirmationEmail, sendAdminAlertEmail } from '@/lib/email';
 
@@ -13,6 +12,10 @@ export async function POST(request: NextRequest) {
   const authResult = await withAuth(request, ['client', 'business', 'admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
+
+  // CSRF protection
+  const csrfResult = await withCsrf(request);
+  if (csrfResult) return withSecurityHeaders(csrfResult, traceId);
 
   // Rate limiting check
   const rateLimitResult = await withRateLimit(request, rateLimits.standard);

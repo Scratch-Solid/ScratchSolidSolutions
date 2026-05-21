@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { getDb } from '@/lib/db';
-import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
+import { withAuth, withTracing, withSecurityHeaders, withCsrf } from '@/lib/middleware';
 import { logger } from '@/lib/logger';
 import { withRateLimit, rateLimits } from "@/lib/middleware";
 
@@ -12,6 +12,10 @@ export async function POST(request: NextRequest) {
   const authResult = await withAuth(request);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db, user } = authResult;
+
+  // CSRF protection
+  const csrfResult = await withCsrf(request);
+  if (csrfResult) return withSecurityHeaders(csrfResult, traceId);
 
   const rateLimitResult = await withRateLimit(request, rateLimits.strict);
   if (rateLimitResult && !rateLimitResult.success) {

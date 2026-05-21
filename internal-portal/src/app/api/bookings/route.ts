@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
+import { withAuth, withTracing, withSecurityHeaders, withCsrf } from '@/lib/middleware';
 import { horizonScoper, suburbExtractor } from '@/lib/horizon/scoping';
 import { autoAssignBooking, determinePoolFromServiceType, isValidTimeSlot } from '@/lib/pool-management/pool-assignment';
 
@@ -70,6 +70,10 @@ export async function POST(request: NextRequest) {
   const authResult = await withAuth(request, ['admin', 'cleaner', 'client']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
+
+  // CSRF protection
+  const csrfResult = await withCsrf(request);
+  if (csrfResult) return withSecurityHeaders(csrfResult, traceId);
 
   try {
     const body = await request.json() as any;

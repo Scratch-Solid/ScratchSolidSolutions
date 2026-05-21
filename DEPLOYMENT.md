@@ -175,3 +175,59 @@ In Cloudflare dashboard:
 | `ZOHO_CLIENT_ID` | Marketing | Yes | Zoho OAuth client ID |
 | `ZOHO_CLIENT_SECRET` | Marketing | Yes | Zoho OAuth client secret |
 | `ZOHO_REFRESH_TOKEN` | Marketing | Yes | Zoho OAuth refresh token |
+
+## GitHub Actions Workflows
+
+### Active Workflows (ONLY these should exist)
+
+| Workflow | File | Trigger | Purpose |
+|---|---|---|---|
+| CI | `.github/workflows/ci.yml` | Push/PR to `main`, `staging`, `develop` | Build, test, lint, security audit for all 3 projects |
+| Deploy to Production | `.github/workflows/deploy-production.yml` | Push to `main` + manual | Deploy marketing-site, internal-portal, backend-worker to production |
+| Deploy to Staging | `.github/workflows/deploy-staging.yml` | Push to `staging` | Deploy all 3 projects to staging environment |
+
+### DELETED Workflows
+
+**`Deploy to Cloudflare`** (`marketing-site/.github/workflows/deploy.yml`) — **DELETED on 2026-05-20**
+- Reason: Duplicate/stale workflow that was causing deployment confusion
+- This workflow tried to deploy marketing-site independently from a subdirectory
+- It conflicted with the unified `deploy-staging.yml` and `deploy-production.yml` workflows at the repository root
+- It was deploying with different environment variables and missing database bindings
+
+### Why the Database Unavailable Error Happened
+
+1. **Duplicate workflow confusion**: The stale `Deploy to Cloudflare` workflow was disabled but still existed in GitHub, causing confusion about which deployment method to use
+2. **Deployments were not triggering**: The `deploy-staging.yml` workflow requires pushes to the `staging` branch, but GitHub Actions wasn't running (possibly due to the disabled duplicate workflow or missing secrets)
+3. **Manual deployment required**: When GitHub Actions fails, deployments must be done manually using wrangler commands
+4. **Database binding mismatch**: The `getDb()` function expects `scratchsolid_db` binding, but the deployed worker may not have received the binding from wrangler.jsonc
+
+### How to Fix and Verify
+
+1. Ensure only 3 workflows exist in GitHub Actions tab:
+   - CI
+   - Deploy to Production
+   - Deploy to Staging
+
+2. If staging deployment fails, deploy manually:
+   ```bash
+   # Marketing Site
+   cd marketing-site
+   npm run cloudflare-build
+   npx wrangler deploy --env staging
+
+   # Internal Portal
+   cd internal-portal
+   npm run cloudflare-build
+   npx wrangler deploy --env staging
+   ```
+
+3. Verify database connectivity after deployment:
+   ```bash
+   curl https://staging.scratchsolidsolutions.org/api/health
+   curl https://portal-staging.scratchsolidsolutions.org/api/health
+   ```
+
+4. Check Cloudflare Dashboard for correct bindings:
+   - Workers & Pages → [Worker Name] → Settings → Bindings
+   - Verify D1 database `scratchsolid_db` is bound
+   - Verify KV namespaces are bound
