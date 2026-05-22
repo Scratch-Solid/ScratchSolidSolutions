@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkAuthAndRole } from '@/lib/auth-middleware';
 import { autoAssignBooking, determinePoolFromServiceType, isValidTimeSlot } from '@/lib/pool-management/pool-assignment';
-import { getDb } from '@/lib/db';
+import { getDb, getTrainingDb } from '@/lib/db';
 
 export async function POST(
   request: NextRequest,
@@ -16,7 +16,7 @@ export async function POST(
   }
 
   try {
-    const body = await request.json();
+    const body = await request.json() as { serviceType: string; assignmentDate: string; timeSlot?: string };
     const { serviceType, assignmentDate, timeSlot } = body;
 
     // Validate input
@@ -35,9 +35,15 @@ export async function POST(
 
     // Get database
     const db = await getDb();
+    const trainingDb = await getTrainingDb();
+
+    if (!trainingDb) {
+      return NextResponse.json({ error: 'Training database not available' }, { status: 500 });
+    }
 
     const result = await autoAssignBooking(
       db,
+      trainingDb,
       bookingId,
       serviceType,
       assignmentDate,

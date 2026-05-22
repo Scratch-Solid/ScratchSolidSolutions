@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { getDb, getTrainingDb } from '@/lib/db';
 import { withAuth, withTracing, withSecurityHeaders, withCsrf } from '@/lib/middleware';
 import { horizonScoper, suburbExtractor } from '@/lib/horizon/scoping';
 import { autoAssignBooking, determinePoolFromServiceType, isValidTimeSlot } from '@/lib/pool-management/pool-assignment';
@@ -139,7 +139,10 @@ export async function POST(request: NextRequest) {
     // Auto-assign for INDIVIDUAL pool bookings immediately
     if (poolType === 'INDIVIDUAL' && booking) {
       try {
-        await autoAssignBooking(db, (booking as any).id, resolvedServiceType, booking_date, resolvedSlot || null);
+        const trainingDb = await getTrainingDb();
+        if (trainingDb) {
+          await autoAssignBooking(db, trainingDb, (booking as any).id, resolvedServiceType, booking_date, resolvedSlot || null);
+        }
       } catch (assignErr) {
         // Log but don't fail the booking creation — admin can assign manually
         console.warn('Auto-assign failed for booking', (booking as any).id, assignErr);

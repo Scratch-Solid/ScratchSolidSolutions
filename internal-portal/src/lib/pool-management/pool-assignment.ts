@@ -69,6 +69,7 @@ export async function calculatePoolCapacity(
  */
 export async function scoreAssignmentCandidates(
   db: D1Database,
+  trainingDb: D1Database,
   poolType: PoolType,
   serviceType: ServiceType,
   assignmentDate: string,
@@ -94,6 +95,16 @@ export async function scoreAssignmentCandidates(
     `).bind(s.id, assignmentDate, timeSlot).first<{ count: number }>();
     
     if (existingAssignment?.count === 0) {
+      // Check training status - only staff with completed training are eligible
+      const trainingProgress = await trainingDb.prepare(`
+        SELECT training_status FROM employee_training_progress WHERE user_id = ?
+      `).bind(s.id.toString()).first<{ training_status: string }>();
+      
+      // Skip staff who haven't completed training
+      if (!trainingProgress || trainingProgress.training_status !== 'Completed') {
+        continue;
+      }
+      
       // Calculate score based on service type match, performance, etc.
       let score = 0;
       
@@ -129,6 +140,7 @@ export async function scoreAssignmentCandidates(
  */
 export async function autoAssignBooking(
   db: D1Database,
+  trainingDb: D1Database,
   bookingId: number,
   serviceType: ServiceType,
   assignmentDate: string,
@@ -137,7 +149,7 @@ export async function autoAssignBooking(
   const poolType = determinePoolFromServiceType(serviceType);
   
   // Get available candidates
-  const candidates = await scoreAssignmentCandidates(db, poolType, serviceType, assignmentDate, timeSlot);
+  const candidates = await scoreAssignmentCandidates(db, trainingDb, poolType, serviceType, assignmentDate, timeSlot);
   
   if (candidates.length === 0) {
     return {
