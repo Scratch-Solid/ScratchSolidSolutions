@@ -38,6 +38,24 @@ export async function getDb(): Promise<D1Database | null> {
   return null;
 }
 
+// Helper to get the training D1 database from the OpenNext Cloudflare context
+export async function getTrainingDb(): Promise<D1Database | null> {
+  try {
+    const cloudflareContext = globalThis as any;
+    const env = cloudflareContext?.env;
+    const envAny = env as any;
+    const db = envAny?.training_db || envAny?.trainingDb;
+    if (db) {
+      return db as D1Database;
+    }
+    console.error('Training D1 binding missing: expected training_db');
+    console.error('Available env keys:', Object.keys(envAny || {}));
+  } catch (error) {
+    console.error('Error getting training database from globalThis context', error);
+  }
+  return null;
+}
+
 // User operations
 export async function getUserByEmail(db: D1Database, email: string) {
   const result = await db.prepare('SELECT id, email, role, name, phone, address, business_name, password_hash, failed_attempts, locked_until FROM users WHERE email = ?').bind(email).first();
