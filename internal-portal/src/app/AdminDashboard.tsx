@@ -8,6 +8,7 @@ import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import DashboardLayout from "@/components/DashboardLayout";
 import ServicesManagement from "./AdminDashboard/services-management";
 import CleanerVisibility from "./AdminDashboard/cleaner-visibility";
+import TrainingLedger from "./AdminDashboard/training-ledger";
 
 function ProxyObserver() {
   const [activeSession, setActiveSession] = useState<any>(null);
@@ -847,6 +848,12 @@ export default function AdminDashboard() {
         >
           Staff Reviews
         </button>
+        <button
+          onClick={() => setActiveTab("training")}
+          className={`tab ${activeTab === "training" ? "active" : ""}`}
+        >
+          Training
+        </button>
       </div>
 
       {activeTab === "overview" ? (
@@ -1043,6 +1050,8 @@ export default function AdminDashboard() {
         <PoolManagement />
       ) : activeTab === "staff-reviews" ? (
         <StaffReviews />
+      ) : activeTab === "training" ? (
+        <TrainingLedger />
       ) : null}
     </DashboardLayout>
   );
