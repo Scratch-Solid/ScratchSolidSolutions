@@ -1020,9 +1020,6 @@ export default function AdminDashboard() {
                           <td style={{ color: 'var(--text)' }}>{emp.name}</td>
                           <td style={{ color: 'var(--text)' }}>{emp.email}</td>
                           <td><span className={`badge badge-info`}>{emp.role}</span></td>
-                          <td>
-                            <button className="secondary-button" style={{ padding: '6px 12px', fontSize: '0.875rem' }}>Edit</button>
-                          </td>
                         </tr>
                       ))}
                     </tbody>

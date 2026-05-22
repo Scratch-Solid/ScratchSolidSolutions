@@ -397,7 +397,7 @@ export default function ClientDashboard() {
     }
     try {
       const cleanerId = (assignedCleaner as any).id;
-      const response = await fetch(`${process.env.NEXT_PUBLIC_INTERNAL_PORTAL_URL || ''}/api/cleaner-status?cleaner_id=${cleanerId}`, {
+      const response = await fetch(`/api/cleaner-status?cleaner_id=${cleanerId}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` }
       });
       if (response.ok) {

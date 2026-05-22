@@ -21,11 +21,11 @@ export async function GET(request: NextRequest) {
       'SELECT * FROM task_completions WHERE cleaner_id = ? ORDER BY completed_at DESC'
     ).bind(cleanerId).all();
 
-    return NextResponse.json(taskCompletions.results || []);
+    const response = NextResponse.json(taskCompletions.results || []);
     response.headers.set('Cache-Control', 'private, max-age=30');
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch cleaner earnings' }, { status: 500 });
+    const response = NextResponse.json({ error: 'Failed to fetch cleaner earnings' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

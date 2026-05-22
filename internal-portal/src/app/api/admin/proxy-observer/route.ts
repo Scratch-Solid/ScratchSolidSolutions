@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminProxyObserver } from '@/lib/security/popia-compliance';
 import { getDb } from '@/lib/db';
+import { withAuth } from '@/lib/middleware';
 
 export async function POST(request: NextRequest) {
+  const authResult = await withAuth(request, ['admin']);
+  if (authResult instanceof NextResponse) return authResult;
+  const { user } = authResult;
+
   try {
     const body = await request.json();
     const { action, targetUserId, sessionId } = body;
-    const userId = (request as any).user?.id;
+    const userId = (user as any).id;
 
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

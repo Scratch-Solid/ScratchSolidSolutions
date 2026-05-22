@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
   const countResult = await db.prepare('SELECT COUNT(*) as total FROM pending_contracts').first();
   const total = (countResult as any)?.total || 0;
 
-  return NextResponse.json({
+  const response = NextResponse.json({
     data: contracts,
     pagination: {
       page,
@@ -164,8 +164,7 @@ export async function PUT(request: NextRequest) {
   });
 
   if (error) {
-    return NextResponse.json({ error }, { status: 400 });
-    return withSecurityHeaders(response, traceId);
+    return withSecurityHeaders(NextResponse.json({ error }, { status: 400 }), traceId);
   }
 
   const sanitizedData = sanitized as any;
@@ -183,8 +182,7 @@ export async function PUT(request: NextRequest) {
     if (sanitizedData.status === 'rejected') {
       const contract = await db.prepare('SELECT * FROM pending_contracts WHERE id = ?').bind(parseInt(id)).first();
       if (!contract) {
-        return NextResponse.json({ error: "Contract not found" }, { status: 404 });
-        return withSecurityHeaders(response, traceId);
+        return withSecurityHeaders(NextResponse.json({ error: "Contract not found" }, { status: 404 }), traceId);
       }
 
       // Update with rejection reason
@@ -206,8 +204,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json(updated);
     }
   }
-  return NextResponse.json({ error: "Contract not found" }, { status: 404 });
-  return withSecurityHeaders(response, traceId);
+  return withSecurityHeaders(NextResponse.json({ error: "Contract not found" }, { status: 404 }), traceId);
 }
 
 export async function DELETE(request: NextRequest) {
@@ -227,6 +224,5 @@ export async function DELETE(request: NextRequest) {
     await logAuditEvent(db, (user as any).id, 'delete_contract', 'pending_contract', parseInt(id), JSON.stringify({ contract_id: id }), request.headers.get('x-forwarded-for') || '');
     return NextResponse.json({ success: true });
   }
-  return NextResponse.json({ error: "ID required" }, { status: 400 });
-  return withSecurityHeaders(response, traceId);
+  return withSecurityHeaders(NextResponse.json({ error: "ID required" }, { status: 400 }), traceId);
 }
