@@ -60,7 +60,7 @@ jobs:
 
     - name: Install dependencies
       working-directory: ./internal-portal
-      run: npm ci
+      run: npm install
 
     - name: Build with OpenNext
       working-directory: ./internal-portal
