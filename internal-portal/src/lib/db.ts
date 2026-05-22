@@ -7,7 +7,7 @@ import crypto from 'crypto';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 
 export interface Env {
-  DB: D1Database;
+  scratchsolid_db: D1Database;
 }
 
 // Helper to get the D1 database from the OpenNext Cloudflare context
