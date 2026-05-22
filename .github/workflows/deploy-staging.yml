@@ -24,7 +24,7 @@ jobs:
     
     - name: Install dependencies
       working-directory: ./marketing-site
-      run: npm ci
+      run: npm install
     
     - name: Build
       working-directory: ./marketing-site
@@ -96,7 +96,7 @@ jobs:
     
     - name: Install dependencies
       working-directory: ./backend-worker
-      run: npm ci
+      run: npm install
     
     - name: Unassign conflicting route from marketing worker
       working-directory: ./backend-worker
