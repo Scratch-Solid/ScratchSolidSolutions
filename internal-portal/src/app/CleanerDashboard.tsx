@@ -8,6 +8,8 @@ import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import DashboardLayout from "@/components/DashboardLayout";
 import TrainingModuleCard from "@/components/TrainingModuleCard";
 import QuizInterface from "@/components/QuizInterface";
+import confetti from 'canvas-confetti';
+import jsPDF from 'jspdf';
 
 export default function CleanerDashboard() {
   useSessionTimeout(true);
@@ -298,6 +300,76 @@ export default function CleanerDashboard() {
       ]
     };
     return questions[moduleId] || [];
+  };
+
+  // Helper function to generate certificate PDF
+  const generateCertificate = (certHash: string, completionDate: string) => {
+    const doc = new jsPDF({
+      orientation: 'landscape',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    // Background color
+    doc.setFillColor(245, 245, 250);
+    doc.rect(0, 0, 297, 210, 'F');
+
+    // Border
+    doc.setDrawColor(38, 103, 255);
+    doc.setLineWidth(3);
+    doc.rect(10, 10, 277, 190);
+
+    // Header
+    doc.setFontSize(32);
+    doc.setTextColor(38, 103, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Certificate of Completion', 148.5, 40, { align: 'center' });
+
+    // Subtitle
+    doc.setFontSize(16);
+    doc.setTextColor(100, 100, 100);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Scratch Solid Solutions Training Program', 148.5, 55, { align: 'center' });
+
+    // Divider line
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(1);
+    doc.line(50, 65, 247, 65);
+
+    // Recipient name
+    doc.setFontSize(14);
+    doc.setTextColor(100, 100, 100);
+    doc.text('This is to certify that', 148.5, 85, { align: 'center' });
+
+    doc.setFontSize(28);
+    doc.setTextColor(38, 103, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`${profileData.firstName} ${profileData.lastName}`, 148.5, 100, { align: 'center' });
+
+    // Completion text
+    doc.setFontSize(14);
+    doc.setTextColor(100, 100, 100);
+    doc.setFont('helvetica', 'normal');
+    doc.text('has successfully completed all 5 training modules of the', 148.5, 120, { align: 'center' });
+    doc.text('Scratch Solid Solutions Cleaner Training Program', 148.5, 130, { align: 'center' });
+
+    // Date
+    doc.setFontSize(12);
+    doc.setTextColor(150, 150, 150);
+    doc.text(`Completed on: ${completionDate}`, 148.5, 150, { align: 'center' });
+
+    // Certificate ID
+    doc.setFontSize(10);
+    doc.setTextColor(150, 150, 150);
+    doc.text(`Certificate ID: ${certHash}`, 148.5, 165, { align: 'center' });
+
+    // Footer
+    doc.setFontSize(10);
+    doc.setTextColor(200, 200, 200);
+    doc.text('Scratch Solid Solutions - Excellence in Every Clean', 148.5, 190, { align: 'center' });
+
+    // Save the PDF
+    doc.save(`training-certificate-${certHash}.pdf`);
   };
 
   const updateBookingStatus = async (bookingId: string, status: string) => {
@@ -977,8 +1049,30 @@ export default function CleanerDashboard() {
                 if (response.ok) {
                   const result = await response.json() as { status: string; message?: string; certHash?: string; completionDate?: string };
                   if (result.status === 'certified') {
-                    // TODO: Trigger confetti and show certificate download
-                    alert('Congratulations! You have completed all training modules!');
+                    // Trigger confetti celebration
+                    confetti({
+                      particleCount: 150,
+                      spread: 70,
+                      origin: { y: 0.6 },
+                      colors: ['#2667FF', '#00C853', '#FFD600', '#FF6D00']
+                    });
+                    
+                    // Second burst for emphasis
+                    setTimeout(() => {
+                      confetti({
+                        particleCount: 100,
+                        spread: 100,
+                        origin: { y: 0.6 },
+                        colors: ['#2667FF', '#00C853', '#FFD600', '#FF6D00']
+                      });
+                    }, 300);
+                    
+                    // Generate and download certificate
+                    if (result.certHash && result.completionDate) {
+                      generateCertificate(result.certHash, result.completionDate);
+                    }
+                    
+                    alert('Congratulations! You have completed all training modules! Your certificate has been downloaded.');
                   }
                   // Refresh training progress
                   const progressRes = await fetch(`/api/training/current-state?user_id=${userId}`);
