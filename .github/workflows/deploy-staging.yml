@@ -26,6 +26,9 @@ jobs:
       working-directory: ./marketing-site
       run: npm ci
     
+    - name: Install Wrangler
+      run: npm install -g wrangler@4.93.0
+    
     - name: Build
       working-directory: ./marketing-site
       run: npm run cloudflare-build
@@ -62,6 +65,9 @@ jobs:
       working-directory: ./internal-portal
       run: npm ci
 
+    - name: Install Wrangler
+      run: npm install -g wrangler@4.93.0
+
     - name: Build with OpenNext
       working-directory: ./internal-portal
       run: npm run cloudflare-build
@@ -97,6 +103,9 @@ jobs:
     - name: Install dependencies
       working-directory: ./backend-worker
       run: npm ci
+
+    - name: Install Wrangler
+      run: npm install -g wrangler@4.93.0
     
     - name: Unassign conflicting route from marketing worker
       working-directory: ./backend-worker
