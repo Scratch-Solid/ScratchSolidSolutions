@@ -3,12 +3,12 @@ import type { D1Database } from '@cloudflare/workers-types';
 
 declare global {
   interface CloudflareEnv extends Env {
-    DB: D1Database;
+    scratchsolid_db: D1Database;
   }
 }
 
 interface Env {
-  DB: D1Database;
+  scratchsolid_db: D1Database;
 }
 
 export {};

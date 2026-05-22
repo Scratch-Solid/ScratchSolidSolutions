@@ -40,10 +40,6 @@
 		{
 			"bucket_name": "cleaner-photos",
 			"binding": "cleaner_photos"
-		},
-		{
-			"bucket_name": "cleaner-photos-staging",
-			"binding": "cleaner_photos_staging"
 		}
 	],
 	"routes": [
