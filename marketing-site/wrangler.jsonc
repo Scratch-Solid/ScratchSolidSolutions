@@ -86,10 +86,6 @@
 					"bucket_name": "marketing-uploads-staging"
 				},
 				{
-					"binding": "cleaner_photos",
-					"bucket_name": "cleaner-photos"
-				},
-				{
 					"binding": "cleaner_photos_staging",
 					"bucket_name": "cleaner-photos-staging"
 				}
