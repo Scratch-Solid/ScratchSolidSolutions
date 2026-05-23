@@ -98,7 +98,6 @@
 			"vars": {
 				"NEXT_PUBLIC_BASE_URL": "https://staging.scratchsolidsolutions.org",
 				"NEXT_PUBLIC_API_URL": "https://api-staging.scratchsolidsolutions.org/api",
-				"R2_BUCKET": "marketing-uploads-staging",
 				"R2_PUBLIC_BASE": "https://uploads-staging.scratchsolidsolutions.org",
 				"NODE_ENV": "staging"
 			}
