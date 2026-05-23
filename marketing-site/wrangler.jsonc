@@ -36,10 +36,6 @@
 		{
 			"binding": "UPLOADS_BUCKET",
 			"bucket_name": "marketing-uploads"
-		},
-		{
-			"bucket_name": "cleaner-photos",
-			"binding": "cleaner_photos"
 		}
 	],
 	"routes": [
