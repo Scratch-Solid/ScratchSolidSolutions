@@ -51,7 +51,6 @@
 	"vars": {
 		"NEXT_PUBLIC_BASE_URL": "https://scratchsolidsolutions.org",
 		"NEXT_PUBLIC_API_URL": "https://api.scratchsolidsolutions.org/api",
-		"R2_BUCKET": "marketing-uploads",
 		"R2_PUBLIC_BASE": "https://uploads.scratchsolidsolutions.org"
 	},
 	"observability": {
