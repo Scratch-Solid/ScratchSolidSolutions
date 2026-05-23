@@ -112,7 +112,7 @@
 			"r2_buckets": [
 				{
 					"binding": "UPLOADS_BUCKET",
-					"bucket_name": "portal-uploads-staging"
+					"bucket_name": "scratchsolid-uploads-portal-staging"
 				},
 				{
 					"binding": "CLEANER_PHOTOS_BUCKET",
