@@ -196,8 +196,6 @@ export async function POST(request: NextRequest) {
     // Create Zoho estimate (non-blocking - quote creation succeeds even if Zoho fails)
     let zohoEstimateId = '';
     let zohoEstimateNumber = '';
-    // Temporarily disabled for debugging
-    /*
     try {
       const contactId = await findOrCreateContact(sanitizedName, sanitizedEmail, sanitizedPhone);
       if (contactId) {
@@ -225,12 +223,9 @@ export async function POST(request: NextRequest) {
       console.error('Zoho estimate creation failed (non-blocking):', zohoError);
       // Continue - quote creation succeeded
     }
-    */
 
     // Log audit event for quote creation
     const clientIp = request.headers.get('x-forwarded-for') || request.headers.get('cf-connecting-ip') || '';
-    // Temporarily disabled for debugging
-    /*
     await logAuditEvent({
       resourceType: 'quote',
       resourceId: quoteId,
@@ -253,7 +248,6 @@ export async function POST(request: NextRequest) {
         vat_registered: vat_registered || false,
       },
     });
-    */
 
     return NextResponse.json({
       success: true,
