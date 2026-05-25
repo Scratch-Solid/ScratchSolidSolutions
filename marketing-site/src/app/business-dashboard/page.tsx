@@ -17,6 +17,12 @@ export default function BusinessDashboard() {
   const [userProfile, setUserProfile] = useState<any>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [viewingContract, setViewingContract] = useState<any>(null);
+  
+  // Review upload state
+  const [reviewImages, setReviewImages] = useState<string[]>([]);
+  const [reviewText, setReviewText] = useState<string>('');
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const [reviewImagesLoading, setReviewImagesLoading] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('authToken');
@@ -235,6 +241,110 @@ export default function BusinessDashboard() {
     localStorage.removeItem('userPhone');
     localStorage.removeItem('userAddress');
     router.push('/auth');
+  };
+
+  // Review upload functions
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length > 3) {
+      alert('Maximum 3 images allowed');
+      return;
+    }
+
+    setUploadingImages(true);
+    const uploadedUrls: string[] = [];
+
+    try {
+      for (const file of files) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('folder', 'review-images');
+
+        const token = localStorage.getItem('authToken');
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const error = await response.json() as { error?: string };
+          throw new Error(error.error || 'Failed to upload image');
+        }
+
+        const data = await response.json() as { publicUrl: string };
+        uploadedUrls.push(data.publicUrl);
+      }
+
+      setReviewImages(prev => [...prev, ...uploadedUrls]);
+    } catch (err) {
+      console.error('Image upload error:', err);
+      alert('Failed to upload images. Please try again.');
+    } finally {
+      setUploadingImages(false);
+    }
+  };
+
+  const handleReviewSubmit = async () => {
+    if (reviewText.trim().split(/\s+/).filter(w => w.length > 0).length > 100) {
+      alert('Review must be 100 words or less');
+      return;
+    }
+
+    if (reviewImages.length === 0) {
+      alert('Please upload at least one image');
+      return;
+    }
+
+    const userId = localStorage.getItem('userId');
+    const token = localStorage.getItem('authToken');
+    
+    // Get first completed booking for review
+    const response = await fetch(`/api/bookings?client_id=${userId}&status=completed`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const bookings = response.ok ? await response.json() as any[] : [];
+    
+    if (bookings.length === 0) {
+      alert('No completed bookings found to review');
+      return;
+    }
+
+    setReviewImagesLoading(true);
+    try {
+      const reviewRes = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          user_id: userId,
+          booking_id: bookings[0].id,
+          rating: 5,
+          text: reviewText,
+          images: reviewImages
+        })
+      });
+      if (!reviewRes.ok) {
+        throw new Error('Review submission failed');
+      }
+      
+      alert('Review submitted successfully! Gallery will be updated.');
+      
+      // Reset review form
+      setReviewImages([]);
+      setReviewText('');
+      
+    } catch (error) {
+      alert('Failed to submit review');
+    } finally {
+      setReviewImagesLoading(false);
+    }
+  };
+
+  const removeReviewImage = (index: number) => {
+    setReviewImages(prev => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -583,6 +693,71 @@ export default function BusinessDashboard() {
                 >
                   {loading ? "Submitting..." : "Request Weekend Cleaning"}
                 </button>
+              </div>
+
+              {/* Review Upload Section */}
+              <div className="bg-white rounded-lg p-6 border border-gray-200">
+                <h3 className="font-semibold text-lg text-gray-800 mb-4">Write a Review</h3>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Upload Photos (Max 3)
+                    </label>
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    {reviewImages.length > 0 && (
+                      <div className="mt-3 grid grid-cols-3 gap-2">
+                        {reviewImages.map((img, index) => (
+                          <div key={index} className="relative">
+                            <img 
+                              src={img} 
+                              alt={`Review image ${index + 1}`}
+                              className="w-full h-24 object-cover rounded-lg"
+                            />
+                            <button
+                              onClick={() => removeReviewImage(index)}
+                              className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Your Review (100 words max)
+                    </label>
+                    <textarea
+                      value={reviewText}
+                      onChange={(e) => setReviewText(e.target.value)}
+                      rows={4}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Share your experience..."
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      {reviewText.trim().split(/\s+/).filter(w => w.length > 0).length}/100 words
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={handleReviewSubmit}
+                    disabled={reviewImagesLoading || reviewText.trim().length === 0 || reviewText.trim().split(/\s+/).filter(w => w.length > 0).length > 100}
+                    className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {reviewImagesLoading ? 'Submitting...' : 'Submit Review'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

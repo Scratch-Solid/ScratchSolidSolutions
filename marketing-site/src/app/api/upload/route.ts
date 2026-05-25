@@ -18,7 +18,7 @@ function sanitizeFilename(name: string) {
 
 export async function POST(req: NextRequest) {
   const traceId = withTracing(req);
-  const authResult = await withAuth(req, ['admin']);
+  const authResult = await withAuth(req, ['admin', 'client']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
 
   // Get R2 bucket from Cloudflare context

@@ -18,7 +18,9 @@ export default function GalleryClient() {
       fetch('/api/content?type=gallery-images').then(res => res.ok ? res.json() : Promise.resolve({ content: '' })),
     ]).then(([reviewsData, galleryData]) => {
       setReviews((reviewsData as any)?.results || (Array.isArray(reviewsData) ? reviewsData : []));
-      const parsed = (() => {
+      
+      // Parse CMS gallery images
+      const cmsImages = (() => {
         try {
           const raw = (galleryData as any)?.content;
           if (!raw) return [];
@@ -28,7 +30,20 @@ export default function GalleryClient() {
           return [];
         }
       })();
-      setGalleryImages(parsed.filter((x: any) => x?.url));
+
+      // Extract images from approved reviews
+      const reviewImages = (reviewsData as any)?.results?.flatMap((review: any) => {
+        try {
+          const images = typeof review.images === 'string' ? JSON.parse(review.images) : review.images;
+          return Array.isArray(images) ? images.map((img: string) => ({ url: img, caption: review.text?.substring(0, 50) + '...' })) : [];
+        } catch {
+          return [];
+        }
+      }) || [];
+
+      // Combine both sources
+      const allImages = [...cmsImages, ...reviewImages].filter((x: any) => x?.url);
+      setGalleryImages(allImages);
       setLoading(false);
     });
   }, []);
