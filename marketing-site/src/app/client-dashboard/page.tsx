@@ -299,6 +299,8 @@ export default function ClientDashboard() {
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
+    console.log('[Upload] Files selected:', files.length);
+    
     if (files.length > 3) {
       setError('Maximum 3 images allowed');
       return;
@@ -309,7 +311,10 @@ export default function ClientDashboard() {
 
     try {
       const token = localStorage.getItem('authToken');
+      console.log('[Upload] Token exists:', !!token);
+      
       for (const file of files) {
+        console.log('[Upload] Uploading file:', file.name, file.size);
         const formData = new FormData();
         formData.append('file', file);
         formData.append('folder', 'review-images');
@@ -320,18 +325,28 @@ export default function ClientDashboard() {
           body: formData,
         });
 
+        console.log('[Upload] Response status:', response.status);
+        
         if (!response.ok) {
           const error = await response.json() as { error?: string };
+          console.error('[Upload] Upload failed:', error);
           throw new Error(error.error || 'Failed to upload image');
         }
 
         const data = await response.json() as { publicUrl: string };
+        console.log('[Upload] Upload successful, URL:', data.publicUrl);
         uploadedUrls.push(data.publicUrl);
       }
 
-      setReviewImages(prev => [...prev, ...uploadedUrls]);
+      console.log('[Upload] Total uploaded URLs:', uploadedUrls.length);
+      setReviewImages(prev => {
+        console.log('[Upload] Previous images:', prev.length);
+        const newImages = [...prev, ...uploadedUrls];
+        console.log('[Upload] New total images:', newImages.length);
+        return newImages;
+      });
     } catch (err) {
-      console.error('Image upload error:', err);
+      console.error('[Upload] Image upload error:', err);
       setError('Failed to upload images. Please try again.');
     } finally {
       setUploadingImages(false);
@@ -339,6 +354,9 @@ export default function ClientDashboard() {
   };
 
   const handleReviewSubmit = async () => {
+    console.log('[Review Submit] Current reviewImages:', reviewImages);
+    console.log('[Review Submit] reviewImages length:', reviewImages.length);
+    
     if (reviewText.trim().length === 0) {
       setError('Please enter a review');
       return;
@@ -351,6 +369,7 @@ export default function ClientDashboard() {
     }
 
     if (reviewImages.length === 0) {
+      console.error('[Review Submit] No images in state');
       setError('Please upload at least one image');
       return;
     }
