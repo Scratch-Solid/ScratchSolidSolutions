@@ -1,10 +1,12 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { generatePromoCodeEmail } from '@/lib/email-templates';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 
 export async function POST(request: NextRequest) {
   try {
-    const resendApiKey = process.env.RESEND_API_KEY;
+    const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
+    const resendApiKey = (env as any)?.RESEND_API_KEY || process.env.RESEND_API_KEY;
     if (!resendApiKey) {
       return NextResponse.json({ error: 'Email service not configured' }, { status: 503 });
     }

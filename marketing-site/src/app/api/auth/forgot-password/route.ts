@@ -3,11 +3,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb, getUserByEmail, getUserByPhone, createPasswordResetToken } from "@/lib/db";
 import { sanitizeEmail, sanitizePhone } from "@/lib/sanitization";
 import { withRateLimit, rateLimits } from "@/lib/middleware";
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 
 // Direct Resend API call - bulletproof approach
 async function sendPasswordResetEmail(to: string, resetLink: string) {
   try {
-    const apiKey = process.env.RESEND_API_KEY;
+    const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
+    const apiKey = (env as any)?.RESEND_API_KEY || process.env.RESEND_API_KEY;
     if (!apiKey) {
       console.error('RESEND_API_KEY not found in environment');
       return { success: false, error: 'Email service not configured' };

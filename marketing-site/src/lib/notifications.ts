@@ -3,6 +3,8 @@
  * Handles WhatsApp (primary) and email (fallback) notifications
  */
 
+import { getCloudflareContext } from '@opennextjs/cloudflare';
+
 interface NotificationPayload {
   recipient: {
     phone?: string;
@@ -45,14 +47,15 @@ export async function sendNotification(payload: NotificationPayload): Promise<{ 
 
 async function sendWhatsApp(phone: string, type: string, data: any): Promise<{ success: boolean; error?: string }> {
   try {
+    const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
     const message = formatWhatsAppMessage(type, data);
     
     // Call WhatsApp API (e.g., Twilio, MessageBird, or direct WhatsApp Business API)
-    const response = await fetch(process.env.WHATSAPP_API_URL || 'https://api.whatsapp.com/v1/messages', {
+    const response = await fetch((env as any)?.WHATSAPP_API_URL || process.env.WHATSAPP_API_URL || 'https://api.whatsapp.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.WHATSAPP_API_KEY || ''}`
+        'Authorization': `Bearer ${(env as any)?.WHATSAPP_API_KEY || process.env.WHATSAPP_API_KEY || ''}`
       },
       body: JSON.stringify({
         to: phone,
