@@ -38,7 +38,7 @@ async function sendEmailVerificationEmailDirect(to: string, name: string, verify
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Scratch Solid Solutions <customerservice@scratchsolidsolutions.org>',
+        from: 'Scratch Solid Solutions <it@scratchsolidsolutions.org>',
         to,
         subject: 'Verify your Scratch Solid Solutions account',
         html,

@@ -11,8 +11,11 @@ import { withRateLimit, rateLimits } from "@/lib/middleware";
 async function sendEmailVerificationEmailDirect(to: string, name: string, verifyLink: string) {
   try {
     const apiKey = process.env.RESEND_API_KEY;
+    console.log('[EMAIL] RESEND_API_KEY exists:', !!apiKey);
+    console.log('[EMAIL] RESEND_API_KEY length:', apiKey?.length || 0);
+    
     if (!apiKey) {
-      console.error('RESEND_API_KEY not found in environment');
+      console.error('[EMAIL] RESEND_API_KEY not found in environment');
       return { success: false, error: 'Email service not configured' };
     }
 
@@ -35,6 +38,9 @@ async function sendEmailVerificationEmailDirect(to: string, name: string, verify
       </html>
     `;
 
+    console.log('[EMAIL] Sending to:', to);
+    console.log('[EMAIL] Verify link:', verifyLink);
+
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -42,21 +48,23 @@ async function sendEmailVerificationEmailDirect(to: string, name: string, verify
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Scratch Solid Solutions <customerservice@scratchsolidsolutions.org>',
+        from: 'Scratch Solid Solutions <it@scratchsolidsolutions.org>',
         to,
         subject: 'Verify your Scratch Solid Solutions account',
         html,
       }),
     });
 
+    console.log('[EMAIL] Response status:', response.status);
     const result = await response.json();
+    console.log('[EMAIL] Response body:', JSON.stringify(result));
     
     if (!response.ok) {
-      console.error('Resend API error:', result);
+      console.error('[EMAIL] Resend API error:', result);
       return { success: false, error: `Email service error: ${JSON.stringify(result)}` };
     }
 
-    console.log('Verification email sent successfully:', result);
+    console.log('[EMAIL] Verification email sent successfully:', result);
     return { success: true, data: result };
   } catch (error) {
     console.error('Email send failed:', error);
