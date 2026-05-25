@@ -26,6 +26,9 @@ jobs:
       working-directory: ./marketing-site
       run: npm install
     
+    - name: Install Wrangler
+      run: npm install -g wrangler@4.93.0
+    
     - name: Build
       working-directory: ./marketing-site
       run: npm run cloudflare-build
@@ -62,6 +65,9 @@ jobs:
       working-directory: ./internal-portal
       run: npm install
 
+    - name: Install Wrangler
+      run: npm install -g wrangler@4.93.0
+
     - name: Build with OpenNext
       working-directory: ./internal-portal
       run: npm run cloudflare-build
@@ -96,13 +102,16 @@ jobs:
     
     - name: Install dependencies
       working-directory: ./backend-worker
-      run: npm install
+      run: npm ci
+
+    - name: Install Wrangler
+      run: npm install -g wrangler@4.93.0
     
     - name: Unassign conflicting route from marketing worker
       working-directory: ./backend-worker
       run: |
         ZONE_ID=$(curl -s -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" "https://api.cloudflare.com/client/v4/zones?name=scratchsolidsolutions.org" | jq -r '.result[0].id')
-        ROUTE_ID=$(curl -s -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/workers/routes" | jq -r '.result[] | select(.pattern=="api-staging.scratchsolidsolutions.org/*") | .id')
+        ROUTE_ID=$(curl -s -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/workers/routes" | jq -r '.result[] | select(.pattern[...]
         if [ -n "$ROUTE_ID" ]; then
           curl -s -X DELETE -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/workers/routes/$ROUTE_ID"
           echo "Unassigned api-staging route from marketing worker"

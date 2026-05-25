@@ -22,3 +22,15 @@ frontend/node_modules/
 backend-worker/node_modules/
 marketing-site/.next/
 marketing-site/node_modules/
+
+# SQL files with sensitive data (but keep migrations)
+*_admin.sql
+*_user.sql
+*_password.sql
+update_password.sql
+create_*.sql
+clear_*.sql
+seed_*.sql
+copy_*.sql
+test_*.sql
+fix_*.sql

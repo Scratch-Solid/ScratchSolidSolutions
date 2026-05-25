@@ -36,10 +36,6 @@
 		{
 			"binding": "UPLOADS_BUCKET",
 			"bucket_name": "marketing-uploads"
-		},
-		{
-			"bucket_name": "cleaner-photos",
-			"binding": "cleaner_photos"
 		}
 	],
 	"routes": [
@@ -51,7 +47,6 @@
 	"vars": {
 		"NEXT_PUBLIC_BASE_URL": "https://scratchsolidsolutions.org",
 		"NEXT_PUBLIC_API_URL": "https://api.scratchsolidsolutions.org/api",
-		"R2_BUCKET": "marketing-uploads",
 		"R2_PUBLIC_BASE": "https://uploads.scratchsolidsolutions.org"
 	},
 	"observability": {
@@ -86,10 +81,6 @@
 					"bucket_name": "marketing-uploads-staging"
 				},
 				{
-					"binding": "cleaner_photos",
-					"bucket_name": "cleaner-photos"
-				},
-				{
 					"binding": "cleaner_photos_staging",
 					"bucket_name": "cleaner-photos-staging"
 				}
@@ -103,7 +94,6 @@
 			"vars": {
 				"NEXT_PUBLIC_BASE_URL": "https://staging.scratchsolidsolutions.org",
 				"NEXT_PUBLIC_API_URL": "https://api-staging.scratchsolidsolutions.org/api",
-				"R2_BUCKET": "marketing-uploads-staging",
 				"R2_PUBLIC_BASE": "https://uploads-staging.scratchsolidsolutions.org",
 				"NODE_ENV": "staging"
 			}

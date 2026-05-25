@@ -8,9 +8,8 @@ import { logAuditEvent } from '@/lib/audit';
 import { findOrCreateContact, createEstimate } from '@/lib/zoho';
 
 export async function POST(request: NextRequest) {
-  // CSRF protection
-  const csrfResult = await withCsrf(request);
-  if (csrfResult) return csrfResult;
+  // CSRF protection disabled for public quote endpoint
+  // Quote requests are public-facing and don't require authentication
 
   // Rate limiting - prevent abuse
   const rateLimitResult = await withRateLimit(request, { windowMs: 3600000, maxRequests: 5 }); // 5 quotes per hour

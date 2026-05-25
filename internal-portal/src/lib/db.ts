@@ -8,14 +8,14 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 
 export interface Env {
   scratchsolid_db: D1Database;
+  training_db: D1Database;
 }
 
 // Helper to get the D1 database from the OpenNext Cloudflare context
 export async function getDb(): Promise<D1Database | null> {
   try {
-    // Use globalThis.env for Cloudflare Workers context
-    const cloudflareContext = globalThis as any;
-    const env = cloudflareContext?.env;
+    // Use getCloudflareContext for OpenNext.js on Cloudflare Pages
+    const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
     const envAny = env as any;
     const db = envAny?.scratchsolid_db || envAny?.scratchsolidDb || envAny?.scratchsolid_db_portal_staging || envAny?.DB || envAny?.db || envAny?.database;
     if (db) {
@@ -33,7 +33,7 @@ export async function getDb(): Promise<D1Database | null> {
     console.error('D1 binding missing: expected scratchsolid_db, scratchsolid-db-portal-staging, or DB');
     console.error('Available env keys:', Object.keys(envAny || {}));
   } catch (error) {
-    console.error('Error getting database from globalThis context', error);
+    console.error('Error getting database from Cloudflare context', error);
   }
   return null;
 }
@@ -41,8 +41,7 @@ export async function getDb(): Promise<D1Database | null> {
 // Helper to get the training D1 database from the OpenNext Cloudflare context
 export async function getTrainingDb(): Promise<D1Database | null> {
   try {
-    const cloudflareContext = globalThis as any;
-    const env = cloudflareContext?.env;
+    const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
     const envAny = env as any;
     const db = envAny?.training_db || envAny?.trainingDb;
     if (db) {
@@ -51,7 +50,7 @@ export async function getTrainingDb(): Promise<D1Database | null> {
     console.error('Training D1 binding missing: expected training_db');
     console.error('Available env keys:', Object.keys(envAny || {}));
   } catch (error) {
-    console.error('Error getting training database from globalThis context', error);
+    console.error('Error getting training database from Cloudflare context', error);
   }
   return null;
 }
