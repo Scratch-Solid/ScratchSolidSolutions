@@ -109,8 +109,10 @@ jobs:
     
     - name: Unassign conflicting route from marketing worker
       working-directory: ./backend-worker
+      env:
+        CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       run: |
-        echo "Authorization: Bearer $CLOUDFLARE_API_TOKEN" > /tmp/auth_header
+        printf 'Authorization: Bearer %s' "$CLOUDFLARE_API_TOKEN" > /tmp/auth_header
         ZONE_ID=$(curl -s -H @/tmp/auth_header "https://api.cloudflare.com/client/v4/zones?name=scratchsolidsolutions.org" | jq -r '.result[0].id')
         ROUTE_ID=$(curl -s -H @/tmp/auth_header "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/workers/routes" | jq -r '.result[] | select(.pattern == "api-staging.scratchsolidsolutions.org/*") | .id')
         if [ -n "$ROUTE_ID" ]; then
@@ -119,9 +121,6 @@ jobs:
         else
           echo "No conflicting route found, skipping"
         fi
-      env:
-        CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-    
     - name: Deploy to Cloudflare Workers (Staging)
       uses: cloudflare/wrangler-action@v3
       with:
