@@ -286,6 +286,11 @@ export default function BusinessDashboard() {
   };
 
   const handleReviewSubmit = async () => {
+    if (reviewText.trim().length === 0) {
+      alert('Please enter a review');
+      return;
+    }
+    
     if (reviewText.trim().split(/\s+/).filter(w => w.length > 0).length > 100) {
       alert('Review must be 100 words or less');
       return;

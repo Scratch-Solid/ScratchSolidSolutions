@@ -27,6 +27,7 @@ export default function GalleryClient() {
           const json = typeof raw === 'string' ? JSON.parse(raw) : raw;
           return Array.isArray(json) ? json : (json?.images || []);
         } catch (e) {
+          console.error('Error parsing CMS gallery images:', e);
           return [];
         }
       })();
@@ -34,16 +35,25 @@ export default function GalleryClient() {
       // Extract images from approved reviews
       const reviewImages = (reviewsData as any)?.results?.flatMap((review: any) => {
         try {
+          if (!review.images) return [];
           const images = typeof review.images === 'string' ? JSON.parse(review.images) : review.images;
-          return Array.isArray(images) ? images.map((img: string) => ({ url: img, caption: review.text?.substring(0, 50) + '...' })) : [];
-        } catch {
+          if (!Array.isArray(images)) return [];
+          return images.map((img: string) => ({
+            url: img,
+            caption: review.text ? (review.text.length > 50 ? review.text.substring(0, 50) + '...' : review.text) : ''
+          }));
+        } catch (e) {
+          console.error('Error parsing review images:', e);
           return [];
         }
       }) || [];
 
-      // Combine both sources
+      // Combine both sources, ensuring unique URLs
       const allImages = [...cmsImages, ...reviewImages].filter((x: any) => x?.url);
-      setGalleryImages(allImages);
+      const uniqueImages = allImages.filter((img, index, self) =>
+        index === self.findIndex((i) => i.url === img.url)
+      );
+      setGalleryImages(uniqueImages);
       setLoading(false);
     });
   }, []);

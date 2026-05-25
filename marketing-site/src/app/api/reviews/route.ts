@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
   const traceId = withTracing(request);
-  const authResult = await withAuth(request, ['client']);
+  const authResult = await withAuth(request, ['client', 'business']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
 

@@ -308,6 +308,7 @@ export default function ClientDashboard() {
     const uploadedUrls: string[] = [];
 
     try {
+      const token = localStorage.getItem('authToken');
       for (const file of files) {
         const formData = new FormData();
         formData.append('file', file);
@@ -315,6 +316,7 @@ export default function ClientDashboard() {
 
         const response = await fetch('/api/upload', {
           method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
           body: formData,
         });
 
@@ -337,7 +339,13 @@ export default function ClientDashboard() {
   };
 
   const handleReviewSubmit = async () => {
-    if (reviewText.length > 100) {
+    if (reviewText.trim().length === 0) {
+      setError('Please enter a review');
+      return;
+    }
+    
+    const wordCount = reviewText.trim().split(/\s+/).filter(w => w.length > 0).length;
+    if (wordCount > 100) {
       setError('Review must be 100 words or less');
       return;
     }
