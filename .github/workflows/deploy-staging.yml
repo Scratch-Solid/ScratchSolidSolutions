@@ -111,7 +111,7 @@ jobs:
       working-directory: ./backend-worker
       run: |
         ZONE_ID=$(curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "https://api.cloudflare.com/client/v4/zones?name=scratchsolidsolutions.org" | jq -r '.result[0].id')
-        ROUTE_ID=$(curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/workers/routes" | jq -r '.result[] | select(.pattern[...]
+        ROUTE_ID=$(curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/workers/routes" | jq -r '.result[] | select(.pattern == "api-staging.scratchsolidsolutions.org/*") | .id')
         if [ -n "$ROUTE_ID" ]; then
           curl -s -X DELETE -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/workers/routes/$ROUTE_ID"
           echo "Unassigned api-staging route from marketing worker"
