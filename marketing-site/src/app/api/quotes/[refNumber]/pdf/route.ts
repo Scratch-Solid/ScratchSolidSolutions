@@ -5,6 +5,7 @@ import { withAuth, withRateLimit, rateLimits } from '@/lib/middleware';
 import jwt from 'jsonwebtoken';
 import { getJWTSecret } from '@/lib/env';
 import { getEstimatePdf } from '@/lib/zoho';
+import jsPDF from 'jspdf';
 
 export async function GET(
   request: NextRequest,
@@ -87,14 +88,15 @@ export async function GET(
       }
     }
 
-    // Fallback: Generate HTML for PDF
-    const html = generateQuoteHTML(q);
-
-    // Return HTML that can be converted to PDF
-    return NextResponse.json({
-      success: true,
-      html,
-      quote: q
+    // Fallback: Generate proper PDF server-side
+    const pdfBuffer = generateQuotePDF(q);
+    
+    return new NextResponse(pdfBuffer, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename="Quote-${refNumber}.pdf"`,
+      },
     });
 
   } catch (error) {
@@ -106,196 +108,117 @@ export async function GET(
   }
 }
 
-function generateQuoteHTML(quote: Record<string, unknown>): string {
+function generateQuotePDF(quote: Record<string, unknown>): Uint8Array {
+  const pdf = new jsPDF('p', 'mm', 'a4');
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+  const margin = 20;
+  let y = margin;
+
   const discountAmount = quote.discount_amount as number;
   const finalPrice = quote.final_price as number;
   const baselinePrice = quote.baseline_price as number;
-  
-  return `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>Quote ${quote.ref_number}</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 40px;
-      color: #333;
-    }
-    .header {
-      text-align: center;
-      margin-bottom: 40px;
-      border-bottom: 2px solid #1e40af;
-      padding-bottom: 20px;
-    }
-    .header h1 {
-      color: #1e40af;
-      margin: 0;
-      font-size: 32px;
-    }
-    .header p {
-      color: #666;
-      margin: 5px 0 0 0;
-    }
-    .quote-details {
-      background: #f8fafc;
-      padding: 20px;
-      border-radius: 8px;
-      margin-bottom: 30px;
-    }
-    .quote-details h2 {
-      margin: 0 0 15px 0;
-      color: #1e40af;
-    }
-    .detail-row {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 10px;
-      padding: 8px 0;
-      border-bottom: 1px solid #e2e8f0;
-    }
-    .detail-row:last-child {
-      border-bottom: none;
-    }
-    .detail-label {
-      font-weight: 600;
-      color: #475569;
-    }
-    .detail-value {
-      color: #1e293b;
-    }
-    .pricing-section {
-      background: #f0f9ff;
-      padding: 20px;
-      border-radius: 8px;
-      margin-bottom: 30px;
-    }
-    .pricing-section h2 {
-      margin: 0 0 15px 0;
-      color: #1e40af;
-    }
-    .price-row {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 10px;
-      padding: 8px 0;
-    }
-    .price-row.final {
-      font-size: 24px;
-      font-weight: bold;
-      color: #1e40af;
-      border-top: 2px solid #1e40af;
-      padding-top: 15px;
-      margin-top: 15px;
-    }
-    .footer {
-      text-align: center;
-      margin-top: 40px;
-      padding-top: 20px;
-      border-top: 1px solid #e2e8f0;
-      color: #666;
-      font-size: 14px;
-    }
-    .status {
-      display: inline-block;
-      padding: 6px 12px;
-      border-radius: 4px;
-      font-weight: bold;
-      text-transform: uppercase;
-      font-size: 12px;
-    }
-    .status-pending {
-      background: #fef3c7;
-      color: #92400e;
-    }
-    .status-sent {
-      background: #dbeafe;
-      color: #1e40af;
-    }
-    .status-accepted {
-      background: #dcfce7;
-      color: #166534;
-    }
-    .status-declined {
-      background: #fee2e2;
-      color: #991b1b;
-    }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <h1>Scratch Solid Solutions</h1>
-    <p>Professional Cleaning Services Quote</p>
-  </div>
 
-  <div class="quote-details">
-    <h2>Quote Details</h2>
-    <div class="detail-row">
-      <span class="detail-label">Reference Number:</span>
-      <span class="detail-value">${quote.ref_number}</span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label">Customer Name:</span>
-      <span class="detail-value">${quote.name}</span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label">Email:</span>
-      <span class="detail-value">${quote.email || 'N/A'}</span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label">Phone:</span>
-      <span class="detail-value">${quote.phone || 'N/A'}</span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label">Service:</span>
-      <span class="detail-value">${quote.service_name || 'Custom Service'}</span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label">Status:</span>
-      <span class="detail-value">
-        <span class="status status-${quote.status}">${quote.status}</span>
-      </span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label">Date:</span>
-      <span class="detail-value">${new Date(quote.created_at as string).toLocaleDateString()}</span>
-    </div>
-  </div>
+  // Helper function for text
+  const addText = (text: string, x: number, fontSize: number = 10, isBold: boolean = false) => {
+    pdf.setFontSize(fontSize);
+    if (isBold) pdf.setFont('helvetica', 'bold');
+    else pdf.setFont('helvetica', 'normal');
+    pdf.text(text, x, y);
+  };
 
-  <div class="pricing-section">
-    <h2>Pricing</h2>
-    <div class="price-row">
-      <span>Baseline Price:</span>
-      <span>R${baselinePrice.toFixed(2)}</span>
-    </div>
-    ${discountAmount > 0 ? `
-    <div class="price-row">
-      <span>Discount:</span>
-      <span style="color: #166534;">-R${discountAmount.toFixed(2)}</span>
-    </div>
-    ` : ''}
-    <div class="price-row final">
-      <span>Total:</span>
-      <span>R${finalPrice.toFixed(2)}</span>
-    </div>
-  </div>
+  // Header
+  pdf.setFillColor(30, 64, 175);
+  pdf.rect(0, 0, pageWidth, 40, 'F');
+  pdf.setTextColor(255, 255, 255);
+  addText('Scratch Solid Solutions', margin, 24, 20, true);
+  addText('Professional Cleaning Services Quote', margin, 32, 12);
 
-  ${quote.notes ? `
-  <div style="background: #f8fafc; padding: 20px; border-radius: 8px;">
-    <h2 style="margin: 0 0 15px 0; color: #1e40af;">Notes</h2>
-    <p style="margin: 0; color: #475569;">${quote.notes}</p>
-  </div>
-  ` : ''}
+  // Reset text color
+  pdf.setTextColor(0, 0, 0);
+  y = 55;
 
-  <div class="footer">
-    <p>This quote is valid for 30 days from the date of issue.</p>
-    <p>For questions, please contact us at info@scratchsolidsolutions.org</p>
-    <p>Generated on ${new Date().toLocaleString()}</p>
-  </div>
-</body>
-</html>
-  `;
+  // Quote Details Section
+  pdf.setFillColor(248, 250, 252);
+  pdf.rect(margin, y - 5, pageWidth - (margin * 2), 60, 'F');
+  addText('Quote Details', margin, y + 5, 14, true);
+  y += 15;
+
+  const details = [
+    ['Reference Number:', quote.ref_number as string],
+    ['Customer Name:', quote.name as string],
+    ['Email:', (quote.email as string) || 'N/A'],
+    ['Phone:', (quote.phone as string) || 'N/A'],
+    ['Service:', (quote.service_name as string) || 'Custom Service'],
+    ['Status:', (quote.status as string).toUpperCase()],
+    ['Date:', new Date(quote.created_at as string).toLocaleDateString()],
+  ];
+
+  details.forEach(([label, value]) => {
+    addText(label, margin, y, 10, true);
+    addText(value, pageWidth - margin - pdf.getTextWidth(value), y);
+    y += 8;
+  });
+
+  y += 15;
+
+  // Pricing Section
+  pdf.setFillColor(240, 249, 255);
+  pdf.rect(margin, y - 5, pageWidth - (margin * 2), 50, 'F');
+  addText('Pricing', margin, y + 5, 14, true);
+  y += 15;
+
+  addText('Baseline Price:', margin, y);
+  addText(`R${baselinePrice.toFixed(2)}`, pageWidth - margin - pdf.getTextWidth(`R${baselinePrice.toFixed(2)}`), y);
+  y += 10;
+
+  if (discountAmount > 0) {
+    pdf.setTextColor(22, 101, 52);
+    addText('Discount:', margin, y);
+    addText(`-R${discountAmount.toFixed(2)}`, pageWidth - margin - pdf.getTextWidth(`-R${discountAmount.toFixed(2)}`), y);
+    pdf.setTextColor(0, 0, 0);
+    y += 10;
+  }
+
+  // Total
+  pdf.setDrawColor(30, 64, 175);
+  pdf.setLineWidth(0.5);
+  pdf.line(margin, y + 5, pageWidth - margin, y + 5);
+  y += 15;
+  pdf.setTextColor(30, 64, 175);
+  addText('Total:', margin, y, 20, true);
+  addText(`R${finalPrice.toFixed(2)}`, pageWidth - margin - pdf.getTextWidth(`R${finalPrice.toFixed(2)}`), y, 20, true);
+  pdf.setTextColor(0, 0, 0);
+
+  y += 25;
+
+  // Notes if present
+  if (quote.notes) {
+    pdf.setFillColor(248, 250, 252);
+    pdf.rect(margin, y - 5, pageWidth - (margin * 2), 30, 'F');
+    addText('Notes', margin, y + 5, 14, true);
+    y += 15;
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'normal');
+    const splitNotes = pdf.splitTextToSize(quote.notes as string, pageWidth - (margin * 2));
+    pdf.text(splitNotes, margin, y);
+    y += splitNotes.length * 5 + 20;
+  }
+
+  // Footer
+  y = pageHeight - 30;
+  pdf.setDrawColor(226, 232, 240);
+  pdf.setLineWidth(0.3);
+  pdf.line(margin, y, pageWidth - margin, y);
+  y += 10;
+  pdf.setTextColor(102, 102, 102);
+  pdf.setFontSize(9);
+  pdf.setFont('helvetica', 'normal');
+  pdf.text('This quote is valid for 30 days from the date of issue.', pageWidth / 2, y, { align: 'center' });
+  y += 6;
+  pdf.text('For questions, please contact us at info@scratchsolidsolutions.org', pageWidth / 2, y, { align: 'center' });
+  y += 6;
+  pdf.text(`Generated on ${new Date().toLocaleString()}`, pageWidth / 2, y, { align: 'center' });
+
+  return pdf.output('arraybuffer') as Uint8Array;
 }
