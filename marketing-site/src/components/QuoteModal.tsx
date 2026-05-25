@@ -365,6 +365,28 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
     }
   };
 
+  const handleDownloadQuotePdf = async (refNumber: string) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`/api/quotes/${refNumber}/pdf`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+      });
+      if (!response.ok) throw new Error('Failed to download PDF');
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Quote-${refNumber}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('PDF download failed:', err);
+      alert('Failed to download PDF. Please try again.');
+    }
+  };
+
   const handleAccept = async () => {
     if (!quoteResult) return;
     setActionLoading('accept');
@@ -506,7 +528,7 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
                           </p>
                           <div className="flex gap-1">
                             <button
-                              onClick={() => window.open(`/api/quotes/${quote.ref_number}/pdf`, '_blank')}
+                              onClick={() => handleDownloadQuotePdf(quote.ref_number)}
                               className="text-blue-600 hover:text-blue-700 px-2 py-1 border border-blue-500/30 rounded transition-all text-xs"
                             >
                               PDF
