@@ -112,15 +112,44 @@ jobs:
       env:
         CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       run: |
-        printf 'Authorization: Bearer %s' "$CLOUDFLARE_API_TOKEN" > /tmp/auth_header
-        ZONE_ID=$(curl -s -H @/tmp/auth_header "https://api.cloudflare.com/client/v4/zones?name=scratchsolidsolutions.org" | jq -r '.result[0].id')
-        ROUTE_ID=$(curl -s -H @/tmp/auth_header "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/workers/routes" | jq -r '.result[] | select(.pattern == "api-staging.scratchsolidsolutions.org/*") | .id')
-        if [ -n "$ROUTE_ID" ]; then
-          curl -s -X DELETE -H @/tmp/auth_header "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/workers/routes/$ROUTE_ID"
-          echo "Unassigned api-staging route from marketing worker"
-        else
-          echo "No conflicting route found, skipping"
-        fi
+        node -e '
+        const https = require("https");
+        const token = process.env.CLOUDFLARE_API_TOKEN;
+        
+        function request(url, method = "GET") {
+          return new Promise((resolve, reject) => {
+            const urlObj = new URL(url);
+            const options = {
+              hostname: urlObj.hostname,
+              path: urlObj.pathname + urlObj.search,
+              method: method,
+              headers: {
+                "Authorization": "Bearer " + token
+              }
+            };
+            const req = https.request(options, (res) => {
+              let data = "";
+              res.on("data", chunk => data += chunk);
+              res.on("end", () => resolve(data));
+            });
+            req.on("error", reject);
+            req.end();
+          });
+        }
+        
+        (async () => {
+          const zones = JSON.parse(await request("https://api.cloudflare.com/client/v4/zones?name=scratchsolidsolutions.org"));
+          const zoneId = zones.result[0].id;
+          const routes = JSON.parse(await request("https://api.cloudflare.com/client/v4/zones/" + zoneId + "/workers/routes"));
+          const route = routes.result.find(r => r.pattern === "api-staging.scratchsolidsolutions.org/*");
+          if (route) {
+            await request("https://api.cloudflare.com/client/v4/zones/" + zoneId + "/workers/routes/" + route.id, "DELETE");
+            console.log("Unassigned api-staging route from marketing worker");
+          } else {
+            console.log("No conflicting route found, skipping");
+          }
+        })();
+        '
     - name: Deploy to Cloudflare Workers (Staging)
       uses: cloudflare/wrangler-action@v3
       with:
