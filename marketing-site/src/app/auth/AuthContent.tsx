@@ -27,6 +27,9 @@ export default function AuthContent() {
   const [quoteContext, setQuoteContext] = useState<{ ref: string; service: string } | null>(null);
   const [consentAccepted, setConsentAccepted] = useState(false);
   const [infoMessage, setInfoMessage] = useState("");
+  const [resendEmail, setResendEmail] = useState("");
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendMessage, setResendMessage] = useState("");
 
   useEffect(() => {
     const message = searchParams.get('message');
@@ -124,13 +127,38 @@ export default function AuthContent() {
           router.push("/client-dashboard");
         }
       } else {
-        const errorData = await response.json() as { error?: string };
+        const errorData = await response.json() as { error?: string; code?: string };
         setError(errorData.error || "Authentication failed");
+        if (errorData.code === 'EMAIL_NOT_VERIFIED') {
+          setResendEmail(formData.email);
+        }
       }
     } catch {
       setError("Network error. Please try again.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    setResendLoading(true);
+    setResendMessage("");
+    try {
+      const response = await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: resendEmail }),
+      });
+      const data = await response.json() as { message?: string; error?: string };
+      if (response.ok) {
+        setResendMessage(data.message || "Email sent!");
+      } else {
+        setResendMessage(data.error || "Failed to resend");
+      }
+    } catch {
+      setResendMessage("Network error. Please try again.");
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -179,9 +207,30 @@ export default function AuthContent() {
               <p className="text-blue-700 text-sm">{infoMessage}</p>
             </div>
           )}
-          {error && (
+        {error && (
             <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-red-600 text-sm">{error}</p>
+              {error.includes('verify your email') && (
+                <div className="mt-3">
+                  <input
+                    type="email"
+                    value={resendEmail}
+                    onChange={(e) => setResendEmail(e.target.value)}
+                    placeholder="Enter your email"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm mb-2"
+                  />
+                  <button
+                    onClick={handleResendVerification}
+                    disabled={resendLoading}
+                    className="w-full px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {resendLoading ? "Sending..." : "Resend Verification Email"}
+                  </button>
+                  {resendMessage && (
+                    <p className="mt-2 text-xs text-green-600">{resendMessage}</p>
+                  )}
+                </div>
+              )}
             </div>
           )}
 

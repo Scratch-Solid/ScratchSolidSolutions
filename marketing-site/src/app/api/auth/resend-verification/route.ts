@@ -90,6 +90,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Email is already verified' }, { status: 400 });
     }
 
+    const resendCount = (user as any).verification_resend_count || 0;
+    if (resendCount >= 2) {
+      return NextResponse.json({ error: 'Maximum resend limit reached (2). Please contact support for assistance.' }, { status: 429 });
+    }
+
     const verifyToken = await createEmailVerificationToken(db, (user as any).id);
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://scratchsolidsolutions.org';
     const verifyLink = `${baseUrl}/api/auth/verify-email?token=${verifyToken}`;
@@ -101,8 +106,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to send verification email. Please contact support.' }, { status: 500 });
     }
 
+    await db.prepare(`UPDATE users SET verification_resend_count = verification_resend_count + 1 WHERE id = ?`).bind((user as any).id).run();
+
+    const remaining = 2 - (resendCount + 1);
     return NextResponse.json({
-      message: 'Verification email sent successfully. Please check your email.'
+      message: `Verification email sent successfully. Please check your email. (${remaining} resend${remaining !== 1 ? 's' : ''} remaining)`
     }, { status: 200 });
 
   } catch (error) {
