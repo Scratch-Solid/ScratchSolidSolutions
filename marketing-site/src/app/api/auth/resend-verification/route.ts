@@ -2,11 +2,13 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, getUserByEmail, createEmailVerificationToken } from "@/lib/db";
 import { sanitizeEmail } from "@/lib/sanitization";
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 
 // Direct Resend API call
 async function sendEmailVerificationEmailDirect(to: string, name: string, verifyLink: string) {
   try {
-    const apiKey = process.env.RESEND_API_KEY;
+    const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
+    const apiKey = (env as any)?.RESEND_API_KEY || process.env.RESEND_API_KEY;
     if (!apiKey) {
       console.error('RESEND_API_KEY not found in environment');
       return { success: false, error: 'Email service not configured' };

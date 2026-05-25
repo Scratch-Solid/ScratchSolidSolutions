@@ -6,11 +6,13 @@ import bcrypt from 'bcryptjs';
 import { logger } from "@/lib/logger";
 import { validateEmail, validatePassword } from "@/lib/validation";
 import { withRateLimit, rateLimits } from "@/lib/middleware";
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 
 // Direct Resend API call - bulletproof approach
 async function sendEmailVerificationEmailDirect(to: string, name: string, verifyLink: string) {
   try {
-    const apiKey = process.env.RESEND_API_KEY;
+    const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
+    const apiKey = (env as any)?.RESEND_API_KEY || process.env.RESEND_API_KEY;
     console.log('[EMAIL] RESEND_API_KEY exists:', !!apiKey);
     console.log('[EMAIL] RESEND_API_KEY length:', apiKey?.length || 0);
     
