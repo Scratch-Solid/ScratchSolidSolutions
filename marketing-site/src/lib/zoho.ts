@@ -1,16 +1,25 @@
-const ZOHO_ORG_ID = process.env.ZOHO_ORG_ID || '';
-const ZOHO_CLIENT_ID = process.env.ZOHO_CLIENT_ID || '';
-const ZOHO_CLIENT_SECRET = process.env.ZOHO_CLIENT_SECRET || '';
-const ZOHO_REFRESH_TOKEN = process.env.ZOHO_REFRESH_TOKEN || '';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
+
 let accessToken = '';
 let tokenExpiry = 0;
 
+async function getZohoCredentials() {
+  const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
+  return {
+    orgId: (env as any)?.ZOHO_ORG_ID || process.env.ZOHO_ORG_ID || '',
+    clientId: (env as any)?.ZOHO_CLIENT_ID || process.env.ZOHO_CLIENT_ID || '',
+    clientSecret: (env as any)?.ZOHO_CLIENT_SECRET || process.env.ZOHO_CLIENT_SECRET || '',
+    refreshToken: (env as any)?.ZOHO_REFRESH_TOKEN || process.env.ZOHO_REFRESH_TOKEN || '',
+  };
+}
+
 async function getZohoToken() {
   if (accessToken && Date.now() < tokenExpiry) return accessToken;
+  const creds = await getZohoCredentials();
   const response = await fetch('https://accounts.zoho.com/oauth/v2/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ refresh_token: ZOHO_REFRESH_TOKEN, client_id: ZOHO_CLIENT_ID, client_secret: ZOHO_CLIENT_SECRET, grant_type: 'refresh_token' }),
+    body: new URLSearchParams({ refresh_token: creds.refreshToken, client_id: creds.clientId, client_secret: creds.clientSecret, grant_type: 'refresh_token' }),
   });
   const json = await response.json() as { access_token: string; expires_in: number };
   accessToken = json.access_token;
@@ -20,7 +29,8 @@ async function getZohoToken() {
 
 async function zohoRequest(endpoint: string, method: string, body?: any) {
   const token = await getZohoToken();
-  const options: RequestInit = { method, headers: { 'Authorization': `Zoho-oauthtoken ${token}`, 'Content-Type': 'application/json', 'X-com-zoho-books-organizationid': ZOHO_ORG_ID } };
+  const creds = await getZohoCredentials();
+  const options: RequestInit = { method, headers: { 'Authorization': `Zoho-oauthtoken ${token}`, 'Content-Type': 'application/json', 'X-com-zoho-books-organizationid': creds.orgId } };
   if (body) options.body = JSON.stringify(body);
   return fetch(`https://books.zoho.com/api/v3${endpoint}`, options);
 }
@@ -127,26 +137,29 @@ export async function markEstimateAccepted(estimateId: string) {
 
 export async function getEstimatePdf(estimateId: string): Promise<Response> {
   const token = await getZohoToken();
+  const creds = await getZohoCredentials();
   return fetch(`https://books.zoho.com/api/v3/estimates/${estimateId}?accept=pdf`, {
     headers: {
       'Authorization': `Zoho-oauthtoken ${token}`,
-      'X-com-zoho-books-organizationid': ZOHO_ORG_ID,
+      'X-com-zoho-books-organizationid': creds.orgId,
     },
   });
 }
 
 export async function getCustomerStatementPdf(contactId: string): Promise<Response> {
   const token = await getZohoToken();
+  const creds = await getZohoCredentials();
   return fetch(`https://books.zoho.com/api/v3/contacts/${contactId}/statements?accept=pdf`, {
     headers: {
       'Authorization': `Zoho-oauthtoken ${token}`,
-      'X-com-zoho-books-organizationid': ZOHO_ORG_ID,
+      'X-com-zoho-books-organizationid': creds.orgId,
     },
   });
 }
 
 export async function getCustomerStatement(contactId: string, startDate?: string, endDate?: string) {
   const token = await getZohoToken();
+  const creds = await getZohoCredentials();
   let url = `https://books.zoho.com/api/v3/contacts/${contactId}/statements`;
   const params = new URLSearchParams();
   if (startDate) params.append('start_date', startDate);
@@ -156,7 +169,7 @@ export async function getCustomerStatement(contactId: string, startDate?: string
   const response = await fetch(url, {
     headers: {
       'Authorization': `Zoho-oauthtoken ${token}`,
-      'X-com-zoho-books-organizationid': ZOHO_ORG_ID,
+      'X-com-zoho-books-organizationid': creds.orgId,
     },
   });
   return response.json();
@@ -164,10 +177,11 @@ export async function getCustomerStatement(contactId: string, startDate?: string
 
 export async function getInvoicePdf(invoiceId: string): Promise<Response> {
   const token = await getZohoToken();
+  const creds = await getZohoCredentials();
   return fetch(`https://books.zoho.com/api/v3/invoices/${invoiceId}?accept=pdf`, {
     headers: {
       'Authorization': `Zoho-oauthtoken ${token}`,
-      'X-com-zoho-books-organizationid': ZOHO_ORG_ID,
+      'X-com-zoho-books-organizationid': creds.orgId,
     },
   });
 }

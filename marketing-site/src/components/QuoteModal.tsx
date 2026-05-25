@@ -343,8 +343,26 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
     }
   };
 
-  const handlePrintPdf = () => {
-    window.print();
+  const handlePrintPdf = async () => {
+    if (!quoteResult) return;
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`/api/quotes/${quoteResult.ref_number}/pdf`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+      });
+      if (!response.ok) throw new Error('Failed to download PDF');
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Quote-${quoteResult.ref_number}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('PDF download failed:', err);
+    }
   };
 
   const handleAccept = async () => {
@@ -914,7 +932,7 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
                       className="w-full py-2.5 bg-white border-2 border-gray-200 text-gray-600 font-semibold rounded-xl hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-sm"
                     >
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                      Download / Print PDF
+                      Download PDF
                     </button>
 
                     {/* Accept / Decline */}
