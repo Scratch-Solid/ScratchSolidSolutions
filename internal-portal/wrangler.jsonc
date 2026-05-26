@@ -6,10 +6,11 @@
 	"compatibility_flags": [
 		"nodejs_compat"
 	],
+	"pages_build_output_dir": ".open-next",
 	// Deploy trigger: Update to apply new scratchsolid-portal-db configuration
 	"assets": {
 		"directory": ".open-next/assets",
-		"binding": "ASSETS"
+		"binding": "PORTAL_ASSETS"
 	},
 	"d1_databases": [
 		{
