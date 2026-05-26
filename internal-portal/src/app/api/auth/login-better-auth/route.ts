@@ -27,24 +27,28 @@ export async function POST(request: NextRequest) {
     }
 
     // Debug: trace getCloudflareContext before getDb()
+    let debugInfo: any = {};
     try {
       const { getCloudflareContext } = await import('@opennextjs/cloudflare');
       const ctx = await getCloudflareContext({ async: true }) as any;
-      console.error('[LOGIN-DEBUG] env keys:', JSON.stringify(Object.keys(ctx?.env || {})));
-      console.error('[LOGIN-DEBUG] scratchsolid_db exists:', !!ctx?.env?.scratchsolid_db);
-      console.error('[LOGIN-DEBUG] scratchsolid_db type:', typeof ctx?.env?.scratchsolid_db);
+      debugInfo.envKeys = Object.keys(ctx?.env || {});
+      debugInfo.hasScratchsolidDb = !!ctx?.env?.scratchsolid_db;
+      debugInfo.scratchsolidDbType = typeof ctx?.env?.scratchsolid_db;
       if (ctx?.env?.scratchsolid_db) {
-        console.error('[LOGIN-DEBUG] scratchsolid_db has prepare:', typeof ctx.env.scratchsolid_db.prepare);
+        debugInfo.hasPrepare = typeof ctx.env.scratchsolid_db.prepare === 'function';
       }
+      console.error('[LOGIN-DEBUG] env keys:', JSON.stringify(debugInfo.envKeys));
+      console.error('[LOGIN-DEBUG] scratchsolid_db exists:', debugInfo.hasScratchsolidDb);
     } catch (e: any) {
-      console.error('[LOGIN-DEBUG] getCloudflareContext threw:', e.message, e.stack);
+      debugInfo.ctxError = e.message;
+      console.error('[LOGIN-DEBUG] getCloudflareContext threw:', e.message);
     }
 
     const db = await getDb();
     if (!db) {
       console.error('Database binding missing (expected scratchsolid_db or DB)');
       return withSecurityHeaders(NextResponse.json(
-        { success: false, error: 'Database unavailable' },
+        { success: false, error: 'Database unavailable', debug: debugInfo },
         { status: 503 }
       ), traceId);
     }
