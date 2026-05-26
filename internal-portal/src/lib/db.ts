@@ -209,7 +209,7 @@ export async function getRemainingLockoutTime(db: D1Database, identifier: string
 
 export async function validateSession(db: D1Database, token: string) {
   const session = await db.prepare(
-    `SELECT s.*, u.email, u.role, u.name FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.token = ? AND s.expires_at > datetime('now')`
+    `SELECT s.*, u.email, u.role, u.name, u.password_hash FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.token = ? AND s.expires_at > datetime('now')`
   ).bind(token).first();
   return session;
 }
