@@ -54,10 +54,15 @@ export async function POST(request: NextRequest) {
     }
 
     const newHash = (await bcrypt.hash(newPassword, 10)).replace('$2b$', '$2a$');
-    await db.prepare('UPDATE users SET password_hash = ?, password_needs_reset = 0, login_count = 0 WHERE id = ?').bind(newHash, user.id).run();
+    console.log('[CHANGE-PASSWORD] New password hash generated');
+
+    const updateResult = await db.prepare('UPDATE users SET password_hash = ?, password_needs_reset = 0, login_count = 0 WHERE id = ?').bind(newHash, user.id).run();
+    console.log('[CHANGE-PASSWORD] Update result:', updateResult);
 
     const currentToken = request.headers.get('Authorization')?.replace('Bearer ', '');
+    console.log('[CHANGE-PASSWORD] Revoking sessions, current token:', currentToken ? 'present' : 'missing');
     await revokeAllUserSessions(db, user.id, currentToken);
+    console.log('[CHANGE-PASSWORD] Sessions revoked');
 
     await logAuditEvent(db, {
       user_id: user.id,
@@ -67,10 +72,12 @@ export async function POST(request: NextRequest) {
       ip_address: request.headers.get('x-forwarded-for') || 'unknown',
       success: true
     });
+    console.log('[CHANGE-PASSWORD] Audit event logged');
 
     return withSecurityHeaders(NextResponse.json({ success: true }), traceId);
   } catch (err) {
-    console.error('change-password error', err);
+    console.error('[CHANGE-PASSWORD] Error:', err);
+    console.error('[CHANGE-PASSWORD] Error details:', JSON.stringify(err, Object.getOwnPropertyNames(err)));
     return withSecurityHeaders(NextResponse.json({ error: 'Failed to change password' }, { status: 500 }), traceId);
   }
 }
