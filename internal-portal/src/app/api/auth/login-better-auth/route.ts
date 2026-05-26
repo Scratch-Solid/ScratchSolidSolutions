@@ -108,6 +108,8 @@ export async function POST(request: NextRequest) {
     await db.prepare('ALTER TABLE users ADD COLUMN totp_secret TEXT').run().catch(() => {});
     await db.prepare('ALTER TABLE users ADD COLUMN backup_codes TEXT').run().catch(() => {});
     await db.prepare('ALTER TABLE users ADD COLUMN username TEXT').run().catch(() => {});
+    await db.prepare('ALTER TABLE users ADD COLUMN paysheet_code TEXT').run().catch(() => {});
+    await db.prepare('ALTER TABLE users ADD COLUMN department TEXT').run().catch(() => {});
     const meta = await db.prepare('SELECT password_needs_reset, login_count FROM users WHERE id = ?').bind(user.id).first();
     (user as any).password_needs_reset = (meta as any)?.password_needs_reset ?? user.password_needs_reset;
     (user as any).login_count = (meta as any)?.login_count ?? user.login_count;
