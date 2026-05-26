@@ -27,24 +27,24 @@ export async function POST(request: NextRequest) {
       return withSecurityHeaders(NextResponse.json({ error: 'Current and new password required' }, { status: 400 }), traceId);
     }
 
-    const existing = await db.prepare('SELECT password_hash, phone, username FROM users WHERE id = ?').bind(user.id).first();
-    if (!existing) {
-      return withSecurityHeaders(NextResponse.json({ error: 'User not found' }, { status: 404 }), traceId);
+    // Use the user object from withAuth middleware instead of querying again
+    const passwordHash = (user as any).password_hash;
+    if (!passwordHash) {
+      console.error('[CHANGE-PASSWORD] User has no password_hash in session data');
+      return withSecurityHeaders(NextResponse.json({ error: 'User data incomplete' }, { status: 500 }), traceId);
     }
 
-    console.log('[CHANGE-PASSWORD] Stored phone from DB:', (existing as any).phone);
-    console.log('[CHANGE-PASSWORD] Stored phone digits:', (existing as any).phone?.replace(/\D/g, ''));
-    console.log('[CHANGE-PASSWORD] Username:', (existing as any).username);
+    console.log('[CHANGE-PASSWORD] Using password_hash from session user object');
 
     // Try comparing with raw input first (like login does)
-    const rawMatch = await bcrypt.compare(currentPassword, (existing as any).password_hash);
+    const rawMatch = await bcrypt.compare(currentPassword, passwordHash);
     console.log('[CHANGE-PASSWORD] Raw password match result:', rawMatch);
 
     // If raw doesn't match, try normalized (digits only)
     if (!rawMatch) {
       const normalizedCurrentPassword = currentPassword.replace(/\D/g, '');
       console.log('[CHANGE-PASSWORD] Normalized current password:', normalizedCurrentPassword);
-      const normalizedMatch = await bcrypt.compare(normalizedCurrentPassword, (existing as any).password_hash);
+      const normalizedMatch = await bcrypt.compare(normalizedCurrentPassword, passwordHash);
       console.log('[CHANGE-PASSWORD] Normalized password match result:', normalizedMatch);
 
       if (!normalizedMatch) {
