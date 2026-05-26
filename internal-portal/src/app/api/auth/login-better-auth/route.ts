@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
     if (!db) {
       console.error('Database binding missing (expected scratchsolid_db or DB)');
       return withSecurityHeaders(NextResponse.json(
-        { success: false, error: 'Database unavailable', debug: debugInfo },
+        { success: false, error: 'Database unavailable v2', debug: debugInfo },
         { status: 503 }
       ), traceId);
     }
