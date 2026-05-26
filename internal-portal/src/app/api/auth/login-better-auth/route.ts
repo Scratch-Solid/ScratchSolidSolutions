@@ -26,6 +26,20 @@ export async function POST(request: NextRequest) {
       ), traceId);
     }
 
+    // Debug: trace getCloudflareContext before getDb()
+    try {
+      const { getCloudflareContext } = await import('@opennextjs/cloudflare');
+      const ctx = await getCloudflareContext({ async: true }) as any;
+      console.error('[LOGIN-DEBUG] env keys:', JSON.stringify(Object.keys(ctx?.env || {})));
+      console.error('[LOGIN-DEBUG] scratchsolid_db exists:', !!ctx?.env?.scratchsolid_db);
+      console.error('[LOGIN-DEBUG] scratchsolid_db type:', typeof ctx?.env?.scratchsolid_db);
+      if (ctx?.env?.scratchsolid_db) {
+        console.error('[LOGIN-DEBUG] scratchsolid_db has prepare:', typeof ctx.env.scratchsolid_db.prepare);
+      }
+    } catch (e: any) {
+      console.error('[LOGIN-DEBUG] getCloudflareContext threw:', e.message, e.stack);
+    }
+
     const db = await getDb();
     if (!db) {
       console.error('Database binding missing (expected scratchsolid_db or DB)');
