@@ -6,10 +6,7 @@
 	"compatibility_flags": [
 		"nodejs_compat"
 	],
-	"assets": {
-		"directory": ".open-next/assets",
-		"binding": "ASSETS"
-	},
+	"pages_build_output_dir": ".open-next",
 	"d1_databases": [
 		{
 			"binding": "scratchsolid_db",
