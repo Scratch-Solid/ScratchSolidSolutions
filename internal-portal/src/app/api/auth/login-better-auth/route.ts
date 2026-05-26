@@ -42,10 +42,10 @@ export async function POST(request: NextRequest) {
       return withSecurityHeaders(NextResponse.json({ success: false, error: 'Database not initialized' }, { status: 503 }), traceId);
     }
 
-    // Find user by email or username
+    // Find user by email, username, or paysheet_code
     let user;
     try {
-      user = await db.prepare('SELECT * FROM users WHERE email = ? OR username = ?').bind(identifier, identifier).first();
+      user = await db.prepare('SELECT * FROM users WHERE email = ? OR username = ? OR paysheet_code = ?').bind(identifier, identifier, identifier).first();
     } catch (dbError) {
       console.error('Database error during user lookup:', dbError);
       return withSecurityHeaders(NextResponse.json(
