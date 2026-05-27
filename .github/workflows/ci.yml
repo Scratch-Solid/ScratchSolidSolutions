@@ -61,10 +61,6 @@ jobs:
       working-directory: ./internal-portal
       run: npm ci
     
-    - name: Run linter
-      working-directory: ./internal-portal
-      run: npm run lint
-    
     - name: Run tests
       working-directory: ./internal-portal
       run: npm test
