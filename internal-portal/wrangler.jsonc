@@ -66,6 +66,9 @@
 		"enabled": true
 	},
 	"env": {
+		"production": {
+			"name": "scratchsolid-portal"
+		},
 		"staging": {
 			"routes": [
 				{
