@@ -12,6 +12,10 @@ export const auth = betterAuth({
     throw new Error('BETTER_AUTH_SECRET environment variable must be set');
   })(),
   database: new D1Adapter(process.env.DB as any),
+  emailAndPassword: {
+    enabled: true,
+    requireEmailVerification: false,
+  },
   session: {
     expiresIn: 60 * 60 * 24, // 24 hours
     updateAge: 60 * 60 * 12, // 12 hours
