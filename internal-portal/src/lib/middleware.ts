@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, validateSession } from './db';
 import { validateCsrfToken, generateCsrfToken } from './csrf';
+import { getUserPermissions, hasPermission, hasResourcePermission, hasRoleLevel, UserPermissions } from './rbac';
 
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
 const RATE_LIMIT_MAX = 100; // requests per window per IP
@@ -376,6 +377,190 @@ export async function withAuth(request: NextRequest, allowedRoles?: string[]): P
   }
 
   return { user: session, db };
+}
+
+// RBAC Middleware: Check if user has specific permission
+export async function withPermission(
+  request: NextRequest,
+  permission: string
+): Promise<{ user: any; db: D1Database; permissions: UserPermissions } | NextResponse> {
+  const rateLimitResponse = await withRateLimit(request);
+  if (rateLimitResponse) return rateLimitResponse;
+
+  const db = await getDb();
+  if (!db) {
+    return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
+  }
+
+  const token = request.headers.get('Authorization')?.replace('Bearer ', '');
+  if (!token) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const session = await validateSession(db, token);
+  if (!session) {
+    return NextResponse.json({ error: 'Session expired or invalid' }, { status: 401 });
+  }
+
+  const userId = (session as any).user_id || (session as any).id;
+  const userPermissions = await getUserPermissions(db, userId);
+
+  if (!hasPermission(userPermissions, permission)) {
+    return NextResponse.json({ 
+      error: 'Forbidden - insufficient permissions',
+      required: permission 
+    }, { status: 403 });
+  }
+
+  return { user: session, db, permissions: userPermissions };
+}
+
+// RBAC Middleware: Check if user has resource permission
+export async function withResourcePermission(
+  request: NextRequest,
+  resource: string,
+  action: string
+): Promise<{ user: any; db: D1Database; permissions: UserPermissions } | NextResponse> {
+  const rateLimitResponse = await withRateLimit(request);
+  if (rateLimitResponse) return rateLimitResponse;
+
+  const db = await getDb();
+  if (!db) {
+    return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
+  }
+
+  const token = request.headers.get('Authorization')?.replace('Bearer ', '');
+  if (!token) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const session = await validateSession(db, token);
+  if (!session) {
+    return NextResponse.json({ error: 'Session expired or invalid' }, { status: 401 });
+  }
+
+  const userId = (session as any).user_id || (session as any).id;
+  const userPermissions = await getUserPermissions(db, userId);
+
+  if (!hasResourcePermission(userPermissions, resource, action)) {
+    return NextResponse.json({ 
+      error: 'Forbidden - insufficient permissions',
+      required: `${resource}.${action}`
+    }, { status: 403 });
+  }
+
+  return { user: session, db, permissions: userPermissions };
+}
+
+// RBAC Middleware: Check if user has minimum role level
+export async function withRoleLevel(
+  request: NextRequest,
+  requiredLevel: number
+): Promise<{ user: any; db: D1Database; permissions: UserPermissions } | NextResponse> {
+  const rateLimitResponse = await withRateLimit(request);
+  if (rateLimitResponse) return rateLimitResponse;
+
+  const db = await getDb();
+  if (!db) {
+    return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
+  }
+
+  const token = request.headers.get('Authorization')?.replace('Bearer ', '');
+  if (!token) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const session = await validateSession(db, token);
+  if (!session) {
+    return NextResponse.json({ error: 'Session expired or invalid' }, { status: 401 });
+  }
+
+  const userId = (session as any).user_id || (session as any).id;
+  const userPermissions = await getUserPermissions(db, userId);
+
+  if (!hasRoleLevel(userPermissions, requiredLevel)) {
+    return NextResponse.json({ 
+      error: 'Forbidden - insufficient role level',
+      required: requiredLevel,
+      current: userPermissions.maxRoleLevel
+    }, { status: 403 });
+  }
+
+  return { user: session, db, permissions: userPermissions };
+}
+
+// RBAC Middleware: Check if user has any of the specified permissions
+export async function withAnyPermission(
+  request: NextRequest,
+  permissions: string[]
+): Promise<{ user: any; db: D1Database; userPermissions: UserPermissions } | NextResponse> {
+  const rateLimitResponse = await withRateLimit(request);
+  if (rateLimitResponse) return rateLimitResponse;
+
+  const db = await getDb();
+  if (!db) {
+    return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
+  }
+
+  const token = request.headers.get('Authorization')?.replace('Bearer ', '');
+  if (!token) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const session = await validateSession(db, token);
+  if (!session) {
+    return NextResponse.json({ error: 'Session expired or invalid' }, { status: 401 });
+  }
+
+  const userId = (session as any).user_id || (session as any).id;
+  const userPermissions = await getUserPermissions(db, userId);
+
+  const hasAny = permissions.some(p => hasPermission(userPermissions, p));
+  if (!hasAny) {
+    return NextResponse.json({ 
+      error: 'Forbidden - insufficient permissions',
+      required: permissions
+    }, { status: 403 });
+  }
+
+  return { user: session, db, userPermissions };
+}
+
+// RBAC Middleware: Check if user has all of the specified permissions
+export async function withAllPermissions(
+  request: NextRequest,
+  permissions: string[]
+): Promise<{ user: any; db: D1Database; userPermissions: UserPermissions } | NextResponse> {
+  const rateLimitResponse = await withRateLimit(request);
+  if (rateLimitResponse) return rateLimitResponse;
+
+  const db = await getDb();
+  if (!db) {
+    return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
+  }
+
+  const token = request.headers.get('Authorization')?.replace('Bearer ', '');
+  if (!token) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const session = await validateSession(db, token);
+  if (!session) {
+    return NextResponse.json({ error: 'Session expired or invalid' }, { status: 401 });
+  }
+
+  const userId = (session as any).user_id || (session as any).id;
+  const userPermissions = await getUserPermissions(db, userId);
+
+  const hasAll = permissions.every(p => hasPermission(userPermissions, p));
+  if (!hasAll) {
+    return NextResponse.json({ 
+      error: 'Forbidden - insufficient permissions',
+      required: permissions
+    }, { status: 403 });
+  }
+
+  return { user: session, db, userPermissions };
 }
 
 export async function withCSRF(request: NextRequest): Promise<NextResponse | null> {
