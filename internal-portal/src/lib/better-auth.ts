@@ -16,6 +16,9 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false,
+    sendResetPassword: async () => {
+      // Custom email sending logic can be added here
+    },
   },
   session: {
     expiresIn: 60 * 60 * 24, // 24 hours
@@ -24,7 +27,6 @@ export const auth = betterAuth({
       enabled: true,
       maxAge: 5 * 60, // 5 minutes
     },
-    maxAge: 60 * 60 * 24, // 24 hours
     concurrentSessions: {
       enabled: true,
       maxSessions: 3, // Maximum concurrent sessions per user
