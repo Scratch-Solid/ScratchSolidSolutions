@@ -79,7 +79,7 @@ jobs:
         workingDirectory: internal-portal
         wranglerVersion: 4.93.0
       env:
-        CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        CLOUDFLARE_ACCOUNT_ID: b2a8cb0641daf69d84e59ec101d80edb
 
   deploy-backend-worker-production:
     name: Deploy Backend Worker to Production
