@@ -1,9 +1,10 @@
 import { betterAuth } from "better-auth";
-import { D1Adapter } from "better-auth/adapters/d1";
 
 // Better Auth configuration
 // Note: dash plugin removed - requires Better Auth dashboard setup
 // Can be added later if dashboard is needed
+// Note: D1Adapter not available in current Better-Auth version
+// Using database adapter with custom D1 binding
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL || (() => {
     throw new Error('BETTER_AUTH_URL environment variable must be set');
@@ -11,7 +12,7 @@ export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET || (() => {
     throw new Error('BETTER_AUTH_SECRET environment variable must be set');
   })(),
-  database: new D1Adapter(process.env.DB as any),
+  database: process.env.DB as any,
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false,
