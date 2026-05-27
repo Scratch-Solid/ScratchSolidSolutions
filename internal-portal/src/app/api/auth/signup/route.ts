@@ -24,10 +24,10 @@ export async function POST(request: NextRequest) {
   if (csrfResult) return csrfResult;
 
   // Get client identifier for rate limiting
-  const clientId = request.headers.get('x-forwarded-for') || 
-                   request.headers.get('x-real-ip') || 
+  const clientId = request.headers.get('x-forwarded-for') ||
+                   request.headers.get('x-real-ip') ||
                    'anonymous';
-  
+
   // Check rate limit (auth endpoints have stricter limits)
   const rateLimitResult = checkRateLimit(clientId, 'auth');
   if (!rateLimitResult.allowed) {
@@ -39,9 +39,15 @@ export async function POST(request: NextRequest) {
     return response;
   }
 
+  // CRITICAL: Get DB BEFORE consuming request stream to avoid AsyncLocalStorage context loss in Node.js compat
+  const db = await getDb();
+  if (!db) {
+    return createSecurityError('Database unavailable', 503);
+  }
+
   try {
     const body = await request.json();
-    
+
     // Validate request body
     const validationResult: any = validateRequestBody(userSignupSchema, body);
     if (!validationResult.success) {
@@ -49,11 +55,6 @@ export async function POST(request: NextRequest) {
     }
 
     const { name, email, password, role, phone, address, business_name, business_info } = validationResult.data;
-
-    const db = await getDb();
-    if (!db) {
-      return createSecurityError('Database unavailable', 503);
-    }
 
     // Hash password
     const passwordHash = await bcrypt.hash(password, 10);

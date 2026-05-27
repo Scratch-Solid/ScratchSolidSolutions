@@ -57,11 +57,16 @@ jobs:
     - name: Install dependencies
       working-directory: ./internal-portal
       run: npm ci
-    
+
+    - name: Install Wrangler
+      run: npm install -g wrangler@4.93.0
+
     - name: Build
       working-directory: ./internal-portal
       run: npm run cloudflare-build
-    
+      env:
+        CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
     - name: Deploy to Cloudflare Workers (Production)
       uses: cloudflare/wrangler-action@v3
       with:
@@ -69,6 +74,8 @@ jobs:
         command: deploy
         workingDirectory: internal-portal
         wranglerVersion: 4.93.0
+      env:
+        CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
   deploy-backend-worker-production:
     name: Deploy Backend Worker to Production

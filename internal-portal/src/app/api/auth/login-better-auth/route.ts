@@ -9,11 +9,21 @@ import { withSecurityHeaders, withTracing, withRateLimit } from '@/lib/middlewar
 
 export async function POST(request: NextRequest) {
   const traceId = withTracing(request);
-  
+
   // Apply rate limiting
   const rateLimitResponse = await withRateLimit(request);
   if (rateLimitResponse) return rateLimitResponse;
-  
+
+  // CRITICAL: Get DB BEFORE consuming request stream to avoid AsyncLocalStorage context loss in Node.js compat
+  const db = await getDb();
+  if (!db) {
+    console.error('Database binding missing (expected scratchsolid_db or DB)');
+    return withSecurityHeaders(NextResponse.json(
+      { success: false, error: 'Database unavailable' },
+      { status: 503 }
+    ), traceId);
+  }
+
   try {
     const body = await request.json() as { email?: string; password?: string; username?: string; identifier?: string };
     const identifier = body.identifier || body.username || body.email;
@@ -23,33 +33,6 @@ export async function POST(request: NextRequest) {
       return withSecurityHeaders(NextResponse.json(
         { success: false, error: 'Email/username and password required' },
         { status: 400 }
-      ), traceId);
-    }
-
-    // Debug: trace getCloudflareContext before getDb()
-    let debugInfo: any = {};
-    try {
-      const { getCloudflareContext } = await import('@opennextjs/cloudflare');
-      const ctx = await getCloudflareContext({ async: true }) as any;
-      debugInfo.envKeys = Object.keys(ctx?.env || {});
-      debugInfo.hasScratchsolidDb = !!ctx?.env?.scratchsolid_db;
-      debugInfo.scratchsolidDbType = typeof ctx?.env?.scratchsolid_db;
-      if (ctx?.env?.scratchsolid_db) {
-        debugInfo.hasPrepare = typeof ctx.env.scratchsolid_db.prepare === 'function';
-      }
-      console.error('[LOGIN-DEBUG] env keys:', JSON.stringify(debugInfo.envKeys));
-      console.error('[LOGIN-DEBUG] scratchsolid_db exists:', debugInfo.hasScratchsolidDb);
-    } catch (e: any) {
-      debugInfo.ctxError = e.message;
-      console.error('[LOGIN-DEBUG] getCloudflareContext threw:', e.message);
-    }
-
-    const db = await getDb();
-    if (!db) {
-      console.error('Database binding missing (expected scratchsolid_db or DB)');
-      return withSecurityHeaders(NextResponse.json(
-        { success: false, error: 'Database unavailable v2', debug: debugInfo },
-        { status: 503 }
       ), traceId);
     }
 
