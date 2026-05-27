@@ -1,16 +1,34 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, logAuditEvent } from '@/lib/db';
-import { verifySync } from 'otplib';
+import { getDb } from '@/lib/db';
+import { verifyAccessToken, verifyTOTP, logAuthEvent } from '@/lib/auth';
 import crypto from 'crypto';
 
+/**
+ * Verify 2FA Endpoint
+ * 
+ * Verifies TOTP code or backup code during login or 2FA setup.
+ * Updated to work with JWT-based authentication.
+ */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json() as { preAuthToken?: string; code?: string; backupCode?: string };
-    const { preAuthToken, code, backupCode } = body;
+    const body = await request.json() as { code?: string; backupCode?: string };
+    const { code, backupCode } = body;
 
-    if (!preAuthToken || (!code && !backupCode)) {
-      return NextResponse.json({ error: 'preAuthToken and code or backupCode are required' }, { status: 400 });
+    if (!code && !backupCode) {
+      return NextResponse.json({ error: 'code or backupCode is required' }, { status: 400 });
+    }
+
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Authorization header required' }, { status: 401 });
+    }
+
+    const token = authHeader.substring(7);
+    const decoded = verifyAccessToken(token);
+
+    if (!decoded) {
+      return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 });
     }
 
     const db = await getDb();
@@ -18,78 +36,60 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
     }
 
-    const session = await db.prepare(
-      `SELECT s.user_id, u.email, u.role, u.name, u.username, u.paysheet_code, u.totp_secret, u.backup_codes, u.password_needs_reset
-       FROM sessions s JOIN users u ON s.user_id = u.id
-       WHERE s.token = ? AND s.expires_at > datetime('now')`
-    ).bind('pre:' + preAuthToken).first();
-
-    if (!session) {
-      return NextResponse.json({ error: 'Invalid or expired pre-auth token' }, { status: 401 });
-    }
-
-    const ip = request.headers.get('x-forwarded-for') || 'unknown';
+    const ip = request.headers.get('cf-connecting-ip') || 
+               request.headers.get('x-forwarded-for') || 
+               'unknown';
     const ua = request.headers.get('user-agent') || 'unknown';
 
-    if (code) {
-      const secret = (session as any).totp_secret;
-      if (!secret) {
-        return NextResponse.json({ error: '2FA not configured' }, { status: 400 });
-      }
-      const result = verifySync({ token: code, secret });
-      const isValid = typeof result === 'object' ? result.valid : result;
-      if (!isValid) {
-        await logAuditEvent(db, {
-          user_id: (session as any).user_id,
-          action: '2fa_verify_failed',
-          ip_address: ip, user_agent: ua, success: false
-        });
-        return NextResponse.json({ error: 'Invalid 2FA code' }, { status: 401 });
-      }
-    } else if (backupCode) {
-      const storedHashes: string[] = JSON.parse((session as any).backup_codes || '[]');
-      const incoming = crypto.createHash('sha256').update(backupCode.toUpperCase()).digest('hex');
-      const idx = storedHashes.indexOf(incoming);
-      if (idx === -1) {
-        await logAuditEvent(db, {
-          user_id: (session as any).user_id,
-          action: '2fa_backup_failed',
-          ip_address: ip, user_agent: ua, success: false
-        });
-        return NextResponse.json({ error: 'Invalid backup code' }, { status: 401 });
-      }
-      storedHashes.splice(idx, 1);
-      await db.prepare('UPDATE users SET backup_codes = ? WHERE id = ?')
-        .bind(JSON.stringify(storedHashes), (session as any).user_id).run();
+    // Get user's 2FA settings
+    const totpRecord = await db.prepare(
+      'SELECT * FROM user_2fa WHERE user_id = ?'
+    ).bind(decoded.userId).first();
+
+    if (!totpRecord) {
+      return NextResponse.json({ error: '2FA not configured' }, { status: 400 });
     }
 
-    await db.prepare('DELETE FROM sessions WHERE token = ?').bind('pre:' + preAuthToken).run();
+    if (!(totpRecord as any).enabled) {
+      return NextResponse.json({ error: '2FA is not enabled for this account' }, { status: 400 });
+    }
 
-    const sessionToken = crypto.randomUUID() + crypto.randomUUID().replace(/-/g, '');
-    await db.prepare(
-      `INSERT INTO sessions (user_id, token, expires_at) VALUES (?, ?, datetime('now', '+7 days'))`
-    ).bind((session as any).user_id, sessionToken).run();
+    if (code) {
+      const secret = (totpRecord as any).secret;
+      const isValid = verifyTOTP(code, secret);
+      
+      if (!isValid) {
+        await logAuthEvent(db, decoded.userId, '2fa_verify_failed', ip, ua);
+        return NextResponse.json({ error: 'Invalid 2FA code' }, { status: 401 });
+      }
 
-    await logAuditEvent(db, {
-      user_id: (session as any).user_id,
-      action: '2fa_verify_success',
-      ip_address: ip, user_agent: ua, success: true
-    });
+      // Update last used timestamp
+      await db.prepare(
+        'UPDATE user_2fa SET last_used_at = ? WHERE user_id = ?'
+      ).bind(Math.floor(Date.now() / 1000), decoded.userId).run();
+
+    } else if (backupCode) {
+      const storedCodes: string[] = JSON.parse((totpRecord as any).backup_codes || '[]');
+      const incoming = backupCode.toUpperCase();
+      const idx = storedCodes.indexOf(incoming);
+      
+      if (idx === -1) {
+        await logAuthEvent(db, decoded.userId, '2fa_backup_failed', ip, ua);
+        return NextResponse.json({ error: 'Invalid backup code' }, { status: 401 });
+      }
+
+      // Remove used backup code
+      storedCodes.splice(idx, 1);
+      await db.prepare(
+        'UPDATE user_2fa SET backup_codes = ? WHERE user_id = ?'
+      ).bind(JSON.stringify(storedCodes), decoded.userId).run();
+    }
+
+    await logAuthEvent(db, decoded.userId, '2fa_verify_success', ip, ua);
 
     return NextResponse.json({
       success: true,
-      token: sessionToken,
-      role: (session as any).role,
-      username: (session as any).username || (session as any).email,
-      user_id: String((session as any).user_id),
-      paysheet_code: (session as any).paysheet_code || '',
-      mustChangePassword: (session as any).password_needs_reset === 1,
-      user: {
-        id: (session as any).user_id,
-        email: (session as any).email,
-        name: (session as any).name,
-        role: (session as any).role
-      }
+      message: '2FA verified successfully'
     });
   } catch (error) {
     console.error('2FA verify error:', error);

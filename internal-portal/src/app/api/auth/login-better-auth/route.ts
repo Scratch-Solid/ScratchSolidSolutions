@@ -1,17 +1,30 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import {
+  checkRateLimit,
+  isUserLockedOut,
+  recordFailedAttempt,
+  clearFailedAttempts,
+  verifyPassword,
+  generateAccessToken,
+  generateRefreshToken,
+  hashPassword,
+  logAuthEvent,
+  getUserPermissions,
+  isSuperuser,
+} from '@/lib/auth';
 
 /**
- * Custom login endpoint - temporarily restored due to Better-Auth D1 integration issues
+ * World-Class Login Endpoint
  * 
- * Better-Auth is not recognizing the D1 database adapter, resulting in
- * "Email and password is not enabled" error. This endpoint provides
- * working authentication while Better-Auth integration is debugged.
- * 
- * TODO: Remove this endpoint once Better-Auth D1 integration is working
+ * Features:
+ * - Rate limiting (IP-based)
+ * - Brute force protection with exponential backoff
+ * - Secure session management with refresh tokens
+ * - RBAC integration (permissions returned in response)
+ * - Comprehensive audit logging
+ * - Secure token generation with JWT
  */
 export async function POST(request: NextRequest) {
   try {
@@ -22,6 +35,20 @@ export async function POST(request: NextRequest) {
         success: false,
         error: 'Email and password are required'
       }, { status: 400 });
+    }
+
+    // Get client IP for rate limiting
+    const ip = request.headers.get('cf-connecting-ip') || 
+               request.headers.get('x-forwarded-for') || 
+               'unknown';
+    const userAgent = request.headers.get('user-agent') || 'unknown';
+
+    // Check rate limit
+    if (!checkRateLimit(ip)) {
+      return NextResponse.json({
+        success: false,
+        error: 'Too many requests. Please try again later.'
+      }, { status: 429 });
     }
 
     const db = await getDb();
@@ -38,42 +65,92 @@ export async function POST(request: NextRequest) {
     ).bind(email).first();
 
     if (!userResult) {
+      // Record failed attempt for IP
+      recordFailedAttempt(ip);
+      await logAuthEvent(db, null, 'login_failed', ip, userAgent, { email });
+      
       return NextResponse.json({
         success: false,
         error: 'Invalid credentials'
       }, { status: 401 });
+    }
+
+    // Check if user is locked out
+    if (userResult.locked_until && userResult.locked_until > Math.floor(Date.now() / 1000)) {
+      return NextResponse.json({
+        success: false,
+        error: 'Account is temporarily locked due to too many failed login attempts. Please try again later.'
+      }, { status: 423 });
     }
 
     // Verify password
-    const passwordMatch = await bcrypt.compare(password, userResult.password_hash);
+    const passwordMatch = await verifyPassword(password, userResult.password_hash);
     if (!passwordMatch) {
+      // Increment failed login attempts
+      const newAttempts = (userResult.failed_login_attempts || 0) + 1;
+      let lockedUntil = null;
+      
+      if (newAttempts >= 5) {
+        lockedUntil = Math.floor(Date.now() / 1000) + (15 * 60); // Lock for 15 minutes
+      }
+
+      await db.prepare(
+        'UPDATE users SET failed_login_attempts = ?, locked_until = ? WHERE id = ?'
+      ).bind(newAttempts, lockedUntil, userResult.id).run();
+
+      recordFailedAttempt(ip);
+      await logAuthEvent(db, userResult.id, 'login_failed', ip, userAgent, { email });
+      
       return NextResponse.json({
         success: false,
         error: 'Invalid credentials'
       }, { status: 401 });
     }
 
-    // Generate JWT token
-    const token = jwt.sign(
-      { userId: userResult.id, email: userResult.email },
-      process.env.JWT_SECRET || 'fallback-secret',
-      { expiresIn: '24h' }
-    );
-
-    // Update login count
+    // Clear failed attempts on successful login
     await db.prepare(
-      'UPDATE users SET login_count = login_count + 1 WHERE id = ?'
-    ).bind(userResult.id).run();
+      'UPDATE users SET failed_login_attempts = 0, locked_until = NULL, last_login_at = ?, last_login_ip = ? WHERE id = ?'
+    ).bind(Math.floor(Date.now() / 1000), ip, userResult.id).run();
+
+    clearFailedAttempts(ip);
+
+    // Generate tokens
+    const accessToken = generateAccessToken(userResult.id, userResult.email, userResult.role);
+    const refreshToken = generateRefreshToken(userResult.id);
+    const refreshTokenHash = await hashPassword(refreshToken);
+    const tokenId = refreshToken.split('.')[1]; // Extract token ID from JWT
+
+    // Store refresh token in database
+    await db.prepare(
+      `INSERT INTO refresh_tokens (user_id, token_id, token_hash, expires_at, ip_address, user_agent)
+       VALUES (?, ?, ?, ?, ?, ?)`
+    ).bind(
+      userResult.id,
+      tokenId,
+      refreshTokenHash,
+      Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60), // 7 days
+      ip,
+      userAgent
+    ).run();
+
+    // Get user permissions
+    const permissions = await getUserPermissions(db, userResult.id);
+    const superuser = await isSuperuser(db, userResult.id);
+
+    // Log successful login
+    await logAuthEvent(db, userResult.id, 'login_success', ip, userAgent, { email });
 
     return NextResponse.json({
       success: true,
-      token,
+      accessToken,
+      refreshToken,
       user: {
         id: userResult.id,
         email: userResult.email,
         name: userResult.name,
         role: userResult.role,
-        is_superuser: userResult.is_superuser,
+        is_superuser: superuser,
+        permissions,
       }
     });
   } catch (error) {
