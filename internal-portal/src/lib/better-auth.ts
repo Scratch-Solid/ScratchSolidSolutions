@@ -1,10 +1,11 @@
 import { betterAuth } from "better-auth";
+import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 // Better Auth configuration
 // Note: dash plugin removed - requires Better Auth dashboard setup
 // Can be added later if dashboard is needed
-// Using native Better-Auth D1 support via Kysely
+// Using Drizzle adapter for D1 database integration
 // Create auth instance function to handle async database initialization
 export async function createAuth() {
   const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
@@ -28,12 +29,10 @@ export async function createAuth() {
     secret: process.env.BETTER_AUTH_SECRET || (() => {
       throw new Error('BETTER_AUTH_SECRET environment variable must be set');
     })(),
-    database: {
-      dialect: "sqlite",
-      type: "d1",
-      schema: {},
-      adapter: async () => db,
-    },
+    database: drizzleAdapter(db as any, {
+      provider: "sqlite",
+      usePlural: true,
+    }),
     emailAndPassword: {
       enabled: true,
       requireEmailVerification: false,

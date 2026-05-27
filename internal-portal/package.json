@@ -21,6 +21,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@better-auth/drizzle-adapter": "^1.6.11",
     "@better-auth/infra": "^0.2.8",
     "@better-auth/sso": "^1.6.11",
     "@opennextjs/cloudflare": "^1.19.10",
@@ -34,6 +35,7 @@
     "better-auth-cloudflare": "^0.3.0",
     "canvas-confetti": "^1.9.4",
     "dompurify": "^3.4.3",
+    "drizzle-orm": "^0.45.2",
     "eslint": "^9.39.4",
     "eslint-config-next": "^16.2.4",
     "jsonwebtoken": "^9.0.3",
