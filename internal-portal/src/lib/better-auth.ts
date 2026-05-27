@@ -21,7 +21,13 @@ export async function createAuth() {
   return betterAuth({
     ...withCloudflare(
       {
-        d1Native: db,
+        d1: {
+          db,
+          options: {
+            usePlural: true,
+            debugLogs: true,
+          },
+        },
       },
       {
         baseURL: process.env.BETTER_AUTH_URL || (() => {
