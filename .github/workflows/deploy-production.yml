@@ -63,7 +63,7 @@ jobs:
 
     - name: Clean build artifacts
       working-directory: ./internal-portal
-      run: rm -rf .open-next
+      run: rm -rf .open-next .next node_modules/.cache
 
     - name: Build
       working-directory: ./internal-portal
