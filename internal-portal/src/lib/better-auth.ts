@@ -6,6 +6,8 @@ import { getDb } from "./db";
 // Can be added later if dashboard is needed
 // Note: D1Adapter not available in current Better-Auth version
 // Using database binding directly from Cloudflare context
+const db = getDb();
+
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL || (() => {
     throw new Error('BETTER_AUTH_URL environment variable must be set');
@@ -13,13 +15,7 @@ export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET || (() => {
     throw new Error('BETTER_AUTH_SECRET environment variable must be set');
   })(),
-  database: async () => {
-    const db = await getDb();
-    if (!db) {
-      throw new Error('Database not available');
-    }
-    return db;
-  },
+  database: db as any,
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false,
