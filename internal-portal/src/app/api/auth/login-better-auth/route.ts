@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
   if (!db) {
     console.error('Database binding missing (expected scratchsolid_db or DB)');
     return withSecurityHeaders(NextResponse.json(
-      { success: false, error: 'Database unavailable v7 - local wrangler deploy test' },
+      { success: false, error: 'Database unavailable' },
       { status: 503 }
     ), traceId);
   }
