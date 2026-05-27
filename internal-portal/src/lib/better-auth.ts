@@ -18,16 +18,12 @@ export async function createAuth() {
     throw new Error('D1 database binding not found');
   }
 
+  console.log('D1 database found:', !!db);
+
   return betterAuth({
     ...withCloudflare(
       {
-        d1: {
-          db,
-          options: {
-            usePlural: true,
-            debugLogs: true,
-          },
-        },
+        d1Native: db,
       },
       {
         baseURL: process.env.BETTER_AUTH_URL || (() => {
