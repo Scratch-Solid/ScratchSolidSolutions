@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
+import { drizzle } from "drizzle-orm/d1";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 // Better Auth configuration
@@ -22,6 +23,9 @@ export async function createAuth() {
   console.log('D1 database type:', typeof db);
   console.log('D1 database has prepare:', typeof (db as any).prepare);
 
+  // Create Drizzle client from D1 binding
+  const drizzleDb = drizzle(db);
+
   return betterAuth({
     baseURL: process.env.BETTER_AUTH_URL || (() => {
       throw new Error('BETTER_AUTH_URL environment variable must be set');
@@ -29,7 +33,7 @@ export async function createAuth() {
     secret: process.env.BETTER_AUTH_SECRET || (() => {
       throw new Error('BETTER_AUTH_SECRET environment variable must be set');
     })(),
-    database: drizzleAdapter(db as any, {
+    database: drizzleAdapter(drizzleDb, {
       provider: "sqlite",
       usePlural: true,
     }),
