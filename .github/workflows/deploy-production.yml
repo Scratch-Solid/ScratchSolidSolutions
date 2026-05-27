@@ -75,7 +75,7 @@ jobs:
       uses: cloudflare/wrangler-action@v3
       with:
         apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        command: deploy --no-version
+        command: deploy --no-version --env production
         workingDirectory: internal-portal
         wranglerVersion: 4.93.0
       env:
