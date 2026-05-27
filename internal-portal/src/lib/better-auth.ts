@@ -28,7 +28,12 @@ export async function createAuth() {
     secret: process.env.BETTER_AUTH_SECRET || (() => {
       throw new Error('BETTER_AUTH_SECRET environment variable must be set');
     })(),
-    database: db,
+    database: {
+      dialect: "sqlite",
+      type: "d1",
+      schema: {},
+      adapter: async () => db,
+    },
     emailAndPassword: {
       enabled: true,
       requireEmailVerification: false,
