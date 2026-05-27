@@ -19,39 +19,39 @@ CREATE TABLE IF NOT EXISTS users_backup AS SELECT * FROM users;
 -- ============================================
 -- Insert users from custom users table to better_auth_users
 -- Better-Auth schema: id, email, emailVerified, name, image, createdAt, updatedAt
-INSERT INTO better_auth_users (id, email, name, createdAt, updatedAt)
+INSERT INTO better_auth_users (id, email, name, created_at, updated_at)
 SELECT 
   id,
   email,
   COALESCE(name, email) as name,
-  created_at as createdAt,
-  updated_at as updatedAt
+  created_at,
+  updated_at
 FROM users
 WHERE email IS NOT NULL
 ON CONFLICT(id) DO UPDATE SET
   email = excluded.email,
   name = excluded.name,
-  updatedAt = excluded.updatedAt;
+  updated_at = excluded.updated_at;
 
 -- ============================================
 -- Step 4: Migrate password hashes
 -- Better-Auth stores passwords in better_auth_accounts table
 -- ============================================
 -- Insert accounts with password hashes
-INSERT INTO better_auth_accounts (id, userId, accountId, passwordHash, createdAt, updatedAt)
+INSERT INTO better_auth_accounts (id, userId, accountId, passwordHash, created_at, updated_at)
 SELECT 
   u.id,
   u.id as userId,
   u.email as accountId,
   u.password_hash as passwordHash,
-  u.created_at as createdAt,
-  u.updated_at as updatedAt
+  u.created_at,
+  u.updated_at
 FROM users u
 WHERE u.password_hash IS NOT NULL
   AND u.email IS NOT NULL
 ON CONFLICT(userId, accountId) DO UPDATE SET
   passwordHash = excluded.passwordHash,
-  updatedAt = excluded.updatedAt;
+  updated_at = excluded.updated_at;
 
 -- ============================================
 -- Step 5: Add custom fields to better_auth_users
@@ -61,7 +61,6 @@ ON CONFLICT(userId, accountId) DO UPDATE SET
 CREATE TABLE IF NOT EXISTS user_profile (
   user_id INTEGER PRIMARY KEY,
   paysheet_code TEXT,
-  department TEXT,
   phone TEXT,
   role TEXT,
   is_superuser INTEGER NOT NULL DEFAULT 0,
@@ -74,11 +73,10 @@ CREATE TABLE IF NOT EXISTS user_profile (
 );
 
 -- Migrate custom fields to user_profile
-INSERT INTO user_profile (user_id, paysheet_code, department, phone, role, is_superuser, default_role_id, rbac_version, password_needs_reset, login_count)
+INSERT INTO user_profile (user_id, paysheet_code, phone, role, is_superuser, default_role_id, rbac_version, password_needs_reset, login_count)
 SELECT 
   id,
   paysheet_code,
-  department,
   phone,
   role,
   is_superuser,
@@ -89,7 +87,6 @@ SELECT
 FROM users
 ON CONFLICT(user_id) DO UPDATE SET
   paysheet_code = excluded.paysheet_code,
-  department = excluded.department,
   phone = excluded.phone,
   role = excluded.role,
   is_superuser = excluded.is_superuser,

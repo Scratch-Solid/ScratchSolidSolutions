@@ -485,7 +485,6 @@ export async function updateUserProfile(
   userId: number,
   updates: {
     paysheet_code?: string;
-    department?: string;
     phone?: string;
     role?: string;
     is_superuser?: number;
@@ -501,10 +500,6 @@ export async function updateUserProfile(
   if (updates.paysheet_code !== undefined) {
     fields.push('paysheet_code = ?');
     values.push(updates.paysheet_code);
-  }
-  if (updates.department !== undefined) {
-    fields.push('department = ?');
-    values.push(updates.department);
   }
   if (updates.phone !== undefined) {
     fields.push('phone = ?');
