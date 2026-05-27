@@ -50,22 +50,64 @@
 			"bucket_name": "cleaner-photos"
 		}
 	],
-	"routes": [
-		{
-			"pattern": "portal.scratchsolidsolutions.org/*",
-			"zone_name": "scratchsolidsolutions.org"
-		}
-	],
-	"vars": {
-		"NEXT_PUBLIC_BASE_URL": "https://portal.scratchsolidsolutions.org",
-		"NEXT_PUBLIC_API_URL": "https://api.scratchsolidsolutions.org/api",
-		"ALLOWED_ORIGINS": "https://portal.scratchsolidsolutions.org",
-		"R2_PUBLIC_BASE": "https://uploads.scratchsolidsolutions.org"
-	},
 	"observability": {
 		"enabled": true
 	},
 	"env": {
+		"production": {
+			"routes": [
+				{
+					"pattern": "portal.scratchsolidsolutions.org/*",
+					"zone_name": "scratchsolidsolutions.org"
+				}
+			],
+			"d1_databases": [
+				{
+					"binding": "scratchsolid_db",
+					"database_name": "scratchsolid-portal-db",
+					"database_id": "a08f16f5-9d75-47f9-973c-35bade106b47"
+				},
+				{
+					"binding": "training_db",
+					"database_name": "scratchsolid-training-db",
+					"database_id": "030e033d-0f97-42bf-9309-6583ceeb33ed"
+				}
+			],
+			"kv_namespaces": [
+				{
+					"binding": "RATE_LIMIT_KV",
+					"id": "98a7542aead048e1b5cc965dfc3d0552"
+				},
+				{
+					"binding": "GPS_KV",
+					"id": "f10442563c354116976f56e569bd40f6"
+				},
+				{
+					"binding": "PUSH_KV",
+					"id": "d297a8eb5c85444997e7cefa43b924dc"
+				},
+				{
+					"binding": "STATUS_KV",
+					"id": "6ae00113fb454ed2ba046c4f157dffc3"
+				}
+			],
+			"r2_buckets": [
+				{
+					"binding": "UPLOADS_BUCKET",
+					"bucket_name": "portal-uploads"
+				},
+				{
+					"binding": "CLEANER_PHOTOS_BUCKET",
+					"bucket_name": "cleaner-photos"
+				}
+			],
+			"vars": {
+				"NEXT_PUBLIC_BASE_URL": "https://portal.scratchsolidsolutions.org",
+				"NEXT_PUBLIC_API_URL": "https://api.scratchsolidsolutions.org/api",
+				"ALLOWED_ORIGINS": "https://portal.scratchsolidsolutions.org",
+				"R2_PUBLIC_BASE": "https://uploads.scratchsolidsolutions.org"
+			}
+		},
 		"staging": {
 			"routes": [
 				{
