@@ -19,6 +19,12 @@ import {
 import { withCsrf } from '@/lib/middleware';
 
 export async function POST(request: NextRequest) {
+  // CRITICAL: Get DB BEFORE ANY other operation to ensure AsyncLocalStorage context is preserved
+  const db = await getDb();
+  if (!db) {
+    return createSecurityError('Database unavailable', 503);
+  }
+
   // CSRF protection
   const csrfResult = await withCsrf(request);
   if (csrfResult) return csrfResult;
@@ -37,12 +43,6 @@ export async function POST(request: NextRequest) {
       response.headers.set(key, value);
     });
     return response;
-  }
-
-  // CRITICAL: Get DB BEFORE consuming request stream to avoid AsyncLocalStorage context loss in Node.js compat
-  const db = await getDb();
-  if (!db) {
-    return createSecurityError('Database unavailable', 503);
   }
 
   try {
