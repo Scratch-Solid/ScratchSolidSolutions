@@ -50,12 +50,6 @@
 			"bucket_name": "cleaner-photos"
 		}
 	],
-	"routes": [
-		{
-			"pattern": "portal.scratchsolidsolutions.org/*",
-			"zone_name": "scratchsolidsolutions.org"
-		}
-	],
 	"vars": {
 		"NEXT_PUBLIC_BASE_URL": "https://portal.scratchsolidsolutions.org",
 		"NEXT_PUBLIC_API_URL": "https://api.scratchsolidsolutions.org/api",
