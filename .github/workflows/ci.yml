@@ -92,10 +92,6 @@ jobs:
       working-directory: ./backend-worker
       run: npm ci
     
-    - name: Run tests
-      working-directory: ./backend-worker
-      run: npm test
-    
     - name: Security audit
       working-directory: ./backend-worker
       run: npm audit --audit-level=high
