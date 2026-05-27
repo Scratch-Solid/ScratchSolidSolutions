@@ -8,10 +8,10 @@ import { generateDeviceFingerprint, parseUserAgent } from '@/lib/device-fingerpr
 import { withSecurityHeaders, withTracing, withRateLimit } from '@/lib/middleware';
 
 export async function POST(request: NextRequest) {
-  const traceId = withTracing(request);
-
-  // CRITICAL: Get DB BEFORE any middleware that might consume request stream to avoid AsyncLocalStorage context loss in Node.js compat
+  // CRITICAL: Get DB BEFORE ANY other operation to ensure AsyncLocalStorage context is preserved
   const db = await getDb();
+  const traceId = withTracing(request);
+  
   if (!db) {
     console.error('Database binding missing (expected scratchsolid_db or DB)');
     return withSecurityHeaders(NextResponse.json(
