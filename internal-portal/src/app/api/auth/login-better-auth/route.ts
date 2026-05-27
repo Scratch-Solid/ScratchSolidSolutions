@@ -10,19 +10,19 @@ import { withSecurityHeaders, withTracing, withRateLimit } from '@/lib/middlewar
 export async function POST(request: NextRequest) {
   const traceId = withTracing(request);
 
-  // Apply rate limiting
-  const rateLimitResponse = await withRateLimit(request);
-  if (rateLimitResponse) return rateLimitResponse;
-
-  // CRITICAL: Get DB BEFORE consuming request stream to avoid AsyncLocalStorage context loss in Node.js compat
+  // CRITICAL: Get DB BEFORE any middleware that might consume request stream to avoid AsyncLocalStorage context loss in Node.js compat
   const db = await getDb();
   if (!db) {
     console.error('Database binding missing (expected scratchsolid_db or DB)');
     return withSecurityHeaders(NextResponse.json(
-      { success: false, error: 'Database unavailable v3' },
+      { success: false, error: 'Database unavailable v4' },
       { status: 503 }
     ), traceId);
   }
+
+  // Apply rate limiting
+  const rateLimitResponse = await withRateLimit(request);
+  if (rateLimitResponse) return rateLimitResponse;
 
   try {
     const body = await request.json() as { email?: string; password?: string; username?: string; identifier?: string };
