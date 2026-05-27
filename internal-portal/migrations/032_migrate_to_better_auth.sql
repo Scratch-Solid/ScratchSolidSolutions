@@ -36,21 +36,27 @@ ON CONFLICT(id) DO UPDATE SET
 -- ============================================
 -- Step 4: Migrate password hashes
 -- Better-Auth stores passwords in better_auth_accounts table
+-- Note: Better-Auth D1 schema doesn't include password_hash by default
+-- We need to add it manually for email/password authentication
 -- ============================================
+-- Add password_hash column to better_auth_accounts
+ALTER TABLE better_auth_accounts ADD COLUMN password_hash TEXT;
+
 -- Insert accounts with password hashes
-INSERT INTO better_auth_accounts (id, userId, accountId, passwordHash, created_at, updated_at)
+INSERT INTO better_auth_accounts (id, account_id, provider_id, user_id, password_hash, created_at, updated_at)
 SELECT 
   u.id,
-  u.id as userId,
-  u.email as accountId,
+  u.email as account_id,
+  'credential' as provider_id,
+  u.id as user_id,
   u.password_hash as passwordHash,
   u.created_at,
   u.updated_at
 FROM users u
 WHERE u.password_hash IS NOT NULL
   AND u.email IS NOT NULL
-ON CONFLICT(userId, accountId) DO UPDATE SET
-  passwordHash = excluded.passwordHash,
+ON CONFLICT(user_id, account_id) DO UPDATE SET
+  password_hash = excluded.password_hash,
   updated_at = excluded.updated_at;
 
 -- ============================================
