@@ -41,7 +41,6 @@ jobs:
   deploy-internal-portal-production:
     name: Deploy Internal Portal to Production
     runs-on: ubuntu-latest
-    environment: production
     
     steps:
     - name: Checkout code
@@ -75,7 +74,7 @@ jobs:
       uses: cloudflare/wrangler-action@v3
       with:
         apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        command: deploy --name scratchsolid-portal
+        command: deploy
         workingDirectory: internal-portal
         wranglerVersion: 4.93.0
       env:
