@@ -61,6 +61,10 @@ jobs:
     - name: Install Wrangler
       run: npm install -g wrangler@4.93.0
 
+    - name: Clean build artifacts
+      working-directory: ./internal-portal
+      run: rm -rf .open-next
+
     - name: Build
       working-directory: ./internal-portal
       run: npm run cloudflare-build
