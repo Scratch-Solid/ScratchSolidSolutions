@@ -17,8 +17,13 @@ export async function getDb(): Promise<D1Database | null> {
     // Use getCloudflareContext for OpenNext.js on Cloudflare Pages
     const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
     const envAny = env as any;
+    
+    // Log available env keys for debugging
+    console.log('Available env keys:', Object.keys(envAny || {}));
+    
     const db = envAny?.scratchsolid_db || envAny?.scratchsolidDb || envAny?.scratchsolid_db_portal_staging || envAny?.DB || envAny?.db || envAny?.database;
     if (db) {
+      console.log('Found D1 binding:', db);
       return db as D1Database;
     }
     // As a last resort, scan env for a D1-like binding (has prepare method)
