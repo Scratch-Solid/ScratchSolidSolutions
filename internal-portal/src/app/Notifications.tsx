@@ -17,7 +17,7 @@ export default function Notifications() {
     setSending(true);
     setResult("");
     try {
-      const token = localStorage.getItem('authToken');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       const res = await fetch("/api/notifications", {
         method: "POST",
         headers: { "Content-Type": "application/json", 'Authorization': `Bearer ${token}` },

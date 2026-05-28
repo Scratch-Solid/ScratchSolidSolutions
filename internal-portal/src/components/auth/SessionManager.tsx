@@ -30,7 +30,7 @@ export default function SessionManager({ onClose }: SessionManagerProps) {
     setError('');
 
     try {
-      const token = localStorage.getItem('authToken');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       const response = await fetch('/api/auth/sessions', {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -56,7 +56,7 @@ export default function SessionManager({ onClose }: SessionManagerProps) {
     setError('');
 
     try {
-      const token = localStorage.getItem('authToken');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       const response = await fetch('/api/auth/sessions', {
         method: 'DELETE',
         headers: {
@@ -85,7 +85,7 @@ export default function SessionManager({ onClose }: SessionManagerProps) {
     setError('');
 
     try {
-      const token = localStorage.getItem('authToken');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       const response = await fetch('/api/auth/sessions', {
         method: 'DELETE',
         headers: {
@@ -116,7 +116,7 @@ export default function SessionManager({ onClose }: SessionManagerProps) {
   };
 
   const isCurrentSession = (session: Session) => {
-    const currentToken = localStorage.getItem('authToken');
+    const currentToken = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
     return session.token === currentToken;
   };
 

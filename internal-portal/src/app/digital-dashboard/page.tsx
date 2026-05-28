@@ -14,7 +14,7 @@ export default function DigitalDashboard() {
   useEffect(() => {
     async function fetchTasks() {
       try {
-        const token = localStorage.getItem('authToken');
+        const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
         const res = await fetch('/api/admin/content?page=digital-tasks', {
           headers: { Authorization: `Bearer ${token}` }
         });

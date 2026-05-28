@@ -49,7 +49,7 @@ class OfflineSyncManager {
    */
   private loadQueue(): void {
     try {
-      const saved = localStorage.getItem('offline_queue');
+      const saved = typeof window !== 'undefined' ? localStorage.getItem('offline_queue') : null;
       if (saved) {
         this.queue = JSON.parse(saved);
       }
@@ -150,7 +150,7 @@ class OfflineSyncManager {
    * Sync status update
    */
   private async syncStatusUpdate(data: any): Promise<boolean> {
-    const token = localStorage.getItem('authToken');
+    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
     const response = await fetch('/api/cleaner-status', {
       method: 'PUT',
       headers: {
@@ -167,7 +167,7 @@ class OfflineSyncManager {
    * Sync GPS update
    */
   private async syncGPSUpdate(data: any): Promise<boolean> {
-    const token = localStorage.getItem('authToken');
+    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
     const response = await fetch('/api/cleaner-status', {
       method: 'PUT',
       headers: {
@@ -184,7 +184,7 @@ class OfflineSyncManager {
    * Sync photo upload
    */
   private async syncPhotoUpload(data: any): Promise<boolean> {
-    const token = localStorage.getItem('authToken');
+    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
     const formData = new FormData();
     formData.append('booking_id', data.booking_id);
     formData.append('photo', data.photo);

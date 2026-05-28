@@ -27,7 +27,7 @@ export default function TwoFactorSetup({ onSuccess, onCancel }: TwoFactorSetupPr
     setError('');
 
     try {
-      const token = localStorage.getItem('authToken');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       const response = await fetch('/api/auth/2fa/setup', {
         method: 'POST',
         headers: {
@@ -63,7 +63,7 @@ export default function TwoFactorSetup({ onSuccess, onCancel }: TwoFactorSetupPr
     setError('');
 
     try {
-      const token = localStorage.getItem('authToken');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       const response = await fetch('/api/auth/2fa/verify', {
         method: 'POST',
         headers: {

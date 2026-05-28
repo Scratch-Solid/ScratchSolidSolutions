@@ -12,7 +12,7 @@ export default function ConsentSubmittedPage() {
 
   useEffect(() => {
     // Get consent data from localStorage
-    const storedConsent = localStorage.getItem("pendingConsent");
+    const storedConsent = typeof window !== 'undefined' ? localStorage.getItem("pendingConsent") : null;
     if (!storedConsent) {
       router.push("/auth/login");
       return;

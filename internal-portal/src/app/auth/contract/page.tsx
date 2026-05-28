@@ -42,7 +42,7 @@ export default function ContractPage() {
 
     async function checkApprovalStatus() {
       // Get consent data from localStorage
-      const storedConsent = localStorage.getItem("pendingConsent");
+      const storedConsent = typeof window !== 'undefined' ? localStorage.getItem("pendingConsent") : null;
       if (storedConsent) {
         const consent = JSON.parse(storedConsent);
         setConsentData(consent);

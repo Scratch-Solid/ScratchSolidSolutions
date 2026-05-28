@@ -18,7 +18,7 @@ export default function Accounting() {
     setResult("");
     try {
       const endpoint = action === "invoice" ? "/api/zoho/invoice" : "/api/zoho/refund";
-      const token = localStorage.getItem('authToken');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json", 'Authorization': `Bearer ${token}` },

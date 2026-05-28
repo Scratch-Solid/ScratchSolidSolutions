@@ -15,8 +15,8 @@ export default function ContractFormPage() {
     setError("");
 
     try {
-      const userId = localStorage.getItem("user_id");
-      const businessName = localStorage.getItem("business_name") || "";
+      const userId = typeof window !== 'undefined' ? localStorage.getItem("user_id") : null;
+      const businessName = typeof window !== 'undefined' ? localStorage.getItem("business_name") : null || "";
 
       // POST /contracts
       const response = await fetch("/api/contracts", {

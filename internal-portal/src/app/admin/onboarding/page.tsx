@@ -9,8 +9,8 @@ export default function AdminOnboardingPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('authToken');
-    if (!token || localStorage.getItem('userRole') !== 'admin') {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+    if (!token || typeof window !== 'undefined' ? localStorage.getItem('userRole') : null !== 'admin') {
       router.push('/auth/login');
       return;
     }
@@ -18,14 +18,14 @@ export default function AdminOnboardingPage() {
   }, [router]);
 
   const fetchContracts = async () => {
-    const token = localStorage.getItem('authToken');
+    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
     const res = await fetch('/api/pending-contracts', { headers: { 'Authorization': `Bearer ${token}` } });
     if (res.ok) setContracts(await res.json());
     setLoading(false);
   };
 
   const updateStatus = async (id: number, status: string) => {
-    const token = localStorage.getItem('authToken');
+    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
     await fetch(`/api/pending-contracts?id=${id}`, {
       method: 'PUT',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },

@@ -24,8 +24,8 @@ export default function ContentManagement() {
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('authToken');
-    const role = localStorage.getItem('userRole');
+    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+    const role = typeof window !== 'undefined' ? localStorage.getItem('userRole') : null;
 
     if (!token || role !== 'admin') {
       router.push('/login');
@@ -39,7 +39,7 @@ export default function ContentManagement() {
   const loadContent = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('authToken');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       const response = await fetch('/api/content/list', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -65,7 +65,7 @@ export default function ContentManagement() {
     if (!editingItem) return;
 
     try {
-      const token = localStorage.getItem('authToken');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       const response = await fetch(`/api/content/${editingItem.slug}`, {
         method: 'PUT',
         headers: {
@@ -91,7 +91,7 @@ export default function ContentManagement() {
     if (!confirm(`Are you sure you want to delete "${item.title}"?`)) return;
 
     try {
-      const token = localStorage.getItem('authToken');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       const response = await fetch(`/api/content/${item.slug}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }

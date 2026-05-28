@@ -8,9 +8,9 @@ export default function RootPage() {
 
   useEffect(() => {
     // Check authentication status
-    const authToken = localStorage.getItem("authToken");
-    const userRole = localStorage.getItem("userRole");
-    const username = localStorage.getItem("username");
+    const authToken = typeof window !== 'undefined' ? localStorage.getItem("authToken") : null;
+    const userRole = typeof window !== 'undefined' ? localStorage.getItem("userRole") : null;
+    const username = typeof window !== 'undefined' ? localStorage.getItem("username") : null;
 
     if (!authToken || !username) {
       // Not authenticated, redirect to login

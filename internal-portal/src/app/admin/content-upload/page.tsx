@@ -13,8 +13,8 @@ export default function ContentUpload() {
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('authToken');
-    const role = localStorage.getItem('userRole');
+    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+    const role = typeof window !== 'undefined' ? localStorage.getItem('userRole') : null;
 
     if (!token || role !== 'admin') {
       router.push('/login');
@@ -27,7 +27,7 @@ export default function ContentUpload() {
 
   const loadExistingContent = async () => {
     try {
-      const token = localStorage.getItem('authToken');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       const response = await fetch(`/api/content?type=${type}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -51,7 +51,7 @@ export default function ContentUpload() {
     setMessage(null);
 
     try {
-      const token = localStorage.getItem('authToken');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       const response = await fetch(`/api/content?type=${type}`, {
         method: 'PUT',
         headers: {

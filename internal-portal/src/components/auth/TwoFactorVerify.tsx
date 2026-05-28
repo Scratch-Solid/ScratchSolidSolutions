@@ -32,7 +32,7 @@ export default function TwoFactorVerify({ onSuccess, onCancel, email }: TwoFacto
     setError('');
 
     try {
-      const token = localStorage.getItem('authToken');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       const response = await fetch('/api/auth/2fa/verify', {
         method: 'POST',
         headers: {

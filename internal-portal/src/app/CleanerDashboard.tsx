@@ -86,11 +86,11 @@ export default function CleanerDashboard() {
       setLoading(true);
       try {
         // Get username from localStorage
-        const storedUsername = localStorage.getItem("username");
-        const storedUserId = localStorage.getItem("user_id");
+        const storedUsername = typeof window !== 'undefined' ? localStorage.getItem("username") : null;
+        const storedUserId = typeof window !== 'undefined' ? localStorage.getItem("user_id") : null;
         if (storedUsername) {
           setUsername(storedUsername);
-          const mustChange = localStorage.getItem('mustChangePassword') === 'true';
+          const mustChange = typeof window !== 'undefined' ? localStorage.getItem('mustChangePassword') : null === 'true';
           setMustChangePassword(mustChange);
 
           // Fetch cleaner profile
@@ -468,7 +468,7 @@ export default function CleanerDashboard() {
   };
 
   const handleLogout = async () => {
-    const token = localStorage.getItem('authToken');
+    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
     if (token) {
       try {
         await fetch('/api/auth/logout', {
@@ -868,7 +868,7 @@ export default function CleanerDashboard() {
               <h4 className="font-semibold" style={{ color: 'var(--text-h)' }}>Estimated Salary Preview</h4>
               <button
                 onClick={async () => {
-                  const userId = localStorage.getItem('user_id');
+                  const userId = typeof window !== 'undefined' ? localStorage.getItem('user_id') : null;
                   if (!userId) return;
                   setSalaryLoading(true);
                   try {
@@ -1032,7 +1032,7 @@ export default function CleanerDashboard() {
               moduleId={activeModuleId}
               questions={getModuleQuestions(activeModuleId)}
               onComplete={async (score, total) => {
-                const userId = localStorage.getItem('user_id');
+                const userId = typeof window !== 'undefined' ? localStorage.getItem('user_id') : null;
                 if (!userId) return;
                 
                 const response = await fetch('/api/training/submit-quiz', {

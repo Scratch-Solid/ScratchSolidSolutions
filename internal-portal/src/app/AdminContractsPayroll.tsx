@@ -15,7 +15,7 @@ export default function AdminContractsPayroll() {
     async function fetchData() {
       setLoading(true);
       try {
-        const token = localStorage.getItem('authToken');
+        const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
         const headers = { 'Authorization': `Bearer ${token}` };
 
         const [contractsRes, payrollsRes] = await Promise.all([

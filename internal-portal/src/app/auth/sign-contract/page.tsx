@@ -16,7 +16,7 @@ export default function SignContractPage() {
 
   useEffect(() => {
     // Check if user is authenticated
-    const token = localStorage.getItem("authToken");
+    const token = typeof window !== 'undefined' ? localStorage.getItem("authToken") : null;
     if (!token) {
       router.push("/auth/login");
       return;
@@ -42,7 +42,7 @@ export default function SignContractPage() {
   const handleSign = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("authToken");
+      const token = typeof window !== 'undefined' ? localStorage.getItem("authToken") : null;
       const signatureDate = new Date().toISOString();
       setSignatureDate(signatureDate);
 
@@ -58,7 +58,7 @@ export default function SignContractPage() {
         setSigned(true);
         setTimeout(() => {
           // Redirect to dashboard
-          const userRole = localStorage.getItem("userRole");
+          const userRole = typeof window !== 'undefined' ? localStorage.getItem("userRole") : null;
           if (userRole === 'cleaner') {
             router.push("/cleaner-dashboard");
           } else if (userRole === 'digital') {

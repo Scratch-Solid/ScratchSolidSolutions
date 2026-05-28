@@ -28,7 +28,7 @@ export default function EmployeeConsentPage() {
     // Check if user has an existing contract submission
     const checkExistingContract = async () => {
       try {
-        const storedConsent = localStorage.getItem("pendingConsent");
+        const storedConsent = typeof window !== 'undefined' ? localStorage.getItem("pendingConsent") : null;
         if (storedConsent) {
           const consent = JSON.parse(storedConsent);
           // Check status via API

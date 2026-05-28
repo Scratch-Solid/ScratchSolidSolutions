@@ -30,7 +30,7 @@ export default function RoleManager({ onClose }: RoleManagerProps) {
     setError('');
 
     try {
-      const token = localStorage.getItem('authToken');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       const response = await fetch('/api/admin/users', {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -56,7 +56,7 @@ export default function RoleManager({ onClose }: RoleManagerProps) {
     setError('');
 
     try {
-      const token = localStorage.getItem('authToken');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       const response = await fetch(`/api/admin/users/${userId}/role`, {
         method: 'PATCH',
         headers: {

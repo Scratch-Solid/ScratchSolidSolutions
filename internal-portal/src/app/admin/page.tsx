@@ -7,8 +7,8 @@ export default function AdminLegacyRedirect() {
   const router = useRouter();
 
   useEffect(() => {
-    const token = localStorage.getItem('authToken');
-    const role = localStorage.getItem('userRole');
+    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+    const role = typeof window !== 'undefined' ? localStorage.getItem('userRole') : null;
 
     if (!token || role !== 'admin') {
       router.replace('/auth/login');

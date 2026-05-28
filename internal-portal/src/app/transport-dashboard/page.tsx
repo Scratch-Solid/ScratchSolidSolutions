@@ -14,7 +14,7 @@ export default function TransportDashboard() {
   useEffect(() => {
     async function fetchDeliveries() {
       try {
-        const token = localStorage.getItem('authToken');
+        const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
         const res = await fetch('/api/admin/bookings?type=transport', {
           headers: { Authorization: `Bearer ${token}` }
         });

@@ -25,7 +25,7 @@ export default function CreateProfilePage() {
   const [stream, setStream] = useState<MediaStream | null>(null);
 
   useEffect(() => {
-    const pendingConsent = localStorage.getItem("pendingConsent");
+    const pendingConsent = typeof window !== 'undefined' ? localStorage.getItem("pendingConsent") : null;
     if (!pendingConsent) {
       router.push("/auth/employee-consent");
       return;
@@ -155,7 +155,7 @@ export default function CreateProfilePage() {
     }
 
     try {
-      const consent = JSON.parse(localStorage.getItem("pendingConsent") || "{}");
+      const consent = JSON.parse(typeof window !== 'undefined' ? localStorage.getItem("pendingConsent") : null || "{}");
 
       // Convert profile picture to base64
       const reader = new FileReader();

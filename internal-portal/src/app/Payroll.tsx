@@ -16,7 +16,7 @@ export default function Payroll() {
     async function fetchPayroll() {
       setLoading(true);
       try {
-        const token = localStorage.getItem('authToken');
+        const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
         const res = await fetch('/api/payroll', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
