@@ -17,11 +17,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Missing cleaner_id' }, { status: 400 });
     }
 
-    const taskCompletions = await db.prepare(
-      'SELECT * FROM task_completions WHERE cleaner_id = ? ORDER BY completed_at DESC'
+    // Query payroll table for earnings data
+    const payrollRecords = await db.prepare(
+      'SELECT id, gross_amount, deductions, net_amount, pay_period_start, pay_period_end, status FROM payroll WHERE staff_id = ? ORDER BY pay_period_start DESC'
     ).bind(cleanerId).all();
 
-    const response = NextResponse.json(taskCompletions.results || []);
+    const response = NextResponse.json(payrollRecords.results || []);
     response.headers.set('Cache-Control', 'private, max-age=30');
     return withSecurityHeaders(response, traceId);
   } catch (error) {

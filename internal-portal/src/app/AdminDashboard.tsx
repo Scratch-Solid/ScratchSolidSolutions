@@ -38,6 +38,8 @@ export default function AdminDashboard() {
   const [bankingDetails, setBankingDetails] = useState<any>(null);
   const [serviceForm, setServiceForm] = useState({ name: '', description: '', base_price: '', duration_hours: '', category: 'standard' });
   const [bankingForm, setBankingForm] = useState({ bank_name: '', account_number: '', account_holder: '', branch_code: '', account_type: 'current' });
+  const [showCreateCleaner, setShowCreateCleaner] = useState(false);
+  const [newCleanerForm, setNewCleanerForm] = useState({ fullName: '', idPassportNumber: '', contactNumber: '', positionAppliedFor: '' });
 
   useEffect(() => {
     async function fetchAdminData() {
@@ -177,6 +179,45 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleCreateCleaner = async () => {
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+      const generatedUsername = 'SCRATCH' + Math.random().toString(36).substring(2, 8).toUpperCase();
+      
+      const response = await fetch('/api/pending-contracts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          fullName: newCleanerForm.fullName,
+          idPassportNumber: newCleanerForm.idPassportNumber,
+          contactNumber: newCleanerForm.contactNumber,
+          positionAppliedFor: newCleanerForm.positionAppliedFor,
+          department: 'Scratch',
+          generatedUsername,
+          applicantSignature: true,
+        }),
+      });
+
+      if (response.ok) {
+        setShowCreateCleaner(false);
+        setNewCleanerForm({ fullName: '', idPassportNumber: '', contactNumber: '', positionAppliedFor: '' });
+        // Refresh new joiners list
+        const pendingContractsRes = await fetch("/api/pending-contracts", { headers: { Authorization: `Bearer ${token}` } });
+        if (pendingContractsRes.ok) {
+          setNewJoiners(await pendingContractsRes.json());
+        }
+      } else {
+        const errorData = await response.json() as { error?: string };
+        setError(errorData.error || 'Failed to create cleaner');
+      }
+    } catch (err) {
+      setError('Failed to create cleaner');
+    }
+  };
+
   if (loading) return <DashboardLayout title="Admin Dashboard" role="admin"><div className="animate-pulse space-y-6"><div className="responsive-grid">{[1,2,3,4].map(i=><div key={i} className="glass-card"><div className="h-4 bg-white/30 rounded w-1/2 mb-3"/><div className="h-8 bg-white/30 rounded w-3/4"/></div>)}</div></div></DashboardLayout>;
   if (error) return <DashboardLayout title="Admin Dashboard" role="admin"><div className="error-msg">{error}</div></DashboardLayout>;
 
@@ -302,6 +343,61 @@ export default function AdminDashboard() {
                     <CardTitle>New Joiners - Pending Approval</CardTitle>
                   </CardHeader>
                   <CardContent>
+                    <button
+                      onClick={() => setShowCreateCleaner(true)}
+                      className="mb-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    >
+                      + Add New Cleaner
+                    </button>
+                    {showCreateCleaner && (
+                      <div className="mb-4 p-4 border rounded bg-gray-50">
+                        <h3 className="font-bold mb-3">Create New Cleaner</h3>
+                        <div className="grid grid-cols-2 gap-3 mb-3">
+                          <input
+                            type="text"
+                            placeholder="Full Name"
+                            value={newCleanerForm.fullName}
+                            onChange={(e) => setNewCleanerForm({...newCleanerForm, fullName: e.target.value})}
+                            className="p-2 border rounded"
+                          />
+                          <input
+                            type="text"
+                            placeholder="ID/Passport Number"
+                            value={newCleanerForm.idPassportNumber}
+                            onChange={(e) => setNewCleanerForm({...newCleanerForm, idPassportNumber: e.target.value})}
+                            className="p-2 border rounded"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Contact Number"
+                            value={newCleanerForm.contactNumber}
+                            onChange={(e) => setNewCleanerForm({...newCleanerForm, contactNumber: e.target.value})}
+                            className="p-2 border rounded"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Position Applied For"
+                            value={newCleanerForm.positionAppliedFor}
+                            onChange={(e) => setNewCleanerForm({...newCleanerForm, positionAppliedFor: e.target.value})}
+                            className="p-2 border rounded"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={handleCreateCleaner}
+                            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                          >
+                            Create
+                          </button>
+                          <button
+                            onClick={() => setShowCreateCleaner(false)}
+                            className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
                     {newJoiners.length === 0 ? (
                       <p className="text-slate-500">No pending new joiners.</p>
                     ) : (

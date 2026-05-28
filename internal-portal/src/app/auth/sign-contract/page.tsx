@@ -60,7 +60,8 @@ export default function SignContractPage() {
           // Redirect to dashboard
           const userRole = typeof window !== 'undefined' ? localStorage.getItem("userRole") : null;
           if (userRole === 'cleaner') {
-            router.push("/cleaner-dashboard");
+            // Check if training is required
+            router.push("/cleaner-dashboard?training_required=true");
           } else if (userRole === 'digital') {
             router.push("/digital-dashboard");
           } else if (userRole === 'transport') {

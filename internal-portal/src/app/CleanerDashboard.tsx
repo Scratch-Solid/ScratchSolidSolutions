@@ -80,6 +80,15 @@ export default function CleanerDashboard() {
   const [showQuiz, setShowQuiz] = useState(false);
   const [activeModuleId, setActiveModuleId] = useState<number | null>(null);
   const [trainingLoading, setTrainingLoading] = useState(false);
+  const [showTrainingPrompt, setShowTrainingPrompt] = useState(false);
+
+  useEffect(() => {
+    // Check if training is required from URL param
+    const urlParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+    if (urlParams.get('training_required') === 'true') {
+      setShowTrainingPrompt(true);
+    }
+  }, []);
 
   useEffect(() => {
     async function fetchCleanerAndTasks() {
@@ -494,6 +503,15 @@ export default function CleanerDashboard() {
 
   return (
     <DashboardLayout title="Cleaner Dashboard" role="cleaner">
+      {showTrainingPrompt && (
+        <div className="mb-4 glass-panel" style={{ background: 'rgba(59, 130, 246, 0.1)', borderColor: 'rgba(59, 130, 246, 0.3)' }}>
+          <div className="font-bold" style={{ color: '#1e40af' }}>Training Required</div>
+          <div style={{ color: '#1e40af' }}>Please complete the mandatory training modules to get started.</div>
+          <button className="mt-2 primary-button" onClick={() => { setActiveTile('training'); setShowTrainingPrompt(false); }}>
+            Start Training
+          </button>
+        </div>
+      )}
       {mustChangePassword && (
         <div className="mb-4 glass-panel" style={{ background: 'rgba(254, 249, 195, 0.9)', borderColor: 'rgba(234, 179, 8, 0.4)' }}>
           <div className="font-bold" style={{ color: '#854d0e' }}>Action required</div>
