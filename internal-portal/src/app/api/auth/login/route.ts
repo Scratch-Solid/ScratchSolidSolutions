@@ -52,10 +52,23 @@ export async function POST(request: NextRequest) {
       return createSecurityError('Identifier and password are required', 400);
     }
 
-    // Query user by email or paysheet code
-    const user = await db.prepare(
+    // Query user by email, phone, or paysheet code
+    let user = await db.prepare(
       'SELECT id, email, password_hash, role, name, phone, address, business_name, two_factor_enabled, email_verified FROM users WHERE email = ? OR phone = ?'
     ).bind(identifier, identifier).first() as { id: number; email: string; password_hash: string; role: string; name: string; phone: string; address: string; business_name: string; two_factor_enabled: boolean; email_verified: boolean } | null;
+
+    // If not found in users table, try paysheet code in cleaner_profiles
+    if (!user) {
+      const cleanerProfile = await db.prepare(
+        'SELECT user_id FROM cleaner_profiles WHERE paysheet_code = ?'
+      ).bind(identifier).first() as { user_id: number } | null;
+
+      if (cleanerProfile) {
+        user = await db.prepare(
+          'SELECT id, email, password_hash, role, name, phone, address, business_name, two_factor_enabled, email_verified FROM users WHERE id = ?'
+        ).bind(cleanerProfile.user_id).first() as { id: number; email: string; password_hash: string; role: string; name: string; phone: string; address: string; business_name: string; two_factor_enabled: boolean; email_verified: boolean } | null;
+      }
+    }
 
     if (!user) {
       return createSecurityError('Invalid credentials', 401);
@@ -67,8 +80,8 @@ export async function POST(request: NextRequest) {
       return createSecurityError('Invalid credentials', 401);
     }
 
-    // Check if email is verified
-    if (!user.email_verified) {
+    // Check if email is verified (skip for cleaners who login via paysheet code)
+    if (!user.email_verified && user.role !== 'cleaner') {
       return createSecurityError('Please verify your email before logging in', 403);
     }
 
