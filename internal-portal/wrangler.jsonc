@@ -67,6 +67,7 @@
 	},
 	"env": {
 		"staging": {
+			"name": "scratchsolid-portal-staging",
 			"routes": [
 				{
 					"pattern": "portal-staging.scratchsolidsolutions.org/*",
