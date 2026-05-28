@@ -47,38 +47,66 @@ export async function POST(request: NextRequest) {
 
     // Update user profile
     const fullName = `${firstName} ${lastName}`;
-    const updates: string[] = [];
-    const params: any[] = [];
+    const userUpdates: string[] = [];
+    const userParams: any[] = [];
 
-    updates.push('name = ?');
-    params.push(fullName);
+    userUpdates.push('name = ?');
+    userParams.push(fullName);
 
-    updates.push('phone = ?');
-    params.push(cellphone);
+    userUpdates.push('phone = ?');
+    userParams.push(cellphone);
 
     if (residentialAddress) {
-      updates.push('address = ?');
-      params.push(residentialAddress);
+      userUpdates.push('address = ?');
+      userParams.push(residentialAddress);
     }
 
     // Update password if provided
     if (password && password.length >= 8) {
       const passwordHash = (await bcrypt.hash(password, 10)).replace('$2b$', '$2a$');
-      updates.push('password_hash = ?');
-      params.push(passwordHash);
-      updates.push('password_needs_reset = 0');
+      userUpdates.push('password_hash = ?');
+      userParams.push(passwordHash);
+      userUpdates.push('password_needs_reset = 0');
     }
 
-    // Update profile picture if provided
-    if (profilePicture) {
-      updates.push('profile_picture = ?');
-      params.push(profilePicture);
+    userParams.push((user as any).id);
+
+    const userQuery = `UPDATE users SET ${userUpdates.join(', ')} WHERE id = ?`;
+    await db.prepare(userQuery).bind(...userParams).run();
+
+    // Update or create cleaner profile with profile picture
+    const cleanerProfile = await db.prepare('SELECT * FROM cleaner_profiles WHERE user_id = ?').bind((user as any).id).first();
+    
+    if (cleanerProfile) {
+      // Update existing profile
+      const profileUpdates: string[] = [];
+      const profileParams: any[] = [];
+
+      profileUpdates.push('first_name = ?');
+      profileParams.push(firstName);
+      profileUpdates.push('last_name = ?');
+      profileParams.push(lastName);
+      profileUpdates.push('residential_address = ?');
+      profileParams.push(residentialAddress);
+      profileUpdates.push('cellphone = ?');
+      profileParams.push(cellphone);
+
+      if (profilePicture) {
+        profileUpdates.push('profile_picture = ?');
+        profileParams.push(profilePicture);
+      }
+
+      profileParams.push((user as any).id);
+
+      const profileQuery = `UPDATE cleaner_profiles SET ${profileUpdates.join(', ')} WHERE user_id = ?`;
+      await db.prepare(profileQuery).bind(...profileParams).run();
+    } else {
+      // Create new cleaner profile
+      await db.prepare(
+        `INSERT INTO cleaner_profiles (user_id, first_name, last_name, residential_address, cellphone, profile_picture, status, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, 'idle', datetime('now'), datetime('now'))`
+      ).bind((user as any).id, firstName, lastName, residentialAddress, cellphone, profilePicture || '').run();
     }
-
-    params.push((user as any).id);
-
-    const query = `UPDATE users SET ${updates.join(', ')} WHERE id = ?`;
-    await db.prepare(query).bind(...params).run();
 
     return NextResponse.json({ success: true, message: 'Profile created successfully' }, { status: 200 });
   } catch (error) {

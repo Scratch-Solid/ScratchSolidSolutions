@@ -225,8 +225,15 @@ export async function deleteSession(db: D1Database, token: string) {
 
 // Cleaner profile operations
 export async function getCleanerProfileByUsername(db: D1Database, username: string) {
-  const result = await db.prepare('SELECT * FROM cleaner_profiles WHERE username = ?').bind(username).first();
-  return result;
+  // Try to find by paysheet_code first (username is stored as paysheet_code)
+  const result = await db.prepare('SELECT * FROM cleaner_profiles WHERE paysheet_code = ?').bind(username).first();
+  if (result) return result;
+  
+  // Fallback: try to find by joining with users table
+  const joinedResult = await db.prepare(
+    'SELECT cp.* FROM cleaner_profiles cp JOIN users u ON cp.user_id = u.id WHERE u.username = ?'
+  ).bind(username).first();
+  return joinedResult;
 }
 
 export async function getCleanerProfileByUserId(db: D1Database, userId: number) {
