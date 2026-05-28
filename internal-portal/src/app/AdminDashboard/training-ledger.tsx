@@ -19,8 +19,7 @@ interface TrainingProgress {
 interface StaffMember {
   id: number;
   user_id?: number;
-  first_name: string;
-  last_name: string;
+  full_name: string;
   email: string;
 }
 
@@ -198,7 +197,7 @@ export default function TrainingLedger() {
                 {filteredData.map((item) => (
                   <TableRow key={item.user_id}>
                     <TableCell>
-                      <div className="font-medium text-slate-900">{item.staff.first_name} {item.staff.last_name}</div>
+                      <div className="font-medium text-slate-900">{item.staff.full_name}</div>
                       <div className="text-sm text-slate-500">{item.staff.email}</div>
                     </TableCell>
                     <TableCell>
