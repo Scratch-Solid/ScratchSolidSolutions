@@ -67,6 +67,12 @@
 	},
 	"env": {
 		"staging": {
+			"routes": [
+				{
+					"pattern": "portal-staging.scratchsolidsolutions.org/*",
+					"zone_name": "scratchsolidsolutions.org"
+				}
+			],
 			"d1_databases": [
 				{
 					"binding": "scratchsolid_db",
