@@ -367,16 +367,33 @@ export async function withAuth(request: NextRequest, allowedRoles?: string[]): P
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  // First try to validate session in database
   const session = await validateSession(db, token);
-  if (!session) {
-    return NextResponse.json({ error: 'Session expired or invalid' }, { status: 401 });
+  if (session) {
+    if (allowedRoles && !allowedRoles.includes((session as any).role)) {
+      return NextResponse.json({ error: 'Forbidden - insufficient permissions' }, { status: 403 });
+    }
+    return { user: session, db };
   }
 
-  if (allowedRoles && !allowedRoles.includes((session as any).role)) {
-    return NextResponse.json({ error: 'Forbidden - insufficient permissions' }, { status: 403 });
+  // Fallback: Try to verify JWT token directly
+  const { verifyAccessToken } = await import('@/lib/auth');
+  const jwtPayload = verifyAccessToken(token);
+  if (jwtPayload) {
+    // Fetch user from database to get fresh data
+    const user = await db.prepare(
+      'SELECT id, email, role, name, phone, password_hash FROM users WHERE id = ?'
+    ).bind(jwtPayload.userId).first();
+
+    if (user) {
+      if (allowedRoles && !allowedRoles.includes((user as any).role)) {
+        return NextResponse.json({ error: 'Forbidden - insufficient permissions' }, { status: 403 });
+      }
+      return { user, db };
+    }
   }
 
-  return { user: session, db };
+  return NextResponse.json({ error: 'Session expired or invalid' }, { status: 401 });
 }
 
 // RBAC Middleware: Check if user has specific permission
