@@ -75,7 +75,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify password
-    const isValidPassword = await bcrypt.compare(password, user.password_hash as string);
+    // Handle password_hash that might be returned as array of numbers (hex-encoded)
+    let passwordHash = user.password_hash as string;
+    if (Array.isArray(user.password_hash)) {
+      // Convert array of numbers back to string
+      passwordHash = String.fromCharCode(...user.password_hash);
+    }
+    const isValidPassword = await bcrypt.compare(password, passwordHash);
     if (!isValidPassword) {
       return createSecurityError('Invalid credentials', 401);
     }
