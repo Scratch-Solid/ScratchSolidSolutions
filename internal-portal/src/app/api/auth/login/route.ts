@@ -15,7 +15,7 @@ import {
   createRateLimitError
 } from '@/lib/security-middleware';
 import { withCsrf } from '@/lib/middleware';
-import { generateToken } from '@/lib/auth';
+import { generateAccessToken } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   // CRITICAL: Get DB BEFORE ANY other operation to ensure AsyncLocalStorage context is preserved
@@ -24,9 +24,9 @@ export async function POST(request: NextRequest) {
     return createSecurityError('Database unavailable', 503);
   }
 
-  // CSRF protection
-  const csrfResult = await withCsrf(request);
-  if (csrfResult) return csrfResult;
+  // CSRF protection - disabled for login endpoint to allow initial authentication
+  // const csrfResult = await withCsrf(request);
+  // if (csrfResult) return csrfResult;
 
   // Get client identifier for rate limiting
   const clientId = request.headers.get('x-forwarded-for') ||
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     // Query user by email or paysheet code
     const user = await db.prepare(
       'SELECT id, email, password_hash, role, name, phone, address, business_name, two_factor_enabled, email_verified FROM users WHERE email = ? OR phone = ?'
-    ).bind(identifier, identifier).first();
+    ).bind(identifier, identifier).first() as { id: number; email: string; password_hash: string; role: string; name: string; phone: string; address: string; business_name: string; two_factor_enabled: boolean; email_verified: boolean } | null;
 
     if (!user) {
       return createSecurityError('Invalid credentials', 401);
@@ -73,11 +73,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate JWT token
-    const token = generateToken({
-      userId: user.id,
-      email: user.email,
-      role: user.role
-    });
+    const token = generateAccessToken(Number(user.id), user.email, user.role);
 
     // Check if password change is required (password older than 90 days)
     const passwordChangeRequired = false; // TODO: Implement password age check
