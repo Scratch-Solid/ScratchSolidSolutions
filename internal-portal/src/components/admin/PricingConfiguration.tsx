@@ -23,7 +23,7 @@ export default function PricingConfiguration() {
   const fetchPricingData = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('authToken');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       const response = await fetch('/api/v2/pricing/matrix', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -47,7 +47,7 @@ export default function PricingConfiguration() {
   const handleCellSave = async () => {
     if (!editingCell) return;
     try {
-      const token = localStorage.getItem('authToken');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       const response = await fetch('/api/v2/pricing/matrix', {
         method: 'PUT',
         headers: {

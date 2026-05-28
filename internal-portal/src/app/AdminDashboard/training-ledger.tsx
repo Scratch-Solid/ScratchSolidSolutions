@@ -37,7 +37,7 @@ export default function TrainingLedger() {
   const fetchTrainingData = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('authToken');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       
       // Fetch staff list
       const staffRes = await fetch('/api/employees', {
@@ -70,7 +70,7 @@ export default function TrainingLedger() {
 
   const handleBypass = async (userId: number) => {
     try {
-      const token = localStorage.getItem('authToken');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       const res = await fetch('/api/training/bypass', {
         method: 'POST',
         headers: {

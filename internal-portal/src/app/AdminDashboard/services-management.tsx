@@ -124,7 +124,7 @@ export default function ServicesManagement() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('authToken');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       const headers = {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
@@ -165,7 +165,7 @@ export default function ServicesManagement() {
 
   const handleAddService = async () => {
     try {
-      const token = localStorage.getItem('authToken');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       const res = await fetch('/api/services', {
         method: 'POST',
         headers: {
@@ -203,7 +203,7 @@ export default function ServicesManagement() {
 
   const handleUpdateService = async (id: number) => {
     try {
-      const token = localStorage.getItem('authToken');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       const res = await fetch('/api/services', {
         method: 'PUT',
         headers: {
@@ -244,7 +244,7 @@ export default function ServicesManagement() {
     if (!confirm('Are you sure you want to delete this service? This will affect all pricing and quotes.')) return;
     
     try {
-      const token = localStorage.getItem('authToken');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       const res = await fetch(`/api/services?id=${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -262,7 +262,7 @@ export default function ServicesManagement() {
 
   const handleAddPricing = async () => {
     try {
-      const token = localStorage.getItem('authToken');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       const res = await fetch('/api/service-pricing', {
         method: 'POST',
         headers: {
@@ -307,7 +307,7 @@ export default function ServicesManagement() {
 
   const handleAddPromo = async () => {
     try {
-      const token = localStorage.getItem('authToken');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       const res = await fetch('/api/promo-codes', {
         method: 'POST',
         headers: {
@@ -352,7 +352,7 @@ export default function ServicesManagement() {
     if (!confirm('Are you sure you want to delete this promo code?')) return;
     
     try {
-      const token = localStorage.getItem('authToken');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       const res = await fetch(`/api/promo-codes?id=${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -392,7 +392,7 @@ export default function ServicesManagement() {
     if (!selectedPromoForDistribution) return;
 
     try {
-      const token = localStorage.getItem('authToken');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       const res = await fetch('/api/promo-distribution', {
         method: 'POST',
         headers: {

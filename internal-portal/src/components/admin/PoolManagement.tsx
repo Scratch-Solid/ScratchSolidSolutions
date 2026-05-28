@@ -13,7 +13,8 @@ export default function PoolManagement() {
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    const token = localStorage.getItem('authToken');
+    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+    if (!token) return;
     fetch('/api/admin/cleaners', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json()).then((data: any) => { setCleaners(Array.isArray(data) ? data : []); })
       .catch(() => setMessage('Failed to load cleaners'))
@@ -22,7 +23,7 @@ export default function PoolManagement() {
 
   const togglePool = async (cleanerId: number, currentPool: string) => {
     const newPool = currentPool === 'INDIVIDUAL' ? 'BUSINESS' : 'INDIVIDUAL';
-    const token = localStorage.getItem('authToken');
+    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
     try {
       const res = await fetch('/api/v2/staff/pool-transition', {
         method: 'POST',

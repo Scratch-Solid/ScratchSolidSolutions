@@ -43,7 +43,7 @@ export default function AdminDashboard() {
     async function fetchAdminData() {
       setLoading(true);
       try {
-        const token = localStorage.getItem('authToken');
+        const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
         const headers: Record<string, string> = {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
@@ -133,7 +133,7 @@ export default function AdminDashboard() {
 
   const assignCleaner = async (bookingId: string, cleanerId: string) => {
     try {
-      const token = localStorage.getItem('authToken');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       const res = await fetch(`/api/bookings/${bookingId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },

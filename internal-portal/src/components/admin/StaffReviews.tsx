@@ -18,7 +18,8 @@ export default function StaffReviews() {
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    const token = localStorage.getItem('authToken');
+    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+    if (!token) return;
     fetch('/api/admin/cleaners', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json()).then((data: any) => setCleaners(Array.isArray(data) ? data : []))
       .catch(() => setMessage('Failed to load staff'));
@@ -27,7 +28,7 @@ export default function StaffReviews() {
   const submitReview = async () => {
     if (!selected) return;
     setLoading(true);
-    const token = localStorage.getItem('authToken');
+    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
     try {
       const res = await fetch('/api/admin/staff-reviews', {
         method: 'POST',

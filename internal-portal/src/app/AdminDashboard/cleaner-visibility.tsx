@@ -36,7 +36,7 @@ export default function CleanerVisibility() {
 
   const fetchCleaners = async () => {
     try {
-      const token = localStorage.getItem('authToken');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       const res = await fetch('/api/admin/cleaners', {
         headers: { Authorization: `Bearer ${token}` }
       });

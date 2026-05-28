@@ -48,7 +48,11 @@ export default function ContentManagement() {
     setLoading(true);
     try {
       if (mode !== 'static') return;
-      const token = localStorage.getItem('authToken');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+      if (!token) {
+        setMessage('Authentication required');
+        return;
+      }
       if (contentType === 'consent-form') {
         const response = await fetch('/api/admin/consent-form', {
           headers: { 'Authorization': `Bearer ${token}` }
@@ -92,7 +96,8 @@ export default function ContentManagement() {
   const fetchBackground = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('authToken');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+      if (!token) return;
       const res = await fetch(marketingProxy('/content?type=background-image'), { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) {
         const data = await res.json() as { content?: string };
@@ -109,7 +114,8 @@ export default function ContentManagement() {
   const fetchGallery = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('authToken');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+      if (!token) return;
       const res = await fetch(marketingProxy('/content?type=gallery-images'), { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) {
         const data = await res.json() as { content?: string };
@@ -135,7 +141,8 @@ export default function ContentManagement() {
   const fetchReviews = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('authToken');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+      if (!token) return;
       const res = await fetch(marketingProxy(`/reviews?status=${reviewFilter}`), { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) {
         const data = await res.json();
@@ -151,7 +158,7 @@ export default function ContentManagement() {
   const fetchLeaders = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('authToken');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       if (!token) {
         setMessage('Authentication required to load leaders');
         return;
@@ -172,7 +179,7 @@ export default function ContentManagement() {
   const fetchAi = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('authToken');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       if (!token) {
         setMessage('Authentication required to load bot content');
         return;
@@ -188,7 +195,7 @@ export default function ContentManagement() {
   };
 
   const handleUpload = async (file: File) => {
-    const token = localStorage.getItem('authToken');
+    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
     if (!token) {
       setMessage('Authentication required to upload');
       return;

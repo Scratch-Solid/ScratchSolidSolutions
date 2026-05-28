@@ -23,7 +23,7 @@ export default function ProxyObserver() {
 
   const fetchSessionHistory = async () => {
     try {
-      const token = localStorage.getItem('authToken');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       const response = await fetch('/api/admin/proxy-observer', {
         method: 'POST',
         headers: {
@@ -48,7 +48,7 @@ export default function ProxyObserver() {
     }
     setLoading(true);
     try {
-      const token = localStorage.getItem('authToken');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       const response = await fetch('/api/admin/proxy-observer', {
         method: 'POST',
         headers: {
@@ -79,7 +79,7 @@ export default function ProxyObserver() {
     if (!activeSession) return;
     setLoading(true);
     try {
-      const token = localStorage.getItem('authToken');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       const response = await fetch('/api/admin/proxy-observer', {
         method: 'POST',
         headers: {

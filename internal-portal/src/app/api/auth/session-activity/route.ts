@@ -1,19 +1,23 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/better-auth';
 import { getSessionActivity, detectSuspiciousActivity } from '@/lib/session-activity-logger';
+import { withAuth } from '@/lib/middleware';
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth.api.getSession({ headers: request.headers });
+    const authResult = await withAuth(request);
+    if (authResult instanceof NextResponse) return authResult;
     
-    if (!session?.user) {
+    const { user } = authResult;
+    // @ts-ignore - Handle flexible user type from middleware
+    const userId = user?.userId || user?.id;
+    
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const searchParams = request.nextUrl.searchParams;
     const limit = parseInt(searchParams.get('limit') || '50', 10);
-    const userId = session.user.id;
 
     const activities = await getSessionActivity(userId, limit);
     const isSuspicious = await detectSuspiciousActivity(userId);
@@ -21,7 +25,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       activities,
       isSuspicious,
-      user: session.user
+      user
     });
   } catch (error) {
     console.error('Failed to get session activity:', error);

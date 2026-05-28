@@ -33,7 +33,7 @@ export default function AnalyticsDashboard({ promoCodeId }: AnalyticsDashboardPr
   const fetchAnalytics = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('authToken');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       const url = `/api/analytics?dateRange=${dateRange}${promoCodeId ? `&promoCodeId=${promoCodeId}` : ''}`;
       
       const res = await fetch(url, {

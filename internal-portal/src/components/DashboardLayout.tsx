@@ -16,7 +16,7 @@ export default function DashboardLayout({ children, title, role = 'admin' }: Das
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = async () => {
-    const token = localStorage.getItem('authToken');
+    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
     if (token) {
       try {
         await fetch('/api/auth/logout', {
@@ -29,11 +29,14 @@ export default function DashboardLayout({ children, title, role = 'admin' }: Das
         console.error('Logout error:', error);
       }
     }
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('username');
-    localStorage.removeItem('user_id');
-    window.location.href = '/auth/login';
+    
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('userRole');
+      localStorage.removeItem('username');
+      localStorage.removeItem('user_id');
+      window.location.href = '/auth/login';
+    }
   };
 
   const getNavItems = () => {
