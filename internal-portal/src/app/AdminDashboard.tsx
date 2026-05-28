@@ -183,17 +183,17 @@ export default function AdminDashboard() {
   return (
     <DashboardLayout title="Admin Dashboard" role="admin">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5 lg:grid-cols-10 h-auto">
-          <TabsTrigger value="overview" className="gap-2"><LayoutDashboard className="h-4 w-4" />Overview</TabsTrigger>
-          <TabsTrigger value="employees" className="gap-2"><Users className="h-4 w-4" />Employees</TabsTrigger>
-          <TabsTrigger value="services-banking" className="gap-2"><DollarSign className="h-4 w-4" />Services</TabsTrigger>
-          <TabsTrigger value="cleaners" className="gap-2"><UserCheck className="h-4 w-4" />Cleaners</TabsTrigger>
-          <TabsTrigger value="content" className="gap-2"><FileText className="h-4 w-4" />Content</TabsTrigger>
-          <TabsTrigger value="pricing" className="gap-2"><Wrench className="h-4 w-4" />Pricing</TabsTrigger>
-          <TabsTrigger value="proxy-observer" className="gap-2"><Eye className="h-4 w-4" />Proxy</TabsTrigger>
-          <TabsTrigger value="pool-management" className="gap-2"><Settings className="h-4 w-4" />Pools</TabsTrigger>
-          <TabsTrigger value="staff-reviews" className="gap-2"><UserCheck className="h-4 w-4" />Reviews</TabsTrigger>
-          <TabsTrigger value="training" className="gap-2"><GraduationCap className="h-4 w-4" />Training</TabsTrigger>
+        <TabsList className="w-full h-auto overflow-x-auto flex-wrap gap-1 p-1">
+          <TabsTrigger value="overview" className="gap-2 whitespace-nowrap"><LayoutDashboard className="h-4 w-4" />Overview</TabsTrigger>
+          <TabsTrigger value="employees" className="gap-2 whitespace-nowrap"><Users className="h-4 w-4" />Employees</TabsTrigger>
+          <TabsTrigger value="services-banking" className="gap-2 whitespace-nowrap"><DollarSign className="h-4 w-4" />Services</TabsTrigger>
+          <TabsTrigger value="cleaners" className="gap-2 whitespace-nowrap"><UserCheck className="h-4 w-4" />Cleaners</TabsTrigger>
+          <TabsTrigger value="content" className="gap-2 whitespace-nowrap"><FileText className="h-4 w-4" />Content</TabsTrigger>
+          <TabsTrigger value="pricing" className="gap-2 whitespace-nowrap"><Wrench className="h-4 w-4" />Pricing</TabsTrigger>
+          <TabsTrigger value="proxy-observer" className="gap-2 whitespace-nowrap"><Eye className="h-4 w-4" />Proxy</TabsTrigger>
+          <TabsTrigger value="pool-management" className="gap-2 whitespace-nowrap"><Settings className="h-4 w-4" />Pools</TabsTrigger>
+          <TabsTrigger value="staff-reviews" className="gap-2 whitespace-nowrap"><UserCheck className="h-4 w-4" />Reviews</TabsTrigger>
+          <TabsTrigger value="training" className="gap-2 whitespace-nowrap"><GraduationCap className="h-4 w-4" />Training</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">
