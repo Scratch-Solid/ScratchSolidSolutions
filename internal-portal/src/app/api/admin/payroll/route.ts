@@ -14,8 +14,8 @@ export async function GET(request: NextRequest) {
 
     let query = `
       SELECT p.*, u.name as user_name, u.email as user_email
-      FROM payments p
-      LEFT JOIN users u ON p.user_id = u.id
+      FROM payroll p
+      LEFT JOIN users u ON p.cleaner_id = u.id
     `;
     const conditions: string[] = [];
     const params: any[] = [];

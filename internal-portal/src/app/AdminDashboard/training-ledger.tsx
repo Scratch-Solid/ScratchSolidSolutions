@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { GraduationCap, CheckCircle, Clock, AlertCircle } from "lucide-react";
 
 interface TrainingProgress {
-  user_id: string;
+  user_id: number;
   training_status: 'Trainee' | 'Completed';
   current_module_id: number;
   last_completed_at: string | null;
@@ -18,6 +18,7 @@ interface TrainingProgress {
 
 interface StaffMember {
   id: number;
+  user_id?: number;
   first_name: string;
   last_name: string;
   email: string;
@@ -46,7 +47,7 @@ export default function TrainingLedger() {
       
       // Fetch training progress for each staff member
       const trainingPromises = staff.map(async (s) => {
-        const progressRes = await fetch(`/api/training/current-state?user_id=${s.id}`, {
+        const progressRes = await fetch(`/api/training/current-state?user_id=${s.user_id || s.id}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (progressRes.ok) {
@@ -67,7 +68,7 @@ export default function TrainingLedger() {
     }
   };
 
-  const handleBypass = async (userId: string) => {
+  const handleBypass = async (userId: number) => {
     try {
       const token = localStorage.getItem('authToken');
       const res = await fetch('/api/training/bypass', {

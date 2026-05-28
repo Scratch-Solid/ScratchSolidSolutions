@@ -4,7 +4,7 @@
 -- Table: employee_training_progress
 -- Tracks user progression and system access lockouts
 CREATE TABLE IF NOT EXISTS employee_training_progress (
-    user_id TEXT PRIMARY KEY,                       -- UUID string from primary users table
+    user_id INTEGER PRIMARY KEY,                   -- Changed from TEXT to INTEGER to match users.id
     training_status TEXT DEFAULT 'Trainee',         -- 'Trainee' or 'Completed'
     current_module_id INTEGER DEFAULT 1,            -- Range: 1 to 5
     last_completed_at TEXT NULL,                    -- ISO8601 String for D1 Compatibility
@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS employee_training_progress (
 -- Audit log for quiz scoring metrics
 CREATE TABLE IF NOT EXISTS training_quiz_attempts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id TEXT NOT NULL,
+    user_id INTEGER NOT NULL,                       -- Changed from TEXT to INTEGER
     module_id INTEGER NOT NULL,
     score_percentage REAL NOT NULL,
     passed INTEGER NOT NULL,                        -- 0 for False, 1 for True (D1 Boolean standard)
