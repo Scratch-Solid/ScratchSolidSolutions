@@ -50,11 +50,11 @@ export default function ChangePasswordPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-semibold mb-1">Current Password</label>
-            <input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} className="w-full" required />
+            <input type="password" name="currentPassword" autoComplete="current-password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} className="w-full" required />
           </div>
           <div>
             <label className="block text-sm font-semibold mb-1">New Password</label>
-            <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full" required />
+            <input type="password" name="newPassword" autoComplete="new-password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full" required />
           </div>
           <button type="submit" className="primary-button w-full" disabled={loading}>
             {loading ? 'Saving...' : 'Change Password'}

@@ -290,6 +290,7 @@ export default function CreateProfilePage() {
                 <label className="block text-sm font-bold mb-2">First Name</label>
                 <input
                   name="firstName"
+                  autoComplete="given-name"
                   placeholder="Enter first name"
                   value={formData.firstName}
                   onChange={handleChange}
@@ -303,6 +304,7 @@ export default function CreateProfilePage() {
                 <label className="block text-sm font-bold mb-2">Last Name</label>
                 <input
                   name="lastName"
+                  autoComplete="family-name"
                   placeholder="Enter last name"
                   value={formData.lastName}
                   onChange={handleChange}
@@ -316,6 +318,7 @@ export default function CreateProfilePage() {
                 <label className="block text-sm font-bold mb-2">Residential Address</label>
                 <input
                   name="residentialAddress"
+                  autoComplete="street-address"
                   placeholder="Enter residential address"
                   value={formData.residentialAddress}
                   onChange={handleChange}
@@ -330,6 +333,7 @@ export default function CreateProfilePage() {
                 <input
                   name="cellphone"
                   type="tel"
+                  autoComplete="tel"
                   placeholder="+27 XX XXX XXXX"
                   value={formData.cellphone}
                   onChange={handleChange}
@@ -350,6 +354,7 @@ export default function CreateProfilePage() {
                 <input
                   name="password"
                   type="password"
+                  autoComplete="new-password"
                   placeholder="Min 8 characters, uppercase, lowercase, number, special character"
                   value={formData.password}
                   onChange={handleChange}
@@ -364,6 +369,7 @@ export default function CreateProfilePage() {
                 <input
                   name="confirmPassword"
                   type="password"
+                  autoComplete="new-password"
                   placeholder="Confirm your password"
                   value={formData.confirmPassword}
                   onChange={handleChange}

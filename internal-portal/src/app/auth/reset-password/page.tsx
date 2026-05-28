@@ -90,6 +90,8 @@ function ResetPasswordContent() {
             <input
               type="password"
               id="password"
+              name="password"
+              autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full"
@@ -105,6 +107,8 @@ function ResetPasswordContent() {
             <input
               type="password"
               id="confirmPassword"
+              name="confirmPassword"
+              autoComplete="new-password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="w-full"
