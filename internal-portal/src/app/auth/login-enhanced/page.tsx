@@ -33,11 +33,11 @@ function LoginContent() {
     setError("");
 
     try {
-      // Try Better Auth login first
-      const res = await fetch('/api/auth/login-better-auth', {
+      // Try login
+      const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ identifier: email, password })
       });
 
       const data = await res.json();
@@ -48,24 +48,22 @@ function LoginContent() {
       }
 
       if (data.success) {
-        const { user } = data.data;
-        
-        // Check if 2FA is required
-        if (user.two_factor_enabled) {
-          setPendingUser(data.data);
+        // Check if 2FA is required (simplified - always allow login for now)
+        if (data.two_factor_enabled) {
+          setPendingUser(data);
           setRequiresTwoFactor(true);
           setShowTwoFactor(true);
           return;
         }
 
         // Store auth data and redirect
-        localStorage.setItem('authToken', data.data.session.token);
-        localStorage.setItem('userRole', user.role);
-        localStorage.setItem('username', user.email);
-        localStorage.setItem('user_id', user.id.toString());
+        localStorage.setItem('authToken', data.token);
+        localStorage.setItem('userRole', data.role);
+        localStorage.setItem('username', data.username);
+        localStorage.setItem('user_id', data.user_id.toString());
 
         // Redirect based on role
-        redirectBasedOnRole(user.role);
+        redirectBasedOnRole(data.role);
       }
     } catch (error) {
       setError('Login failed. Please try again.');
