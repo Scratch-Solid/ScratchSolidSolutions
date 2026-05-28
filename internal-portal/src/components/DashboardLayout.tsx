@@ -1,7 +1,10 @@
 "use client";
 
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useState } from 'react';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { LogOut, Menu, X } from 'lucide-react';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -10,6 +13,8 @@ interface DashboardLayoutProps {
 }
 
 export default function DashboardLayout({ children, title, role = 'admin' }: DashboardLayoutProps) {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   const handleLogout = async () => {
     const token = localStorage.getItem('authToken');
     if (token) {
@@ -61,34 +66,61 @@ export default function DashboardLayout({ children, title, role = 'admin' }: Das
   };
 
   const navItems = getNavItems();
+  const username = localStorage.getItem('username') || 'User';
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--bg)', backgroundAttachment: 'fixed' }}>
-      {/* Glassified Header */}
-      <header className="app-header">
-        <div className="app-header-inner">
-          <div className="flex items-center">
-            <h1 className="text-2xl font-bold" style={{ color: 'var(--text-h)' }}>{title}</h1>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/20 to-purple-50/20">
+      {/* Modern Header */}
+      <header className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex h-16 items-center justify-between">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="lg:hidden p-2 rounded-lg hover:bg-slate-100 transition-colors"
+              >
+                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </button>
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold">
+                  SS
+                </div>
+                <div>
+                  <h1 className="text-lg font-semibold text-slate-900">{title}</h1>
+                  <p className="text-xs text-slate-500">Internal Portal</p>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <Avatar className="h-9 w-9">
+                <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white text-sm font-medium">
+                  {username.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <Button
+                onClick={handleLogout}
+                variant="ghost"
+                size="sm"
+                className="gap-2"
+              >
+                <LogOut className="h-4 w-4" />
+                <span className="hidden sm:inline">Logout</span>
+              </Button>
+            </div>
           </div>
-          <button
-            onClick={handleLogout}
-            className="secondary-button"
-          >
-            Logout
-          </button>
         </div>
       </header>
 
-      {/* Glassified Navigation */}
-      <nav className="glass-panel mb-6">
-        <div className="app-header-inner py-3">
-          <div className="flex space-x-4">
+      {/* Navigation */}
+      <nav className={`lg:hidden ${mobileMenuOpen ? 'block' : 'hidden'} border-b bg-white/95 backdrop-blur-xl`}>
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex flex-col gap-2">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="px-4 py-2 rounded-lg transition-all duration-200 hover:bg-white/10 font-medium"
-                style={{ color: 'var(--text)' }}
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-4 py-3 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-colors font-medium"
               >
                 {item.label}
               </Link>
@@ -97,17 +129,36 @@ export default function DashboardLayout({ children, title, role = 'admin' }: Das
         </div>
       </nav>
 
-      {/* Glassified Content Area */}
-      <main className="app-main">
-        <div className="glass-panel p-6">
+      {/* Desktop Navigation */}
+      <nav className="hidden lg:block border-b bg-white/60 backdrop-blur-xl">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex gap-1 py-2">
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 transition-all duration-200"
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
+        </div>
+      </nav>
+
+      {/* Main Content */}
+      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-slate-200/60 shadow-sm p-6 sm:p-8">
           {children}
         </div>
       </main>
 
-      {/* Glassified Footer */}
-      <footer className="glass-panel mt-8">
-        <div className="text-center py-4" style={{ color: 'var(--text-secondary)', opacity: 0.7 }}>
-          © 2024 Scratch Solid Solutions. All rights reserved.
+      {/* Footer */}
+      <footer className="border-t bg-white/60 backdrop-blur-xl mt-auto">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="text-center text-sm text-slate-500">
+            © 2024 Scratch Solid Solutions. All rights reserved.
+          </div>
         </div>
       </footer>
     </div>

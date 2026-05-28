@@ -1,6 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Users, MapPin, RefreshCw, X } from "lucide-react";
 
 interface Cleaner {
   user_id: number;
@@ -36,7 +42,7 @@ export default function CleanerVisibility() {
       });
       
       if (res.ok) {
-        const data = await res.json();
+        const data = await res.json() as Cleaner[];
         setCleaners(data || []);
       }
     } catch (error) {
@@ -46,13 +52,23 @@ export default function CleanerVisibility() {
     }
   };
 
+  const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
+    switch (status) {
+      case 'idle': return 'secondary';
+      case 'on_way': return 'default';
+      case 'arrived': return 'outline';
+      case 'completed': return 'default';
+      default: return 'secondary';
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'idle': return 'bg-gray-100 text-gray-800';
+      case 'idle': return 'bg-slate-100 text-slate-800';
       case 'on_way': return 'bg-blue-100 text-blue-800';
       case 'arrived': return 'bg-yellow-100 text-yellow-800';
       case 'completed': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+      default: return 'bg-slate-100 text-slate-800';
     }
   };
 
@@ -72,187 +88,221 @@ export default function CleanerVisibility() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold text-white">Cleaner Visibility</h2>
-        <button
-          onClick={() => setAutoRefresh(!autoRefresh)}
-          className={`px-4 py-2 rounded-lg ${autoRefresh ? 'bg-green-600 text-white' : 'bg-gray-600 text-white'}`}
-        >
-          {autoRefresh ? 'Auto-refresh: ON' : 'Auto-refresh: OFF'}
-        </button>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-4 gap-4">
-        <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-4">
-          <h3 className="font-bold text-white">Total Cleaners</h3>
-          <p className="text-2xl font-bold text-white">{cleaners.length}</p>
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900">Cleaner Visibility</h2>
+          <p className="text-slate-500 text-sm mt-1">Real-time cleaner status and GPS tracking</p>
         </div>
-        <div className="bg-blue-500/20 backdrop-blur-sm rounded-lg border border-blue-500/30 p-4">
-          <h3 className="font-bold text-white">Active</h3>
-          <p className="text-2xl font-bold text-white">{activeCleaners.length}</p>
-        </div>
-        <div className="bg-green-500/20 backdrop-blur-sm rounded-lg border border-green-500/30 p-4">
-          <h3 className="font-bold text-white">Idle</h3>
-          <p className="text-2xl font-bold text-white">{idleCleaners.length}</p>
-        </div>
-        <div className="bg-red-500/20 backdrop-blur-sm rounded-lg border border-red-500/30 p-4">
-          <h3 className="font-bold text-white">Blocked</h3>
-          <p className="text-2xl font-bold text-white">{blockedCleaners.length}</p>
+        <div className="flex items-center gap-2">
+          <RefreshCw className={`h-4 w-4 ${autoRefresh ? 'text-green-600 animate-spin' : 'text-slate-400'}`} />
+          <Switch
+            checked={autoRefresh}
+            onCheckedChange={setAutoRefresh}
+          />
+          <span className="text-sm text-slate-600">Auto-refresh</span>
         </div>
       </div>
 
-      {/* Active Cleaners */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-slate-600">Total Cleaners</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold text-slate-900">{cleaners.length}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-slate-600">Active</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold text-blue-600">{activeCleaners.length}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-slate-600">Idle</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold text-green-600">{idleCleaners.length}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-slate-600">Blocked</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold text-red-600">{blockedCleaners.length}</p>
+          </CardContent>
+        </Card>
+      </div>
+
       {activeCleaners.length > 0 && (
-        <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
-          <h3 className="font-bold text-lg text-white mb-4">Active Cleaners</h3>
-          <div className="space-y-3">
-            {activeCleaners.map(cleaner => (
-              <div
-                key={cleaner.user_id}
-                className="flex items-center justify-between bg-white/5 rounded-lg p-4 hover:bg-white/10 cursor-pointer transition-colors"
-                onClick={() => setSelectedCleaner(cleaner)}
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
-                    {cleaner.first_name?.[0]}{cleaner.last_name?.[0]}
-                  </div>
-                  <div>
-                    <p className="font-semibold text-white">
-                      {cleaner.first_name} {cleaner.last_name}
-                    </p>
-                    <p className="text-sm text-gray-400">ID: {cleaner.user_id}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(cleaner.status)}`}>
-                    {getStatusText(cleaner.status)}
-                  </span>
-                  {cleaner.gps_lat && cleaner.gps_long && (
-                    <span className="text-green-400 text-sm">📍 GPS Active</span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Idle Cleaners */}
-      {idleCleaners.length > 0 && (
-        <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
-          <h3 className="font-bold text-lg text-white mb-4">Idle Cleaners (Available)</h3>
-          <div className="space-y-3">
-            {idleCleaners.map(cleaner => (
-              <div
-                key={cleaner.user_id}
-                className="flex items-center justify-between bg-white/5 rounded-lg p-4 hover:bg-white/10 cursor-pointer transition-colors"
-                onClick={() => setSelectedCleaner(cleaner)}
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white font-bold">
-                    {cleaner.first_name?.[0]}{cleaner.last_name?.[0]}
-                  </div>
-                  <div>
-                    <p className="font-semibold text-white">
-                      {cleaner.first_name} {cleaner.last_name}
-                    </p>
-                    <p className="text-sm text-gray-400">ID: {cleaner.user_id}</p>
-                  </div>
-                </div>
-                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(cleaner.status)}`}>
-                  {getStatusText(cleaner.status)}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Blocked Cleaners */}
-      {blockedCleaners.length > 0 && (
-        <div className="bg-red-500/10 backdrop-blur-sm rounded-lg border border-red-500/30 p-6">
-          <h3 className="font-bold text-lg text-white mb-4">Blocked Cleaners</h3>
-          <div className="space-y-3">
-            {blockedCleaners.map(cleaner => (
-              <div
-                key={cleaner.user_id}
-                className="flex items-center justify-between bg-red-500/5 rounded-lg p-4"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center text-white font-bold">
-                    {cleaner.first_name?.[0]}{cleaner.last_name?.[0]}
-                  </div>
-                  <div>
-                    <p className="font-semibold text-white">
-                      {cleaner.first_name} {cleaner.last_name}
-                    </p>
-                    <p className="text-sm text-gray-400">ID: {cleaner.user_id}</p>
-                  </div>
-                </div>
-                <span className="px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-red-800">
-                  Blocked
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Selected Cleaner Detail Modal */}
-      {selectedCleaner && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setSelectedCleaner(null)}>
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4" onClick={e => e.stopPropagation()}>
-            <h3 className="text-xl font-bold mb-4">Cleaner Details</h3>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Active Cleaners
+            </CardTitle>
+            <CardDescription>Cleaners currently on jobs</CardDescription>
+          </CardHeader>
+          <CardContent>
             <div className="space-y-3">
+              {activeCleaners.map(cleaner => (
+                <div
+                  key={cleaner.user_id}
+                  className="flex items-center justify-between p-4 border rounded-lg bg-slate-50 hover:bg-slate-100 cursor-pointer transition-colors"
+                  onClick={() => setSelectedCleaner(cleaner)}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
+                      {cleaner.first_name?.[0]}{cleaner.last_name?.[0]}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-slate-900">
+                        {cleaner.first_name} {cleaner.last_name}
+                      </p>
+                      <p className="text-sm text-slate-500">ID: {cleaner.user_id}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <Badge variant={getStatusVariant(cleaner.status)} className={getStatusColor(cleaner.status)}>
+                      {getStatusText(cleaner.status)}
+                    </Badge>
+                    {cleaner.gps_lat && cleaner.gps_long && (
+                      <Badge variant="outline" className="gap-1">
+                        <MapPin className="h-3 w-3" />
+                        GPS Active
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {idleCleaners.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Idle Cleaners (Available)</CardTitle>
+            <CardDescription>Cleaners available for new assignments</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {idleCleaners.map(cleaner => (
+                <div
+                  key={cleaner.user_id}
+                  className="flex items-center justify-between p-4 border rounded-lg bg-slate-50 hover:bg-slate-100 cursor-pointer transition-colors"
+                  onClick={() => setSelectedCleaner(cleaner)}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white font-bold">
+                      {cleaner.first_name?.[0]}{cleaner.last_name?.[0]}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-slate-900">
+                        {cleaner.first_name} {cleaner.last_name}
+                      </p>
+                      <p className="text-sm text-slate-500">ID: {cleaner.user_id}</p>
+                    </div>
+                  </div>
+                  <Badge variant={getStatusVariant(cleaner.status)} className={getStatusColor(cleaner.status)}>
+                    {getStatusText(cleaner.status)}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {blockedCleaners.length > 0 && (
+        <Card className="border-red-200">
+          <CardHeader>
+            <CardTitle className="text-red-600">Blocked Cleaners</CardTitle>
+            <CardDescription>Cleaners with restricted access</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {blockedCleaners.map(cleaner => (
+                <div
+                  key={cleaner.user_id}
+                  className="flex items-center justify-between p-4 border border-red-200 rounded-lg bg-red-50"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center text-white font-bold">
+                      {cleaner.first_name?.[0]}{cleaner.last_name?.[0]}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-slate-900">
+                        {cleaner.first_name} {cleaner.last_name}
+                      </p>
+                      <p className="text-sm text-slate-500">ID: {cleaner.user_id}</p>
+                    </div>
+                  </div>
+                  <Badge variant="destructive">Blocked</Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <Dialog open={!!selectedCleaner} onOpenChange={() => setSelectedCleaner(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Cleaner Details</DialogTitle>
+          </DialogHeader>
+          {selectedCleaner && (
+            <div className="space-y-4">
               <div>
-                <p className="text-sm text-gray-500">Name</p>
-                <p className="font-semibold">{selectedCleaner.first_name} {selectedCleaner.last_name}</p>
+                <p className="text-sm text-slate-500">Name</p>
+                <p className="font-semibold text-slate-900">{selectedCleaner.first_name} {selectedCleaner.last_name}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Status</p>
-                <p className={`font-semibold ${getStatusColor(selectedCleaner.status)}`}>{getStatusText(selectedCleaner.status)}</p>
+                <p className="text-sm text-slate-500">Status</p>
+                <Badge variant={getStatusVariant(selectedCleaner.status)} className={getStatusColor(selectedCleaner.status)}>
+                  {getStatusText(selectedCleaner.status)}
+                </Badge>
               </div>
               {selectedCleaner.gps_lat && selectedCleaner.gps_long && (
                 <>
                   <div>
-                    <p className="text-sm text-gray-500">GPS Latitude</p>
-                    <p className="font-semibold">{selectedCleaner.gps_lat.toFixed(6)}</p>
+                    <p className="text-sm text-slate-500">GPS Latitude</p>
+                    <p className="font-semibold text-slate-900">{selectedCleaner.gps_lat.toFixed(6)}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">GPS Longitude</p>
-                    <p className="font-semibold">{selectedCleaner.gps_long.toFixed(6)}</p>
+                    <p className="text-sm text-slate-500">GPS Longitude</p>
+                    <p className="font-semibold text-slate-900">{selectedCleaner.gps_long.toFixed(6)}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Last Updated</p>
-                    <p className="font-semibold">{selectedCleaner.updated_at || 'Unknown'}</p>
+                    <p className="text-sm text-slate-500">Last Updated</p>
+                    <p className="font-semibold text-slate-900">{selectedCleaner.updated_at || 'Unknown'}</p>
                   </div>
-                  <a
-                    href={`https://www.google.com/maps?q=${selectedCleaner.gps_lat},${selectedCleaner.gps_long}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block text-center bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 transition-colors"
+                  <Button
+                    asChild
+                    className="w-full"
+                    onClick={() => window.open(`https://www.google.com/maps?q=${selectedCleaner.gps_lat},${selectedCleaner.gps_long}`, '_blank')}
                   >
-                    View on Google Maps
-                  </a>
+                    <a target="_blank" rel="noopener noreferrer">
+                      <MapPin className="h-4 w-4 mr-2" />
+                      View on Google Maps
+                    </a>
+                  </Button>
                 </>
               )}
             </div>
-            <button
-              onClick={() => setSelectedCleaner(null)}
-              className="mt-4 w-full bg-gray-200 text-gray-800 py-2 rounded-xl hover:bg-gray-300 transition-colors"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
+          )}
+        </DialogContent>
+      </Dialog>
 
       {loading && (
-        <div className="text-center text-white py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-2"></div>
-          <p>Loading cleaner data...</p>
+        <div className="flex items-center justify-center py-12 text-slate-500">
+          <RefreshCw className="h-6 w-6 animate-spin mr-2" />
+          <span>Loading cleaner data...</span>
         </div>
       )}
     </div>

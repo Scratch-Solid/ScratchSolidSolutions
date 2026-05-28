@@ -5,6 +5,15 @@ import DashboardLayout from "@/components/DashboardLayout";
 import QRCodeDisplay from "@/components/QRCodeDisplay";
 import PromoDistributionModal from "@/components/PromoDistributionModal";
 import AnalyticsDashboard from "@/components/AnalyticsDashboard";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Package, DollarSign, Gift, BarChart3, QrCode, Share2, Trash2, Plus } from "lucide-react";
 
 interface Service {
   id: number;
@@ -409,365 +418,338 @@ export default function ServicesManagement() {
     }
   };
 
-  if (loading) return <DashboardLayout title="Services Management" role="admin"><div className="animate-pulse">Loading...</div></DashboardLayout>;
+  if (loading) return <DashboardLayout title="Services Management" role="admin"><div className="flex items-center justify-center py-12 text-slate-500">Loading...</div></DashboardLayout>;
   if (error) return <DashboardLayout title="Services Management" role="admin"><div className="text-red-500">{error}</div></DashboardLayout>;
 
   return (
     <DashboardLayout title="Services Management" role="admin">
       <div className="space-y-6">
-        {/* Tab Navigation */}
-        <div className="flex space-x-4 border-b border-white/20 pb-2">
-          <button
-            onClick={() => setActiveTab('services')}
-            className={`px-4 py-2 rounded-lg transition-all ${activeTab === 'services' ? 'bg-white/20 text-white' : 'bg-white/10 text-white/70'}`}
-          >
-            Services
-          </button>
-          <button
-            onClick={() => setActiveTab('pricing')}
-            className={`px-4 py-2 rounded-lg transition-all ${activeTab === 'pricing' ? 'bg-white/20 text-white' : 'bg-white/10 text-white/70'}`}
-          >
-            Pricing
-          </button>
-          <button
-            onClick={() => setActiveTab('promos')}
-            className={`px-4 py-2 rounded-lg transition-all ${activeTab === 'promos' ? 'bg-white/20 text-white' : 'bg-white/10 text-white/70'}`}
-          >
-            Promo Codes
-          </button>
-          <button
-            onClick={() => setActiveTab('analytics')}
-            className={`px-4 py-2 rounded-lg transition-all ${activeTab === 'analytics' ? 'bg-white/20 text-white' : 'bg-white/10 text-white/70'}`}
-          >
-            Analytics
-          </button>
-        </div>
+        {error && <Badge variant="destructive">{error}</Badge>}
 
-        {/* Services Tab */}
-        {activeTab === 'services' && (
-          <div className="space-y-6">
-            {/* Add Service Form */}
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
-              <h3 className="text-lg font-bold text-white mb-4">Add New Service</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <input
-                  type="text"
-                  placeholder="Service Name"
-                  value={serviceForm.name}
-                  onChange={(e) => setServiceForm({...serviceForm, name: e.target.value})}
-                  className="px-3 py-2 border border-white/20 rounded bg-white/10 text-white placeholder-white/50"
-                />
-                <input
-                  type="text"
-                  placeholder="Icon (emoji)"
-                  value={serviceForm.icon}
-                  onChange={(e) => setServiceForm({...serviceForm, icon: e.target.value})}
-                  className="px-3 py-2 border border-white/20 rounded bg-white/10 text-white placeholder-white/50"
-                />
-                <input
-                  type="number"
-                  placeholder="Display Order"
-                  value={serviceForm.display_order}
-                  onChange={(e) => setServiceForm({...serviceForm, display_order: e.target.value})}
-                  className="px-3 py-2 border border-white/20 rounded bg-white/10 text-white placeholder-white/50"
-                />
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="service-active"
-                    checked={serviceForm.is_active}
-                    onChange={(e) => setServiceForm({...serviceForm, is_active: e.target.checked})}
-                    className="rounded"
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="services" className="gap-2">
+              <Package className="h-4 w-4" />
+              Services
+            </TabsTrigger>
+            <TabsTrigger value="pricing" className="gap-2">
+              <DollarSign className="h-4 w-4" />
+              Pricing
+            </TabsTrigger>
+            <TabsTrigger value="promos" className="gap-2">
+              <Gift className="h-4 w-4" />
+              Promo Codes
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Analytics
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="services" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Plus className="h-5 w-5" />
+                  Add New Service
+                </CardTitle>
+                <CardDescription>Create a new service offering</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input
+                    placeholder="Service Name"
+                    value={serviceForm.name}
+                    onChange={(e) => setServiceForm({...serviceForm, name: e.target.value})}
                   />
-                  <label htmlFor="service-active" className="text-white text-sm">Active</label>
-                </div>
-              </div>
-              <textarea
-                placeholder="Description"
-                value={serviceForm.description}
-                onChange={(e) => setServiceForm({...serviceForm, description: e.target.value})}
-                rows={3}
-                className="w-full mt-3 px-3 py-2 border border-white/20 rounded bg-white/10 text-white placeholder-white/50"
-              />
-              <button
-                onClick={handleAddService}
-                className="mt-3 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
-              >
-                Add Service
-              </button>
-            </div>
-
-            {/* Services List */}
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
-              <h3 className="text-lg font-bold text-white mb-4">Existing Services</h3>
-              <div className="space-y-3">
-                {services.map((service) => (
-                  <div key={service.id} className="flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded">
-                    <div className="flex items-center space-x-3">
-                      <span className="text-2xl">{service.icon}</span>
-                      <div>
-                        <p className="font-semibold text-white">{service.name}</p>
-                        <p className="text-sm text-white/60">{service.description}</p>
-                        <p className="text-xs text-white/40">Order: {service.display_order} | Active: {service.is_active ? 'Yes' : 'No'}</p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => handleDeleteService(service.id)}
-                      className="text-red-400 hover:text-red-300 px-3 py-1 border border-red-500/30 rounded transition-all"
-                    >
-                      Delete
-                    </button>
+                  <Input
+                    placeholder="Icon (emoji)"
+                    value={serviceForm.icon}
+                    onChange={(e) => setServiceForm({...serviceForm, icon: e.target.value})}
+                  />
+                  <Input
+                    type="number"
+                    placeholder="Display Order"
+                    value={serviceForm.display_order}
+                    onChange={(e) => setServiceForm({...serviceForm, display_order: e.target.value})}
+                  />
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="service-active"
+                      checked={serviceForm.is_active}
+                      onCheckedChange={(checked) => setServiceForm({...serviceForm, is_active: checked})}
+                    />
+                    <label htmlFor="service-active" className="text-sm font-medium">Active</label>
                   </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
+                </div>
+                <Textarea
+                  placeholder="Description"
+                  value={serviceForm.description}
+                  onChange={(e) => setServiceForm({...serviceForm, description: e.target.value})}
+                  rows={3}
+                  className="mt-4"
+                />
+                <Button onClick={handleAddService} className="mt-4">
+                  Add Service
+                </Button>
+              </CardContent>
+            </Card>
 
-        {/* Pricing Tab */}
-        {activeTab === 'pricing' && (
-          <div className="space-y-6">
-            {/* Add Pricing Form */}
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
-              <h3 className="text-lg font-bold text-white mb-4">Add Service Pricing</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <select
-                  value={pricingForm.service_id}
-                  onChange={(e) => setPricingForm({...pricingForm, service_id: e.target.value})}
-                  className="px-3 py-2 border border-white/20 rounded bg-white/10 text-white"
-                >
-                  <option value="">Select Service</option>
-                  {services.map(service => (
-                    <option key={service.id} value={service.id} className="text-black">{service.name}</option>
-                  ))}
-                </select>
-                <select
-                  value={pricingForm.client_type}
-                  onChange={(e) => setPricingForm({...pricingForm, client_type: e.target.value})}
-                  className="px-3 py-2 border border-white/20 rounded bg-white/10 text-white"
-                >
-                  <option value="all" className="text-black">All Clients</option>
-                  <option value="individual" className="text-black">Individual</option>
-                  <option value="business" className="text-black">Business</option>
-                </select>
-                <input
-                  type="number"
-                  placeholder="Price (R)"
-                  value={pricingForm.price}
-                  onChange={(e) => setPricingForm({...pricingForm, price: e.target.value})}
-                  className="px-3 py-2 border border-white/20 rounded bg-white/10 text-white placeholder-white/50"
-                />
-                <input
-                  type="number"
-                  placeholder="Min Quantity"
-                  value={pricingForm.min_quantity}
-                  onChange={(e) => setPricingForm({...pricingForm, min_quantity: e.target.value})}
-                  className="px-3 py-2 border border-white/20 rounded bg-white/10 text-white placeholder-white/50"
-                />
-                <input
-                  type="number"
-                  placeholder="Max Quantity (optional)"
-                  value={pricingForm.max_quantity}
-                  onChange={(e) => setPricingForm({...pricingForm, max_quantity: e.target.value})}
-                  className="px-3 py-2 border border-white/20 rounded bg-white/10 text-white placeholder-white/50"
-                />
-                <input
-                  type="text"
-                  placeholder="Unit (e.g., service, hour)"
-                  value={pricingForm.unit}
-                  onChange={(e) => setPricingForm({...pricingForm, unit: e.target.value})}
-                  className="px-3 py-2 border border-white/20 rounded bg-white/10 text-white placeholder-white/50"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4 mt-3">
-                <input
-                  type="number"
-                  placeholder="Special Price (optional)"
-                  value={pricingForm.special_price}
-                  onChange={(e) => setPricingForm({...pricingForm, special_price: e.target.value})}
-                  className="px-3 py-2 border border-white/20 rounded bg-white/10 text-white placeholder-white/50"
-                />
-                <input
-                  type="text"
-                  placeholder="Special Label (e.g., Summer Special)"
-                  value={pricingForm.special_label}
-                  onChange={(e) => setPricingForm({...pricingForm, special_label: e.target.value})}
-                  className="px-3 py-2 border border-white/20 rounded bg-white/10 text-white placeholder-white/50"
-                />
-              </div>
-              <button
-                onClick={handleAddPricing}
-                className="mt-3 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
-              >
-                Add Pricing
-              </button>
-            </div>
-
-            {/* Pricing List */}
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
-              <h3 className="text-lg font-bold text-white mb-4">Existing Pricing</h3>
-              <div className="space-y-2">
-                {servicePricing.map((pricing) => {
-                  const service = services.find(s => s.id === pricing.service_id);
-                  return (
-                    <div key={pricing.id} className="p-3 bg-white/5 border border-white/10 rounded">
-                      <div className="flex justify-between items-start">
+            <Card>
+              <CardHeader>
+                <CardTitle>Existing Services</CardTitle>
+                <CardDescription>Manage your service offerings</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {services.map((service) => (
+                    <div key={service.id} className="flex items-center justify-between p-4 border rounded-lg bg-slate-50">
+                      <div className="flex items-center space-x-3">
+                        <span className="text-2xl">{service.icon}</span>
                         <div>
-                          <p className="font-semibold text-white">{service?.name || 'Unknown Service'}</p>
-                          <p className="text-sm text-white/60">R{pricing.price} per {pricing.unit} | {pricing.client_type}</p>
-                          <p className="text-xs text-white/40">Min: {pricing.min_quantity} | Max: {pricing.max_quantity || 'Unlimited'}</p>
-                          {pricing.special_price && (
-                            <p className="text-xs text-green-400">Special: R{pricing.special_price} ({pricing.special_label})</p>
-                          )}
+                          <p className="font-semibold text-slate-900">{service.name}</p>
+                          <p className="text-sm text-slate-500">{service.description}</p>
+                          <p className="text-xs text-slate-400">Order: {service.display_order} | Active: {service.is_active ? 'Yes' : 'No'}</p>
                         </div>
                       </div>
+                      <Button variant="destructive" size="sm" onClick={() => handleDeleteService(service.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        )}
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-        {/* Promo Codes Tab */}
-        {activeTab === 'promos' && (
-          <div className="space-y-6">
-            {/* Add Promo Form */}
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
-              <h3 className="text-lg font-bold text-white mb-4">Generate Promo Code</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <input
-                  type="text"
-                  placeholder="Promo Code"
-                  value={promoForm.code}
-                  onChange={(e) => setPromoForm({...promoForm, code: e.target.value.toUpperCase()})}
-                  className="px-3 py-2 border border-white/20 rounded bg-white/10 text-white placeholder-white/50"
-                />
-                <input
-                  type="text"
-                  placeholder="Description"
-                  value={promoForm.description}
-                  onChange={(e) => setPromoForm({...promoForm, description: e.target.value})}
-                  className="px-3 py-2 border border-white/20 rounded bg-white/10 text-white placeholder-white/50"
-                />
-                <select
-                  value={promoForm.discount_type}
-                  onChange={(e) => setPromoForm({...promoForm, discount_type: e.target.value})}
-                  className="px-3 py-2 border border-white/20 rounded bg-white/10 text-white"
-                >
-                  <option value="percentage" className="text-black">Percentage (%)</option>
-                  <option value="fixed" className="text-black">Fixed Amount (R)</option>
-                </select>
-                <input
-                  type="number"
-                  placeholder="Discount Value"
-                  value={promoForm.discount_value}
-                  onChange={(e) => setPromoForm({...promoForm, discount_value: e.target.value})}
-                  className="px-3 py-2 border border-white/20 rounded bg-white/10 text-white placeholder-white/50"
-                />
-                <input
-                  type="number"
-                  placeholder="Min Amount (optional)"
-                  value={promoForm.min_amount}
-                  onChange={(e) => setPromoForm({...promoForm, min_amount: e.target.value})}
-                  className="px-3 py-2 border border-white/20 rounded bg-white/10 text-white placeholder-white/50"
-                />
-                <input
-                  type="number"
-                  placeholder="Max Uses (optional)"
-                  value={promoForm.max_uses}
-                  onChange={(e) => setPromoForm({...promoForm, max_uses: e.target.value})}
-                  className="px-3 py-2 border border-white/20 rounded bg-white/10 text-white placeholder-white/50"
-                />
-                <input
-                  type="datetime-local"
-                  placeholder="Valid From"
-                  value={promoForm.valid_from}
-                  onChange={(e) => setPromoForm({...promoForm, valid_from: e.target.value})}
-                  className="px-3 py-2 border border-white/20 rounded bg-white/10 text-white placeholder-white/50"
-                />
-                <input
-                  type="datetime-local"
-                  placeholder="Valid Until"
-                  value={promoForm.valid_until}
-                  onChange={(e) => setPromoForm({...promoForm, valid_until: e.target.value})}
-                  className="px-3 py-2 border border-white/20 rounded bg-white/10 text-white placeholder-white/50"
-                />
-              </div>
-              <div className="flex items-center space-x-2 mt-3">
-                <input
-                  type="checkbox"
-                  id="promo-active"
-                  checked={promoForm.is_active}
-                  onChange={(e) => setPromoForm({...promoForm, is_active: e.target.checked})}
-                  className="rounded"
-                />
-                <label htmlFor="promo-active" className="text-white text-sm">Active</label>
-              </div>
-              <button
-                onClick={handleAddPromo}
-                className="mt-3 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
-              >
-                Generate Promo Code
-              </button>
-            </div>
+          <TabsContent value="pricing" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Plus className="h-5 w-5" />
+                  Add Service Pricing
+                </CardTitle>
+                <CardDescription>Configure pricing tiers for services</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Select value={pricingForm.service_id} onValueChange={(v) => setPricingForm({...pricingForm, service_id: v})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Service" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {services.map(service => (
+                        <SelectItem key={service.id} value={service.id.toString()}>{service.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={pricingForm.client_type} onValueChange={(v) => setPricingForm({...pricingForm, client_type: v})}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Clients</SelectItem>
+                      <SelectItem value="individual">Individual</SelectItem>
+                      <SelectItem value="business">Business</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    type="number"
+                    placeholder="Price (R)"
+                    value={pricingForm.price}
+                    onChange={(e) => setPricingForm({...pricingForm, price: e.target.value})}
+                  />
+                  <Input
+                    type="number"
+                    placeholder="Min Quantity"
+                    value={pricingForm.min_quantity}
+                    onChange={(e) => setPricingForm({...pricingForm, min_quantity: e.target.value})}
+                  />
+                  <Input
+                    type="number"
+                    placeholder="Max Quantity (optional)"
+                    value={pricingForm.max_quantity}
+                    onChange={(e) => setPricingForm({...pricingForm, max_quantity: e.target.value})}
+                  />
+                  <Input
+                    placeholder="Unit (e.g., service, hour)"
+                    value={pricingForm.unit}
+                    onChange={(e) => setPricingForm({...pricingForm, unit: e.target.value})}
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <Input
+                    type="number"
+                    placeholder="Special Price (optional)"
+                    value={pricingForm.special_price}
+                    onChange={(e) => setPricingForm({...pricingForm, special_price: e.target.value})}
+                  />
+                  <Input
+                    placeholder="Special Label (e.g., Summer Special)"
+                    value={pricingForm.special_label}
+                    onChange={(e) => setPricingForm({...pricingForm, special_label: e.target.value})}
+                  />
+                </div>
+                <Button onClick={handleAddPricing} className="mt-4">
+                  Add Pricing
+                </Button>
+              </CardContent>
+            </Card>
 
-            {/* Promo Codes List */}
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 p-6">
-              <h3 className="text-lg font-bold text-white mb-4">Existing Promo Codes</h3>
-              <div className="space-y-2">
-                {promoCodes.map((promo) => (
-                  <div key={promo.id} className="flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded">
-                    <div>
-                      <p className="font-semibold text-white">{promo.code}</p>
-                      <p className="text-sm text-white/60">{promo.description}</p>
-                      <p className="text-xs text-white/40">
-                        {promo.discount_type === 'percentage' ? `${promo.discount_value}% off` : `R${promo.discount_value} off`}
-                        {promo.max_uses && ` | Max uses: ${promo.max_uses}`}
-                        {promo.used_count > 0 && ` | Used: ${promo.used_count}`}
-                      </p>
-                      <p className="text-xs text-white/40">
-                        Active: {promo.is_active ? 'Yes' : 'No'}
-                        {promo.valid_until && ` | Expires: ${new Date(promo.valid_until).toLocaleDateString()}`}
-                      </p>
-                      {(promo.distribution_count || 0) > 0 && (
-                        <p className="text-xs text-green-400 mt-1">
-                          Distributed: {promo.distribution_count}x
-                          {promo.last_distributed_at && ` | Last: ${new Date(promo.last_distributed_at).toLocaleDateString()}`}
+            <Card>
+              <CardHeader>
+                <CardTitle>Existing Pricing</CardTitle>
+                <CardDescription>View current pricing configurations</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {servicePricing.map((pricing) => {
+                    const service = services.find(s => s.id === pricing.service_id);
+                    return (
+                      <div key={pricing.id} className="p-3 border rounded-lg bg-slate-50">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-semibold text-slate-900">{service?.name || 'Unknown Service'}</p>
+                            <p className="text-sm text-slate-600">R{pricing.price} per {pricing.unit} | {pricing.client_type}</p>
+                            <p className="text-xs text-slate-500">Min: {pricing.min_quantity} | Max: {pricing.max_quantity || 'Unlimited'}</p>
+                            {pricing.special_price && (
+                              <p className="text-xs text-green-600">Special: R{pricing.special_price} ({pricing.special_label})</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="promos" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Plus className="h-5 w-5" />
+                  Generate Promo Code
+                </CardTitle>
+                <CardDescription>Create promotional discount codes</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input
+                    placeholder="Promo Code"
+                    value={promoForm.code}
+                    onChange={(e) => setPromoForm({...promoForm, code: e.target.value.toUpperCase()})}
+                  />
+                  <Input
+                    placeholder="Description"
+                    value={promoForm.description}
+                    onChange={(e) => setPromoForm({...promoForm, description: e.target.value})}
+                  />
+                  <Select value={promoForm.discount_type} onValueChange={(v) => setPromoForm({...promoForm, discount_type: v})}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="percentage">Percentage (%)</SelectItem>
+                      <SelectItem value="fixed">Fixed Amount (R)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    type="number"
+                    placeholder="Discount Value"
+                    value={promoForm.discount_value}
+                    onChange={(e) => setPromoForm({...promoForm, discount_value: e.target.value})}
+                  />
+                  <Input
+                    type="number"
+                    placeholder="Min Amount (optional)"
+                    value={promoForm.min_amount}
+                    onChange={(e) => setPromoForm({...promoForm, min_amount: e.target.value})}
+                  />
+                  <Input
+                    type="number"
+                    placeholder="Max Uses (optional)"
+                    value={promoForm.max_uses}
+                    onChange={(e) => setPromoForm({...promoForm, max_uses: e.target.value})}
+                  />
+                  <Input
+                    type="datetime-local"
+                    placeholder="Valid From"
+                    value={promoForm.valid_from}
+                    onChange={(e) => setPromoForm({...promoForm, valid_from: e.target.value})}
+                  />
+                  <Input
+                    type="datetime-local"
+                    placeholder="Valid Until"
+                    value={promoForm.valid_until}
+                    onChange={(e) => setPromoForm({...promoForm, valid_until: e.target.value})}
+                  />
+                </div>
+                <div className="flex items-center space-x-2 mt-4">
+                  <Switch
+                    id="promo-active"
+                    checked={promoForm.is_active}
+                    onCheckedChange={(checked) => setPromoForm({...promoForm, is_active: checked})}
+                  />
+                  <label htmlFor="promo-active" className="text-sm font-medium">Active</label>
+                </div>
+                <Button onClick={handleAddPromo} className="mt-4">
+                  Generate Promo Code
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Existing Promo Codes</CardTitle>
+                <CardDescription>Manage promotional codes</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {promoCodes.map((promo) => (
+                    <div key={promo.id} className="flex items-center justify-between p-4 border rounded-lg bg-slate-50">
+                      <div>
+                        <p className="font-semibold text-slate-900">{promo.code}</p>
+                        <p className="text-sm text-slate-600">{promo.description}</p>
+                        <p className="text-xs text-slate-500">
+                          {promo.discount_type === 'percentage' ? `${promo.discount_value}% off` : `R${promo.discount_value} off`}
+                          {promo.max_uses && ` | Max uses: ${promo.max_uses}`}
+                          {promo.used_count > 0 && ` | Used: ${promo.used_count}`}
                         </p>
-                      )}
+                        <p className="text-xs text-slate-500">
+                          Active: {promo.is_active ? 'Yes' : 'No'}
+                          {promo.valid_until && ` | Expires: ${new Date(promo.valid_until).toLocaleDateString()}`}
+                        </p>
+                        {(promo.distribution_count || 0) > 0 && (
+                          <p className="text-xs text-green-600 mt-1">
+                            Distributed: {promo.distribution_count}x
+                            {promo.last_distributed_at && ` | Last: ${new Date(promo.last_distributed_at).toLocaleDateString()}`}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" onClick={() => handleShowDistribution(promo)}>
+                          <Share2 className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => handleShowQRCode(promo)}>
+                          <QrCode className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="destructive" onClick={() => handleDeletePromo(promo.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleShowDistribution(promo)}
-                        className="text-green-400 hover:text-green-300 px-3 py-1 border border-green-500/30 rounded transition-all"
-                      >
-                        Distribute
-                      </button>
-                      <button
-                        onClick={() => handleShowQRCode(promo)}
-                        className="text-blue-400 hover:text-blue-300 px-3 py-1 border border-blue-500/30 rounded transition-all"
-                      >
-                        QR Code
-                      </button>
-                      <button
-                        onClick={() => handleDeletePromo(promo.id)}
-                        className="text-red-400 hover:text-red-300 px-3 py-1 border border-red-500/30 rounded transition-all"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-        {/* Analytics Tab */}
-        {activeTab === 'analytics' && (
-          <AnalyticsDashboard />
-        )}
+          <TabsContent value="analytics">
+            <AnalyticsDashboard />
+          </TabsContent>
+        </Tabs>
       </div>
       
       {/* QR Code Modal */}
