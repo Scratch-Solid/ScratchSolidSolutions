@@ -2,7 +2,7 @@
 
 import React, { ReactNode, useState } from 'react';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { LogOut, Menu, X } from 'lucide-react';
 

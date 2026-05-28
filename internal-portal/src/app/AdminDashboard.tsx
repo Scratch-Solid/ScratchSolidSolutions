@@ -14,7 +14,7 @@ import PricingConfiguration from "@/components/admin/PricingConfiguration";
 import PoolManagement from "@/components/admin/PoolManagement";
 import ContentManagement from "@/components/admin/ContentManagement";
 import StaffReviews from "@/components/admin/StaffReviews";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { LayoutDashboard, Users, DollarSign, Wrench, FileText, Settings, Eye, UserCheck, GraduationCap } from "lucide-react";
