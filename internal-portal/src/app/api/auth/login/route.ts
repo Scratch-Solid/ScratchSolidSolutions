@@ -80,6 +80,12 @@ export async function POST(request: NextRequest) {
     if (Array.isArray(user.password_hash)) {
       // Convert array of numbers back to string
       passwordHash = String.fromCharCode(...user.password_hash);
+    } else if (typeof user.password_hash === 'object' && user.password_hash !== null) {
+      // Handle if password_hash is an object (sometimes D1 returns objects)
+      console.log('password_hash is object:', JSON.stringify(user.password_hash));
+      // Try to extract the actual hash string
+      const hashStr = JSON.stringify(user.password_hash);
+      passwordHash = hashStr;
     }
     const isValidPassword = await bcrypt.compare(password, passwordHash);
     if (!isValidPassword) {
