@@ -406,6 +406,8 @@ export async function createOrUpdateStaffRecord(db: D1Database, data: {
   email?: string;
   department?: string;
   onboarding_stage?: string;
+  training_completed?: boolean;
+  is_active?: boolean;
 }) {
   try {
     // Check if staff record exists
@@ -424,6 +426,8 @@ export async function createOrUpdateStaffRecord(db: D1Database, data: {
       if (data.email !== undefined) { updates.push('email = ?'); values.push(data.email); }
       if (data.department !== undefined) { updates.push('department = ?'); values.push(data.department); }
       if (data.onboarding_stage !== undefined) { updates.push('onboarding_stage = ?'); values.push(data.onboarding_stage); }
+      if (data.training_completed !== undefined) { updates.push('training_completed = ?'); values.push(data.training_completed ? 1 : 0); }
+      if (data.is_active !== undefined) { updates.push('is_active = ?'); values.push(data.is_active ? 1 : 0); }
       
       updates.push('pool_type = ?');
       values.push(poolType);
@@ -579,6 +583,103 @@ export async function getOnboardingAuditHistory(db: D1Database, userId: number, 
   } catch (error) {
     console.error('Failed to get onboarding audit history:', error);
     return [];
+  }
+}
+
+// Cross-database sync: Update main database when training is completed
+export async function syncTrainingCompletion(userId: string, certificateHash: string, ip?: string, userAgent?: string) {
+  try {
+    const db = await getDb();
+    if (!db) {
+      console.error('Main database not available for training sync');
+      return false;
+    }
+
+    // Find user by user_id (string from training DB)
+    const user = await db.prepare('SELECT id, onboarding_stage FROM users WHERE id = ?').bind(parseInt(userId)).first();
+    if (!user) {
+      console.error('User not found in main database for training sync:', userId);
+      return false;
+    }
+
+    const userIdNum = (user as any).id;
+    const currentStage = (user as any).onboarding_stage;
+
+    // Update users table onboarding_stage to training_completed
+    await updateUserOnboardingStage(db, userIdNum, 'training_completed');
+
+    // Update staff table training_completed flag
+    await createOrUpdateStaffRecord(db, {
+      user_id: userIdNum,
+      training_completed: true,
+      onboarding_stage: 'training_completed'
+    });
+
+    // Log the stage transition
+    await logOnboardingTransition(db, {
+      user_id: userIdNum,
+      from_stage: currentStage || 'contract_signed',
+      to_stage: 'training_completed',
+      event_type: 'training_completed',
+      metadata: { certificate_hash: certificateHash },
+      ip_address: ip,
+      user_agent: userAgent
+    });
+
+    console.log('Training completion sync successful for user:', userId);
+    return true;
+  } catch (error) {
+    console.error('Failed to sync training completion:', error);
+    return false;
+  }
+}
+
+// Cross-database sync: Activate user after training completion
+export async function activateUserAfterTraining(userId: string, ip?: string, userAgent?: string) {
+  try {
+    const db = await getDb();
+    if (!db) {
+      console.error('Main database not available for user activation');
+      return false;
+    }
+
+    // Find user by user_id (string from training DB)
+    const user = await db.prepare('SELECT id, onboarding_stage FROM users WHERE id = ?').bind(parseInt(userId)).first();
+    if (!user) {
+      console.error('User not found in main database for activation:', userId);
+      return false;
+    }
+
+    const userIdNum = (user as any).id;
+    const currentStage = (user as any).onboarding_stage;
+
+    // Update users table onboarding_stage to active
+    await updateUserOnboardingStage(db, userIdNum, 'active');
+
+    // Update staff table
+    await createOrUpdateStaffRecord(db, {
+      user_id: userIdNum,
+      training_completed: true,
+      onboarding_stage: 'active',
+      is_active: true
+    });
+
+    // Log the stage transition
+    await logOnboardingTransition(db, {
+      user_id: userIdNum,
+      from_stage: currentStage || 'training_completed',
+      to_stage: 'active',
+      event_type: 'user_activated',
+      metadata: { activation_reason: 'training_completed' },
+      ip_address: ip,
+      user_agent: userAgent
+    });
+
+    console.log('User activation successful for user:', userId);
+    return true;
+  } catch (error) {
+    console.error('Failed to activate user:', error);
+    return false;
   }
 }
 

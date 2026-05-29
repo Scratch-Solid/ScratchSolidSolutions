@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
-import { getTrainingDb } from '@/lib/db';
+import { getTrainingDb, syncTrainingCompletion, activateUserAfterTraining } from '@/lib/db';
 import { withAuth, withTracing, withSecurityHeaders, withCsrf } from '@/lib/middleware';
 
 export async function POST(request: NextRequest) {
@@ -88,8 +88,12 @@ export async function POST(request: NextRequest) {
            WHERE user_id = ?`
         ).bind(currentTimestamp, `VERIFIED-${certHash}`, currentTimestamp, userId).run();
 
-        // NOTE: Trigger operational sync script hook here to upgrade the core user account status
-        // This would typically update the main users table to set the cleaner to active status
+        // Cross-database sync: Update main database
+        const ip = request.headers.get('x-forwarded-for') || undefined;
+        const userAgent = request.headers.get('user-agent') || undefined;
+        
+        await syncTrainingCompletion(userId, `VERIFIED-${certHash}`, ip, userAgent);
+        await activateUserAfterTraining(userId, ip, userAgent);
         
         return withSecurityHeaders(
           NextResponse.json({ 
