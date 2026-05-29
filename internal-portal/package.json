@@ -15,6 +15,9 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
     "postinstall": "node scripts/patch-better-auth.js"
   },
   "keywords": [],
@@ -54,6 +57,7 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260422.1",
+    "@playwright/test": "^1.60.0",
     "@testing-library/jest-dom": "^6.1.0",
     "@testing-library/react": "^16.0.0",
     "@types/jest": "^29.5.14",
