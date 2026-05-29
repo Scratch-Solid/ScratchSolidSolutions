@@ -58,7 +58,7 @@ export async function calculatePoolCapacity(
   const result = await db.prepare(`
     SELECT COUNT(*) as count
     FROM staff
-    WHERE pool_type = ? AND is_active = 1
+    WHERE pool_type = ? AND is_active = 1 AND training_completed = 1
   `).bind(poolType).first<{ count: number }>();
   
   return result?.count || 0;
@@ -186,13 +186,15 @@ export async function autoAssignBooking(
  */
 export async function manualAssignBooking(
   db: D1Database,
+  trainingDb: D1Database,
   bookingId: number,
   staffId: number,
   poolType: PoolType,
   serviceType: ServiceType,
   assignmentDate: string,
   timeSlot: TimeSlot,
-  assignedBy: string
+  assignedBy: string,
+  overrideTraining: boolean = false
 ): Promise<{ success: boolean; message: string }> {
   // Check if staff is available at this time slot
   const existingAssignment = await db.prepare(`
@@ -208,11 +210,25 @@ export async function manualAssignBooking(
     };
   }
   
+  // Check training status - only staff with completed training are eligible unless override is set
+  if (!overrideTraining) {
+    const trainingProgress = await trainingDb.prepare(`
+      SELECT training_status FROM employee_training_progress WHERE user_id = ?
+    `).bind(staffId.toString()).first<{ training_status: string }>();
+    
+    if (!trainingProgress || trainingProgress.training_status !== 'Completed') {
+      return {
+        success: false,
+        message: 'Staff has not completed training. Use override to assign anyway.'
+      };
+    }
+  }
+  
   // Create booking assignment
   await db.prepare(`
     INSERT INTO booking_assignments (booking_id, staff_id, pool_type, service_type, time_slot, assignment_date, status, assigned_at, reason)
-    VALUES (?, ?, ?, ?, ?, ?, 'assigned', CURRENT_TIMESTAMP, 'Manually assigned by ' || ?)
-  `).bind(bookingId, staffId, poolType, serviceType, timeSlot, assignmentDate, assignedBy).run();
+    VALUES (?, ?, ?, ?, ?, ?, 'assigned', CURRENT_TIMESTAMP, 'Manually assigned by ' || ? || ?)
+  `).bind(bookingId, staffId, poolType, serviceType, timeSlot, assignmentDate, assignedBy, overrideTraining ? ' (training override)' : '').run();
   
   // Update booking
   await db.prepare(`
@@ -273,9 +289,12 @@ export async function transitionStaffPool(
 export async function getPoolCapacity(
   db: D1Database,
   poolType?: PoolType
-): Promise<{ poolType: PoolType; totalStaff: number; activeStaff: number; availableStaff: number }[]> {
+): Promise<{ poolType: PoolType; totalStaff: number; activeStaff: number; availableStaff: number; trainedStaff: number }[]> {
   let query = `
-    SELECT pool_type, COUNT(*) as total_staff
+    SELECT pool_type, 
+           COUNT(*) as total_staff,
+           SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active_staff,
+           SUM(CASE WHEN training_completed = 1 THEN 1 ELSE 0 END) as trained_staff
     FROM staff
   `;
   
@@ -285,12 +304,13 @@ export async function getPoolCapacity(
   
   query += ` GROUP BY pool_type`;
   
-  const results = await db.prepare(query).bind(poolType || null).all<{ pool_type: PoolType; total_staff: number }>();
+  const results = await db.prepare(query).bind(poolType || null).all<{ pool_type: PoolType; total_staff: number; active_staff: number; trained_staff: number }>();
   
   return (results.results || []).map(r => ({
     poolType: r.pool_type,
     totalStaff: r.total_staff,
-    activeStaff: r.total_staff, // Assuming all are active for now
-    availableStaff: r.total_staff // This would need to account for current assignments
+    activeStaff: r.active_staff || 0,
+    trainedStaff: r.trained_staff || 0,
+    availableStaff: r.trained_staff || 0 // Only trained staff are available for assignment
   }));
 }
