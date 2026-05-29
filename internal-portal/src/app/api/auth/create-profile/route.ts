@@ -4,6 +4,7 @@ import { getDb, addOnboardingColumnsToStaff, createOrUpdateStaffRecord, addOnboa
 import bcrypt from 'bcryptjs';
 import { generateAccessToken } from '@/lib/auth';
 import { notifyProfileCreated } from '@/lib/notifications';
+import { getExperimentAssignment, trackExperimentEvent } from '@/lib/ab-testing';
 
 export async function POST(request: NextRequest) {
   try {
@@ -149,12 +150,21 @@ export async function POST(request: NextRequest) {
       phone_number: cellphone,
       notification_type: 'profile_created',
       channel: 'whatsapp',
-      template_name: 'profile_created',
       status: notifyResult.success ? 'sent' : 'failed',
       message_id: notifyResult.messageId,
       error_message: notifyResult.error,
-      metadata: { first_name: firstName, last_name: lastName }
+      metadata: { notifyResult }
     });
+
+    // Track A/B testing event
+    const sessionId = request.headers.get('x-session-id') || Math.random().toString();
+    const abVariant = getExperimentAssignment('onboarding_flow_v2', (user as any).id, sessionId);
+    if (abVariant) {
+      trackExperimentEvent('onboarding_flow_v2', abVariant, 'profile_created', {
+        user_id: (user as any).id,
+        department
+      });
+    }
 
     // Generate JWT token for auto-login after profile creation
     const token = generateAccessToken(

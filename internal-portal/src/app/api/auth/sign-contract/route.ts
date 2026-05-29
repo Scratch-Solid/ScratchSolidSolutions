@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb, updateUserOnboardingStage, createOrUpdateStaffRecord, logOnboardingTransition, logNotification } from '@/lib/db';
 import { verifyAccessToken } from '@/lib/auth';
 import { notifyContractSigned } from '@/lib/notifications';
+import { getExperimentAssignment, trackExperimentEvent } from '@/lib/ab-testing';
 
 export async function POST(request: NextRequest) {
   try {
@@ -130,6 +131,16 @@ export async function POST(request: NextRequest) {
         message_id: notifyResult.messageId,
         error_message: notifyResult.error,
         metadata: { signatureDate }
+      });
+    }
+
+    // Track A/B testing event
+    const sessionId = request.headers.get('x-session-id') || Math.random().toString();
+    const abVariant = getExperimentAssignment('onboarding_flow_v2', decoded.userId, sessionId);
+    if (abVariant) {
+      trackExperimentEvent('onboarding_flow_v2', abVariant, 'contract_signed', {
+        user_id: decoded.userId,
+        signatureDate
       });
     }
 
