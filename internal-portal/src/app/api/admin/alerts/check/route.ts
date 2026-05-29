@@ -109,6 +109,77 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // Alert 4: Notification failure rate > 10%
+    const notificationStats = await db.prepare(`
+      SELECT 
+        status,
+        COUNT(*) as count
+      FROM notification_log
+      WHERE created_at >= datetime('now', '-24 hours')
+      GROUP BY status
+    `).all();
+
+    const notificationResults = notificationStats.results || [];
+    const sentCount = notificationResults.find((r: any) => r.status === 'sent')?.count || 0;
+    const failedCount = notificationResults.find((r: any) => r.status === 'failed')?.count || 0;
+    const totalNotifications = sentCount + failedCount;
+
+    if (totalNotifications > 0) {
+      const failureRate = (failedCount / totalNotifications) * 100;
+      if (failureRate > 10) {
+        alerts.push({
+          type: 'notification_failure_high',
+          severity: 'critical',
+          message: `Notification failure rate is ${failureRate.toFixed(1)}% (> 10%)`,
+          failureRate,
+          failedCount,
+          totalNotifications
+        });
+      }
+    }
+
+    // Alert 5: Stage duration > 7 days (from onboarding_audit)
+    const longStages = await db.prepare(`
+      SELECT 
+        to_stage as stage,
+        COUNT(*) as count
+      FROM onboarding_audit
+      WHERE created_at < datetime('now', '-7 days')
+        AND to_stage != 'active'
+        AND to_stage != 'rejected'
+        AND user_id NOT IN (
+          SELECT user_id FROM onboarding_audit 
+          WHERE to_stage = 'active' 
+          OR to_stage = 'rejected'
+        )
+      GROUP BY to_stage
+    `).all();
+
+    const longStageResults = longStages.results || [];
+    longStageResults.forEach((row: any) => {
+      if (row.count > 0) {
+        alerts.push({
+          type: 'stage_duration_long',
+          severity: 'warning',
+          message: `${row.count} users in ${row.stage} stage for > 7 days`,
+          stage: row.stage,
+          count: row.count
+        });
+      }
+    });
+
+    // Alert 6: Database connectivity (check from health status)
+    try {
+      await db.prepare('SELECT 1').first();
+    } catch (error) {
+      alerts.push({
+        type: 'db_connectivity_failure',
+        severity: 'critical',
+        message: 'Database connectivity check failed',
+        error: String(error)
+      });
+    }
+
     return withSecurityHeaders(NextResponse.json({ alerts }), traceId);
   } catch (error) {
     console.error('Alert check error:', error);
