@@ -69,7 +69,60 @@ export async function GET(request: NextRequest) {
       avg_duration_hours: item.avg_duration_hours || 0
     }));
 
-    return withSecurityHeaders(NextResponse.json({ funnel, stageDurations }), traceId);
+    // Get drop-off points - users who didn't progress to next stage
+    const dropOffQuery = await db.prepare(`
+      SELECT 
+        onboarding_stage as stage,
+        COUNT(*) as count
+      FROM users
+      WHERE onboarding_stage IS NOT NULL
+        AND onboarding_stage != 'active'
+        AND onboarding_stage != 'rejected'
+        AND created_at < datetime('now', '-7 days')
+      GROUP BY onboarding_stage
+    `).all();
+
+    const dropOffs = (dropOffQuery.results || []).map((item: any) => ({
+      stage: item.stage,
+      count: item.count
+    }));
+
+    // Get department comparison
+    const departmentQuery = await db.prepare(`
+      SELECT 
+        s.department,
+        u.onboarding_stage,
+        COUNT(*) as count
+      FROM users u
+      LEFT JOIN staff s ON u.id = s.user_id
+      WHERE u.onboarding_stage IS NOT NULL
+      GROUP BY s.department, u.onboarding_stage
+    `).all();
+
+    const departmentComparison = (departmentQuery.results || []).reduce((acc: any, item: any) => {
+      const dept = item.department || 'Unassigned';
+      if (!acc[dept]) acc[dept] = {};
+      acc[dept][item.onboarding_stage] = item.count;
+      return acc;
+    }, {});
+
+    // Get time-of-day analysis
+    const timeOfDayQuery = await db.prepare(`
+      SELECT 
+        CAST(strftime('%H', created_at) AS INTEGER) as hour,
+        COUNT(*) as count
+      FROM users
+      WHERE created_at >= datetime('now', '-30 days')
+      GROUP BY hour
+      ORDER BY hour
+    `).all();
+
+    const timeOfDayAnalysis = (timeOfDayQuery.results || []).map((item: any) => ({
+      hour: item.hour,
+      count: item.count
+    }));
+
+    return withSecurityHeaders(NextResponse.json({ funnel, stageDurations, dropOffs, departmentComparison, timeOfDayAnalysis }), traceId);
   } catch (error) {
     console.error('Analytics error:', error);
     return withSecurityHeaders(NextResponse.json({ error: 'Failed to get analytics' }, { status: 500 }), traceId);

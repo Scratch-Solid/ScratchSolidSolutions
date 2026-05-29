@@ -13,9 +13,28 @@ interface StageDuration {
   avg_duration_hours: number;
 }
 
+interface DropOff {
+  stage: string;
+  count: number;
+}
+
+interface DepartmentComparison {
+  [department: string]: {
+    [stage: string]: number;
+  };
+}
+
+interface TimeOfDayAnalysis {
+  hour: number;
+  count: number;
+}
+
 export default function OnboardingAnalytics() {
   const [funnelData, setFunnelData] = useState<FunnelData[]>([]);
   const [stageDurations, setStageDurations] = useState<StageDuration[]>([]);
+  const [dropOffs, setDropOffs] = useState<DropOff[]>([]);
+  const [departmentComparison, setDepartmentComparison] = useState<DepartmentComparison>({});
+  const [timeOfDayAnalysis, setTimeOfDayAnalysis] = useState<TimeOfDayAnalysis[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -25,9 +44,12 @@ export default function OnboardingAnalytics() {
   const fetchAnalytics = async () => {
     try {
       const response = await fetch('/api/admin/onboarding/analytics');
-      const data = await response.json();
+      const data = await response.json() as { funnel?: FunnelData[]; stageDurations?: StageDuration[]; dropOffs?: DropOff[]; departmentComparison?: DepartmentComparison; timeOfDayAnalysis?: TimeOfDayAnalysis[] };
       setFunnelData(data.funnel || []);
       setStageDurations(data.stageDurations || []);
+      setDropOffs(data.dropOffs || []);
+      setDepartmentComparison(data.departmentComparison || {});
+      setTimeOfDayAnalysis(data.timeOfDayAnalysis || []);
     } catch (error) {
       console.error('Failed to fetch analytics:', error);
     } finally {
@@ -90,7 +112,7 @@ export default function OnboardingAnalytics() {
       </div>
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-4 mb-8">
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <div className="text-sm text-blue-600">Total Applicants</div>
           <div className="text-2xl font-bold text-blue-900">{totalApplicants}</div>
@@ -107,6 +129,60 @@ export default function OnboardingAnalytics() {
             {totalApplicants > 0
               ? ((funnelData.find(f => f.stage === 'active')?.count || 0) / totalApplicants * 100).toFixed(1)
               : 0}%
+          </div>
+        </div>
+      </div>
+
+      {/* Drop-off Points */}
+      <div className="mb-8">
+        <h2 className="text-lg font-semibold mb-4">Drop-off Points (stuck > 7 days)</h2>
+        <div className="grid grid-cols-4 gap-4">
+          {dropOffs.map((item) => (
+            <div key={item.stage} className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+              <div className="text-sm text-orange-600">{item.stage.replace(/_/g, ' ')}</div>
+              <div className="text-xl font-bold text-orange-900">{item.count}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Department Comparison */}
+      <div className="mb-8">
+        <h2 className="text-lg font-semibold mb-4">Department Comparison</h2>
+        <div className="bg-white border rounded-lg p-4">
+          {Object.entries(departmentComparison).map(([dept, stages]) => (
+            <div key={dept} className="mb-4 last:mb-0">
+              <div className="font-medium mb-2">{dept}</div>
+              <div className="grid grid-cols-7 gap-2 text-sm">
+                {Object.entries(stages as Record<string, number>).map(([stage, count]) => (
+                  <div key={stage} className="text-center">
+                    <div className="text-gray-500">{stage.replace(/_/g, ' ')}</div>
+                    <div className="font-bold">{count}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Time-of-Day Analysis */}
+      <div className="mb-8">
+        <h2 className="text-lg font-semibold mb-4">Sign-up Time Distribution (last 30 days)</h2>
+        <div className="bg-white border rounded-lg p-4">
+          <div className="flex items-end gap-1 h-32">
+            {Array.from({ length: 24 }, (_, i) => {
+              const hourData = timeOfDayAnalysis.find(t => t.hour === i);
+              const count = hourData?.count || 0;
+              const maxCount = Math.max(...timeOfDayAnalysis.map(t => t.count), 1);
+              const height = (count / maxCount) * 100;
+              return (
+                <div key={i} className="flex-1 flex flex-col items-center">
+                  <div className="w-full bg-blue-500 rounded-t" style={{ height: `${height}%` }}></div>
+                  <div className="text-xs text-gray-500 mt-1">{i}</div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
