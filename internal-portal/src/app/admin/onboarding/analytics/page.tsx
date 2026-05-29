@@ -57,6 +57,22 @@ export default function OnboardingAnalytics() {
     }
   };
 
+  const handleExport = async (format: string) => {
+    try {
+      const response = await fetch(`/api/admin/onboarding/export?format=${format}`);
+      if (format === 'csv') {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'onboarding_export.csv';
+        a.click();
+      }
+    } catch (error) {
+      console.error('Export failed:', error);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -69,7 +85,15 @@ export default function OnboardingAnalytics() {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Onboarding Analytics</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Onboarding Analytics</h1>
+        <button
+          onClick={() => handleExport('csv')}
+          className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+        >
+          Export CSV
+        </button>
+      </div>
 
       {/* Funnel Visualization */}
       <div className="mb-8">
@@ -135,7 +159,7 @@ export default function OnboardingAnalytics() {
 
       {/* Drop-off Points */}
       <div className="mb-8">
-        <h2 className="text-lg font-semibold mb-4">Drop-off Points (stuck > 7 days)</h2>
+        <h2 className="text-lg font-semibold mb-4">Drop-off Points (stuck {'>'} 7 days)</h2>
         <div className="grid grid-cols-4 gap-4">
           {dropOffs.map((item) => (
             <div key={item.stage} className="bg-orange-50 border border-orange-200 rounded-lg p-4">
