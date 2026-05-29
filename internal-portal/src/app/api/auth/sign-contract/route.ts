@@ -22,19 +22,33 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { signatureDate } = body;
+    const { signatureDate, signatureData, geolocation } = body;
 
     // Get user info for notification
     const user = await db.prepare('SELECT name, phone FROM users WHERE id = ?').bind(decoded.userId).first();
 
+    // Capture signature metadata
+    const signatureMetadata = {
+      signatureDate,
+      signatureData: signatureData || null,
+      geolocation: geolocation || null,
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('cf-connecting-ip') || null,
+      userAgent: request.headers.get('user-agent') || null,
+      timestamp: new Date().toISOString()
+    };
+
     // Update user onboarding stage to contract_signed
     await updateUserOnboardingStage(db, decoded.userId, 'contract_signed');
 
-    // Update staff record with contract signing info
+    // Update staff record with contract signing info and signature metadata
     await createOrUpdateStaffRecord(db, {
       user_id: decoded.userId,
       onboarding_stage: 'contract_signed'
     });
+
+    // Store signature metadata in staff table (add column if needed)
+    await db.prepare(`ALTER TABLE staff ADD COLUMN signature_metadata TEXT`).run().catch(() => {});
+    await db.prepare(`UPDATE staff SET signature_metadata = ? WHERE user_id = ?`).bind(JSON.stringify(signatureMetadata), decoded.userId).run();
 
     // Log the stage transition
     await logOnboardingTransition(db, {
@@ -42,7 +56,7 @@ export async function POST(request: NextRequest) {
       from_stage: 'profile_created',
       to_stage: 'contract_signed',
       event_type: 'contract_signed',
-      metadata: { signatureDate },
+      metadata: { ...signatureMetadata },
       ip_address: request.headers.get('x-forwarded-for') || undefined,
       user_agent: request.headers.get('user-agent') || undefined
     });
