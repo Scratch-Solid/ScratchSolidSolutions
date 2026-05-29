@@ -773,6 +773,51 @@ export async function getNotificationHistory(db: D1Database, userId: number, lim
   }
 }
 
+// Initialize notification preferences column
+export async function initializeNotificationPreferences(db: D1Database) {
+  try {
+    await db.prepare(`ALTER TABLE users ADD COLUMN notification_preferences TEXT DEFAULT '{"whatsapp": true, "email": true}'`).run().catch(() => {});
+    await db.prepare(`CREATE INDEX IF NOT EXISTS idx_users_notification_preferences ON users(notification_preferences)`).run();
+    return true;
+  } catch (error) {
+    console.error('Failed to initialize notification preferences:', error);
+    return false;
+  }
+}
+
+// Get user notification preferences
+export async function getNotificationPreferences(db: D1Database, userId: number) {
+  try {
+    await initializeNotificationPreferences(db);
+    const result = await db.prepare('SELECT notification_preferences FROM users WHERE id = ?').bind(userId).first();
+    if (result && (result as any).notification_preferences) {
+      try {
+        return JSON.parse((result as any).notification_preferences);
+      } catch {
+        return { whatsapp: true, email: true };
+      }
+    }
+    return { whatsapp: true, email: true };
+  } catch (error) {
+    console.error('Failed to get notification preferences:', error);
+    return { whatsapp: true, email: true };
+  }
+}
+
+// Update user notification preferences
+export async function updateNotificationPreferences(db: D1Database, userId: number, preferences: { whatsapp?: boolean; email?: boolean }) {
+  try {
+    await initializeNotificationPreferences(db);
+    const current = await getNotificationPreferences(db, userId);
+    const updated = { ...current, ...preferences };
+    await db.prepare('UPDATE users SET notification_preferences = ? WHERE id = ?').bind(JSON.stringify(updated), userId).run();
+    return true;
+  } catch (error) {
+    console.error('Failed to update notification preferences:', error);
+    return false;
+  }
+}
+
 export async function updateCleanerProfile(db: D1Database, username: string, data: Record<string, any>) {
   // Map frontend field names to database column names
   const fieldMap: Record<string, string> = {

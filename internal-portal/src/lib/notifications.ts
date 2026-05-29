@@ -7,9 +7,19 @@ export interface NotificationResult {
   success: boolean;
   error?: string;
   messageId?: string;
+  skipped?: boolean;
+  skipReason?: string;
 }
 
-export async function sendWhatsApp(to: string, templateName: string, params: Record<string, string>): Promise<NotificationResult> {
+export interface NotificationPreferences {
+  whatsapp: boolean;
+  email: boolean;
+}
+
+export async function sendWhatsApp(to: string, templateName: string, params: Record<string, string>, preferences?: NotificationPreferences): Promise<NotificationResult> {
+  if (preferences && !preferences.whatsapp) {
+    return { success: false, skipped: true, skipReason: 'WhatsApp notifications disabled' };
+  }
   if (!WHATSAPP_API_KEY || !WHATSAPP_PHONE_ID) return { success: false, error: 'WhatsApp not configured' };
   try {
     const response = await fetch(`https://graph.facebook.com/v18.0/${WHATSAPP_PHONE_ID}/messages`, {
@@ -31,7 +41,10 @@ export async function sendWhatsApp(to: string, templateName: string, params: Rec
   }
 }
 
-export async function sendEmail(to: string, subject: string, body: string): Promise<NotificationResult> {
+export async function sendEmail(to: string, subject: string, body: string, preferences?: NotificationPreferences): Promise<NotificationResult> {
+  if (preferences && !preferences.email) {
+    return { success: false, skipped: true, skipReason: 'Email notifications disabled' };
+  }
   if (!EMAIL_API_KEY) return { success: false, error: 'Email not configured' };
   try {
     const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
@@ -46,43 +59,43 @@ export async function sendEmail(to: string, subject: string, body: string): Prom
   }
 }
 
-export async function notifyCleanerStatusChange(cleanerPhone: string, status: string, bookingId: string): Promise<NotificationResult> {
-  const wa = await sendWhatsApp(cleanerPhone, 'status_update', { status, booking_id: bookingId });
-  if (!wa.success) await sendEmail(cleanerPhone + '@fallback.com', 'Status Update', `Status changed to ${status} for booking ${bookingId}`);
+export async function notifyCleanerStatusChange(cleanerPhone: string, status: string, bookingId: string, preferences?: NotificationPreferences): Promise<NotificationResult> {
+  const wa = await sendWhatsApp(cleanerPhone, 'status_update', { status, booking_id: bookingId }, preferences);
+  if (!wa.success && !wa.skipped) await sendEmail(cleanerPhone + '@fallback.com', 'Status Update', `Status changed to ${status} for booking ${bookingId}`, preferences);
   return wa;
 }
 
-export async function notifyPaymentReminder(clientPhone: string, clientEmail: string, amount: string, dueDate: string): Promise<NotificationResult> {
-  const wa = await sendWhatsApp(clientPhone, 'payment_reminder', { amount, due_date: dueDate });
-  if (!wa.success) await sendEmail(clientEmail, 'Payment Reminder', `Payment of ${amount} due by ${dueDate}`);
+export async function notifyPaymentReminder(clientPhone: string, clientEmail: string, amount: string, dueDate: string, preferences?: NotificationPreferences): Promise<NotificationResult> {
+  const wa = await sendWhatsApp(clientPhone, 'payment_reminder', { amount, due_date: dueDate }, preferences);
+  if (!wa.success && !wa.skipped) await sendEmail(clientEmail, 'Payment Reminder', `Payment of ${amount} due by ${dueDate}`, preferences);
   return wa;
 }
 
-export async function notifyAdminFailure(adminEmail: string, action: string, error: string): Promise<NotificationResult> {
-  return sendEmail(adminEmail, 'Admin Action Failure', `Action "${action}" failed with error: ${error}`);
+export async function notifyAdminFailure(adminEmail: string, action: string, error: string, preferences?: NotificationPreferences): Promise<NotificationResult> {
+  return sendEmail(adminEmail, 'Admin Action Failure', `Action "${action}" failed with error: ${error}`, preferences);
 }
 
 // Onboarding notification functions
-export async function notifyConsentSubmitted(phone: string, name: string): Promise<NotificationResult> {
-  return sendWhatsApp(phone, 'consent_submitted', { name });
+export async function notifyConsentSubmitted(phone: string, name: string, preferences?: NotificationPreferences): Promise<NotificationResult> {
+  return sendWhatsApp(phone, 'consent_submitted', { name }, preferences);
 }
 
-export async function notifyAdminApproved(phone: string, name: string): Promise<NotificationResult> {
-  return sendWhatsApp(phone, 'admin_approved', { name });
+export async function notifyAdminApproved(phone: string, name: string, preferences?: NotificationPreferences): Promise<NotificationResult> {
+  return sendWhatsApp(phone, 'admin_approved', { name }, preferences);
 }
 
-export async function notifyAdminRejected(phone: string, name: string, reason?: string): Promise<NotificationResult> {
-  return sendWhatsApp(phone, 'admin_rejected', { name, reason: reason || 'Not specified' });
+export async function notifyAdminRejected(phone: string, name: string, reason?: string, preferences?: NotificationPreferences): Promise<NotificationResult> {
+  return sendWhatsApp(phone, 'admin_rejected', { name, reason: reason || 'Not specified' }, preferences);
 }
 
-export async function notifyProfileCreated(phone: string, name: string): Promise<NotificationResult> {
-  return sendWhatsApp(phone, 'profile_created', { name });
+export async function notifyProfileCreated(phone: string, name: string, preferences?: NotificationPreferences): Promise<NotificationResult> {
+  return sendWhatsApp(phone, 'profile_created', { name }, preferences);
 }
 
-export async function notifyContractSigned(phone: string, name: string): Promise<NotificationResult> {
-  return sendWhatsApp(phone, 'contract_signed', { name });
+export async function notifyContractSigned(phone: string, name: string, preferences?: NotificationPreferences): Promise<NotificationResult> {
+  return sendWhatsApp(phone, 'contract_signed', { name }, preferences);
 }
 
-export async function notifyTrainingCompleted(phone: string, name: string, certHash: string): Promise<NotificationResult> {
-  return sendWhatsApp(phone, 'training_completed', { name, cert_hash: certHash });
+export async function notifyTrainingCompleted(phone: string, name: string, certHash: string, preferences?: NotificationPreferences): Promise<NotificationResult> {
+  return sendWhatsApp(phone, 'training_completed', { name, cert_hash: certHash }, preferences);
 }
