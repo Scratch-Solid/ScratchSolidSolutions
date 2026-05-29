@@ -159,7 +159,7 @@ export default function OnboardingAnalytics() {
 
       {/* Drop-off Points */}
       <div className="mb-8">
-        <h2 className="text-lg font-semibold mb-4">Drop-off Points (stuck {'>'} 7 days)</h2>
+        <h2 className="text-lg font-semibold mb-4">Drop-off Points (stuck &gt; 7 days)</h2>
         <div className="grid grid-cols-4 gap-4">
           {dropOffs.map((item) => (
             <div key={item.stage} className="bg-orange-50 border border-orange-200 rounded-lg p-4">
