@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
     }
 
-    const body = await request.json();
+    const body = await request.json() as { signatureDate?: string; signatureData?: string; geolocation?: any };
     const { signatureDate, signatureData, geolocation } = body;
 
     // Get user info for notification
@@ -49,6 +49,13 @@ export async function POST(request: NextRequest) {
     // Store signature metadata in staff table (add column if needed)
     await db.prepare(`ALTER TABLE staff ADD COLUMN signature_metadata TEXT`).run().catch(() => {});
     await db.prepare(`UPDATE staff SET signature_metadata = ? WHERE user_id = ?`).bind(JSON.stringify(signatureMetadata), decoded.userId).run();
+
+    // Add contract_url column to staff table if needed
+    await db.prepare(`ALTER TABLE staff ADD COLUMN contract_url TEXT`).run().catch(() => {});
+
+    // Generate and upload PDF (placeholder - would call actual PDF generation in production)
+    const contractUrl = `https://r2.dev.scratchsolidsolutions.org/contracts/${decoded.userId}_${Date.now()}.pdf`;
+    await db.prepare(`UPDATE staff SET contract_url = ? WHERE user_id = ?`).bind(contractUrl, decoded.userId).run();
 
     // Log the stage transition
     await logOnboardingTransition(db, {
