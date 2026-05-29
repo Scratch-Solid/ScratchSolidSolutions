@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { sanitizeHtml } from '@/lib/htmlSanitizer';
+import SignatureCanvas from 'react-signature-canvas';
 
 export default function SignContractPage() {
   const router = useRouter();
@@ -14,6 +15,10 @@ export default function SignContractPage() {
   const [contractContent, setContractContent] = useState<any>(null);
   const [loadingContent, setLoadingContent] = useState(true);
   const [stageError, setStageError] = useState("");
+  const signatureRef = useRef<SignatureCanvas>(null);
+  const [signatureData, setSignatureData] = useState<string | null>(null);
+  const [contractHistory, setContractHistory] = useState<any[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
 
   useEffect(() => {
     // Check if user is authenticated
@@ -55,12 +60,32 @@ export default function SignContractPage() {
         setLoadingContent(false);
       }
     };
+
+    // Fetch contract history
+    const fetchContractHistory = async () => {
+      try {
+        const response = await fetch('/api/contract/history', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (response.ok) {
+          const data = await response.json() as { history: any[] };
+          setContractHistory(data.history || []);
+        }
+      } catch (err) {
+        console.error('Error fetching contract history:', err);
+      }
+    };
     
     checkStage();
     fetchContractContent();
+    fetchContractHistory();
   }, [router]);
 
   const handleSign = async () => {
+    if (!signatureData) {
+      setError("Please provide your signature");
+      return;
+    }
     setLoading(true);
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem("authToken") : null;
@@ -73,7 +98,7 @@ export default function SignContractPage() {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
         },
-        body: JSON.stringify({ signatureDate }),
+        body: JSON.stringify({ signatureDate, signatureData }),
       });
       if (res.ok) {
         setSigned(true);
@@ -102,13 +127,55 @@ export default function SignContractPage() {
     }
   };
 
+  const clearSignature = () => {
+    if (signatureRef.current) {
+      signatureRef.current.clear();
+      setSignatureData(null);
+    }
+  };
+
+  const handleSignatureEnd = () => {
+    if (signatureRef.current) {
+      const dataUrl = signatureRef.current.toDataURL();
+      setSignatureData(dataUrl);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-8">
       <div className="glass-panel max-w-2xl w-full p-8">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--text-h)' }}>Scratch Solid Solutions</h1>
           <p className="text-lg font-medium" style={{ color: 'var(--text)' }}>Employment Contract</p>
+          {contractHistory.length > 0 && (
+            <button
+              onClick={() => setShowHistory(!showHistory)}
+              className="text-sm text-blue-600 hover:text-blue-800 mt-2 underline"
+            >
+              {showHistory ? 'Hide' : 'View'} Contract History ({contractHistory.length})
+            </button>
+          )}
         </div>
+
+        {showHistory && contractHistory.length > 0 && (
+          <div className="bg-gray-50 p-4 rounded-lg mb-6">
+            <h3 className="font-semibold mb-3">Contract History</h3>
+            <div className="space-y-2">
+              {contractHistory.map((item) => (
+                <div key={item.id} className="text-sm border-b pb-2 last:border-0">
+                  <div className="font-medium">Version {item.version_number}</div>
+                  <div className="text-gray-600">Signed: {new Date(item.signed_at).toLocaleString()}</div>
+                  <div className="text-gray-500 text-xs">IP: {item.ip_address}</div>
+                  {item.pdf_url && (
+                    <a href={item.pdf_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 text-xs hover:underline">
+                      View PDF
+                    </a>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="bg-gray-50 p-6 rounded-lg mb-6 text-sm leading-relaxed">
           <h2 className="font-bold text-lg mb-4">EMPLOYMENT AGREEMENT</h2>
@@ -150,7 +217,31 @@ export default function SignContractPage() {
             </label>
 
             {agreed && (
-              <div className="border-t pt-4">
+              <div className="border-t pt-4 space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold mb-2">Your Signature</label>
+                  <div className="border-2 border-gray-300 rounded-lg bg-white">
+                    <SignatureCanvas
+                      ref={signatureRef}
+                      canvasProps={{
+                        className: 'w-full h-40',
+                      }}
+                      onEnd={handleSignatureEnd}
+                    />
+                  </div>
+                  <div className="flex gap-2 mt-2">
+                    <button
+                      onClick={clearSignature}
+                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-sm"
+                    >
+                      Clear Signature
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Sign in the box above using your mouse or touch screen
+                  </p>
+                </div>
+
                 <label className="flex items-center gap-3 cursor-pointer">
                   <input
                     type="checkbox"
@@ -160,7 +251,7 @@ export default function SignContractPage() {
                   />
                   <span className="text-sm font-semibold">I hereby sign this contract electronically</span>
                 </label>
-                <p className="text-xs text-gray-500 mt-2">
+                <p className="text-xs text-gray-500">
                   By checking this box, you are providing your electronic signature and agreeing to be bound by the terms of this contract.
                 </p>
               </div>
@@ -168,7 +259,7 @@ export default function SignContractPage() {
 
             <button
               onClick={handleSign}
-              disabled={!signed || loading}
+              disabled={!signed || !signatureData || loading}
               className="w-full primary-button disabled:opacity-50"
             >
               {loading ? "Signing..." : "Sign Contract Electronically"}
