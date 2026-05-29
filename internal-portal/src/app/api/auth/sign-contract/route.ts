@@ -57,6 +57,55 @@ export async function POST(request: NextRequest) {
     const contractUrl = `https://r2.dev.scratchsolidsolutions.org/contracts/${decoded.userId}_${Date.now()}.pdf`;
     await db.prepare(`UPDATE staff SET contract_url = ? WHERE user_id = ?`).bind(contractUrl, decoded.userId).run();
 
+    // Initialize contract versioning tables
+    await db.prepare(`
+      CREATE TABLE IF NOT EXISTS contract_versions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        version_number TEXT NOT NULL,
+        template_content TEXT NOT NULL,
+        effective_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        created_by INTEGER,
+        is_active BOOLEAN DEFAULT 1
+      )
+    `).run();
+
+    await db.prepare(`
+      CREATE TABLE IF NOT EXISTS signed_contracts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        contract_version_id INTEGER NOT NULL,
+        pdf_url TEXT NOT NULL,
+        signature_metadata TEXT,
+        signed_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        ip_address TEXT,
+        user_agent TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id),
+        FOREIGN KEY (contract_version_id) REFERENCES contract_versions(id)
+      )
+    `).run();
+
+    // Get or create active contract version
+    let contractVersion = await db.prepare('SELECT id FROM contract_versions WHERE is_active = 1 ORDER BY id DESC LIMIT 1').first();
+    if (!contractVersion) {
+      const result = await db.prepare('INSERT INTO contract_versions (version_number, template_content) VALUES (?, ?)').bind('1.0', 'Standard Employment Contract').run();
+      contractVersion = { id: result.meta.last_row_id };
+    }
+
+    // Store signed contract record
+    await db.prepare(`
+      INSERT INTO signed_contracts (user_id, contract_version_id, pdf_url, signature_metadata, ip_address, user_agent)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).bind(
+      decoded.userId,
+      (contractVersion as any).id,
+      contractUrl,
+      JSON.stringify(signatureMetadata),
+      signatureMetadata.ipAddress,
+      signatureMetadata.userAgent
+    ).run();
+
     // Log the stage transition
     await logOnboardingTransition(db, {
       user_id: decoded.userId,
