@@ -683,6 +683,96 @@ export async function activateUserAfterTraining(userId: string, ip?: string, use
   }
 }
 
+// Initialize notification_log table
+export async function initializeNotificationLogTable(db: D1Database) {
+  try {
+    await db.prepare(`
+      CREATE TABLE IF NOT EXISTS notification_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        phone_number TEXT,
+        email TEXT,
+        notification_type TEXT NOT NULL,
+        channel TEXT NOT NULL,
+        template_name TEXT,
+        status TEXT NOT NULL,
+        message_id TEXT,
+        error_message TEXT,
+        metadata TEXT,
+        created_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+      )
+    `).run();
+
+    // Create indexes
+    await db.prepare(`CREATE INDEX IF NOT EXISTS idx_notification_log_user_id ON notification_log(user_id)`).run();
+    await db.prepare(`CREATE INDEX IF NOT EXISTS idx_notification_log_type ON notification_log(notification_type)`).run();
+    await db.prepare(`CREATE INDEX IF NOT EXISTS idx_notification_log_status ON notification_log(status)`).run();
+    await db.prepare(`CREATE INDEX IF NOT EXISTS idx_notification_log_created_at ON notification_log(created_at)`).run();
+    await db.prepare(`CREATE INDEX IF NOT EXISTS idx_notification_log_channel ON notification_log(channel)`).run();
+
+    return true;
+  } catch (error) {
+    console.error('Failed to initialize notification_log table:', error);
+    return false;
+  }
+}
+
+// Log notification to database
+export async function logNotification(db: D1Database, data: {
+  user_id?: number;
+  phone_number?: string;
+  email?: string;
+  notification_type: string;
+  channel: 'whatsapp' | 'email';
+  template_name?: string;
+  status: 'sent' | 'failed' | 'pending';
+  message_id?: string;
+  error_message?: string;
+  metadata?: Record<string, any>;
+}) {
+  try {
+    await initializeNotificationLogTable(db);
+
+    await db.prepare(`
+      INSERT INTO notification_log (user_id, phone_number, email, notification_type, channel, template_name, status, message_id, error_message, metadata, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+    `).bind(
+      data.user_id || null,
+      data.phone_number || null,
+      data.email || null,
+      data.notification_type,
+      data.channel,
+      data.template_name || null,
+      data.status,
+      data.message_id || null,
+      data.error_message || null,
+      data.metadata ? JSON.stringify(data.metadata) : null
+    ).run();
+
+    return true;
+  } catch (error) {
+    console.error('Failed to log notification:', error);
+    return false;
+  }
+}
+
+// Get notification history for a user
+export async function getNotificationHistory(db: D1Database, userId: number, limit: number = 50) {
+  try {
+    const results = await db.prepare(`
+      SELECT * FROM notification_log 
+      WHERE user_id = ? 
+      ORDER BY created_at DESC 
+      LIMIT ?
+    `).bind(userId, limit).all();
+    return results.results || [];
+  } catch (error) {
+    console.error('Failed to get notification history:', error);
+    return [];
+  }
+}
+
 export async function updateCleanerProfile(db: D1Database, username: string, data: Record<string, any>) {
   // Map frontend field names to database column names
   const fieldMap: Record<string, string> = {

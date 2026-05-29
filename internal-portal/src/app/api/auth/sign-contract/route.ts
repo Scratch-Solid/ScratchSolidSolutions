@@ -1,7 +1,8 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, updateUserOnboardingStage, createOrUpdateStaffRecord, logOnboardingTransition } from '@/lib/db';
+import { getDb, updateUserOnboardingStage, createOrUpdateStaffRecord, logOnboardingTransition, logNotification } from '@/lib/db';
 import { verifyAccessToken } from '@/lib/auth';
+import { notifyContractSigned } from '@/lib/notifications';
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,6 +24,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { signatureDate } = body;
 
+    // Get user info for notification
+    const user = await db.prepare('SELECT name, phone FROM users WHERE id = ?').bind(decoded.userId).first();
+
     // Update user onboarding stage to contract_signed
     await updateUserOnboardingStage(db, decoded.userId, 'contract_signed');
 
@@ -42,6 +46,22 @@ export async function POST(request: NextRequest) {
       ip_address: request.headers.get('x-forwarded-for') || undefined,
       user_agent: request.headers.get('user-agent') || undefined
     });
+
+    // Send WhatsApp notification for contract signed
+    if (user && (user as any).phone) {
+      const notifyResult = await notifyContractSigned((user as any).phone, (user as any).name);
+      await logNotification(db, {
+        user_id: decoded.userId,
+        phone_number: (user as any).phone,
+        notification_type: 'contract_signed',
+        channel: 'whatsapp',
+        template_name: 'contract_signed',
+        status: notifyResult.success ? 'sent' : 'failed',
+        message_id: notifyResult.messageId,
+        error_message: notifyResult.error,
+        metadata: { signatureDate }
+      });
+    }
 
     return NextResponse.json({ 
       success: true, 

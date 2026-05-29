@@ -1,9 +1,10 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
-import { getDb, getPendingContracts, createPendingContract, updatePendingContractStatus, deletePendingContract, logAuditEvent, addOnboardingStageToUsers, updateUserOnboardingStage, logOnboardingTransition } from "../../../lib/db";
+import { getDb, getPendingContracts, createPendingContract, updatePendingContractStatus, deletePendingContract, logAuditEvent, addOnboardingStageToUsers, updateUserOnboardingStage, logOnboardingTransition, logNotification } from "../../../lib/db";
 import { withAuth, withSecurityHeaders, withTracing, withRateLimit, withCsrf } from "../../../lib/middleware";
 import { validatePhone, validateSaIdNumber, validateSaPassport } from "../../../lib/validation";
 import { sanitizeRequestBody } from '@/lib/sanitization';
+import { notifyConsentSubmitted, notifyAdminApproved, notifyAdminRejected } from "@/lib/notifications";
 import bcrypt from 'bcryptjs';
 
 export async function GET(request: NextRequest) {
@@ -151,7 +152,21 @@ export async function POST(request: NextRequest) {
         ip_address: request.headers.get('x-forwarded-for') || undefined,
         user_agent: request.headers.get('user-agent') || undefined
       });
-      
+
+      // Send WhatsApp notification for consent submitted
+      const notifyResult = await notifyConsentSubmitted(contactNumber, data.fullName || data.full_name || username);
+      await logNotification(db, {
+        user_id: userId,
+        phone_number: contactNumber,
+        notification_type: 'consent_submitted',
+        channel: 'whatsapp',
+        template_name: 'consent_submitted',
+        status: notifyResult.success ? 'sent' : 'failed',
+        message_id: notifyResult.messageId,
+        error_message: notifyResult.error,
+        metadata: { contract_id: newContract.id }
+      });
+
       console.log('[PENDING-CONTRACTS POST] User provisioning successful');
     } catch (err) {
       console.error('[PENDING-CONTRACTS POST] User provisioning failed:', err);
@@ -215,10 +230,28 @@ export async function PUT(request: NextRequest) {
               ip_address: request.headers.get('x-forwarded-for') || undefined,
               user_agent: request.headers.get('user-agent') || undefined
             });
+
+            // Send WhatsApp notification for admin approval
+            const contactNumber = (contract as any).contact_number;
+            const fullName = (contract as any).full_name;
+            if (contactNumber) {
+              const notifyResult = await notifyAdminApproved(contactNumber, fullName);
+              await logNotification(db, {
+                user_id: (user as any).id,
+                phone_number: contactNumber,
+                notification_type: 'admin_approved',
+                channel: 'whatsapp',
+                template_name: 'admin_approved',
+                status: notifyResult.success ? 'sent' : 'failed',
+                message_id: notifyResult.messageId,
+                error_message: notifyResult.error,
+                metadata: { contract_id: parseInt(id) }
+              });
+            }
           }
         }
       }
-      
+
       // @ts-ignore
       await logAuditEvent(db, (user as any).id, 'approve_contract', 'pending_contract', parseInt(id), JSON.stringify({ contract_id: id }), request.headers.get('x-forwarded-for') || '');
       return NextResponse.json(updated);
@@ -253,6 +286,24 @@ export async function PUT(request: NextRequest) {
             ip_address: request.headers.get('x-forwarded-for') || undefined,
             user_agent: request.headers.get('user-agent') || undefined
           });
+
+          // Send WhatsApp notification for admin rejection
+          const contactNumber = (contract as any).contact_number;
+          const fullName = (contract as any).full_name;
+          if (contactNumber) {
+            const notifyResult = await notifyAdminRejected(contactNumber, fullName, sanitizedData.rejection_reason);
+            await logNotification(db, {
+              user_id: (user as any).id,
+              phone_number: contactNumber,
+              notification_type: 'admin_rejected',
+              channel: 'whatsapp',
+              template_name: 'admin_rejected',
+              status: notifyResult.success ? 'sent' : 'failed',
+              message_id: notifyResult.messageId,
+              error_message: notifyResult.error,
+              metadata: { contract_id: parseInt(id), rejection_reason: sanitizedData.rejection_reason }
+            });
+          }
         }
       }
 

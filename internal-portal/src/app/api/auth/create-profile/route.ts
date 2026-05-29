@@ -1,8 +1,9 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, addOnboardingColumnsToStaff, createOrUpdateStaffRecord, addOnboardingStageToUsers, updateUserOnboardingStage, logOnboardingTransition } from '@/lib/db';
+import { getDb, addOnboardingColumnsToStaff, createOrUpdateStaffRecord, addOnboardingStageToUsers, updateUserOnboardingStage, logOnboardingTransition, logNotification } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import { generateAccessToken } from '@/lib/auth';
+import { notifyProfileCreated } from '@/lib/notifications';
 
 export async function POST(request: NextRequest) {
   try {
@@ -139,6 +140,20 @@ export async function POST(request: NextRequest) {
       metadata: { profile_data: { firstName, lastName, cellphone } },
       ip_address: request.headers.get('x-forwarded-for') || undefined,
       user_agent: request.headers.get('user-agent') || undefined
+    });
+
+    // Send WhatsApp notification for profile created
+    const notifyResult = await notifyProfileCreated(cellphone, fullName);
+    await logNotification(db, {
+      user_id: (user as any).id,
+      phone_number: cellphone,
+      notification_type: 'profile_created',
+      channel: 'whatsapp',
+      template_name: 'profile_created',
+      status: notifyResult.success ? 'sent' : 'failed',
+      message_id: notifyResult.messageId,
+      error_message: notifyResult.error,
+      metadata: { first_name: firstName, last_name: lastName }
     });
 
     // Generate JWT token for auto-login after profile creation
