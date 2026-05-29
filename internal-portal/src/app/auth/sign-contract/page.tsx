@@ -13,6 +13,7 @@ export default function SignContractPage() {
   const [signatureDate, setSignatureDate] = useState("");
   const [contractContent, setContractContent] = useState<any>(null);
   const [loadingContent, setLoadingContent] = useState(true);
+  const [stageError, setStageError] = useState("");
 
   useEffect(() => {
     // Check if user is authenticated
@@ -21,6 +22,24 @@ export default function SignContractPage() {
       router.push("/auth/login");
       return;
     }
+
+    // Check onboarding stage
+    const checkStage = async () => {
+      try {
+        const response = await fetch('/api/auth/check-onboarding-stage', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.redirect) {
+            setStageError(data.error || 'Please complete previous onboarding steps');
+            setTimeout(() => router.push(data.redirect), 2000);
+          }
+        }
+      } catch (err) {
+        console.error('Error checking onboarding stage:', err);
+      }
+    };
 
     // Fetch contract content from database
     const fetchContractContent = async () => {
@@ -36,6 +55,8 @@ export default function SignContractPage() {
         setLoadingContent(false);
       }
     };
+    
+    checkStage();
     fetchContractContent();
   }, [router]);
 
@@ -106,6 +127,7 @@ export default function SignContractPage() {
           )}
         </div>
 
+        {stageError && <p className="text-yellow-600 mb-4 bg-yellow-50 p-3 rounded">{stageError}</p>}
         {error && <p className="text-red-500 mb-4">{error}</p>}
 
         {signed ? (

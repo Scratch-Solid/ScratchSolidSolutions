@@ -155,7 +155,8 @@ export default function CreateProfilePage() {
     }
 
     try {
-      const consent = JSON.parse(typeof window !== 'undefined' ? localStorage.getItem("pendingConsent") : null || "{}");
+      const consentData = typeof window !== 'undefined' ? localStorage.getItem("pendingConsent") : null;
+      const consent = consentData ? JSON.parse(consentData) : {};
 
       // Convert profile picture to base64
       const reader = new FileReader();
@@ -173,6 +174,23 @@ export default function CreateProfilePage() {
         });
 
         if (res.ok) {
+          const data = await res.json() as { 
+            success?: boolean; 
+            message?: string;
+            token?: string;
+            user_id?: number;
+            email?: string;
+            role?: string;
+          };
+          
+          // Store JWT token in localStorage for auto-login
+          if (data.token) {
+            localStorage.setItem("authToken", data.token);
+            localStorage.setItem("userRole", data.role || "cleaner");
+            localStorage.setItem("username", data.email || "");
+            localStorage.setItem("user_id", String(data.user_id || ""));
+          }
+          
           // Clear pending consent and redirect to contract
           localStorage.removeItem("pendingConsent");
           router.push("/auth/sign-contract");

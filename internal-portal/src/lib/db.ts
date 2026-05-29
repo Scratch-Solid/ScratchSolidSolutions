@@ -298,6 +298,290 @@ export async function initializeCleanerProfilesTable(db: D1Database) {
   }
 }
 
+// Initialize staff table for onboarding
+export async function initializeStaffTable(db: D1Database) {
+  try {
+    await db.prepare(`
+      CREATE TABLE IF NOT EXISTS staff (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL UNIQUE,
+        pool_type TEXT DEFAULT 'INDIVIDUAL',
+        is_active INTEGER DEFAULT 1,
+        service_type TEXT DEFAULT 'standard',
+        first_name TEXT DEFAULT '',
+        last_name TEXT DEFAULT '',
+        cellphone TEXT DEFAULT '',
+        email TEXT DEFAULT '',
+        training_completed INTEGER DEFAULT 0,
+        contract_url TEXT,
+        department TEXT DEFAULT 'cleaning',
+        onboarding_stage TEXT DEFAULT 'consent_pending',
+        hired_at TEXT,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      )
+    `).run();
+
+    // Add indexes
+    await db.prepare(`CREATE INDEX IF NOT EXISTS idx_staff_pool_type ON staff(pool_type)`).run();
+    await db.prepare(`CREATE INDEX IF NOT EXISTS idx_staff_is_active ON staff(is_active)`).run();
+    await db.prepare(`CREATE INDEX IF NOT EXISTS idx_staff_service_type ON staff(service_type)`).run();
+    await db.prepare(`CREATE INDEX IF NOT EXISTS idx_staff_training_completed ON staff(training_completed)`).run();
+    await db.prepare(`CREATE INDEX IF NOT EXISTS idx_staff_onboarding_stage ON staff(onboarding_stage)`).run();
+    await db.prepare(`CREATE INDEX IF NOT EXISTS idx_staff_department ON staff(department)`).run();
+
+    return true;
+  } catch (error) {
+    console.error('Failed to initialize staff table:', error);
+    return false;
+  }
+}
+
+// Add onboarding columns to staff table if they don't exist
+export async function addOnboardingColumnsToStaff(db: D1Database) {
+  try {
+    // Check if table exists first
+    const tableCheck = await db.prepare(`
+      SELECT name FROM sqlite_master WHERE type='table' AND name='staff'
+    `).first();
+    
+    if (!tableCheck) {
+      // Table doesn't exist, initialize it
+      return await initializeStaffTable(db);
+    }
+
+    // Add columns if they don't exist
+    const columns = [
+      { name: 'training_completed', type: 'INTEGER DEFAULT 0' },
+      { name: 'contract_url', type: 'TEXT' },
+      { name: 'department', type: "TEXT DEFAULT 'cleaning'" },
+      { name: 'onboarding_stage', type: "TEXT DEFAULT 'consent_pending'" },
+      { name: 'hired_at', type: 'TEXT' }
+    ];
+
+    for (const col of columns) {
+      try {
+        await db.prepare(`ALTER TABLE staff ADD COLUMN ${col.name} ${col.type}`).run();
+      } catch (error: any) {
+        // Column might already exist, ignore error
+        if (!error.message?.includes('duplicate column name')) {
+          console.error(`Failed to add column ${col.name}:`, error);
+        }
+      }
+    }
+
+    // Create indexes
+    try {
+      await db.prepare(`CREATE INDEX IF NOT EXISTS idx_staff_training_completed ON staff(training_completed)`).run();
+      await db.prepare(`CREATE INDEX IF NOT EXISTS idx_staff_onboarding_stage ON staff(onboarding_stage)`).run();
+      await db.prepare(`CREATE INDEX IF NOT EXISTS idx_staff_department ON staff(department)`).run();
+    } catch (error) {
+      console.error('Failed to create indexes:', error);
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Failed to add onboarding columns to staff table:', error);
+    return false;
+  }
+}
+
+// Map department to pool_type
+export function mapDepartmentToPoolType(department: string): 'INDIVIDUAL' | 'BUSINESS' {
+  // Cleaners (cleaning department) go to INDIVIDUAL pool
+  // Other departments (digital, transport, admin) go to BUSINESS pool
+  if (department === 'cleaning') {
+    return 'INDIVIDUAL';
+  }
+  return 'BUSINESS';
+}
+
+// Create or update staff record for a user
+export async function createOrUpdateStaffRecord(db: D1Database, data: {
+  user_id: number;
+  first_name?: string;
+  last_name?: string;
+  cellphone?: string;
+  email?: string;
+  department?: string;
+  onboarding_stage?: string;
+}) {
+  try {
+    // Check if staff record exists
+    const existing = await db.prepare('SELECT id FROM staff WHERE user_id = ?').bind(data.user_id).first();
+    
+    const poolType = mapDepartmentToPoolType(data.department || 'cleaning');
+    
+    if (existing) {
+      // Update existing record
+      const updates: string[] = [];
+      const values: any[] = [];
+      
+      if (data.first_name !== undefined) { updates.push('first_name = ?'); values.push(data.first_name); }
+      if (data.last_name !== undefined) { updates.push('last_name = ?'); values.push(data.last_name); }
+      if (data.cellphone !== undefined) { updates.push('cellphone = ?'); values.push(data.cellphone); }
+      if (data.email !== undefined) { updates.push('email = ?'); values.push(data.email); }
+      if (data.department !== undefined) { updates.push('department = ?'); values.push(data.department); }
+      if (data.onboarding_stage !== undefined) { updates.push('onboarding_stage = ?'); values.push(data.onboarding_stage); }
+      
+      updates.push('pool_type = ?');
+      values.push(poolType);
+      updates.push('updated_at = datetime("now")');
+      values.push(data.user_id);
+      
+      if (updates.length > 2) { // More than just pool_type and updated_at
+        const setClause = updates.join(', ');
+        await db.prepare(`UPDATE staff SET ${setClause} WHERE user_id = ?`).bind(...values).run();
+      }
+      
+      return existing;
+    } else {
+      // Create new record
+      const result = await db.prepare(`
+        INSERT INTO staff (user_id, first_name, last_name, cellphone, email, department, pool_type, onboarding_stage, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+        RETURNING *
+      `).bind(
+        data.user_id,
+        data.first_name || '',
+        data.last_name || '',
+        data.cellphone || '',
+        data.email || '',
+        data.department || 'cleaning',
+        poolType,
+        data.onboarding_stage || 'consent_pending'
+      ).first();
+      
+      return result;
+    }
+  } catch (error) {
+    console.error('Failed to create or update staff record:', error);
+    return null;
+  }
+}
+
+// Add onboarding_stage column to users table if it doesn't exist
+export async function addOnboardingStageToUsers(db: D1Database) {
+  try {
+    // Add column if it doesn't exist
+    try {
+      await db.prepare(`ALTER TABLE users ADD COLUMN onboarding_stage TEXT DEFAULT 'consent_pending'`).run();
+    } catch (error: any) {
+      // Column might already exist, ignore error
+      if (!error.message?.includes('duplicate column name')) {
+        console.error('Failed to add onboarding_stage column to users:', error);
+      }
+    }
+
+    // Create index
+    try {
+      await db.prepare(`CREATE INDEX IF NOT EXISTS idx_users_onboarding_stage ON users(onboarding_stage)`).run();
+    } catch (error) {
+      console.error('Failed to create index:', error);
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Failed to add onboarding_stage to users table:', error);
+    return false;
+  }
+}
+
+// Update user onboarding stage
+export async function updateUserOnboardingStage(db: D1Database, userId: number, stage: string) {
+  try {
+    await db.prepare(`
+      UPDATE users SET onboarding_stage = ? WHERE id = ?
+    `).bind(stage, userId).run();
+    return true;
+  } catch (error) {
+    console.error('Failed to update user onboarding stage:', error);
+    return false;
+  }
+}
+
+// Initialize onboarding_audit table
+export async function initializeOnboardingAuditTable(db: D1Database) {
+  try {
+    await db.prepare(`
+      CREATE TABLE IF NOT EXISTS onboarding_audit (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        from_stage TEXT,
+        to_stage TEXT NOT NULL,
+        event_type TEXT NOT NULL,
+        metadata TEXT,
+        ip_address TEXT,
+        user_agent TEXT,
+        created_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      )
+    `).run();
+
+    // Create indexes
+    await db.prepare(`CREATE INDEX IF NOT EXISTS idx_onboarding_audit_user_id ON onboarding_audit(user_id)`).run();
+    await db.prepare(`CREATE INDEX IF NOT EXISTS idx_onboarding_audit_to_stage ON onboarding_audit(to_stage)`).run();
+    await db.prepare(`CREATE INDEX IF NOT EXISTS idx_onboarding_audit_created_at ON onboarding_audit(created_at)`).run();
+    await db.prepare(`CREATE INDEX IF NOT EXISTS idx_onboarding_audit_event_type ON onboarding_audit(event_type)`).run();
+
+    return true;
+  } catch (error) {
+    console.error('Failed to initialize onboarding_audit table:', error);
+    return false;
+  }
+}
+
+// Log onboarding stage transition
+export async function logOnboardingTransition(db: D1Database, data: {
+  user_id: number;
+  from_stage?: string;
+  to_stage: string;
+  event_type: string;
+  metadata?: Record<string, any>;
+  ip_address?: string;
+  user_agent?: string;
+}) {
+  try {
+    // Ensure table exists
+    await initializeOnboardingAuditTable(db);
+
+    await db.prepare(`
+      INSERT INTO onboarding_audit (user_id, from_stage, to_stage, event_type, metadata, ip_address, user_agent, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
+    `).bind(
+      data.user_id,
+      data.from_stage || null,
+      data.to_stage,
+      data.event_type,
+      data.metadata ? JSON.stringify(data.metadata) : null,
+      data.ip_address || null,
+      data.user_agent || null
+    ).run();
+
+    return true;
+  } catch (error) {
+    console.error('Failed to log onboarding transition:', error);
+    return false;
+  }
+}
+
+// Get onboarding audit history for a user
+export async function getOnboardingAuditHistory(db: D1Database, userId: number, limit: number = 50) {
+  try {
+    const results = await db.prepare(`
+      SELECT * FROM onboarding_audit 
+      WHERE user_id = ? 
+      ORDER BY created_at DESC 
+      LIMIT ?
+    `).bind(userId, limit).all();
+    return results.results || [];
+  } catch (error) {
+    console.error('Failed to get onboarding audit history:', error);
+    return [];
+  }
+}
+
 export async function updateCleanerProfile(db: D1Database, username: string, data: Record<string, any>) {
   // Map frontend field names to database column names
   const fieldMap: Record<string, string> = {

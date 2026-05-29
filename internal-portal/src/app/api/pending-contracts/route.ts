@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
-import { getDb, getPendingContracts, createPendingContract, updatePendingContractStatus, deletePendingContract, logAuditEvent } from "../../../lib/db";
+import { getDb, getPendingContracts, createPendingContract, updatePendingContractStatus, deletePendingContract, logAuditEvent, addOnboardingStageToUsers, updateUserOnboardingStage, logOnboardingTransition } from "../../../lib/db";
 import { withAuth, withSecurityHeaders, withTracing, withRateLimit, withCsrf } from "../../../lib/middleware";
 import { validatePhone, validateSaIdNumber, validateSaPassport } from "../../../lib/validation";
 import { sanitizeRequestBody } from '@/lib/sanitization';
@@ -110,6 +110,9 @@ export async function POST(request: NextRequest) {
       await db.prepare('ALTER TABLE users ADD COLUMN password_needs_reset INTEGER DEFAULT 0').run().catch(() => {});
       await db.prepare('ALTER TABLE users ADD COLUMN login_count INTEGER DEFAULT 0').run().catch(() => {});
 
+      // Ensure onboarding_stage column exists
+      await addOnboardingStageToUsers(db);
+
       const phoneDigits = contactNumber.replace(/\D/g, '');
       console.log('[PENDING-CONTRACTS POST] Phone digits:', phoneDigits);
       const tempPasswordHash = (await bcrypt.hash(phoneDigits, 10)).replace('$2b$', '$2a$');
@@ -120,18 +123,35 @@ export async function POST(request: NextRequest) {
       const existingUser = await db.prepare('SELECT id FROM users WHERE username = ? OR email = ?').bind(username, email).first();
       console.log('[PENDING-CONTRACTS POST] Existing user:', existingUser ? 'Yes' : 'No');
 
+      let userId: number;
       if (existingUser) {
         console.log('[PENDING-CONTRACTS POST] Updating existing user:', (existingUser as any).id);
         await db.prepare(
           `UPDATE users SET password_hash = ?, phone = ?, role = ?, name = ?, password_needs_reset = 1, login_count = 0, username = ?, email = ? WHERE id = ?`
         ).bind(tempPasswordHash, contactNumber, 'cleaner', data.fullName || data.full_name || username, username, email, (existingUser as any).id).run();
+        userId = (existingUser as any).id;
       } else {
         console.log('[PENDING-CONTRACTS POST] Creating new user');
-        await db.prepare(
-          `INSERT INTO users (email, password_hash, role, name, phone, username, password_needs_reset, login_count)
-           VALUES (?, ?, ?, ?, ?, ?, 1, 0)`
+        const result = await db.prepare(
+          `INSERT INTO users (email, password_hash, role, name, phone, username, password_needs_reset, login_count, onboarding_stage)
+           VALUES (?, ?, ?, ?, ?, ?, 1, 0, 'consent_pending')`
         ).bind(email, tempPasswordHash, 'cleaner', data.fullName || data.full_name || username, contactNumber, username).run();
+        userId = result.meta.last_row_id;
       }
+
+      // Set onboarding stage to consent_pending
+      await updateUserOnboardingStage(db, userId, 'consent_pending');
+      
+      // Log the stage transition
+      await logOnboardingTransition(db, {
+        user_id: userId,
+        to_stage: 'consent_pending',
+        event_type: 'consent_submitted',
+        metadata: { contract_id: newContract.id },
+        ip_address: request.headers.get('x-forwarded-for') || undefined,
+        user_agent: request.headers.get('user-agent') || undefined
+      });
+      
       console.log('[PENDING-CONTRACTS POST] User provisioning successful');
     } catch (err) {
       console.error('[PENDING-CONTRACTS POST] User provisioning failed:', err);
@@ -170,15 +190,41 @@ export async function PUT(request: NextRequest) {
   const sanitizedData = sanitized as any;
 
   if (id && sanitizedData.status) {
-    // If approving, just update status - user will be created during profile creation
+    // If approving, update status and set onboarding stage to consent_approved
     if (sanitizedData.status === 'approved') {
       const updated = await updatePendingContractStatus(db, parseInt(id), 'approved');
+      
+      // Get the pending contract to find the associated user
+      const contract = await db.prepare('SELECT * FROM pending_contracts WHERE id = ?').bind(parseInt(id)).first();
+      if (contract) {
+        // Find user by generated username
+        const generatedUsername = (contract as any).generated_username || (contract as any).generatedUsername;
+        if (generatedUsername) {
+          const user = await db.prepare('SELECT id FROM users WHERE username = ?').bind(generatedUsername).first();
+          if (user) {
+            // Update user onboarding stage to consent_approved
+            await updateUserOnboardingStage(db, (user as any).id, 'consent_approved');
+            
+            // Log the stage transition
+            await logOnboardingTransition(db, {
+              user_id: (user as any).id,
+              from_stage: 'consent_pending',
+              to_stage: 'consent_approved',
+              event_type: 'consent_approved',
+              metadata: { contract_id: parseInt(id) },
+              ip_address: request.headers.get('x-forwarded-for') || undefined,
+              user_agent: request.headers.get('user-agent') || undefined
+            });
+          }
+        }
+      }
+      
       // @ts-ignore
       await logAuditEvent(db, (user as any).id, 'approve_contract', 'pending_contract', parseInt(id), JSON.stringify({ contract_id: id }), request.headers.get('x-forwarded-for') || '');
       return NextResponse.json(updated);
     }
 
-    // If rejecting, add rejection reason if provided
+    // If rejecting, add rejection reason if provided and set onboarding stage to rejected
     if (sanitizedData.status === 'rejected') {
       const contract = await db.prepare('SELECT * FROM pending_contracts WHERE id = ?').bind(parseInt(id)).first();
       if (!contract) {
@@ -189,6 +235,26 @@ export async function PUT(request: NextRequest) {
       await db.prepare(
         `UPDATE pending_contracts SET status = ?, rejection_reason = ?, updated_at = datetime('now') WHERE id = ?`
       ).bind('rejected', sanitizedData.rejection_reason || 'Application rejected', parseInt(id)).run();
+
+      // Find user by generated username and set onboarding stage to rejected
+      const generatedUsername = (contract as any).generated_username || (contract as any).generatedUsername;
+      if (generatedUsername) {
+        const user = await db.prepare('SELECT id FROM users WHERE username = ?').bind(generatedUsername).first();
+        if (user) {
+          await updateUserOnboardingStage(db, (user as any).id, 'rejected');
+          
+          // Log the stage transition
+          await logOnboardingTransition(db, {
+            user_id: (user as any).id,
+            from_stage: 'consent_pending',
+            to_stage: 'rejected',
+            event_type: 'consent_rejected',
+            metadata: { contract_id: parseInt(id), rejection_reason: sanitizedData.rejection_reason },
+            ip_address: request.headers.get('x-forwarded-for') || undefined,
+            user_agent: request.headers.get('user-agent') || undefined
+          });
+        }
+      }
 
       // @ts-ignore
       await logAuditEvent(db, (user as any).id, 'reject_contract', 'pending_contract', parseInt(id), JSON.stringify({ contract_id: id, rejection_reason: sanitizedData.rejection_reason }), request.headers.get('x-forwarded-for') || '');

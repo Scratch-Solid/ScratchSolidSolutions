@@ -1,7 +1,8 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { getDb, addOnboardingColumnsToStaff, createOrUpdateStaffRecord, addOnboardingStageToUsers, updateUserOnboardingStage, logOnboardingTransition } from '@/lib/db';
 import bcrypt from 'bcryptjs';
+import { generateAccessToken } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,7 +41,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Find user by username
-    const user = await db.prepare('SELECT id FROM users WHERE username = ?').bind(username).first();
+    const user = await db.prepare('SELECT id, email, role FROM users WHERE username = ?').bind(username).first();
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
@@ -108,7 +109,53 @@ export async function POST(request: NextRequest) {
       ).bind((user as any).id, firstName, lastName, residentialAddress, cellphone, profilePicture || '').run();
     }
 
-    return NextResponse.json({ success: true, message: 'Profile created successfully' }, { status: 200 });
+    // Ensure staff table has onboarding columns
+    await addOnboardingColumnsToStaff(db);
+
+    // Ensure users table has onboarding_stage column
+    await addOnboardingStageToUsers(db);
+
+    // Create or update staff record with department mapping
+    const department = 'cleaning'; // Default to cleaning for new cleaners
+    await createOrUpdateStaffRecord(db, {
+      user_id: (user as any).id,
+      first_name: firstName,
+      last_name: lastName,
+      cellphone: cellphone,
+      email: (user as any).email,
+      department: department,
+      onboarding_stage: 'profile_created'
+    });
+
+    // Update user onboarding stage
+    await updateUserOnboardingStage(db, (user as any).id, 'profile_created');
+    
+    // Log the stage transition
+    await logOnboardingTransition(db, {
+      user_id: (user as any).id,
+      from_stage: 'consent_approved',
+      to_stage: 'profile_created',
+      event_type: 'profile_created',
+      metadata: { profile_data: { firstName, lastName, cellphone } },
+      ip_address: request.headers.get('x-forwarded-for') || undefined,
+      user_agent: request.headers.get('user-agent') || undefined
+    });
+
+    // Generate JWT token for auto-login after profile creation
+    const token = generateAccessToken(
+      (user as any).id,
+      (user as any).email,
+      (user as any).role
+    );
+
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Profile created successfully',
+      token,
+      user_id: (user as any).id,
+      email: (user as any).email,
+      role: (user as any).role
+    }, { status: 200 });
   } catch (error) {
     console.error('Create profile error:', error);
     return NextResponse.json({ error: 'Failed to create profile' }, { status: 500 });
