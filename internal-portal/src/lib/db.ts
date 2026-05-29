@@ -726,9 +726,10 @@ export async function logNotification(db: D1Database, data: {
   notification_type: string;
   channel: 'whatsapp' | 'email';
   template_name?: string;
-  status: 'sent' | 'failed' | 'pending';
+  status: 'sent' | 'failed' | 'pending' | 'skipped';
   message_id?: string;
   error_message?: string;
+  skip_reason?: string;
   metadata?: Record<string, any>;
 }) {
   try {
