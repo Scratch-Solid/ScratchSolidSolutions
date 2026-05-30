@@ -45,17 +45,17 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = await request.json();
+    const body = await request.json() as { identifier?: string; password?: string };
     const { identifier, password } = body;
 
     if (!identifier || !password) {
       return createSecurityError('Identifier and password are required', 400);
     }
 
-    // Query user by email, phone, or paysheet code
+    // Query user by email, phone, username, or paysheet code
     let user = await db.prepare(
-      'SELECT id, email, password_hash, role, name, phone, address, business_name, email_verified FROM users WHERE email = ? OR phone = ?'
-    ).bind(identifier, identifier).first() as { id: number; email: string; password_hash: string; role: string; name: string; phone: string; address: string; business_name: string; email_verified: boolean } | null;
+      'SELECT id, email, password_hash, role, name, phone, address, business_name, email_verified FROM users WHERE email = ? OR phone = ? OR username = ?'
+    ).bind(identifier, identifier, identifier).first() as { id: number; email: string; password_hash: string; role: string; name: string; phone: string; address: string; business_name: string; email_verified: boolean } | null;
 
     // If not found in users table, try paysheet code in cleaner_profiles
     if (!user) {
