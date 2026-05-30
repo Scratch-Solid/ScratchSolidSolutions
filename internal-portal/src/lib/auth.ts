@@ -22,19 +22,21 @@ import crypto from 'crypto';
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
 
-// Validate secrets are set in production runtime (not during build)
-// Build time validation is skipped as secrets are set via wrangler secrets
-const isRuntime = typeof window === 'undefined' && process.env.NEXT_PHASE !== 'phase-production-build';
-if (isRuntime && process.env.NODE_ENV === 'production' && !JWT_SECRET) {
-  throw new Error('JWT_SECRET must be set in production environment');
-}
-if (isRuntime && process.env.NODE_ENV === 'production' && !JWT_REFRESH_SECRET) {
-  throw new Error('JWT_REFRESH_SECRET must be set in production environment');
+// Validate secrets are set when actually used (not at module load time)
+// This allows build to proceed without secrets being set
+function getJwtSecret() {
+  if (!JWT_SECRET && process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_SECRET must be set in production environment');
+  }
+  return JWT_SECRET || 'dev-secret-change-in-production';
 }
 
-// Use fallback only in development or build time
-const JWT_SECRET_FINAL = JWT_SECRET || 'dev-secret-change-in-production';
-const JWT_REFRESH_SECRET_FINAL = JWT_REFRESH_SECRET || 'dev-refresh-secret-change-in-production';
+function getJwtRefreshSecret() {
+  if (!JWT_REFRESH_SECRET && process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_REFRESH_SECRET must be set in production environment');
+  }
+  return JWT_REFRESH_SECRET || 'dev-refresh-secret-change-in-production';
+}
 const ACCESS_TOKEN_EXPIRY = '15m'; // 15 minutes
 const REFRESH_TOKEN_EXPIRY = '7d'; // 7 days
 const MAX_LOGIN_ATTEMPTS = 5;
@@ -122,7 +124,7 @@ export function generateAccessToken(userId: number, email: string, role: string)
       type: 'access',
       iat: Math.floor(Date.now() / 1000),
     },
-    JWT_SECRET_FINAL,
+    getJwtSecret(),
     { expiresIn: ACCESS_TOKEN_EXPIRY, algorithm: 'HS256' }
   );
 }
@@ -139,7 +141,7 @@ export function generateRefreshToken(userId: number): string {
       type: 'refresh',
       iat: Math.floor(Date.now() / 1000),
     },
-    JWT_REFRESH_SECRET_FINAL,
+    getJwtRefreshSecret(),
     { expiresIn: REFRESH_TOKEN_EXPIRY, algorithm: 'HS256' }
   );
 }
@@ -149,7 +151,7 @@ export function generateRefreshToken(userId: number): string {
  */
 export function verifyAccessToken(token: string): any {
   try {
-    return jwt.verify(token, JWT_SECRET_FINAL, { algorithms: ['HS256'] });
+    return jwt.verify(token, getJwtSecret(), { algorithms: ['HS256'] });
   } catch (error) {
     return null;
   }
@@ -160,7 +162,7 @@ export function verifyAccessToken(token: string): any {
  */
 export function verifyRefreshToken(token: string): any {
   try {
-    return jwt.verify(token, JWT_REFRESH_SECRET_FINAL, { algorithms: ['HS256'] });
+    return jwt.verify(token, getJwtRefreshSecret(), { algorithms: ['HS256'] });
   } catch (error) {
     return null;
   }
