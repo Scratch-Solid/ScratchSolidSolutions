@@ -19,8 +19,20 @@ import { authenticator } from 'otplib';
 import crypto from 'crypto';
 
 // Configuration
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-change-in-production';
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'fallback-refresh-secret-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
+
+// Validate secrets are set in production
+if (process.env.NODE_ENV === 'production' && !JWT_SECRET) {
+  throw new Error('JWT_SECRET must be set in production environment');
+}
+if (process.env.NODE_ENV === 'production' && !JWT_REFRESH_SECRET) {
+  throw new Error('JWT_REFRESH_SECRET must be set in production environment');
+}
+
+// Use fallback only in development
+const JWT_SECRET_FINAL = JWT_SECRET || 'dev-secret-change-in-production';
+const JWT_REFRESH_SECRET_FINAL = JWT_REFRESH_SECRET || 'dev-refresh-secret-change-in-production';
 const ACCESS_TOKEN_EXPIRY = '15m'; // 15 minutes
 const REFRESH_TOKEN_EXPIRY = '7d'; // 7 days
 const MAX_LOGIN_ATTEMPTS = 5;
@@ -108,7 +120,7 @@ export function generateAccessToken(userId: number, email: string, role: string)
       type: 'access',
       iat: Math.floor(Date.now() / 1000),
     },
-    JWT_SECRET,
+    JWT_SECRET_FINAL,
     { expiresIn: ACCESS_TOKEN_EXPIRY, algorithm: 'HS256' }
   );
 }
@@ -125,7 +137,7 @@ export function generateRefreshToken(userId: number): string {
       type: 'refresh',
       iat: Math.floor(Date.now() / 1000),
     },
-    JWT_REFRESH_SECRET,
+    JWT_REFRESH_SECRET_FINAL,
     { expiresIn: REFRESH_TOKEN_EXPIRY, algorithm: 'HS256' }
   );
 }
@@ -135,7 +147,7 @@ export function generateRefreshToken(userId: number): string {
  */
 export function verifyAccessToken(token: string): any {
   try {
-    return jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] });
+    return jwt.verify(token, JWT_SECRET_FINAL, { algorithms: ['HS256'] });
   } catch (error) {
     return null;
   }
@@ -146,7 +158,7 @@ export function verifyAccessToken(token: string): any {
  */
 export function verifyRefreshToken(token: string): any {
   try {
-    return jwt.verify(token, JWT_REFRESH_SECRET, { algorithms: ['HS256'] });
+    return jwt.verify(token, JWT_REFRESH_SECRET_FINAL, { algorithms: ['HS256'] });
   } catch (error) {
     return null;
   }

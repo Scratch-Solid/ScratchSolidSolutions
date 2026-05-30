@@ -49,12 +49,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Hash password
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await bcrypt.hash(password, 12);
 
     // Insert user with paysheet_code and department
     const result = await db.prepare(
-      `INSERT INTO users (name, email, password_hash, role, phone, paysheet_code, department, created_at, password_needs_reset) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), 1)`
+      `INSERT INTO users (name, email, password_hash, role, phone, paysheet_code, department, email_verified, password_needs_reset, created_at) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, 1, 0, datetime('now'))`
     ).bind(name, email, passwordHash, role || 'cleaner', phone || '', paysheetCode || '', department || '').run();
 
     const userId = result.meta.last_row_id;

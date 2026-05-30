@@ -26,9 +26,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Validate password if provided
-    if (password && password !== confirmPassword) {
+    // Validate password (now required)
+    if (!password) {
+      return NextResponse.json({ error: 'Password is required' }, { status: 400 });
+    }
+    if (password !== confirmPassword) {
       return NextResponse.json({ error: 'Passwords do not match' }, { status: 400 });
+    }
+    if (password.length < 8) {
+      return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: 400 });
     }
 
     const db = await getDb();
@@ -64,13 +70,11 @@ export async function POST(request: NextRequest) {
       userParams.push(residentialAddress);
     }
 
-    // Update password if provided
-    if (password && password.length >= 8) {
-      const passwordHash = (await bcrypt.hash(password, 10)).replace('$2b$', '$2a$');
-      userUpdates.push('password_hash = ?');
-      userParams.push(passwordHash);
-      userUpdates.push('password_needs_reset = 0');
-    }
+    // Update password (now required)
+    const passwordHash = await bcrypt.hash(password, 12);
+    userUpdates.push('password_hash = ?');
+    userParams.push(passwordHash);
+    userUpdates.push('password_needs_reset = 0');
 
     userParams.push((user as any).id);
 

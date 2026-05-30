@@ -775,6 +775,31 @@ export async function getNotificationHistory(db: D1Database, userId: number, lim
 }
 
 // Initialize notification preferences column
+export async function initializeSessionsTable(db: D1Database) {
+  try {
+    await db.prepare(`
+      CREATE TABLE IF NOT EXISTS sessions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        token TEXT NOT NULL UNIQUE,
+        refresh_token TEXT,
+        expires_at TEXT NOT NULL,
+        created_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      )
+    `).run();
+
+    // Create indexes
+    await db.prepare(`CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id)`).run();
+    await db.prepare(`CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token)`).run();
+    await db.prepare(`CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at)`).run();
+    return true;
+  } catch (error) {
+    console.error('Failed to initialize sessions table:', error);
+    return false;
+  }
+}
+
 export async function initializeNotificationPreferences(db: D1Database) {
   try {
     await db.prepare(`ALTER TABLE users ADD COLUMN notification_preferences TEXT DEFAULT '{"whatsapp": true, "email": true}'`).run().catch(() => {});

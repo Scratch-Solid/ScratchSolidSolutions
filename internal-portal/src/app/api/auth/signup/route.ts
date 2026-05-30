@@ -56,14 +56,18 @@ export async function POST(request: NextRequest) {
 
     const { name, email, password, role, phone, address, business_name, business_info } = validationResult.data;
 
+    // Validate role - default to 'client' if not provided or invalid
+    const validRoles = ['admin', 'client', 'cleaner', 'digital', 'transport'];
+    const userRole = (role && validRoles.includes(role)) ? role : 'client';
+
     // Hash password
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await bcrypt.hash(password, 12);
 
     // Create user
     try {
       await db.prepare(
-        'INSERT INTO users (name, email, password_hash, role, phone, address, business_name, business_info, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime("now"))'
-      ).bind(name, email, passwordHash, role || 'client', phone || '', address || '', business_name || '', business_info || '').run();
+        'INSERT INTO users (name, email, password_hash, role, phone, address, business_name, business_info, email_verified, password_needs_reset, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 0, datetime("now"))'
+      ).bind(name, email, passwordHash, userRole, phone || '', address || '', business_name || '', business_info || '').run();
     } catch (dbError: any) {
       if (dbError.message?.includes('UNIQUE')) {
         return createSecurityError('Email already registered', 400);

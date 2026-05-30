@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { getDb, logAuditEvent } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import { 
   applySecurityMiddleware, 
@@ -15,7 +15,7 @@ import {
   createRateLimitError
 } from '@/lib/security-middleware';
 import { withCsrf } from '@/lib/middleware';
-import { generateAccessToken } from '@/lib/auth';
+import { generateAccessToken, recordFailedAttempt, isUserLockedOut, clearFailedAttempts } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   // CRITICAL: Get DB BEFORE ANY other operation to ensure AsyncLocalStorage context is preserved
@@ -24,9 +24,13 @@ export async function POST(request: NextRequest) {
     return createSecurityError('Database unavailable', 503);
   }
 
-  // CSRF protection - disabled for login endpoint to allow initial authentication
-  // const csrfResult = await withCsrf(request);
-  // if (csrfResult) return csrfResult;
+  // CSRF protection - disabled for login endpoint
+  // Note: CSRF on login is intentionally disabled because:
+  // 1. Login is the initial authentication step where no session exists yet
+  // 2. An attacker would need to know the user's credentials to exploit CSRF on login
+  // 3. Implementing CSRF on login requires a separate unauthenticated endpoint to fetch tokens
+  // 4. Rate limiting and login attempt tracking provide sufficient protection against brute force
+  // If CSRF protection is needed, implement a separate /api/auth/csrf-token endpoint
 
   // Get client identifier for rate limiting
   const clientId = request.headers.get('x-forwarded-for') ||
@@ -54,8 +58,8 @@ export async function POST(request: NextRequest) {
 
     // Query user by email, phone, username, or paysheet code
     let user = await db.prepare(
-      'SELECT id, email, password_hash, role, name, phone, address, business_name, email_verified FROM users WHERE email = ? OR phone = ? OR username = ?'
-    ).bind(identifier, identifier, identifier).first() as { id: number; email: string; password_hash: string; role: string; name: string; phone: string; address: string; business_name: string; email_verified: boolean } | null;
+      'SELECT id, email, password_hash, role, name, phone, address, business_name, password_needs_reset FROM users WHERE email = ? OR phone = ? OR username = ?'
+    ).bind(identifier, identifier, identifier).first() as { id: number; email: string; password_hash: string; role: string; name: string; phone: string; address: string; business_name: string; password_needs_reset: number } | null;
 
     // If not found in users table, try paysheet code in cleaner_profiles
     if (!user) {
@@ -65,13 +69,20 @@ export async function POST(request: NextRequest) {
 
       if (cleanerProfile) {
         user = await db.prepare(
-          'SELECT id, email, password_hash, role, name, phone, address, business_name, email_verified FROM users WHERE id = ?'
-        ).bind(cleanerProfile.user_id).first() as { id: number; email: string; password_hash: string; role: string; name: string; phone: string; address: string; business_name: string; email_verified: boolean } | null;
+          'SELECT id, email, password_hash, role, name, phone, address, business_name, password_needs_reset FROM users WHERE id = ?'
+        ).bind(cleanerProfile.user_id).first() as { id: number; email: string; password_hash: string; role: string; name: string; phone: string; address: string; business_name: string; password_needs_reset: number } | null;
       }
     }
 
     if (!user) {
+      // Record failed attempt for the identifier
+      recordFailedAttempt(identifier);
       return createSecurityError('Invalid credentials', 401);
+    }
+
+    // Check if user is locked out due to too many failed attempts
+    if (isUserLockedOut(identifier)) {
+      return createSecurityError('Account temporarily locked due to too many failed attempts. Please try again later.', 429);
     }
 
     // Verify password
@@ -87,21 +98,45 @@ export async function POST(request: NextRequest) {
       const hashStr = JSON.stringify(user.password_hash);
       passwordHash = hashStr;
     }
-    const isValidPassword = await bcrypt.compare(password, passwordHash);
+    // Try comparing with raw password first
+    let isValidPassword = await bcrypt.compare(password, passwordHash);
+
+    // If raw doesn't match, try normalized (digits only) for phone-based temp passwords
     if (!isValidPassword) {
+      const normalizedPassword = password.replace(/\D/g, '');
+      if (normalizedPassword && normalizedPassword !== password) {
+        isValidPassword = await bcrypt.compare(normalizedPassword, passwordHash);
+      }
+    }
+
+    if (!isValidPassword) {
+      // Record failed attempt
+      recordFailedAttempt(identifier);
       return createSecurityError('Invalid credentials', 401);
     }
 
-    // Check if email is verified (skip for cleaners who login via paysheet code)
-    if (!user.email_verified && user.role !== 'cleaner') {
-      return createSecurityError('Please verify your email before logging in', 403);
-    }
+    // Email verification check removed - email verification flow not implemented
+    // TODO: Implement email verification flow if needed
 
     // Generate JWT token
     const token = generateAccessToken(Number(user.id), user.email, user.role);
 
-    // Check if password change is required (password older than 90 days)
-    const passwordChangeRequired = false; // TODO: Implement password age check
+    // Clear failed attempts on successful login
+    clearFailedAttempts(identifier);
+
+    // Log successful login for audit
+    await logAuditEvent(db, {
+      user_id: user.id,
+      action: 'login_success',
+      resource: 'auth',
+      ip_address: request.headers.get('x-forwarded-for') || 'unknown',
+      user_agent: request.headers.get('user-agent')?.slice(0, 200) || 'unknown',
+      details: `Login via identifier: ${identifier}`,
+      success: true
+    });
+
+    // Check if password change is required
+    const passwordChangeRequired = user.password_needs_reset === 1;
 
     const response = NextResponse.json({
       success: true,

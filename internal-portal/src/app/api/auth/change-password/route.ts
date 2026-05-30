@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const newHash = (await bcrypt.hash(newPassword, 10)).replace('$2b$', '$2a$');
+    const newHash = await bcrypt.hash(newPassword, 12);
     console.log('[CHANGE-PASSWORD] New password hash generated');
 
     const updateResult = await db.prepare('UPDATE users SET password_hash = ?, password_needs_reset = 0, login_count = 0 WHERE id = ?').bind(newHash, user.id).run();
