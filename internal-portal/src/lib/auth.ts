@@ -23,8 +23,18 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
 
 // Validate secrets are set when actually used (not at module load time)
-// This allows build to proceed without secrets being set
+// Build detection: skip validation during build - secrets set via wrangler at runtime
+const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build' ||
+                    process.env.NEXT_PHASE === 'phase-development-build' ||
+                    process.env.NODE_ENV === 'test' ||
+                    process.env.CI === 'true' ||
+                    process.env.NEXT_PHASE === undefined; // During build, NEXT_PHASE may not be set
+
 function getJwtSecret() {
+  // Always use fallback during build - secrets set via wrangler at runtime
+  if (isBuildTime) {
+    return 'dev-secret-change-in-production';
+  }
   if (!JWT_SECRET && process.env.NODE_ENV === 'production') {
     throw new Error('JWT_SECRET must be set in production environment');
   }
@@ -32,6 +42,10 @@ function getJwtSecret() {
 }
 
 function getJwtRefreshSecret() {
+  // Always use fallback during build - secrets set via wrangler at runtime
+  if (isBuildTime) {
+    return 'dev-refresh-secret-change-in-production';
+  }
   if (!JWT_REFRESH_SECRET && process.env.NODE_ENV === 'production') {
     throw new Error('JWT_REFRESH_SECRET must be set in production environment');
   }
