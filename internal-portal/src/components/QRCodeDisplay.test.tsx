@@ -5,8 +5,11 @@ import QRCodeDisplay from './QRCodeDisplay';
 // Mock qrcode.react
 jest.mock('qrcode.react', () => ({
   __esModule: true,
-  default: ({ value, size, level, includeMargin, renderAs }: any) => (
+  QRCodeCanvas: ({ value, size, level, includeMargin, renderAs }: any) => (
     <canvas data-testid="qr-canvas" data-value={value} data-size={size} />
+  ),
+  QRCodeSVG: ({ value, size, level, includeMargin, renderAs }: any) => (
+    <svg data-testid="qr-svg" data-value={value} data-size={size} />
   ),
 }));
 
