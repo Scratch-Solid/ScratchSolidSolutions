@@ -470,3 +470,201 @@ All errors follow this format:
 - Audit logging for all admin operations
 - Data retention policies enforced
 - Consent management for data collection
+
+## Cleaner-Specific Endpoints
+
+#### POST /api/auth/cleaner/login
+Cleaner login with paysheet code.
+
+**Request Body:**
+```json
+{
+  "paysheet_code": "P12345",
+  "password": "password123"
+}
+```
+
+**Response (200):**
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": 1,
+    "username": "johndoe",
+    "role": "cleaner"
+  }
+}
+```
+
+#### POST /api/auth/cleaner/setup-password
+Initial password setup for new cleaners.
+
+**Request Body:**
+```json
+{
+  "paysheet_code": "P12345",
+  "password": "NewPassword123!"
+}
+```
+
+**Response (200):**
+```json
+{
+  "success": true
+}
+```
+
+#### GET /api/cleaner/pre-dashboard
+Get onboarding status for cleaner.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Response (200):**
+```json
+{
+  "background_check_consent": false,
+  "contract_signed": false,
+  "training_completed": false
+}
+```
+
+#### POST /api/cleaner/background-check-consent
+Submit background check consent.
+
+**Headers:** `Authorization: Bearer <token>`, `X-CSRF-Token: <token>`
+
+**Request Body:**
+```json
+{
+  "consented": true
+}
+```
+
+**Response (200):**
+```json
+{
+  "success": true
+}
+```
+
+#### POST /api/cleaner/contract-sign
+Sign employment contract.
+
+**Headers:** `Authorization: Bearer <token>`, `X-CSRF-Token: <token>`
+
+**Request Body:**
+```json
+{
+  "signature": "data:image/png;base64,..."
+}
+```
+
+**Response (200):**
+```json
+{
+  "success": true
+}
+```
+
+#### GET /api/cleaner/dashboard
+Get cleaner dashboard data.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Response (200):**
+```json
+{
+  "profile": {...},
+  "tasks": [...],
+  "performance": {...}
+}
+```
+
+#### GET /api/cleaner/shifts
+Get upcoming shifts.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Response (200):**
+```json
+{
+  "shifts": [...]
+}
+```
+
+#### GET /api/cleaner/ratings
+Get cleaner ratings.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Response (200):**
+```json
+{
+  "ratings": [...],
+  "average_rating": 4.5
+}
+```
+
+#### GET /api/cleaner/payslips
+Get payslips from ERPNext.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Response (200):**
+```json
+{
+  "payslips": [...]
+}
+```
+
+## Admin Analytics Endpoints
+
+#### GET /api/admin/cleaners/overview
+Get cleaner overview statistics.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Response (200):**
+```json
+{
+  "total_cleaners": 50,
+  "active_cleaners": 45,
+  "new_this_month": 5
+}
+```
+
+#### GET /api/admin/cleaners/training-graph
+Get training completion graph data.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Response (200):**
+```json
+{
+  "data": [...]
+}
+```
+
+#### GET /api/admin/cleaners/onboarding-funnel
+Get onboarding funnel data.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Response (200):**
+```json
+{
+  "funnel": [...]
+}
+```
+
+#### GET /api/admin/cleaners/login-activity
+Get login activity graph data.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Response (200):**
+```json
+{
+  "activity": [...]
+}
+```

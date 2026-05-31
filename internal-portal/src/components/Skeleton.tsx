@@ -47,3 +47,37 @@ export function SkeletonDashboard() {
     </div>
   );
 }
+
+export function SkeletonAvatar() {
+  return (
+    <div className="animate-pulse bg-gray-200 rounded-full w-10 h-10" />
+  );
+}
+
+export function SkeletonButton() {
+  return (
+    <div className="animate-pulse bg-gray-200 rounded h-10 w-24" />
+  );
+}
+
+export function SkeletonInput() {
+  return (
+    <div className="animate-pulse bg-gray-200 rounded h-10 w-full" />
+  );
+}
+
+export function SkeletonChart() {
+  return (
+    <div className="animate-pulse bg-gray-200 rounded h-64 w-full" />
+  );
+}
+
+export function SkeletonText({ lines = 3 }: { lines?: number }) {
+  return (
+    <div className="space-y-2 animate-pulse">
+      {Array.from({ length: lines }).map((_, i) => (
+        <div key={i} className="h-4 bg-gray-200 rounded" style={{ width: `${Math.random() * 40 + 60}%` }} />
+      ))}
+    </div>
+  );
+}
