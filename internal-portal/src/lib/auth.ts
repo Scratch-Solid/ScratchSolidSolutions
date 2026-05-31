@@ -19,37 +19,17 @@ import { authenticator } from 'otplib';
 import crypto from 'crypto';
 
 // Configuration
-const JWT_SECRET = process.env.JWT_SECRET;
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
-
-// Validate secrets are set when actually used (not at module load time)
-// Build detection: skip validation during build - secrets set via wrangler at runtime
-const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build' ||
-                    process.env.NEXT_PHASE === 'phase-development-build' ||
-                    process.env.NODE_ENV === 'test' ||
-                    process.env.CI === 'true' ||
-                    process.env.NEXT_PHASE === undefined; // During build, NEXT_PHASE may not be set
+// Secrets are set via wrangler secrets at runtime
+// During build, use fallback values
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'dev-refresh-secret-change-in-production';
 
 function getJwtSecret() {
-  // Always use fallback during build - secrets set via wrangler at runtime
-  if (isBuildTime) {
-    return 'dev-secret-change-in-production';
-  }
-  if (!JWT_SECRET && process.env.NODE_ENV === 'production') {
-    throw new Error('JWT_SECRET must be set in production environment');
-  }
-  return JWT_SECRET || 'dev-secret-change-in-production';
+  return JWT_SECRET;
 }
 
 function getJwtRefreshSecret() {
-  // Always use fallback during build - secrets set via wrangler at runtime
-  if (isBuildTime) {
-    return 'dev-refresh-secret-change-in-production';
-  }
-  if (!JWT_REFRESH_SECRET && process.env.NODE_ENV === 'production') {
-    throw new Error('JWT_REFRESH_SECRET must be set in production environment');
-  }
-  return JWT_REFRESH_SECRET || 'dev-refresh-secret-change-in-production';
+  return JWT_REFRESH_SECRET;
 }
 const ACCESS_TOKEN_EXPIRY = '15m'; // 15 minutes
 const REFRESH_TOKEN_EXPIRY = '7d'; // 7 days

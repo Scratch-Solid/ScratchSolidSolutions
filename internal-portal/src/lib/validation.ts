@@ -233,3 +233,73 @@ export function validateRequestBodyLengths(data: Record<string, any>, fieldMap: 
   
   return { valid: errors.length === 0, errors };
 }
+
+// Query parameter validation
+export function validateQueryParam(value: string | null, paramName: string, options?: {
+  required?: boolean;
+  type?: 'string' | 'number' | 'boolean' | 'date';
+  enum?: string[];
+  min?: number;
+  max?: number;
+}): ValidationResult {
+  const errors: string[] = [];
+  const { required = false, type = 'string', enum: enumValues, min, max } = options || {};
+
+  if (value === null || value === undefined || value === '') {
+    if (required) {
+      errors.push(`${paramName} is required`);
+    }
+    return { valid: errors.length === 0, errors };
+  }
+
+  // Type validation
+  if (type === 'number') {
+    const num = parseFloat(value);
+    if (isNaN(num)) {
+      errors.push(`${paramName} must be a valid number`);
+    } else {
+      if (min !== undefined && num < min) {
+        errors.push(`${paramName} must be at least ${min}`);
+      }
+      if (max !== undefined && num > max) {
+        errors.push(`${paramName} must be at most ${max}`);
+      }
+    }
+  } else if (type === 'boolean') {
+    if (!['true', 'false', '1', '0'].includes(value.toLowerCase())) {
+      errors.push(`${paramName} must be true or false`);
+    }
+  } else if (type === 'date') {
+    const date = new Date(value);
+    if (isNaN(date.getTime())) {
+      errors.push(`${paramName} must be a valid date`);
+    }
+  }
+
+  // Enum validation
+  if (enumValues && !enumValues.includes(value)) {
+    errors.push(`${paramName} must be one of: ${enumValues.join(', ')}`);
+  }
+
+  return { valid: errors.length === 0, errors };
+}
+
+export function validateQueryParams(params: Record<string, string | null>, validations: Record<string, {
+  required?: boolean;
+  type?: 'string' | 'number' | 'boolean' | 'date';
+  enum?: string[];
+  min?: number;
+  max?: number;
+}>): ValidationResult {
+  const errors: string[] = [];
+
+  for (const [paramName, options] of Object.entries(validations)) {
+    const value = params[paramName];
+    const result = validateQueryParam(value, paramName, options);
+    if (!result.valid) {
+      errors.push(...result.errors);
+    }
+  }
+
+  return { valid: errors.length === 0, errors };
+}
