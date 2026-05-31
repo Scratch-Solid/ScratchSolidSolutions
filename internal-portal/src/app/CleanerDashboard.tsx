@@ -17,6 +17,7 @@ export default function CleanerDashboard() {
   const [tasks, setTasks] = useState([]);
   const [ratings, setRatings] = useState([]);
   const [upcomingShifts, setUpcomingShifts] = useState([]);
+  const [payslips, setPayslips] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeTile, setActiveTile] = useState("profile");
@@ -164,6 +165,31 @@ export default function CleanerDashboard() {
           if (progressRes.ok) {
             const progressData = await progressRes.json() as { progress: any };
             setTrainingProgress(progressData.progress);
+          }
+
+          // Fetch cleaner-specific data from new APIs
+          const shiftsRes = await fetch('/api/cleaner/shifts', {
+            headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` }
+          });
+          if (shiftsRes.ok) {
+            const shiftsData = await shiftsRes.json() as { data?: any[] };
+            setUpcomingShifts(shiftsData.data || []);
+          }
+
+          const ratingsRes = await fetch('/api/cleaner/ratings', {
+            headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` }
+          });
+          if (ratingsRes.ok) {
+            const ratingsData = await ratingsRes.json() as { data?: any[] };
+            setRatings(ratingsData.data || []);
+          }
+
+          const payslipsRes = await fetch('/api/cleaner/payslips', {
+            headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` }
+          });
+          if (payslipsRes.ok) {
+            const payslipsData = await payslipsRes.json() as { data?: any[] };
+            setPayslips(payslipsData.data || []);
           }
         }
 
@@ -571,6 +597,13 @@ export default function CleanerDashboard() {
           style={{ color: activeTile === "geolocation" ? '#09172a' : '#0e223a' }}
         >
           Geolocation
+        </button>
+        <button
+          onClick={() => setActiveTile("payslips")}
+          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTile === "payslips" ? "bg-white/20" : "bg-white/10 hover:bg-white/15"}`}
+          style={{ color: activeTile === "payslips" ? '#09172a' : '#0e223a' }}
+        >
+          Payslips
         </button>
       </div>
 
@@ -1199,6 +1232,42 @@ export default function CleanerDashboard() {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {activeTile === "payslips" && (
+        <div className="glass-card p-6">
+          <h3 className="font-bold text-lg mb-4" style={{ color: 'var(--text-h)' }}>Payslips</h3>
+          {payslips.length === 0 ? (
+            <div className="text-center py-8" style={{ color: 'var(--text-light)' }}>
+              No payslips available yet.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {payslips.map((payslip: any) => (
+                <div key={payslip.id} className="bg-white/5 rounded-lg p-4" style={{ borderColor: 'var(--border)' }}>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <div className="font-semibold" style={{ color: 'var(--text-h)' }}>
+                        {payslip.period || 'Pay Period'}
+                      </div>
+                      <div className="text-sm" style={{ color: 'var(--text-light)' }}>
+                        {payslip.pay_date || new Date().toLocaleDateString()}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-bold text-lg" style={{ color: 'var(--text-h)' }}>
+                        R{(payslip.net_pay || payslip.amount || 0).toFixed(2)}
+                      </div>
+                      <div className="text-sm" style={{ color: 'var(--text-light)' }}>
+                        Net Pay
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </DashboardLayout>

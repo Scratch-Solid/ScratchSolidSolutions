@@ -7,22 +7,16 @@ export default function CleanerSignup() {
   const router = useRouter();
   const [formData, setFormData] = useState({
     name: '',
+    id_number: '',
     email: '',
-    password: '',
-    confirmPassword: '',
     phone: '',
+    whatsapp: '',
     address: '',
-    paysheet_code: '',
-    first_name: '',
-    last_name: '',
-    residential_address: '',
-    cellphone: '',
-    emergency_contact1_name: '',
-    emergency_contact1_phone: '',
-    emergency_contact2_name: '',
-    emergency_contact2_phone: '',
+    emergency_contact: '',
+    bank_details: '',
   });
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -30,70 +24,22 @@ export default function CleanerSignup() {
     setError('');
     setLoading(true);
 
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
-      setLoading(false);
-      return;
-    }
-
     try {
-      // Create user account
-      const userResponse = await fetch('/api/auth/register', {
+      const response = await fetch('/api/signup/cleaner', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          password: formData.password,
-          role: 'cleaner',
-          phone: formData.phone,
-          paysheetCode: formData.paysheet_code,
-          department: 'Scratch',
-        }),
+        body: JSON.stringify(formData),
       });
 
-      if (!userResponse.ok) {
-        const userData = await userResponse.json() as { error?: string; details?: string[] };
-        const errorMsg = userData.details ? `${userData.error}: ${userData.details.join(', ')}` : userData.error;
-        throw new Error(errorMsg || 'Failed to create account');
+      if (!response.ok) {
+        const data = await response.json() as { error?: string; details?: string[] };
+        const errorMsg = data.details ? `${data.error}: ${data.details.join(', ')}` : data.error;
+        throw new Error(errorMsg || 'Failed to submit application');
       }
 
-      const userData = await userResponse.json() as { id: number; token: string };
-      
-      // Store token
-      localStorage.setItem('authToken', userData.token);
-      localStorage.setItem('userId', userData.id.toString());
-      localStorage.setItem('userRole', 'cleaner');
-
-      // Create cleaner profile with additional details
-      const profileResponse = await fetch('/api/cleaner-profiles', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${userData.token}`,
-        },
-        body: JSON.stringify({
-          user_id: userData.id,
-          username: formData.email.split('@')[0],
-          paysheet_code: formData.paysheet_code,
-          first_name: formData.first_name,
-          last_name: formData.last_name,
-          residential_address: formData.residential_address,
-          cellphone: formData.cellphone,
-          emergency_contact1_name: formData.emergency_contact1_name,
-          emergency_contact1_phone: formData.emergency_contact1_phone,
-          emergency_contact2_name: formData.emergency_contact2_name,
-          emergency_contact2_phone: formData.emergency_contact2_phone,
-        }),
-      });
-
-      if (!profileResponse.ok) {
-        console.error('Failed to create cleaner profile, but user account was created');
-      }
-
-      router.push('/cleaner-dashboard');
+      setSuccess(true);
     } catch (err: any) {
-      setError(err.message || 'Signup failed');
+      setError(err.message || 'Submission failed');
     } finally {
       setLoading(false);
     }
@@ -102,8 +48,14 @@ export default function CleanerSignup() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full p-8">
-        <h1 className="text-3xl font-bold text-center text-gray-800 mb-2">Cleaner Signup</h1>
-        <p className="text-center text-gray-600 mb-8">Join our cleaning team</p>
+        <h1 className="text-3xl font-bold text-center text-gray-800 mb-2">Cleaner Application</h1>
+        <p className="text-center text-gray-600 mb-8">Submit your application to join our cleaning team</p>
+
+        {success && (
+          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-6">
+            Application submitted successfully! We will review your application and contact you shortly.
+          </div>
+        )}
 
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
@@ -111,178 +63,106 @@ export default function CleanerSignup() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
-              <input
-                type="text"
-                required
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+        {!success && (
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">ID Number / Passport *</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.id_number}
+                  onChange={(e) => setFormData({ ...formData, id_number: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Email *</label>
+                <input
+                  type="email"
+                  required
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number *</label>
+                <input
+                  type="tel"
+                  required
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">WhatsApp Number</label>
+                <input
+                  type="tel"
+                  value={formData.whatsapp}
+                  onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Address *</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.address}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Emergency Contact *</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.emergency_contact}
+                  onChange={(e) => setFormData({ ...formData, emergency_contact: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Bank Details (Account Number, Bank Name, Branch Code) *</label>
+                <textarea
+                  required
+                  value={formData.bank_details}
+                  onChange={(e) => setFormData({ ...formData, bank_details: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  rows={3}
+                />
+              </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Email *</label>
-              <input
-                type="email"
-                required
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Password *</label>
-              <input
-                type="password"
-                required
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Confirm Password *</label>
-              <input
-                type="password"
-                required
-                value={formData.confirmPassword}
-                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
-              <input
-                type="tel"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
-              <input
-                type="text"
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Paysheet Code</label>
-              <input
-                type="text"
-                value={formData.paysheet_code}
-                onChange={(e) => setFormData({ ...formData, paysheet_code: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
-              <input
-                type="text"
-                value={formData.first_name}
-                onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
-              <input
-                type="text"
-                value={formData.last_name}
-                onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Residential Address</label>
-              <input
-                type="text"
-                value={formData.residential_address}
-                onChange={(e) => setFormData({ ...formData, residential_address: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Cellphone</label>
-              <input
-                type="tel"
-                value={formData.cellphone}
-                onChange={(e) => setFormData({ ...formData, cellphone: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Emergency Contact 1 Name</label>
-              <input
-                type="text"
-                value={formData.emergency_contact1_name}
-                onChange={(e) => setFormData({ ...formData, emergency_contact1_name: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Emergency Contact 1 Phone</label>
-              <input
-                type="tel"
-                value={formData.emergency_contact1_phone}
-                onChange={(e) => setFormData({ ...formData, emergency_contact1_phone: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Emergency Contact 2 Name</label>
-              <input
-                type="text"
-                value={formData.emergency_contact2_name}
-                onChange={(e) => setFormData({ ...formData, emergency_contact2_name: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Emergency Contact 2 Phone</label>
-              <input
-                type="tel"
-                value={formData.emergency_contact2_phone}
-                onChange={(e) => setFormData({ ...formData, emergency_contact2_phone: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-200 disabled:bg-gray-400"
-          >
-            {loading ? 'Creating Account...' : 'Sign Up as Cleaner'}
-          </button>
-        </form>
-
-        <p className="text-center text-gray-600 mt-6">
-          Already have an account?{' '}
-          <a href="/login" className="text-blue-600 hover:underline">
-            Login
-          </a>
-        </p>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-200 disabled:bg-gray-400"
+            >
+              {loading ? 'Submitting...' : 'Submit Application'}
+            </button>
+          </form>
+        )}
       </div>
     </div>
   );

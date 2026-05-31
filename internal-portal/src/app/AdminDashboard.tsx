@@ -14,10 +14,11 @@ import PricingConfiguration from "@/components/admin/PricingConfiguration";
 import PoolManagement from "@/components/admin/PoolManagement";
 import ContentManagement from "@/components/admin/ContentManagement";
 import StaffReviews from "@/components/admin/StaffReviews";
+import AdminCleanerOverview from "@/components/admin/AdminCleanerOverview";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { LayoutDashboard, Users, DollarSign, Wrench, FileText, Settings, Eye, UserCheck, GraduationCap } from "lucide-react";
+import { LayoutDashboard, Users, DollarSign, Wrench, FileText, Settings, Eye, UserCheck, GraduationCap, BarChart3 } from "lucide-react";
 
 export default function AdminDashboard() {
   useSessionTimeout(true);
@@ -51,9 +52,9 @@ export default function AdminDashboard() {
           Authorization: `Bearer ${token}`
         };
 
-        const [employeesRes, pendingContractsRes, usersRes, bookingsRes, contractsRes, paymentsRes, notificationsRes, servicesRes, bankingRes] = await Promise.allSettled([
+        const [employeesRes, newJoinersRes, usersRes, bookingsRes, contractsRes, paymentsRes, notificationsRes, servicesRes, bankingRes] = await Promise.allSettled([
           fetch("/api/employees", { headers }),
-          fetch("/api/pending-contracts", { headers }),
+          fetch("/api/admin/new-joiners", { headers }),
           fetch("/api/admin/users", { headers }),
           fetch("/api/admin/bookings", { headers }),
           fetch("/api/contracts", { headers }),
@@ -63,8 +64,9 @@ export default function AdminDashboard() {
           fetch("/api/admin/banking-details", { headers }),
         ]);
 
-        if (pendingContractsRes.status === 'fulfilled' && pendingContractsRes.value.ok) {
-          setNewJoiners(await pendingContractsRes.value.json());
+        if (newJoinersRes.status === 'fulfilled' && newJoinersRes.value.ok) {
+          const data = await newJoinersRes.value.json();
+          setNewJoiners(data.data || data);
         }
         if (usersRes.status === 'fulfilled' && usersRes.value.ok) {
           setUsers(await usersRes.value.json());
@@ -155,27 +157,42 @@ export default function AdminDashboard() {
 
   const handleApproveJoiner = async (joiner: any) => {
     try {
-      await fetch(`/api/pending-contracts?id=${joiner.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "approved" }),
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+      const response = await fetch(`/api/admin/new-joiners/${joiner.id}/approve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       });
-      setNewJoiners(prev => prev.filter((j: any) => j.id !== joiner.id));
-      setSelectedJoiner(null);
+      if (response.ok) {
+        setNewJoiners(prev => prev.filter((j: any) => j.id !== joiner.id));
+        setSelectedJoiner(null);
+      } else {
+        const errorData = await response.json() as { error?: string };
+        setError(errorData.error || 'Failed to approve application');
+      }
     } catch (err) {
       console.error("Failed to approve joiner:", err);
+      setError('Failed to approve application');
     }
   };
 
-  const handleRejectJoiner = async (joiner: any) => {
+  const handleRejectJoiner = async (joiner: any, reason?: string) => {
     try {
-      await fetch(`/api/pending-contracts?id=${joiner.id}`, {
-        method: "DELETE",
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+      const response = await fetch(`/api/admin/new-joiners/${joiner.id}/reject`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ reason: reason || '' }),
       });
-      setNewJoiners(prev => prev.filter((j: any) => j.id !== joiner.id));
-      setSelectedJoiner(null);
+      if (response.ok) {
+        setNewJoiners(prev => prev.filter((j: any) => j.id !== joiner.id));
+        setSelectedJoiner(null);
+      } else {
+        const errorData = await response.json() as { error?: string };
+        setError(errorData.error || 'Failed to reject application');
+      }
     } catch (err) {
       console.error("Failed to reject joiner:", err);
+      setError('Failed to reject application');
     }
   };
 
@@ -235,6 +252,7 @@ export default function AdminDashboard() {
           <TabsTrigger value="pool-management" className="gap-2 whitespace-nowrap"><Settings className="h-4 w-4" />Pools</TabsTrigger>
           <TabsTrigger value="staff-reviews" className="gap-2 whitespace-nowrap"><UserCheck className="h-4 w-4" />Reviews</TabsTrigger>
           <TabsTrigger value="training" className="gap-2 whitespace-nowrap"><GraduationCap className="h-4 w-4" />Training</TabsTrigger>
+          <TabsTrigger value="cleaner-analytics" className="gap-2 whitespace-nowrap"><BarChart3 className="h-4 w-4" />Cleaner Analytics</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">
@@ -530,6 +548,10 @@ export default function AdminDashboard() {
 
         <TabsContent value="training">
           <TrainingLedger />
+        </TabsContent>
+
+        <TabsContent value="cleaner-analytics">
+          <AdminCleanerOverview />
         </TabsContent>
       </Tabs>
     </DashboardLayout>
