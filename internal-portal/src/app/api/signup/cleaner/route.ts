@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { withTracing, withSecurityHeaders } from '@/lib/middleware';
-import { validateEmail, validatePhone, validateSAIDNumber, validateSAPassportNumber, sanitizeInput } from '@/lib/validation';
+import { validateEmail, validatePhone, validateSaIdNumber, validateSaPassport, sanitizeInput } from '@/lib/validation';
 import { log } from '@/lib/logger';
 import crypto from 'crypto';
 
@@ -94,8 +94,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate ID number (SA ID or Passport)
-    const idValidation = validateSAIDNumber(id_number);
-    const passportValidation = validateSAPassportNumber(id_number);
+    const idValidation = validateSaIdNumber(id_number);
+    const passportValidation = validateSaPassport(id_number);
     if (!idValidation.valid && !passportValidation.valid) {
       const response = NextResponse.json({
         success: false,
