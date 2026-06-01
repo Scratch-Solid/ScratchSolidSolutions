@@ -3,6 +3,28 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { log } from '@/lib/logger';
+import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
+import { generateAccessToken, generateRefreshToken, setAuthCookies } from '@/lib/session';
+
+async function findCleanerForLogin(db: D1Database, paysheetCode: string) {
+  const queries = [
+    'SELECT cp.user_id, cp.paysheet_code, cp.username, u.name, u.email, u.role, u.password_needs_reset, u.password_hash FROM cleaner_profiles cp JOIN users u ON cp.user_id = u.id WHERE cp.paysheet_code = ? OR cp.username = ?',
+    'SELECT cp.user_id, cp.paysheet_code, cp.username, u.name, u.email, u.role, 0 as password_needs_reset, u.password_hash FROM cleaner_profiles cp JOIN users u ON cp.user_id = u.id WHERE cp.paysheet_code = ? OR cp.username = ?',
+  ];
+
+  for (const sql of queries) {
+    try {
+      const cleaner = await db.prepare(sql).bind(paysheetCode, paysheetCode).first();
+      if (cleaner) {
+        return cleaner;
+      }
+    } catch {
+    }
+  }
+
+  return null;
+}
 
 export async function POST(request: NextRequest) {
   const traceId = withTracing(request);
@@ -21,8 +43,8 @@ export async function POST(request: NextRequest) {
       return withSecurityHeaders(response, traceId);
     }
 
-    const body = await request.json() as { paysheet_code?: string };
-    const { paysheet_code } = body;
+    const body = await request.json() as { paysheet_code?: string; password?: string };
+    const { paysheet_code, password } = body;
 
     if (!paysheet_code) {
       const response = NextResponse.json({
@@ -37,9 +59,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Look up cleaner by paysheet code
-    const cleanerProfile = await db.prepare(
-      'SELECT cp.user_id, cp.paysheet_code, u.name, u.email, u.password_needs_reset, u.password_hash FROM cleaner_profiles cp JOIN users u ON cp.user_id = u.id WHERE cp.paysheet_code = ?'
-    ).bind(paysheet_code).first();
+    const cleanerProfile = await findCleanerForLogin(db, paysheet_code);
 
     if (!cleanerProfile) {
       const response = NextResponse.json({
@@ -72,16 +92,62 @@ export async function POST(request: NextRequest) {
       return withSecurityHeaders(response, traceId);
     }
 
-    // User has password, return that they need to provide it
+    if (!password) {
+      const response = NextResponse.json({
+        success: true,
+        requires_password: true,
+        user: {
+          name: cleaner.name,
+          email: cleaner.email,
+          paysheet_code: cleaner.paysheet_code
+        }
+      });
+      return withSecurityHeaders(response, traceId);
+    }
+
+    let passwordHash = cleaner.password_hash as string;
+    if (Array.isArray(cleaner.password_hash)) {
+      passwordHash = String.fromCharCode(...cleaner.password_hash);
+    } else if (typeof cleaner.password_hash === 'object' && cleaner.password_hash !== null) {
+      passwordHash = JSON.stringify(cleaner.password_hash);
+    }
+
+    let isValidPassword = await bcrypt.compare(password, passwordHash);
+    if (!isValidPassword) {
+      const normalizedPassword = password.replace(/\D/g, '');
+      if (normalizedPassword && normalizedPassword !== password) {
+        isValidPassword = await bcrypt.compare(normalizedPassword, passwordHash);
+      }
+    }
+
+    if (!isValidPassword) {
+      const response = NextResponse.json({
+        success: false,
+        error: {
+          code: 'INVALID_CREDENTIALS',
+          message: 'Invalid credentials',
+          suggestion: 'Please check your paysheet code and password and try again'
+        }
+      }, { status: 401 });
+      return withSecurityHeaders(response, traceId);
+    }
+
+    const accessToken = generateAccessToken(Number(cleaner.user_id), String(cleaner.email), String(cleaner.role || 'cleaner'));
+    const refreshToken = generateRefreshToken(Number(cleaner.user_id), crypto.randomUUID());
+
     const response = NextResponse.json({
       success: true,
-      requires_password: true,
+      token: accessToken,
+      role: cleaner.role || 'cleaner',
       user: {
+        id: cleaner.user_id,
         name: cleaner.name,
         email: cleaner.email,
-        paysheet_code: cleaner.paysheet_code
+        paysheet_code: cleaner.paysheet_code,
+        username: cleaner.username
       }
     });
+    setAuthCookies(response, accessToken, refreshToken);
     return withSecurityHeaders(response, traceId);
 
   } catch (error) {

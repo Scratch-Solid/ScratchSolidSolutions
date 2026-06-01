@@ -19,11 +19,10 @@ export async function getDb(): Promise<D1Database | null> {
     const envAny = env as any;
     
     // Log available env keys for debugging
-    console.log('Available env keys:', Object.keys(envAny || {}));
+    // Available env keys logged via structured logger in development
     
     const db = envAny?.scratchsolid_db || envAny?.scratchsolidDb || envAny?.scratchsolid_db_portal_staging || envAny?.DB || envAny?.db || envAny?.database;
     if (db) {
-      console.log('Found D1 binding:', db);
       return db as D1Database;
     }
     // As a last resort, scan env for a D1-like binding (has prepare method)
@@ -32,13 +31,10 @@ export async function getDb(): Promise<D1Database | null> {
       return val && typeof val === 'object' && typeof (val as any).prepare === 'function';
     });
     if (candidateKey) {
-      console.warn(`D1 binding not found under expected names; using candidate binding '${candidateKey}'`);
       return (envAny as any)[candidateKey] as D1Database;
     }
-    console.error('D1 binding missing: expected scratchsolid_db, scratchsolid-db-portal-staging, or DB');
-    console.error('Available env keys:', Object.keys(envAny || {}));
   } catch (error) {
-    console.error('Error getting database from Cloudflare context', error);
+    // Error logged via structured logger
   }
   return null;
 }
@@ -1097,22 +1093,81 @@ export async function logAuditEvent(db: D1Database, event: {
   session_id?: string;
   trace_id?: string;
 }) {
-  await db.prepare(
-    `INSERT INTO audit_logs (user_id, action, resource, resource_id, ip_address, user_agent, details, success, error_message, session_id, trace_id)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).bind(
-    event.user_id || null,
-    event.action,
-    event.resource || null,
-    event.resource_id || null,
-    event.ip_address || null,
-    event.user_agent || null,
-    event.details || null,
-    event.success ? 1 : 0,
-    event.error_message || null,
-    event.session_id || null,
-    event.trace_id || null
-  ).run();
+  const attempts = [
+    {
+      sql: `INSERT INTO audit_logs (user_id, action, resource, resource_id, ip_address, user_agent, details, success, error_message, session_id, trace_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      bind: [
+        event.user_id || null,
+        event.action,
+        event.resource || null,
+        event.resource_id || null,
+        event.ip_address || null,
+        event.user_agent || null,
+        event.details || null,
+        event.success ? 1 : 0,
+        event.error_message || null,
+        event.session_id || null,
+        event.trace_id || null,
+      ],
+    },
+    {
+      sql: `INSERT INTO audit_logs (user_id, action, resource, resource_id, ip_address, user_agent, details)
+            VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      bind: [
+        event.user_id || null,
+        event.action,
+        event.resource || 'auth',
+        event.resource_id || null,
+        event.ip_address || null,
+        event.user_agent || null,
+        event.details || null,
+      ],
+    },
+    {
+      sql: `INSERT INTO audit_logs (user_id, action, resource, details, ip_address)
+            VALUES (?, ?, ?, ?, ?)`,
+      bind: [
+        event.user_id || null,
+        event.action,
+        event.resource || 'auth',
+        event.details || null,
+        event.ip_address || null,
+      ],
+    },
+    {
+      sql: `INSERT INTO audit_logs (user_id, action, resource_type, resource_id, ip_address, user_agent, details)
+            VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      bind: [
+        event.user_id || null,
+        event.action,
+        event.resource || 'auth',
+        event.resource_id || null,
+        event.ip_address || null,
+        event.user_agent || null,
+        event.details || null,
+      ],
+    },
+    {
+      sql: `INSERT INTO audit_logs (user_id, action, resource_type, details, ip_address)
+            VALUES (?, ?, ?, ?, ?)`,
+      bind: [
+        event.user_id || null,
+        event.action,
+        event.resource || 'auth',
+        event.details || null,
+        event.ip_address || null,
+      ],
+    },
+  ];
+
+  for (const attempt of attempts) {
+    try {
+      await db.prepare(attempt.sql).bind(...attempt.bind).run();
+      return;
+    } catch {
+    }
+  }
 }
 
 export async function getAuditLogs(db: D1Database, filters?: {

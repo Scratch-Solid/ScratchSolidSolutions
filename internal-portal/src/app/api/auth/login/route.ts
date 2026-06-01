@@ -14,8 +14,70 @@ import {
   createSecurityError,
   createRateLimitError
 } from '@/lib/security-middleware';
-import { withCsrf } from '@/lib/middleware';
-import { generateAccessToken, recordFailedAttempt, isUserLockedOut, clearFailedAttempts } from '@/lib/auth';
+import { recordFailedAttempt, isUserLockedOut, clearFailedAttempts } from '@/lib/auth';
+import { generateAccessToken, generateRefreshToken, setAuthCookies } from '@/lib/session';
+import crypto from 'crypto';
+
+ type LoginUser = {
+   id: number;
+   email: string;
+   password_hash: unknown;
+   role: string;
+   name: string;
+   phone: string;
+   address: string;
+   business_name: string;
+   paysheet_code?: string;
+   password_needs_reset?: number;
+ };
+
+ async function findUserForLogin(db: D1Database, identifier: string): Promise<LoginUser | null> {
+   const directQueries = [
+     {
+       sql: 'SELECT id, email, password_hash, role, name, phone, address, business_name, paysheet_code, password_needs_reset FROM users WHERE email = ? OR phone = ? OR username = ? OR paysheet_code = ?',
+       bind: [identifier, identifier, identifier, identifier],
+     },
+     {
+       sql: 'SELECT id, email, password_hash, role, name, phone, address, business_name, NULL as paysheet_code, 0 as password_needs_reset FROM users WHERE email = ? OR phone = ? OR username = ?',
+       bind: [identifier, identifier, identifier],
+     },
+     {
+       sql: 'SELECT id, email, password_hash, role, name, phone, address, business_name, NULL as paysheet_code, 0 as password_needs_reset FROM users WHERE email = ? OR phone = ?',
+       bind: [identifier, identifier],
+     },
+   ];
+
+   for (const query of directQueries) {
+     try {
+       const user = await db.prepare(query.sql).bind(...query.bind).first() as LoginUser | null;
+       if (user) {
+         return user;
+       }
+     } catch {
+     }
+   }
+
+   const cleanerQueries = [
+     'SELECT u.id, u.email, u.password_hash, u.role, u.name, u.phone, u.address, u.business_name, cp.paysheet_code as paysheet_code, u.password_needs_reset FROM cleaner_profiles cp JOIN users u ON cp.user_id = u.id WHERE cp.paysheet_code = ? OR cp.username = ?',
+     'SELECT u.id, u.email, u.password_hash, u.role, u.name, u.phone, u.address, u.business_name, cp.paysheet_code as paysheet_code, 0 as password_needs_reset FROM cleaner_profiles cp JOIN users u ON cp.user_id = u.id WHERE cp.paysheet_code = ? OR cp.username = ?',
+     'SELECT u.id, u.email, u.password_hash, u.role, u.name, u.phone, u.address, u.business_name, cp.paysheet_code as paysheet_code, 0 as password_needs_reset FROM cleaner_profiles cp JOIN users u ON cp.user_id = u.id WHERE cp.paysheet_code = ?',
+   ];
+
+   for (const sql of cleanerQueries) {
+     try {
+       const statement = sql.includes('OR cp.username = ?')
+         ? db.prepare(sql).bind(identifier, identifier)
+         : db.prepare(sql).bind(identifier);
+       const user = await statement.first() as LoginUser | null;
+       if (user) {
+         return user;
+       }
+     } catch {
+     }
+   }
+
+   return null;
+ }
 
 export async function POST(request: NextRequest) {
   // CRITICAL: Get DB BEFORE ANY other operation to ensure AsyncLocalStorage context is preserved
@@ -56,23 +118,7 @@ export async function POST(request: NextRequest) {
       return createSecurityError('Identifier and password are required', 400);
     }
 
-    // Query user by email, phone, username, or paysheet code
-    let user = await db.prepare(
-      'SELECT id, email, password_hash, role, name, phone, address, business_name, password_needs_reset FROM users WHERE email = ? OR phone = ? OR username = ?'
-    ).bind(identifier, identifier, identifier).first() as { id: number; email: string; password_hash: string; role: string; name: string; phone: string; address: string; business_name: string; password_needs_reset: number } | null;
-
-    // If not found in users table, try paysheet code in cleaner_profiles
-    if (!user) {
-      const cleanerProfile = await db.prepare(
-        'SELECT user_id FROM cleaner_profiles WHERE paysheet_code = ?'
-      ).bind(identifier).first() as { user_id: number } | null;
-
-      if (cleanerProfile) {
-        user = await db.prepare(
-          'SELECT id, email, password_hash, role, name, phone, address, business_name, password_needs_reset FROM users WHERE id = ?'
-        ).bind(cleanerProfile.user_id).first() as { id: number; email: string; password_hash: string; role: string; name: string; phone: string; address: string; business_name: string; password_needs_reset: number } | null;
-      }
-    }
+    const user = await findUserForLogin(db, identifier);
 
     if (!user) {
       // Record failed attempt for the identifier
@@ -93,7 +139,6 @@ export async function POST(request: NextRequest) {
       passwordHash = String.fromCharCode(...user.password_hash);
     } else if (typeof user.password_hash === 'object' && user.password_hash !== null) {
       // Handle if password_hash is an object (sometimes D1 returns objects)
-      console.log('password_hash is object:', JSON.stringify(user.password_hash));
       // Try to extract the actual hash string
       const hashStr = JSON.stringify(user.password_hash);
       passwordHash = hashStr;
@@ -118,35 +163,43 @@ export async function POST(request: NextRequest) {
     // Email verification check removed - email verification flow not implemented
     // TODO: Implement email verification flow if needed
 
-    // Generate JWT token
-    const token = generateAccessToken(Number(user.id), user.email, user.role);
+    // Generate JWT tokens
+    const accessToken = generateAccessToken(Number(user.id), user.email, user.role);
+    const refreshTokenId = crypto.randomUUID();
+    const refreshToken = generateRefreshToken(Number(user.id), refreshTokenId);
 
     // Clear failed attempts on successful login
     clearFailedAttempts(identifier);
 
     // Log successful login for audit
-    await logAuditEvent(db, {
-      user_id: user.id,
-      action: 'login_success',
-      resource: 'auth',
-      ip_address: request.headers.get('x-forwarded-for') || 'unknown',
-      user_agent: request.headers.get('user-agent')?.slice(0, 200) || 'unknown',
-      details: `Login via identifier: ${identifier}`,
-      success: true
-    });
+    try {
+      await logAuditEvent(db, {
+        user_id: user.id,
+        action: 'login_success',
+        resource: 'auth',
+        ip_address: request.headers.get('x-forwarded-for') || 'unknown',
+        user_agent: request.headers.get('user-agent')?.slice(0, 200) || 'unknown',
+        details: `Login via identifier: ${identifier}`,
+        success: true
+      });
+    } catch {
+    }
 
     // Check if password change is required
     const passwordChangeRequired = user.password_needs_reset === 1;
 
     const response = NextResponse.json({
       success: true,
-      token,
+      token: accessToken,
       role: user.role,
       username: user.email,
       user_id: user.id,
-      paysheet_code: user.phone, // Use phone as paysheet code
+      paysheet_code: user.paysheet_code || user.phone || identifier,
       mustChangePassword: passwordChangeRequired
     });
+
+    // Set httpOnly cookies for session management
+    setAuthCookies(response, accessToken, refreshToken);
 
     // Apply security headers
     applySecurityMiddleware(response);
@@ -160,7 +213,6 @@ export async function POST(request: NextRequest) {
     return response;
 
   } catch (error) {
-    console.error('Login error:', error);
     return createSecurityError('Login failed', 500);
   }
 }

@@ -23,20 +23,36 @@ export default function CleanerLogin() {
         body: JSON.stringify({ paysheet_code: paysheetCode, password }),
       });
 
-      const data = await response.json() as { success?: boolean; needs_password_setup?: boolean; error?: string; details?: string[] };
+      const data = await response.json() as {
+        success?: boolean;
+        token?: string;
+        role?: string;
+        needs_password_setup?: boolean;
+        requires_password_setup?: boolean;
+        user?: { email?: string; paysheet_code?: string };
+        error?: string;
+        details?: string[];
+      };
 
       if (!response.ok) {
         const errorMsg = data.details ? `${data.error}: ${data.details.join(', ')}` : data.error;
         throw new Error(errorMsg || 'Login failed');
       }
 
-      if (data.needs_password_setup) {
+      if (data.needs_password_setup || data.requires_password_setup) {
         setNeedsPasswordSetup(true);
         return;
       }
 
-      // Login successful - token should be in response
       if (data.success) {
+        if (data.token) {
+          localStorage.setItem('authToken', data.token);
+        }
+        localStorage.setItem('userRole', data.role || 'cleaner');
+        localStorage.setItem('paysheetCode', data.user?.paysheet_code || paysheetCode);
+        if (data.user?.email) {
+          localStorage.setItem('username', data.user.email);
+        }
         router.push('/cleaner-dashboard');
       }
     } catch (err: any) {

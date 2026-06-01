@@ -1,16 +1,18 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
+import crypto from 'crypto';
 import {
   verifyRefreshToken,
   verifyPassword,
   generateAccessToken,
-  generateRefreshToken,
   hashPassword,
   logAuthEvent,
   getUserPermissions,
   isSuperuser,
 } from '@/lib/auth';
+import { setAuthCookies, verifyRefreshToken as verifySessionRefreshToken, generateRefreshToken as generateSessionRefreshToken } from '@/lib/session';
+import { applySecurityMiddleware } from '@/lib/security-middleware';
 
 /**
  * Refresh Token Endpoint
@@ -20,7 +22,16 @@ import {
  */
 export async function POST(request: NextRequest) {
   try {
-    const { refreshToken } = await request.json();
+    const db = await getDb();
+    if (!db) {
+      return NextResponse.json({
+        success: false,
+        error: 'Database not available'
+      }, { status: 500 });
+    }
+
+    // Get refresh token from httpOnly cookie
+    const refreshToken = request.cookies.get('refresh_token')?.value;
 
     if (!refreshToken) {
       return NextResponse.json({
@@ -34,21 +45,13 @@ export async function POST(request: NextRequest) {
                'unknown';
     const userAgent = request.headers.get('user-agent') || 'unknown';
 
-    // Verify refresh token
-    const decoded = verifyRefreshToken(refreshToken);
+    // Verify refresh token using session library
+    const decoded = verifySessionRefreshToken(refreshToken);
     if (!decoded) {
       return NextResponse.json({
         success: false,
         error: 'Invalid or expired refresh token'
       }, { status: 401 });
-    }
-
-    const db = await getDb();
-    if (!db) {
-      return NextResponse.json({
-        success: false,
-        error: 'Database not available'
-      }, { status: 500 });
     }
 
     // Check if refresh token exists and is not revoked
@@ -81,10 +84,13 @@ export async function POST(request: NextRequest) {
     ).bind(Math.floor(Date.now() / 1000), tokenRecord.id).run();
 
     // Generate new tokens
-    const newAccessToken = generateAccessToken(userResult.id, userResult.email, userResult.role);
-    const newRefreshToken = generateRefreshToken(userResult.id);
+    const userId = userResult.id as number;
+    const userEmail = userResult.email as string;
+    const userRole = userResult.role as string;
+    const newAccessToken = generateAccessToken(userId, userEmail, userRole);
+    const newRefreshTokenId = crypto.randomUUID();
+    const newRefreshToken = generateSessionRefreshToken(userId, newRefreshTokenId);
     const newRefreshTokenHash = await hashPassword(newRefreshToken);
-    const newTokenId = newRefreshToken.split('.')[1];
 
     // Store new refresh token
     await db.prepare(
@@ -92,7 +98,7 @@ export async function POST(request: NextRequest) {
        VALUES (?, ?, ?, ?, ?, ?)`
     ).bind(
       userResult.id,
-      newTokenId,
+      newRefreshTokenId,
       newRefreshTokenHash,
       Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60), // 7 days
       ip,
@@ -100,13 +106,11 @@ export async function POST(request: NextRequest) {
     ).run();
 
     // Get user permissions
-    const permissions = await getUserPermissions(db, userResult.id);
-    const superuser = await isSuperuser(db, userResult.id);
+    const permissions = await getUserPermissions(db, userId as number);
+    const superuser = await isSuperuser(db, userId as number);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
-      accessToken: newAccessToken,
-      refreshToken: newRefreshToken,
       user: {
         id: userResult.id,
         email: userResult.email,
@@ -116,8 +120,13 @@ export async function POST(request: NextRequest) {
         permissions,
       }
     });
+
+    // Set new httpOnly cookies
+    setAuthCookies(response, newAccessToken, newRefreshToken);
+    applySecurityMiddleware(response);
+
+    return response;
   } catch (error) {
-    console.error('Refresh token error:', error);
     return NextResponse.json({
       success: false,
       error: 'Internal server error'

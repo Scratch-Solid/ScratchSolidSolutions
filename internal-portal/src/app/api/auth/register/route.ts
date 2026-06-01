@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import { withTracing, withSecurityHeaders, withRateLimit } from '@/lib/middleware';
+import crypto from 'crypto';
 
 export async function POST(request: NextRequest) {
   const traceId = withTracing(request);
@@ -13,6 +14,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json() as { 
+      fullName?: string;
       name?: string; 
       email?: string; 
       password?: string; 
@@ -22,9 +24,10 @@ export async function POST(request: NextRequest) {
       department?: string;
     };
 
-    const { name, email, password, role, phone, paysheetCode, department } = body;
+    const { fullName, name, email, password, role, phone, paysheetCode, department } = body;
+    const resolvedName = name || fullName;
 
-    if (!name || !email || !password) {
+    if (!resolvedName || !email || !password) {
       return withSecurityHeaders(NextResponse.json(
         { error: 'Name, email, and password required' },
         { status: 400 }
@@ -51,13 +54,31 @@ export async function POST(request: NextRequest) {
     // Hash password
     const passwordHash = await bcrypt.hash(password, 12);
 
-    // Insert user with paysheet_code and department
     const result = await db.prepare(
       `INSERT INTO users (name, email, password_hash, role, phone, paysheet_code, department, email_verified, password_needs_reset, created_at) 
        VALUES (?, ?, ?, ?, ?, ?, ?, 1, 0, datetime('now'))`
-    ).bind(name, email, passwordHash, role || 'cleaner', phone || '', paysheetCode || '', department || '').run();
+    ).bind(resolvedName, email, passwordHash, role || 'cleaner', phone || '', paysheetCode || '', department || '').run();
 
     const userId = result.meta.last_row_id;
+
+    if (paysheetCode) {
+      const usernameBase = String(paysheetCode).trim() || email;
+      try {
+        await db.prepare(
+          `INSERT INTO cleaner_profiles (user_id, username, paysheet_code, first_name, last_name, cellphone, department, status, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, 'active', datetime('now'), datetime('now'))`
+        ).bind(
+          userId,
+          usernameBase,
+          paysheetCode,
+          resolvedName.split(' ')[0] || resolvedName,
+          resolvedName.split(' ').slice(1).join(' '),
+          phone || '',
+          department || 'cleaning'
+        ).run();
+      } catch {
+      }
+    }
 
     // Generate session token
     const sessionToken = crypto.randomUUID() + crypto.randomUUID().replace(/-/g, '');

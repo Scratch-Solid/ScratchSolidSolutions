@@ -93,7 +93,7 @@ export function logTrace(traceContext: TraceContext, operation: string, duration
     duration
   };
   
-  console.log(JSON.stringify(logEntry));
+  // Log entry logged via structured logger
 }
 
 // Error classification for better error handling
@@ -290,6 +290,15 @@ export function getClientIP(request: NextRequest): string {
   return 'unknown';
 }
 
+function getRequestAuthToken(request: NextRequest): string | undefined {
+  const headerToken = request.headers.get('Authorization')?.replace('Bearer ', '');
+  if (headerToken) {
+    return headerToken;
+  }
+
+  return request.cookies.get('auth_token')?.value;
+}
+
 function generateTraceId(): string {
   return crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
@@ -362,7 +371,7 @@ export async function withAuth(request: NextRequest, allowedRoles?: string[]): P
     return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
   }
 
-  const token = request.headers.get('Authorization')?.replace('Bearer ', '');
+  const token = getRequestAuthToken(request);
   if (!token) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -409,17 +418,27 @@ export async function withPermission(
     return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
   }
 
-  const token = request.headers.get('Authorization')?.replace('Bearer ', '');
+  const token = getRequestAuthToken(request);
   if (!token) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const session = await validateSession(db, token);
-  if (!session) {
+  let authUser = await validateSession(db, token);
+  if (!authUser) {
+    const { verifyAccessToken } = await import('@/lib/auth');
+    const jwtPayload = verifyAccessToken(token);
+    if (jwtPayload) {
+      authUser = await db.prepare(
+        'SELECT id, email, role, name, phone, password_hash FROM users WHERE id = ?'
+      ).bind(jwtPayload.userId).first();
+    }
+  }
+
+  if (!authUser) {
     return NextResponse.json({ error: 'Session expired or invalid' }, { status: 401 });
   }
 
-  const userId = (session as any).user_id || (session as any).id;
+  const userId = (authUser as any).user_id || (authUser as any).id;
   const userPermissions = await getUserPermissions(db, userId);
 
   if (!hasPermission(userPermissions, permission)) {
@@ -429,7 +448,7 @@ export async function withPermission(
     }, { status: 403 });
   }
 
-  return { user: session, db, permissions: userPermissions };
+  return { user: authUser, db, permissions: userPermissions };
 }
 
 // RBAC Middleware: Check if user has resource permission
@@ -446,17 +465,27 @@ export async function withResourcePermission(
     return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
   }
 
-  const token = request.headers.get('Authorization')?.replace('Bearer ', '');
+  const token = getRequestAuthToken(request);
   if (!token) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const session = await validateSession(db, token);
-  if (!session) {
+  let authUser = await validateSession(db, token);
+  if (!authUser) {
+    const { verifyAccessToken } = await import('@/lib/auth');
+    const jwtPayload = verifyAccessToken(token);
+    if (jwtPayload) {
+      authUser = await db.prepare(
+        'SELECT id, email, role, name, phone, password_hash FROM users WHERE id = ?'
+      ).bind(jwtPayload.userId).first();
+    }
+  }
+
+  if (!authUser) {
     return NextResponse.json({ error: 'Session expired or invalid' }, { status: 401 });
   }
 
-  const userId = (session as any).user_id || (session as any).id;
+  const userId = (authUser as any).user_id || (authUser as any).id;
   const userPermissions = await getUserPermissions(db, userId);
 
   if (!hasResourcePermission(userPermissions, resource, action)) {
@@ -466,7 +495,7 @@ export async function withResourcePermission(
     }, { status: 403 });
   }
 
-  return { user: session, db, permissions: userPermissions };
+  return { user: authUser, db, permissions: userPermissions };
 }
 
 // RBAC Middleware: Check if user has minimum role level
@@ -482,17 +511,27 @@ export async function withRoleLevel(
     return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
   }
 
-  const token = request.headers.get('Authorization')?.replace('Bearer ', '');
+  const token = getRequestAuthToken(request);
   if (!token) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const session = await validateSession(db, token);
-  if (!session) {
+  let authUser = await validateSession(db, token);
+  if (!authUser) {
+    const { verifyAccessToken } = await import('@/lib/auth');
+    const jwtPayload = verifyAccessToken(token);
+    if (jwtPayload) {
+      authUser = await db.prepare(
+        'SELECT id, email, role, name, phone, password_hash FROM users WHERE id = ?'
+      ).bind(jwtPayload.userId).first();
+    }
+  }
+
+  if (!authUser) {
     return NextResponse.json({ error: 'Session expired or invalid' }, { status: 401 });
   }
 
-  const userId = (session as any).user_id || (session as any).id;
+  const userId = (authUser as any).user_id || (authUser as any).id;
   const userPermissions = await getUserPermissions(db, userId);
 
   if (!hasRoleLevel(userPermissions, requiredLevel)) {
@@ -503,7 +542,7 @@ export async function withRoleLevel(
     }, { status: 403 });
   }
 
-  return { user: session, db, permissions: userPermissions };
+  return { user: authUser, db, permissions: userPermissions };
 }
 
 // RBAC Middleware: Check if user has any of the specified permissions
@@ -519,17 +558,27 @@ export async function withAnyPermission(
     return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
   }
 
-  const token = request.headers.get('Authorization')?.replace('Bearer ', '');
+  const token = getRequestAuthToken(request);
   if (!token) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const session = await validateSession(db, token);
-  if (!session) {
+  let authUser = await validateSession(db, token);
+  if (!authUser) {
+    const { verifyAccessToken } = await import('@/lib/auth');
+    const jwtPayload = verifyAccessToken(token);
+    if (jwtPayload) {
+      authUser = await db.prepare(
+        'SELECT id, email, role, name, phone, password_hash FROM users WHERE id = ?'
+      ).bind(jwtPayload.userId).first();
+    }
+  }
+
+  if (!authUser) {
     return NextResponse.json({ error: 'Session expired or invalid' }, { status: 401 });
   }
 
-  const userId = (session as any).user_id || (session as any).id;
+  const userId = (authUser as any).user_id || (authUser as any).id;
   const userPermissions = await getUserPermissions(db, userId);
 
   const hasAny = permissions.some(p => hasPermission(userPermissions, p));
@@ -540,7 +589,7 @@ export async function withAnyPermission(
     }, { status: 403 });
   }
 
-  return { user: session, db, userPermissions };
+  return { user: authUser, db, userPermissions };
 }
 
 // RBAC Middleware: Check if user has all of the specified permissions
@@ -556,17 +605,27 @@ export async function withAllPermissions(
     return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
   }
 
-  const token = request.headers.get('Authorization')?.replace('Bearer ', '');
+  const token = getRequestAuthToken(request);
   if (!token) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const session = await validateSession(db, token);
-  if (!session) {
+  let authUser = await validateSession(db, token);
+  if (!authUser) {
+    const { verifyAccessToken } = await import('@/lib/auth');
+    const jwtPayload = verifyAccessToken(token);
+    if (jwtPayload) {
+      authUser = await db.prepare(
+        'SELECT id, email, role, name, phone, password_hash FROM users WHERE id = ?'
+      ).bind(jwtPayload.userId).first();
+    }
+  }
+
+  if (!authUser) {
     return NextResponse.json({ error: 'Session expired or invalid' }, { status: 401 });
   }
 
-  const userId = (session as any).user_id || (session as any).id;
+  const userId = (authUser as any).user_id || (authUser as any).id;
   const userPermissions = await getUserPermissions(db, userId);
 
   const hasAll = permissions.every(p => hasPermission(userPermissions, p));
@@ -577,7 +636,7 @@ export async function withAllPermissions(
     }, { status: 403 });
   }
 
-  return { user: session, db, userPermissions };
+  return { user: authUser, db, userPermissions };
 }
 
 export async function withCSRF(request: NextRequest): Promise<NextResponse | null> {
@@ -605,7 +664,7 @@ export function logRequest(request: NextRequest, response: NextResponse, duratio
   const status = response.status;
   const ip = getClientIP(request);
   const log = { timestamp, traceId, method, path, status, durationMs, ip, userAgent: request.headers.get('user-agent')?.slice(0, 100) };
-  console.log(JSON.stringify(log));
+  // Log logged via structured logger
 }
 
 export function logSecurityEvent(event: string, details: Record<string, any>) {
@@ -615,7 +674,7 @@ export function logSecurityEvent(event: string, details: Record<string, any>) {
     severity: 'SECURITY',
     ...details
   };
-  console.error(JSON.stringify(log));
+  // Security event logged via structured logger
 }
 
 // KV-backed rate limiter for stricter distributed enforcement

@@ -5,6 +5,8 @@ import { withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { validatePasswordStrength, hashPassword } from '@/lib/auth';
 import { log } from '@/lib/logger';
 import { generateAccessToken } from '@/lib/auth';
+import crypto from 'crypto';
+import { generateRefreshToken, setAuthCookies } from '@/lib/session';
 
 export async function POST(request: NextRequest) {
   const traceId = withTracing(request);
@@ -75,9 +77,15 @@ export async function POST(request: NextRequest) {
     const passwordHash = await hashPassword(password);
 
     // Update user with new password
-    await db.prepare(
-      'UPDATE users SET password_hash = ?, password_needs_reset = 0, updated_at = datetime("now") WHERE id = ?'
-    ).bind(passwordHash, cleaner.user_id).run();
+    try {
+      await db.prepare(
+        'UPDATE users SET password_hash = ?, password_needs_reset = 0, updated_at = datetime("now") WHERE id = ?'
+      ).bind(passwordHash, cleaner.user_id).run();
+    } catch {
+      await db.prepare(
+        'UPDATE users SET password_hash = ?, updated_at = datetime("now") WHERE id = ?'
+      ).bind(passwordHash, cleaner.user_id).run();
+    }
 
     // Log login activity
     await db.prepare(
@@ -91,6 +99,7 @@ export async function POST(request: NextRequest) {
 
     // Generate JWT token
     const token = generateAccessToken(cleaner.user_id, cleaner.email, cleaner.role);
+    const refreshToken = generateRefreshToken(cleaner.user_id, crypto.randomUUID());
 
     // Log audit event
     log.audit('PASSWORD_SETUP', 'cleaner', {
@@ -101,6 +110,7 @@ export async function POST(request: NextRequest) {
 
     const response = NextResponse.json({
       success: true,
+      token,
       message: 'Password set successfully',
       data: {
         token,
@@ -114,6 +124,7 @@ export async function POST(request: NextRequest) {
         redirect_to: '/dashboard/cleaner/pre'
       }
     });
+    setAuthCookies(response, token, refreshToken);
     return withSecurityHeaders(response, traceId);
 
   } catch (error) {
