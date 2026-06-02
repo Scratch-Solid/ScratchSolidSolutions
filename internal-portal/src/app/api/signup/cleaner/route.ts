@@ -109,6 +109,43 @@ export async function POST(request: NextRequest) {
       return withSecurityHeaders(response, traceId);
     }
 
+    // Validate bank details format
+    const bankParts = bank_details.split('|').map(s => s.trim());
+    if (bankParts.length !== 4 || bankParts.some(p => !p)) {
+      const response = NextResponse.json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid bank details format',
+          details: { errors: ['Bank details must include bank name, account holder, account number, and branch code'] }
+        }
+      }, { status: 400 });
+      return withSecurityHeaders(response, traceId);
+    }
+    const [, , accountNumber, branchCode] = bankParts;
+    if (!/^\d{6,12}$/.test(accountNumber.replace(/\s/g, ''))) {
+      const response = NextResponse.json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid bank account number',
+          details: { errors: ['Account number must be 6-12 digits'] }
+        }
+      }, { status: 400 });
+      return withSecurityHeaders(response, traceId);
+    }
+    if (!/^\d{4,6}$/.test(branchCode.replace(/\s/g, ''))) {
+      const response = NextResponse.json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid branch code',
+          details: { errors: ['Branch code must be 4-6 digits'] }
+        }
+      }, { status: 400 });
+      return withSecurityHeaders(response, traceId);
+    }
+
     // Check if email already exists in new_joiners
     const existingEmail = await db.prepare(
       'SELECT id FROM new_joiners WHERE email = ?'

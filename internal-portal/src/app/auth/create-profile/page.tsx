@@ -25,28 +25,25 @@ export default function CreateProfilePage() {
   const [stream, setStream] = useState<MediaStream | null>(null);
 
   useEffect(() => {
+    // Legacy flow: check if contract is approved via localStorage
     const pendingConsent = typeof window !== 'undefined' ? localStorage.getItem("pendingConsent") : null;
-    if (!pendingConsent) {
-      router.push("/signup/cleaner");
-      return;
-    }
-
-    // Check if contract is approved
-    const checkApproval = async () => {
-      try {
-        const consent = JSON.parse(pendingConsent);
-        const response = await fetch(`/api/pending-contracts/check?contactNumber=${consent.contactNumber}&idPassportNumber=${consent.idPassportNumber}`);
-        if (response.ok) {
-          const data = await response.json() as { status?: string };
-          if (data.status !== 'approved') {
-            setError('Your application is still being reviewed or has been rejected.');
+    if (pendingConsent) {
+      const checkApproval = async () => {
+        try {
+          const consent = JSON.parse(pendingConsent);
+          const response = await fetch(`/api/pending-contracts/check?contactNumber=${consent.contactNumber}&idPassportNumber=${consent.idPassportNumber}`);
+          if (response.ok) {
+            const data = await response.json() as { status?: string };
+            if (data.status !== 'approved') {
+              setError('Your application is still being reviewed or has been rejected.');
+            }
           }
+        } catch (err) {
+          console.error('Error checking approval status:', err);
         }
-      } catch (err) {
-        console.error('Error checking approval status:', err);
-      }
-    };
-    checkApproval();
+      };
+      checkApproval();
+    }
 
     // Cleanup camera stream on unmount
     return () => {

@@ -64,14 +64,31 @@ export async function POST(request: NextRequest) {
     const resetToken = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 3600000).toISOString();
 
-    // Store reset token in database (requires password_reset_tokens table)
-    // For now, we'll return the token in development mode
+    // Ensure password_reset_tokens table exists
+    await db.prepare(`
+      CREATE TABLE IF NOT EXISTS password_reset_tokens (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        token TEXT NOT NULL UNIQUE,
+        expires_at DATETIME NOT NULL,
+        used_at DATETIME,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )
+    `).run();
+
+    // Store reset token in database
+    await db.prepare(
+      `INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)`
+    ).bind(user.id, resetToken, expiresAt).run();
+
+    // In development, return the token for testing
     const isDevelopment = process.env.NODE_ENV === 'development';
 
     const response = NextResponse.json({
       success: true,
       message: 'If an account exists with this email, a password reset link has been sent.',
-      ...(isDevelopment && { resetToken }) // Only return token in development
+      ...(isDevelopment && { resetToken })
     });
 
     applySecurityMiddleware(response);

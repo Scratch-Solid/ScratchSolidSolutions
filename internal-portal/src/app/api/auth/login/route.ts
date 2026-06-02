@@ -122,12 +122,12 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       // Record failed attempt for the identifier
-      recordFailedAttempt(identifier);
+      await recordFailedAttempt(db, identifier);
       return createSecurityError('Invalid credentials', 401);
     }
 
     // Check if user is locked out due to too many failed attempts
-    if (isUserLockedOut(identifier)) {
+    if (await isUserLockedOut(db, identifier)) {
       return createSecurityError('Account temporarily locked due to too many failed attempts. Please try again later.', 429);
     }
 
@@ -156,7 +156,7 @@ export async function POST(request: NextRequest) {
 
     if (!isValidPassword) {
       // Record failed attempt
-      recordFailedAttempt(identifier);
+      await recordFailedAttempt(db, identifier);
       return createSecurityError('Invalid credentials', 401);
     }
 
@@ -169,7 +169,7 @@ export async function POST(request: NextRequest) {
     const refreshToken = generateRefreshToken(Number(user.id), refreshTokenId);
 
     // Clear failed attempts on successful login
-    clearFailedAttempts(identifier);
+    await clearFailedAttempts(db, identifier);
 
     // Log successful login for audit
     try {

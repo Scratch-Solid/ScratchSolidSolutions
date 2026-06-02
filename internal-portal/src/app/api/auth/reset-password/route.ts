@@ -50,24 +50,43 @@ export async function POST(request: NextRequest) {
       return createSecurityError('Password must be at least 8 characters', 400);
     }
 
-    // In development mode, accept the token directly
-    // In production, this would validate against a stored token
-    const isDevelopment = process.env.NODE_ENV === 'development';
-    
-    if (isDevelopment) {
-      // For development, we'll need to find a way to identify the user
-      // This is a simplified version - production should use proper token validation
-      return createSecurityError('Password reset requires proper token validation in production', 400);
+    // Look up token in database
+    const tokenRecord = await db.prepare(
+      `SELECT id, user_id, expires_at, used_at FROM password_reset_tokens WHERE token = ?`
+    ).bind(token).first() as {
+      id: number;
+      user_id: number;
+      expires_at: string;
+      used_at: string | null;
+    } | null;
+
+    if (!tokenRecord) {
+      return createSecurityError('Invalid or expired reset token', 400);
     }
 
-    // Production flow would:
-    // 1. Validate token from password_reset_tokens table
-    // 2. Check if token is expired
-    // 3. Get user_id from token
-    // 4. Hash new password
-    // 5. Update user password
-    // 6. Delete used token
-    // 7. Clear all sessions for that user
+    // Check if token already used
+    if (tokenRecord.used_at) {
+      return createSecurityError('Reset token has already been used', 400);
+    }
+
+    // Check if token expired
+    const now = new Date().toISOString();
+    if (now > tokenRecord.expires_at) {
+      return createSecurityError('Reset token has expired', 400);
+    }
+
+    // Hash new password
+    const passwordHash = await bcrypt.hash(newPassword, 12);
+
+    // Update user password
+    await db.prepare(
+      'UPDATE users SET password_hash = ?, password_needs_reset = 0, updated_at = datetime("now") WHERE id = ?'
+    ).bind(passwordHash, tokenRecord.user_id).run();
+
+    // Mark token as used
+    await db.prepare(
+      'UPDATE password_reset_tokens SET used_at = datetime("now") WHERE id = ?'
+    ).bind(tokenRecord.id).run();
 
     const response = NextResponse.json({
       success: true,
@@ -78,6 +97,7 @@ export async function POST(request: NextRequest) {
     return response;
 
   } catch (error) {
+    console.error('Reset password error:', error);
     return createSecurityError('Failed to reset password', 500);
   }
 }

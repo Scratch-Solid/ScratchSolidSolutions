@@ -19,17 +19,22 @@ import { authenticator } from 'otplib';
 import crypto from 'crypto';
 
 // Configuration
-// Secrets are set via wrangler secrets at runtime
-// During build, use fallback values
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'dev-refresh-secret-change-in-production';
-
-function getJwtSecret() {
-  return JWT_SECRET;
+// Secrets MUST be set via wrangler secrets at runtime.
+// Do NOT use fallback values in production.
+function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error('JWT_SECRET environment variable is required');
+  }
+  return secret;
 }
 
-function getJwtRefreshSecret() {
-  return JWT_REFRESH_SECRET;
+function getJwtRefreshSecret(): string {
+  const secret = process.env.JWT_REFRESH_SECRET;
+  if (!secret) {
+    throw new Error('JWT_REFRESH_SECRET environment variable is required');
+  }
+  return secret;
 }
 const ACCESS_TOKEN_EXPIRY = '15m'; // 15 minutes
 const REFRESH_TOKEN_EXPIRY = '7d'; // 7 days
@@ -38,65 +43,75 @@ const LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutes
 const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 minutes
 const RATE_LIMIT_MAX_REQUESTS = 10;
 
-// In-memory rate limiting (in production, use Redis or KV)
-const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
-const loginAttemptsStore = new Map<string, { attempts: number; lockoutUntil: number }>();
+// D1-based brute-force protection replaces in-memory Map which is ineffective
+// in serverless/edge environments where each request runs in a fresh isolate.
 
 /**
- * Rate limiting middleware
+ * Ensure login_attempts table exists in D1
  */
-export function checkRateLimit(identifier: string): boolean {
-  const now = Date.now();
-  const record = rateLimitStore.get(identifier);
-
-  if (!record || now > record.resetTime) {
-    rateLimitStore.set(identifier, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
-    return true;
-  }
-
-  if (record.count >= RATE_LIMIT_MAX_REQUESTS) {
-    return false;
-  }
-
-  record.count++;
-  return true;
+async function ensureLoginAttemptsTable(db: D1Database): Promise<void> {
+  await db.prepare(`
+    CREATE TABLE IF NOT EXISTS login_attempts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      identifier TEXT NOT NULL,
+      attempts INTEGER NOT NULL DEFAULT 1,
+      lockout_until INTEGER,
+      last_attempt INTEGER NOT NULL DEFAULT ${Date.now()},
+      UNIQUE(identifier)
+    )
+  `).run();
 }
 
 /**
- * Check if user is locked out due to too many failed attempts
+ * Check if user is locked out due to too many failed attempts (D1-backed)
  */
-export function isUserLockedOut(identifier: string): boolean {
-  const record = loginAttemptsStore.get(identifier);
+export async function isUserLockedOut(db: D1Database, identifier: string): Promise<boolean> {
+  await ensureLoginAttemptsTable(db);
+  const record = await db.prepare(
+    'SELECT attempts, lockout_until FROM login_attempts WHERE identifier = ?'
+  ).bind(identifier).first() as { attempts: number; lockout_until: number | null } | null;
+
   if (!record) return false;
 
   const now = Date.now();
-  if (now > record.lockoutUntil) {
-    loginAttemptsStore.delete(identifier);
+  if (record.lockout_until && now > record.lockout_until) {
+    // Lockout expired, clean up
+    await db.prepare('DELETE FROM login_attempts WHERE identifier = ?').bind(identifier).run();
     return false;
   }
 
-  return true;
+  return record.lockout_until !== null && now <= record.lockout_until;
 }
 
 /**
- * Record failed login attempt
+ * Record failed login attempt (D1-backed)
  */
-export function recordFailedAttempt(identifier: string): void {
-  const record = loginAttemptsStore.get(identifier) || { attempts: 0, lockoutUntil: 0 };
-  record.attempts++;
+export async function recordFailedAttempt(db: D1Database, identifier: string): Promise<void> {
+  await ensureLoginAttemptsTable(db);
 
-  if (record.attempts >= MAX_LOGIN_ATTEMPTS) {
-    record.lockoutUntil = Date.now() + LOCKOUT_DURATION;
+  const existing = await db.prepare(
+    'SELECT attempts FROM login_attempts WHERE identifier = ?'
+  ).bind(identifier).first() as { attempts: number } | null;
+
+  if (existing) {
+    const newAttempts = existing.attempts + 1;
+    const lockoutUntil = newAttempts >= MAX_LOGIN_ATTEMPTS ? Date.now() + LOCKOUT_DURATION : null;
+    await db.prepare(
+      'UPDATE login_attempts SET attempts = ?, lockout_until = ?, last_attempt = ? WHERE identifier = ?'
+    ).bind(newAttempts, lockoutUntil, Date.now(), identifier).run();
+  } else {
+    await db.prepare(
+      'INSERT INTO login_attempts (identifier, attempts, lockout_until, last_attempt) VALUES (?, 1, NULL, ?)'
+    ).bind(identifier, Date.now()).run();
   }
-
-  loginAttemptsStore.set(identifier, record);
 }
 
 /**
- * Clear failed login attempts on successful login
+ * Clear failed login attempts on successful login (D1-backed)
  */
-export function clearFailedAttempts(identifier: string): void {
-  loginAttemptsStore.delete(identifier);
+export async function clearFailedAttempts(db: D1Database, identifier: string): Promise<void> {
+  await ensureLoginAttemptsTable(db);
+  await db.prepare('DELETE FROM login_attempts WHERE identifier = ?').bind(identifier).run();
 }
 
 /**

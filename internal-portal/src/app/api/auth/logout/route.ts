@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { verifyAccessToken, logAuthEvent } from '@/lib/auth';
+import { clearAuthCookies } from '@/lib/session';
 
 /**
  * Logout Endpoint
@@ -49,10 +50,12 @@ export async function POST(request: NextRequest) {
     // Log logout event
     await logAuthEvent(db, decoded.userId, 'logout', ip, userAgent);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       message: 'Logged out successfully'
     });
+    clearAuthCookies(response);
+    return response;
   } catch (error) {
     console.error('Logout error:', error);
     return NextResponse.json({

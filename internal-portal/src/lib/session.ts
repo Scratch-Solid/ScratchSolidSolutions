@@ -9,7 +9,13 @@ import jwt from 'jsonwebtoken';
 
 import { getEnvVar } from './env';
 
-const JWT_SECRET = getEnvVar('JWT_SECRET', 'fallback-secret-change-in-production');
+function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error('JWT_SECRET environment variable is required');
+  }
+  return secret;
+}
 const COOKIE_NAME = 'auth_token';
 const REFRESH_COOKIE_NAME = 'refresh_token';
 
@@ -34,7 +40,7 @@ export interface RefreshTokenPayload {
 export function generateAccessToken(userId: number, email: string, role: string): string {
   return jwt.sign(
     { userId, email, role },
-    JWT_SECRET,
+    getJwtSecret(),
     { expiresIn: '15m' } // 15 minutes
   );
 }
@@ -45,7 +51,7 @@ export function generateAccessToken(userId: number, email: string, role: string)
 export function generateRefreshToken(userId: number, tokenId: string): string {
   return jwt.sign(
     { userId, tokenId },
-    JWT_SECRET,
+    getJwtSecret(),
     { expiresIn: '7d' } // 7 days
   );
 }
@@ -102,7 +108,7 @@ export async function getSession(): Promise<SessionPayload | null> {
       return null;
     }
 
-    const payload = jwt.verify(token, JWT_SECRET) as SessionPayload;
+    const payload = jwt.verify(token, getJwtSecret()) as SessionPayload;
     return payload;
   } catch (error) {
     return null;
@@ -114,7 +120,7 @@ export async function getSession(): Promise<SessionPayload | null> {
  */
 export function verifyAccessToken(token: string): SessionPayload | null {
   try {
-    const payload = jwt.verify(token, JWT_SECRET) as SessionPayload;
+    const payload = jwt.verify(token, getJwtSecret()) as SessionPayload;
     return payload;
   } catch (error) {
     return null;
@@ -126,7 +132,7 @@ export function verifyAccessToken(token: string): SessionPayload | null {
  */
 export function verifyRefreshToken(token: string): RefreshTokenPayload | null {
   try {
-    const payload = jwt.verify(token, JWT_SECRET) as RefreshTokenPayload;
+    const payload = jwt.verify(token, getJwtSecret()) as RefreshTokenPayload;
     return payload;
   } catch (error) {
     return null;

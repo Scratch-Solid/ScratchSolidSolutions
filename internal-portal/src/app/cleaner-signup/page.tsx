@@ -13,7 +13,10 @@ export default function CleanerSignup() {
     whatsapp: '',
     address: '',
     emergency_contact: '',
-    bank_details: '',
+    bank_name: '',
+    account_holder: '',
+    account_number: '',
+    branch_code: '',
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -24,11 +27,31 @@ export default function CleanerSignup() {
     setError('');
     setLoading(true);
 
+    // Validate bank details before submission
+    if (!formData.bank_name || !formData.account_holder || !formData.account_number || !formData.branch_code) {
+      setError('All bank detail fields are required');
+      setLoading(false);
+      return;
+    }
+    if (!/^\d{6,12}$/.test(formData.account_number.replace(/\s/g, ''))) {
+      setError('Please enter a valid bank account number (6-12 digits)');
+      setLoading(false);
+      return;
+    }
+    if (!/^\d{4,6}$/.test(formData.branch_code.replace(/\s/g, ''))) {
+      setError('Please enter a valid branch code (4-6 digits)');
+      setLoading(false);
+      return;
+    }
+
     try {
       const response = await fetch('/api/signup/cleaner', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          bank_details: `${formData.bank_name} | ${formData.account_holder} | ${formData.account_number} | ${formData.branch_code}`,
+        }),
       });
 
       if (!response.ok) {
@@ -143,14 +166,51 @@ export default function CleanerSignup() {
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Bank Details (Account Number, Bank Name, Branch Code) *</label>
-                <textarea
-                  required
-                  value={formData.bank_details}
-                  onChange={(e) => setFormData({ ...formData, bank_details: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  rows={3}
-                />
+                <h3 className="text-sm font-medium text-gray-700 mb-2">Bank Details *</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Bank Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.bank_name}
+                      onChange={(e) => setFormData({ ...formData, bank_name: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Account Holder Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.account_holder}
+                      onChange={(e) => setFormData({ ...formData, account_holder: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Account Number</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.account_number}
+                      onChange={(e) => setFormData({ ...formData, account_number: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      inputMode="numeric"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Branch Code</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.branch_code}
+                      onChange={(e) => setFormData({ ...formData, branch_code: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      inputMode="numeric"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
