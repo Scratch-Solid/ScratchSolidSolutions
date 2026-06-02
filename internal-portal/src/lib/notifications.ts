@@ -203,7 +203,7 @@ WHAT YOU CAN USE THE PORTAL FOR
 If you have any questions, please contact admin support.
 Welcome aboard!
 `;
-  const emailResult = await sendEmail(email, emailSubject, emailText, preferences);
+  const emailResult = await sendEmail(email, emailSubject, emailHtml, preferences);
 
   return { whatsapp: waResult, email: emailResult };
 }
