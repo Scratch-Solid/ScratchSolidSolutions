@@ -1,8 +1,11 @@
 name: Deploy to Production
 
 on:
+  # Production is isolated from main branch pushes.
+  # Deploy manually via GitHub Actions UI or by pushing a version tag.
   push:
-    branches: [ main ]
+    tags:
+      - 'v*'
   workflow_dispatch:
 
 jobs:
