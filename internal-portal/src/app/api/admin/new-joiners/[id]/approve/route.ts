@@ -106,8 +106,10 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     const notificationResult = await notifyCleanerApproval({
       traceId,
       phone: joinerData.phone,
+      email: joinerData.email,
       name: joinerData.name,
       paysheetCode,
+      tempPassword,
     });
 
     // Ensure approval tracking columns exist

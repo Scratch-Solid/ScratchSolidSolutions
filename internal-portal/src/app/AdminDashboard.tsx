@@ -427,12 +427,27 @@ export default function AdminDashboard() {
                                 <p className="text-sm text-slate-600">Position: {joiner.positionAppliedFor}</p>
                                 <p className="text-sm text-slate-600">Username: {joiner.generatedUsername}</p>
                               </div>
-                              <div className="flex gap-2">
+                              <div className="flex gap-2 flex-wrap">
                                 <button
                                   onClick={() => setSelectedJoiner(joiner)}
                                   className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
                                 >
                                   View Consent
+                                </button>
+                                <button
+                                  onClick={() => handleApproveJoiner(joiner)}
+                                  className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
+                                >
+                                  Approve
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    const reason = window.prompt('Rejection reason (optional):');
+                                    handleRejectJoiner(joiner, reason || undefined);
+                                  }}
+                                  className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                                >
+                                  Reject
                                 </button>
                               </div>
                             </div>

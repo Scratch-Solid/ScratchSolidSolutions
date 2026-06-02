@@ -1,5 +1,5 @@
 import { log } from '@/lib/logger';
-import { notifyAdminApproved, notifyAdminRejected, notifyConsentSubmitted, notifyContractSigned } from '@/lib/notifications';
+import { notifyAdminApproved, notifyAdminRejected, notifyConsentSubmitted, notifyContractSigned, sendCleanerWelcome } from '@/lib/notifications';
 import { getEnvVarOptional } from '@/lib/env';
 
 export type CleanerIntegrationResult = {
@@ -122,23 +122,28 @@ export async function setupCleanerPayrollInErpNext(params: {
 export async function notifyCleanerApproval(params: {
   traceId: string;
   phone: string;
+  email: string;
   name: string;
   paysheetCode: string;
+  tempPassword: string;
 }) {
-  const result = await notifyAdminApproved(params.phone, params.name);
+  const result = await sendCleanerWelcome(params.phone, params.email, params.name, params.paysheetCode, params.tempPassword);
   log.audit('APPROVAL_NOTIFICATION', 'cleaner_application', {
     traceId: params.traceId,
     phone: params.phone,
+    email: params.email,
     paysheetCode: params.paysheetCode,
-    success: result.success,
-    skipped: result.skipped,
+    whatsappSuccess: result.whatsapp.success,
+    whatsappSkipped: result.whatsapp.skipped,
+    emailSuccess: result.email.success,
+    emailSkipped: result.email.skipped,
   });
 
   return {
     provider: 'notifications',
-    status: result.success ? 'sent' : result.skipped ? 'skipped' : 'pending',
+    status: (result.whatsapp.success || result.email.success) ? 'sent' : (result.whatsapp.skipped && result.email.skipped) ? 'skipped' : 'pending',
     reference: params.paysheetCode,
-    reason: result.error || result.skipReason,
+    reason: result.whatsapp.error || result.email.error || result.whatsapp.skipReason || result.email.skipReason,
   } satisfies CleanerIntegrationResult;
 }
 
