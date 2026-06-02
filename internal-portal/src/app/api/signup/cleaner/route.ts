@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
+import { createSignupSignatureReference } from '@/lib/cleaner-integrations';
 import { withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { validateEmail, validatePhone, validateSaIdNumber, validateSaPassport, sanitizeInput } from '@/lib/validation';
 import { log } from '@/lib/logger';
@@ -155,7 +156,7 @@ export async function POST(request: NextRequest) {
 
     // TODO: Integrate with DocuSign for e-signature
     // For now, generate a placeholder signature ID
-    const signatureId = `DOCUSIGN_PLACEHOLDER_${Date.now()}`;
+    const { signatureId, integration } = await createSignupSignatureReference(traceId);
 
     // Insert into new_joiners table
     await db.prepare(
@@ -188,6 +189,8 @@ export async function POST(request: NextRequest) {
       message: 'Application submitted successfully',
       data: {
         application_id: signatureId,
+        signature_reference: signatureId,
+        integration,
         status: 'pending',
         next_steps: [
           'Your application has been submitted for review',

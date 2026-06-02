@@ -1,6 +1,8 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
+import { ensureCleanerTrainingProgress, setCleanerOnboardingStage } from '@/lib/cleaner-training';
+import { notifyCleanerApproval, registerCleanerInErpNext, setupCleanerPayrollInErpNext } from '@/lib/cleaner-integrations';
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { log } from '@/lib/logger';
 import crypto from 'crypto';
@@ -50,8 +52,8 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     const passwordHash = await bcrypt.hash(tempPassword, 12);
 
     await db.prepare(
-      `INSERT INTO users (name, email, password_hash, role, phone, password_needs_reset, email_verified, created_at)
-       VALUES (?, ?, ?, 'cleaner', ?, 1, 1, datetime('now'))`
+      `INSERT INTO users (name, email, password_hash, role, phone, password_needs_reset, email_verified, onboarding_stage, created_at)
+       VALUES (?, ?, ?, 'cleaner', ?, 1, 1, 'consent_pending', datetime('now'))`
     ).bind(
       joinerData.name,
       joinerData.email,
@@ -82,13 +84,37 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     ).run();
 
     // Create training progress record
-    await db.prepare(
-      `INSERT INTO training_progress (employee_id, modules_completed, modules_pending, completion_percentage, completed, created_at, updated_at)
-       VALUES (?, '[]', '[]', 0, 0, datetime('now'), datetime('now'))`
-    ).bind(paysheetCode).run();
+    await ensureCleanerTrainingProgress(db, paysheetCode);
+    await setCleanerOnboardingStage(db, Number(newUserId), 'consent_pending');
 
-    // TODO: Create employee in ERPNext
-    // TODO: Send WhatsApp + Email notification with paysheet code and temp password
+    const erpEmployeeResult = await registerCleanerInErpNext({
+      traceId,
+      employeeId: paysheetCode,
+      firstName: joinerData.name.split(' ')[0] || joinerData.name,
+      lastName: joinerData.name.split(' ').slice(1).join(' ') || '',
+      email: joinerData.email,
+      phone: joinerData.phone,
+      department: 'Scratch',
+      position: 'Cleaner',
+    });
+    const payrollSetupResult = await setupCleanerPayrollInErpNext({
+      traceId,
+      employeeId: paysheetCode,
+      paysheetCode,
+      bankDetailsPresent: Boolean(joinerData.bank_details),
+    });
+    const notificationResult = await notifyCleanerApproval({
+      traceId,
+      phone: joinerData.phone,
+      name: joinerData.name,
+      paysheetCode,
+    });
+
+    // Ensure approval tracking columns exist
+    await db.prepare(`ALTER TABLE new_joiners ADD COLUMN erpnext_employee_id TEXT`).run().catch(() => {});
+    await db.prepare(`ALTER TABLE new_joiners ADD COLUMN approved_by INTEGER`).run().catch(() => {});
+    await db.prepare(`ALTER TABLE new_joiners ADD COLUMN approved_at DATETIME`).run().catch(() => {});
+    await db.prepare(`ALTER TABLE new_joiners ADD COLUMN updated_at DATETIME`).run().catch(() => {});
 
     // Update new_joiners status
     await db.prepare(
@@ -113,6 +139,11 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         joinerId,
         paysheetCode,
         status: 'approved',
+        integrations: {
+          employee: erpEmployeeResult,
+          payroll: payrollSetupResult,
+          notifications: notificationResult,
+        },
         next_steps: [
           'Employee account created',
           'Training progress initialized',

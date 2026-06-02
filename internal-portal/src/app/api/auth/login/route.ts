@@ -188,6 +188,45 @@ export async function POST(request: NextRequest) {
     // Check if password change is required
     const passwordChangeRequired = user.password_needs_reset === 1;
 
+    let redirectTo: string | undefined;
+
+    if (user.role === 'cleaner') {
+      const cleanerProgress = await db.prepare(
+        `SELECT tp.background_check_consent, tp.contract_signed, tp.completed
+         FROM cleaner_profiles cp
+         LEFT JOIN training_progress tp ON cp.paysheet_code = tp.employee_id
+         WHERE cp.user_id = ?`
+      ).bind(user.id).first() as {
+        background_check_consent?: number | null;
+        contract_signed?: number | null;
+        completed?: number | null;
+      } | null;
+
+      redirectTo = '/cleaner-pre-dashboard';
+
+      if (
+        cleanerProgress &&
+        cleanerProgress.background_check_consent === 1 &&
+        cleanerProgress.contract_signed === 1 &&
+        cleanerProgress.completed === 1
+      ) {
+        redirectTo = '/cleaner-dashboard';
+      }
+
+      try {
+        await db.prepare(
+          `INSERT INTO login_activity (user_id, stage, timestamp, success, ip_address, user_agent)
+           VALUES (?, ?, datetime('now'), 1, ?, ?)`
+        ).bind(
+          user.id,
+          redirectTo === '/cleaner-dashboard' ? 'cleaner_dashboard' : 'pre_dashboard',
+          request.headers.get('x-forwarded-for') || 'unknown',
+          request.headers.get('user-agent')?.slice(0, 200) || 'unknown'
+        ).run();
+      } catch {
+      }
+    }
+
     const response = NextResponse.json({
       success: true,
       token: accessToken,
@@ -195,6 +234,7 @@ export async function POST(request: NextRequest) {
       username: user.email,
       user_id: user.id,
       paysheet_code: user.paysheet_code || user.phone || identifier,
+      redirect_to: redirectTo,
       mustChangePassword: passwordChangeRequired
     });
 

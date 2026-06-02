@@ -3,33 +3,40 @@
 
 const KV_CACHE_TTL = 300; // 5 minutes
 
-interface CacheEntry {
-  data: any;
+interface CacheEntry<T = unknown> {
+  data: T;
   timestamp: number;
+}
+
+interface CloudflareEnv {
+  KV_CACHE?: KVNamespace;
+}
+
+declare global {
+  var KV_CACHE: KVNamespace | undefined;
 }
 
 const memoryCache = new Map<string, CacheEntry>();
 
-function getCacheKey(table: string, query: string, params?: any[]): string {
+function getCacheKey(table: string, query: string, params?: unknown[]): string {
   const paramHash = params ? JSON.stringify(params) : '';
   return `d1:${table}:${query}:${paramHash}`;
 }
 
-export async function getCachedQuery(table: string, query: string, params?: any[]): Promise<any | null> {
+export async function getCachedQuery<T = unknown>(table: string, query: string, params?: unknown[]): Promise<T | null> {
   const key = getCacheKey(table, query, params);
 
   // Try in-memory first (client-side / Worker runtime)
   const memEntry = memoryCache.get(key);
   if (memEntry && Date.now() - memEntry.timestamp < KV_CACHE_TTL * 1000) {
-    return memEntry.data;
+    return memEntry.data as T;
   }
 
   // Try KV if available
   try {
-    // @ts-ignore
-    const kv = (globalThis as any).KV_CACHE;
+    const kv = globalThis.KV_CACHE;
     if (kv) {
-      const cached = await kv.get(key, { type: 'json' });
+      const cached = await kv.get(key, { type: 'json' }) as T | null;
       if (cached) {
         memoryCache.set(key, { data: cached, timestamp: Date.now() });
         return cached;
@@ -42,13 +49,12 @@ export async function getCachedQuery(table: string, query: string, params?: any[
   return null;
 }
 
-export async function setCachedQuery(table: string, query: string, params: any[] | undefined, data: any, ttl: number = KV_CACHE_TTL): Promise<void> {
+export async function setCachedQuery<T = unknown>(table: string, query: string, params: unknown[] | undefined, data: T, ttl: number = KV_CACHE_TTL): Promise<void> {
   const key = getCacheKey(table, query, params);
   memoryCache.set(key, { data, timestamp: Date.now() });
 
   try {
-    // @ts-ignore
-    const kv = (globalThis as any).KV_CACHE;
+    const kv = globalThis.KV_CACHE;
     if (kv) {
       await kv.put(key, JSON.stringify(data), { expirationTtl: ttl });
     }
@@ -66,8 +72,7 @@ export async function invalidateCache(table: string): Promise<void> {
   }
 
   try {
-    // @ts-ignore
-    const kv = (globalThis as any).KV_CACHE;
+    const kv = globalThis.KV_CACHE;
     if (kv) {
       // Cloudflare KV does not support prefix delete; use tags or list + delete in production
     }

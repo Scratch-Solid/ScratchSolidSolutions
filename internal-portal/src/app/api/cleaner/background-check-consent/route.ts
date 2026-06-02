@@ -1,6 +1,8 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
+import { createOnboardingSignatureReference, notifyCleanerConsent } from '@/lib/cleaner-integrations';
+import { setCleanerOnboardingStage } from '@/lib/cleaner-training';
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { log } from '@/lib/logger';
 
@@ -12,24 +14,11 @@ export async function POST(request: NextRequest) {
   const userId = authResult.user?.id;
 
   try {
-    const body = await request.json() as { signature_id?: string };
-    const { signature_id } = body;
-
-    if (!signature_id) {
-      const response = NextResponse.json({
-        success: false,
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: 'Signature ID is required',
-          suggestion: 'Please provide the DocuSign signature ID'
-        }
-      }, { status: 400 });
-      return withSecurityHeaders(response, traceId);
-    }
+    await request.json().catch(() => ({}));
 
     // Get cleaner profile
     const cleanerProfile = await db.prepare(
-      'SELECT cp.paysheet_code FROM cleaner_profiles cp WHERE cp.user_id = ?'
+      'SELECT cp.paysheet_code, cp.first_name, cp.last_name, cp.cellphone FROM cleaner_profiles cp WHERE cp.user_id = ?'
     ).bind(userId).first();
 
     if (!cleanerProfile) {
@@ -45,6 +34,7 @@ export async function POST(request: NextRequest) {
     }
 
     const cleaner = cleanerProfile as any;
+    const { signatureId, integration } = await createOnboardingSignatureReference(traceId, 'consent');
 
     // Update training progress
     await db.prepare(
@@ -52,19 +42,29 @@ export async function POST(request: NextRequest) {
        SET background_check_consent = 1, background_check_consent_at = datetime('now'), updated_at = datetime('now')
        WHERE employee_id = ?`
     ).bind(cleaner.paysheet_code).run();
+    await setCleanerOnboardingStage(db, Number(userId), 'consent_approved');
+
+    const notificationResult = await notifyCleanerConsent({
+      traceId,
+      phone: cleaner.cellphone || '',
+      name: `${cleaner.first_name || ''} ${cleaner.last_name || ''}`.trim() || cleaner.paysheet_code,
+    });
 
     // Log audit event
     log.audit('BACKGROUND_CHECK_CONSENT', 'cleaner', {
       traceId,
       userId,
       paysheetCode: cleaner.paysheet_code,
-      signatureId: signature_id
+      signatureId
     });
 
     const response = NextResponse.json({
       success: true,
       message: 'Background check consent submitted successfully',
       data: {
+        signature_id: signatureId,
+        integration,
+        notifications: notificationResult,
         next_step: 'contract_sign'
       }
     });

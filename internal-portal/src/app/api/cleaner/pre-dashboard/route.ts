@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
+import { buildCleanerTrainingModules, ensureCleanerTrainingProgress } from '@/lib/cleaner-training';
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { log } from '@/lib/logger';
 
@@ -32,43 +33,25 @@ export async function GET(request: NextRequest) {
     const cleaner = cleanerProfile as any;
 
     // Get training progress
-    const trainingProgress = await db.prepare(
-      'SELECT * FROM training_progress WHERE employee_id = ?'
-    ).bind(cleaner.paysheet_code).first();
-
-    if (!trainingProgress) {
-      const response = NextResponse.json({
-        success: false,
-        error: {
-          code: 'NOT_FOUND',
-          message: 'Training progress not found',
-          suggestion: 'Please contact support'
-        }
-      }, { status: 404 });
-      return withSecurityHeaders(response, traceId);
-    }
-
-    const progress = trainingProgress as any;
-
-    // Parse JSON fields
-    const modulesCompleted = JSON.parse(progress.modules_completed || '[]');
-    const modulesPending = JSON.parse(progress.modules_pending || '[]');
+    const progress = await ensureCleanerTrainingProgress(db, cleaner.paysheet_code);
+    const trainingModules = buildCleanerTrainingModules(progress);
 
     // Build progress tracker
     const progressTracker = {
       background_check_consent: {
-        completed: progress.background_check_consent === 1,
+        completed: progress.background_check_consent,
         completed_at: progress.background_check_consent_at
       },
       contract_signed: {
-        completed: progress.contract_signed === 1,
+        completed: progress.contract_signed,
         completed_at: progress.contract_signed_at
       },
       training: {
-        completed: progress.completed === 1,
+        completed: progress.completed,
         completion_percentage: progress.completion_percentage,
-        modules_completed: modulesCompleted.length,
-        modules_total: modulesCompleted.length + modulesPending.length
+        modules_completed: progress.modules_completed.length,
+        modules_total: progress.modules_completed.length + progress.modules_pending.length,
+        modules: trainingModules
       }
     };
 
@@ -93,7 +76,8 @@ export async function GET(request: NextRequest) {
         },
         progress_tracker: progressTracker,
         next_step: nextStep,
-        can_transition_to_cleaner_dashboard: progress.completed === 1
+        onboarding_state: nextStep === 'complete' ? 'active' : nextStep,
+        can_transition_to_cleaner_dashboard: progress.completed
       }
     });
     response.headers.set('Cache-Control', 'private, max-age=30');

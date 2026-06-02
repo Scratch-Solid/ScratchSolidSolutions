@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
+import { notifyCleanerRejection } from '@/lib/cleaner-integrations';
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { log } from '@/lib/logger';
 
@@ -35,6 +36,12 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
     const joinerData = joiner as any;
 
+    // Ensure rejection tracking columns exist
+    await db.prepare(`ALTER TABLE new_joiners ADD COLUMN rejection_reason TEXT`).run().catch(() => {});
+    await db.prepare(`ALTER TABLE new_joiners ADD COLUMN rejected_by INTEGER`).run().catch(() => {});
+    await db.prepare(`ALTER TABLE new_joiners ADD COLUMN rejected_at DATETIME`).run().catch(() => {});
+    await db.prepare(`ALTER TABLE new_joiners ADD COLUMN updated_at DATETIME`).run().catch(() => {});
+
     // Update new_joiners status
     await db.prepare(
       `UPDATE new_joiners 
@@ -42,7 +49,12 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
        WHERE id = ?`
     ).bind(reason || 'No reason provided', userId, joinerId).run();
 
-    // TODO: Send rejection notification via WhatsApp + Email
+    const notificationResult = await notifyCleanerRejection({
+      traceId,
+      phone: joinerData.phone,
+      name: joinerData.name,
+      reason,
+    });
 
     // Log audit event
     log.audit('REJECT', 'cleaner_application', {
@@ -59,7 +71,10 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       data: {
         joinerId,
         status: 'rejected',
-        reason
+        reason,
+        integrations: {
+          notifications: notificationResult,
+        }
       }
     });
     return withSecurityHeaders(response, traceId);

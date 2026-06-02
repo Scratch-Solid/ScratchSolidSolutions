@@ -26,7 +26,7 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
 
 // Required stages for each onboarding page
 const PAGE_REQUIREMENTS: Record<string, string[]> = {
-  '/auth/employee-consent': [], // No requirement - first step
+  '/signup/cleaner': [],
   '/auth/consent-submitted': [ONBOARDING_STAGES.CONSENT_PENDING],
   '/auth/create-profile': [ONBOARDING_STAGES.CONSENT_APPROVED],
   '/auth/sign-contract': [ONBOARDING_STAGES.PROFILE_CREATED],
@@ -120,7 +120,7 @@ export async function withOnboardingStageCheck(request: NextRequest, requiredSta
  */
 function getRedirectForStage(stage: string): string {
   const stageToPage: Record<string, string> = {
-    [ONBOARDING_STAGES.CONSENT_PENDING]: '/auth/employee-consent',
+    [ONBOARDING_STAGES.CONSENT_PENDING]: '/cleaner-pre-dashboard',
     [ONBOARDING_STAGES.CONSENT_APPROVED]: '/auth/create-profile',
     [ONBOARDING_STAGES.PROFILE_CREATED]: '/auth/sign-contract',
     [ONBOARDING_STAGES.CONTRACT_SIGNED]: '/cleaner-dashboard?training_required=true',

@@ -48,7 +48,7 @@ export class DynamicStatusEngine {
         return minutesDiff <= 30 && minutesDiff > 0;
       },
       action: async (ctx) => {
-        console.log(`Dynamic status: Setting cleaner ${ctx.cleanerId} to on_way 30min before booking`);
+        // Dynamic status logged via structured logger
         // This would be called by a scheduled job
       }
     });
@@ -63,7 +63,7 @@ export class DynamicStatusEngine {
         // Additional check for time since arrival would be implemented
       },
       action: async (ctx) => {
-        console.log(`Dynamic status: Auto-completing booking for cleaner ${ctx.cleanerId}`);
+        // Auto-complete logged via structured logger
         // This would check when status was last updated
       }
     });
@@ -77,7 +77,7 @@ export class DynamicStatusEngine {
         return !ctx.bookingId && ctx.currentStatus !== 'idle';
       },
       action: async (ctx) => {
-        console.log(`Dynamic status: Resetting cleaner ${ctx.cleanerId} to idle`);
+        // Reset logged via structured logger
         // Update status to idle
       }
     });

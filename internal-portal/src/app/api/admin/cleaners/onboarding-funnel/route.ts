@@ -13,6 +13,9 @@ export async function GET(request: NextRequest) {
 
   try {
     // Get onboarding funnel statistics
+    const totalCleaners = await db.prepare(
+      'SELECT COUNT(*) as count FROM cleaner_profiles'
+    ).first();
     const consentSigned = await db.prepare(
       'SELECT COUNT(*) as count FROM training_progress WHERE background_check_consent = 1'
     ).first();
@@ -28,6 +31,16 @@ export async function GET(request: NextRequest) {
     const trainingCompleted = await db.prepare(
       'SELECT COUNT(*) as count FROM training_progress WHERE completed = 1'
     ).first();
+    const total = (totalCleaners as any)?.count || 0;
+    const stages = [
+      { stage: 'Consent Signed', count: (consentSigned as any)?.count || 0 },
+      { stage: 'Contract Signed', count: (contractsSigned as any)?.count || 0 },
+      { stage: 'Training Started', count: (trainingStarted as any)?.count || 0 },
+      { stage: 'Training Completed', count: (trainingCompleted as any)?.count || 0 },
+    ].map((stage) => ({
+      ...stage,
+      percentage: total > 0 ? Math.round((stage.count / total) * 100) : 0,
+    }));
 
     const response = NextResponse.json({
       success: true,
@@ -35,7 +48,8 @@ export async function GET(request: NextRequest) {
         consent_signed: (consentSigned as any)?.count || 0,
         contracts_signed: (contractsSigned as any)?.count || 0,
         training_started: (trainingStarted as any)?.count || 0,
-        training_completed: (trainingCompleted as any)?.count || 0
+        training_completed: (trainingCompleted as any)?.count || 0,
+        stages
       }
     });
     response.headers.set('Cache-Control', 'private, max-age=300');

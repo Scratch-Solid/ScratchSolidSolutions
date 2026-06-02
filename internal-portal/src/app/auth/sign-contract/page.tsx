@@ -101,13 +101,15 @@ export default function SignContractPage() {
         body: JSON.stringify({ signatureDate, signatureData }),
       });
       if (res.ok) {
+        const data = await res.json() as { redirect_to?: string };
         setSigned(true);
         setTimeout(() => {
           // Redirect to dashboard
           const userRole = typeof window !== 'undefined' ? localStorage.getItem("userRole") : null;
           if (userRole === 'cleaner') {
-            // Check if training is required
-            router.push("/cleaner-dashboard?training_required=true");
+            const redirectTo = data.redirect_to || "/cleaner-pre-dashboard";
+            localStorage.setItem('cleanerRedirectTo', redirectTo === '/cleaner-dashboard?training_required=true' ? '/cleaner-pre-dashboard' : redirectTo);
+            router.push(redirectTo);
           } else if (userRole === 'digital') {
             router.push("/digital-dashboard");
           } else if (userRole === 'transport') {

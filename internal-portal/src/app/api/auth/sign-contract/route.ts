@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, updateUserOnboardingStage, createOrUpdateStaffRecord, logOnboardingTransition, logNotification } from '@/lib/db';
 import { verifyAccessToken } from '@/lib/auth';
+import { ensureCleanerTrainingProgress } from '@/lib/cleaner-training';
 import { notifyContractSigned } from '@/lib/notifications';
 import { getExperimentAssignment, trackExperimentEvent } from '@/lib/ab-testing';
 
@@ -27,6 +28,9 @@ export async function POST(request: NextRequest) {
 
     // Get user info for notification
     const user = await db.prepare('SELECT name, phone FROM users WHERE id = ?').bind(decoded.userId).first();
+    const cleanerProfile = await db.prepare(
+      'SELECT paysheet_code FROM cleaner_profiles WHERE user_id = ?'
+    ).bind(decoded.userId).first();
 
     // Capture signature metadata
     const signatureMetadata = {
@@ -40,6 +44,18 @@ export async function POST(request: NextRequest) {
 
     // Update user onboarding stage to contract_signed
     await updateUserOnboardingStage(db, decoded.userId, 'contract_signed');
+
+    if (cleanerProfile) {
+      const cleaner = cleanerProfile as { paysheet_code?: string };
+      if (cleaner.paysheet_code) {
+        await ensureCleanerTrainingProgress(db, cleaner.paysheet_code);
+        await db.prepare(
+          `UPDATE training_progress
+           SET contract_signed = 1, contract_signed_at = ?, updated_at = datetime('now')
+           WHERE employee_id = ?`
+        ).bind(signatureDate || signatureMetadata.timestamp, cleaner.paysheet_code).run();
+      }
+    }
 
     // Update staff record with contract signing info and signature metadata
     await createOrUpdateStaffRecord(db, {
@@ -147,7 +163,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ 
       success: true, 
       message: 'Contract signed successfully',
-      signatureDate 
+      signatureDate,
+      redirect_to: cleanerProfile ? '/cleaner-pre-dashboard' : '/cleaner-dashboard?training_required=true'
     });
   } catch (error) {
     console.error('Sign contract error:', error);

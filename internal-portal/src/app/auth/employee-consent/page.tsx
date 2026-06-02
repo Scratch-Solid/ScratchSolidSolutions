@@ -25,35 +25,7 @@ export default function EmployeeConsentPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Check if user has an existing contract submission
-    const checkExistingContract = async () => {
-      try {
-        const storedConsent = typeof window !== 'undefined' ? localStorage.getItem("pendingConsent") : null;
-        if (storedConsent) {
-          const consent = JSON.parse(storedConsent);
-          // Check status via API
-          const response = await fetch(
-            `/api/pending-contracts/check?contactNumber=${consent.contactNumber}&idPassportNumber=${consent.idPassportNumber}`,
-          );
-          if (response.ok) {
-            const data = (await response.json()) as { status?: string };
-            if (data.status === "rejected") {
-              setExistingStatus("rejected");
-              setError(
-                "Your previous application was rejected. Please contact administration for more information.",
-              );
-            } else if (data.status === "approved") {
-              setExistingStatus("approved");
-              // Redirect to profile creation
-              router.push("/auth/create-profile");
-            }
-          }
-        }
-      } catch (err) {
-        console.error("Error checking existing contract:", err);
-      }
-    };
-    checkExistingContract();
+    router.replace('/signup/cleaner');
   }, [router]);
 
   const handleChange = (

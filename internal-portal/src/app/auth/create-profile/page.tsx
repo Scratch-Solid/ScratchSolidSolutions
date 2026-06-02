@@ -27,7 +27,7 @@ export default function CreateProfilePage() {
   useEffect(() => {
     const pendingConsent = typeof window !== 'undefined' ? localStorage.getItem("pendingConsent") : null;
     if (!pendingConsent) {
-      router.push("/auth/employee-consent");
+      router.push("/signup/cleaner");
       return;
     }
 

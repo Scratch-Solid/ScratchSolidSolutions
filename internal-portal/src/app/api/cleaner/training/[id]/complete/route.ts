@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
+import { completeCleanerTrainingModule, ensureCleanerTrainingProgress, setCleanerOnboardingStage } from '@/lib/cleaner-training';
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { log } from '@/lib/logger';
 
@@ -34,30 +35,10 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     const cleaner = cleanerProfile as any;
 
     // Get current training progress
-    const trainingProgress = await db.prepare(
-      'SELECT * FROM training_progress WHERE employee_id = ?'
-    ).bind(cleaner.paysheet_code).first();
-
-    if (!trainingProgress) {
-      const response = NextResponse.json({
-        success: false,
-        error: {
-          code: 'NOT_FOUND',
-          message: 'Training progress not found',
-          suggestion: 'Please contact support'
-        }
-      }, { status: 404 });
-      return withSecurityHeaders(response, traceId);
-    }
-
-    const progress = trainingProgress as any;
-
-    // Parse current modules
-    const modulesCompleted = JSON.parse(progress.modules_completed || '[]');
-    const modulesPending = JSON.parse(progress.modules_pending || '[]');
+    const progress = await ensureCleanerTrainingProgress(db, cleaner.paysheet_code);
 
     // Check if module is already completed
-    if (modulesCompleted.includes(moduleId)) {
+    if (progress.modules_completed.includes(moduleId)) {
       const response = NextResponse.json({
         success: false,
         error: {
@@ -69,21 +50,8 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       return withSecurityHeaders(response, traceId);
     }
 
-    // Add module to completed list
-    modulesCompleted.push(moduleId);
-
-    // Remove from pending list if present
-    const pendingIndex = modulesPending.indexOf(moduleId);
-    if (pendingIndex > -1) {
-      modulesPending.splice(pendingIndex, 1);
-    }
-
-    // Calculate completion percentage
-    const totalModules = modulesCompleted.length + modulesPending.length;
-    const completionPercentage = totalModules > 0 ? Math.round((modulesCompleted.length / totalModules) * 100) : 0;
-
-    // Check if all modules are completed
-    const allCompleted = modulesPending.length === 0;
+    const updatedProgress = completeCleanerTrainingModule(progress, moduleId);
+    const totalModules = updatedProgress.modules_completed.length + updatedProgress.modules_pending.length;
 
     // Update training progress
     await db.prepare(
@@ -91,12 +59,15 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
        SET modules_completed = ?, modules_pending = ?, completion_percentage = ?, completed = ?, updated_at = datetime('now')
        WHERE employee_id = ?`
     ).bind(
-      JSON.stringify(modulesCompleted),
-      JSON.stringify(modulesPending),
-      completionPercentage,
-      allCompleted ? 1 : 0,
+      JSON.stringify(updatedProgress.modules_completed),
+      JSON.stringify(updatedProgress.modules_pending),
+      updatedProgress.completion_percentage,
+      updatedProgress.completed ? 1 : 0,
       cleaner.paysheet_code
     ).run();
+    if (updatedProgress.all_completed) {
+      await setCleanerOnboardingStage(db, Number(userId), 'training_completed');
+    }
 
     // Log audit event
     log.audit('TRAINING_MODULE_COMPLETED', 'cleaner', {
@@ -104,7 +75,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       userId,
       paysheetCode: cleaner.paysheet_code,
       moduleId,
-      completionPercentage
+      completionPercentage: updatedProgress.completion_percentage
     });
 
     const response = NextResponse.json({
@@ -112,11 +83,11 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       message: 'Module completed successfully',
       data: {
         module_id: moduleId,
-        completed: modulesCompleted.length,
+        completed: updatedProgress.modules_completed.length,
         total: totalModules,
-        percentage: completionPercentage,
-        all_completed: allCompleted,
-        can_transition_to_cleaner_dashboard: allCompleted
+        percentage: updatedProgress.completion_percentage,
+        all_completed: updatedProgress.all_completed,
+        can_transition_to_cleaner_dashboard: updatedProgress.all_completed
       }
     });
     return withSecurityHeaders(response, traceId);

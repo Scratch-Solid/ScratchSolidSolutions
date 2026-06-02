@@ -1,6 +1,8 @@
 // WhatsApp Gateway for Twilio Integration
 // Phase 4: WhatsApp Gateway Architecture & Integration Design
 
+import { getEnvVarOptional } from '../env';
+
 export interface WhatsAppMessage {
   from: string;
   to: string;
@@ -21,9 +23,9 @@ export class WhatsAppGateway {
   private commands: Map<string, WhatsAppCommand> = new Map();
 
   constructor() {
-    this.accountSid = process.env.TWILIO_ACCOUNT_SID || '';
-    this.authToken = process.env.TWILIO_AUTH_TOKEN || '';
-    this.whatsappNumber = process.env.TWILIO_WHATSAPP_NUMBER || '';
+    this.accountSid = getEnvVarOptional('TWILIO_ACCOUNT_SID') || '';
+    this.authToken = getEnvVarOptional('TWILIO_AUTH_TOKEN') || '';
+    this.whatsappNumber = getEnvVarOptional('TWILIO_WHATSAPP_NUMBER') || '';
     
     this.registerDefaultCommands();
   }

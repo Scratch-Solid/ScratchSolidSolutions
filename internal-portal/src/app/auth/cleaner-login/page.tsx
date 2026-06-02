@@ -27,6 +27,7 @@ export default function CleanerLogin() {
         success?: boolean;
         token?: string;
         role?: string;
+        redirect_to?: string;
         needs_password_setup?: boolean;
         requires_password_setup?: boolean;
         user?: { email?: string; paysheet_code?: string };
@@ -53,7 +54,8 @@ export default function CleanerLogin() {
         if (data.user?.email) {
           localStorage.setItem('username', data.user.email);
         }
-        router.push('/cleaner-dashboard');
+        localStorage.setItem('cleanerRedirectTo', data.redirect_to || '/cleaner-pre-dashboard');
+        router.push(data.redirect_to || '/cleaner-pre-dashboard');
       }
     } catch (err: any) {
       setError(err.message || 'Login failed');
@@ -80,7 +82,7 @@ export default function CleanerLogin() {
         body: JSON.stringify({ paysheet_code: paysheetCode, password }),
       });
 
-      const data = await response.json() as { success?: boolean; token?: string; error?: string; details?: string[] };
+      const data = await response.json() as { success?: boolean; token?: string; redirect_to?: string; data?: { redirect_to?: string }; error?: string; details?: string[] };
 
       if (!response.ok) {
         const errorMsg = data.details ? `${data.error}: ${data.details.join(', ')}` : data.error;
@@ -90,7 +92,9 @@ export default function CleanerLogin() {
       if (data.token) {
         localStorage.setItem('authToken', data.token);
         localStorage.setItem('userRole', 'cleaner');
-        router.push('/cleaner-dashboard');
+        const redirectTo = data.redirect_to || data.data?.redirect_to || '/cleaner-pre-dashboard';
+        localStorage.setItem('cleanerRedirectTo', redirectTo);
+        router.push(redirectTo);
       }
     } catch (err: any) {
       setError(err.message || 'Password setup failed');
@@ -155,7 +159,7 @@ export default function CleanerLogin() {
 
         <p className="text-center text-gray-600 mt-6">
           Want to join our team?{' '}
-          <a href="/cleaner-signup" className="text-blue-600 hover:underline">
+          <a href="/signup/cleaner" className="text-blue-600 hover:underline">
             Apply here
           </a>
         </p>

@@ -199,9 +199,8 @@ export default function AdminDashboard() {
   const handleCreateCleaner = async () => {
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
-      const generatedUsername = 'SCRATCH' + Math.random().toString(36).substring(2, 8).toUpperCase();
       
-      const response = await fetch('/api/pending-contracts', {
+      const response = await fetch('/api/admin/new-joiners/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -212,23 +211,21 @@ export default function AdminDashboard() {
           idPassportNumber: newCleanerForm.idPassportNumber,
           contactNumber: newCleanerForm.contactNumber,
           positionAppliedFor: newCleanerForm.positionAppliedFor,
-          department: 'Scratch',
-          generatedUsername,
-          applicantSignature: true,
         }),
       });
 
       if (response.ok) {
         setShowCreateCleaner(false);
         setNewCleanerForm({ fullName: '', idPassportNumber: '', contactNumber: '', positionAppliedFor: '' });
-        // Refresh new joiners list
-        const pendingContractsRes = await fetch("/api/pending-contracts", { headers: { Authorization: `Bearer ${token}` } });
-        if (pendingContractsRes.ok) {
-          setNewJoiners(await pendingContractsRes.json());
+        // Refresh new joiners list from canonical endpoint
+        const newJoinersRes = await fetch("/api/admin/new-joiners", { headers: { Authorization: `Bearer ${token}` } });
+        if (newJoinersRes.ok) {
+          const data = await newJoinersRes.json() as { data?: any[] };
+          setNewJoiners(data.data || []);
         }
       } else {
-        const errorData = await response.json() as { error?: string };
-        setError(errorData.error || 'Failed to create cleaner');
+        const errorData = await response.json() as { error?: { message?: string } };
+        setError(errorData.error?.message || 'Failed to create cleaner');
       }
     } catch (err) {
       setError('Failed to create cleaner');

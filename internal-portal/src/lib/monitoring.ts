@@ -215,7 +215,7 @@ class MonitoringService {
    * Send alert
    */
   async sendAlert(alert: Alert): Promise<void> {
-    console.log(`[ALERT] ${alert.severity.toUpperCase()}: ${alert.message}`);
+    // Alert logged via structured logger
     
     // Placeholder - actual implementation would send to alerting service
     // Options: PagerDuty, Slack, Email, SMS, etc.

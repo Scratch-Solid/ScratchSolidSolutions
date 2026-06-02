@@ -55,11 +55,19 @@ export function addSecurityHeaders(response: Response, isProduction: boolean = f
  * Get API-specific security headers (more relaxed for API endpoints)
  */
 export function getAPISecurityHeaders(): Record<string, string> {
+  const isProduction = process.env.NODE_ENV === 'production';
+  
   return {
     'X-Content-Type-Options': 'nosniff',
-    'X-Frame-Options': 'SAMEORIGIN', // Allow same origin for API
+    'X-Frame-Options': 'DENY',
     'X-XSS-Protection': '1; mode=block',
     'Referrer-Policy': 'strict-origin-when-cross-origin',
-    'Permissions-Policy': 'geolocation=(), microphone=(), camera=()'
+    'Permissions-Policy': 'geolocation=(), microphone=(), camera=()',
+    ...(isProduction && {
+      'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload'
+    }),
+    'Content-Security-Policy': isProduction
+      ? "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://api.scratchsolidsolutions.org https://portal.scratchsolidsolutions.org"
+      : "default-src 'self' *; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: http:; font-src 'self' data:; connect-src 'self' *"
   };
 }

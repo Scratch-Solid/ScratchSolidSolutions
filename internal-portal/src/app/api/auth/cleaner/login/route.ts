@@ -26,6 +26,84 @@ async function findCleanerForLogin(db: D1Database, paysheetCode: string) {
   return null;
 }
 
+async function getCleanerOnboardingStatus(db: D1Database, userId: number) {
+  const cleanerRecord = await db.prepare(
+    `SELECT
+      cp.paysheet_code,
+      tp.background_check_consent,
+      tp.contract_signed,
+      tp.completed,
+      tp.completion_percentage
+    FROM cleaner_profiles cp
+    LEFT JOIN training_progress tp ON cp.paysheet_code = tp.employee_id
+    WHERE cp.user_id = ?`
+  ).bind(userId).first();
+
+  if (!cleanerRecord) {
+    return {
+      onboarding_state: 'profile_missing',
+      redirect_to: '/cleaner-pre-dashboard',
+      next_step: 'contact_support',
+      can_transition_to_cleaner_dashboard: false,
+    };
+  }
+
+  const cleaner = cleanerRecord as {
+    background_check_consent?: number | null;
+    contract_signed?: number | null;
+    completed?: number | null;
+    completion_percentage?: number | null;
+  };
+
+  if (
+    cleaner.background_check_consent == null &&
+    cleaner.contract_signed == null &&
+    cleaner.completed == null &&
+    cleaner.completion_percentage == null
+  ) {
+    return {
+      onboarding_state: 'training_record_missing',
+      redirect_to: '/cleaner-pre-dashboard',
+      next_step: 'contact_support',
+      can_transition_to_cleaner_dashboard: false,
+    };
+  }
+
+  if (cleaner.background_check_consent !== 1) {
+    return {
+      onboarding_state: 'consent_pending',
+      redirect_to: '/cleaner-pre-dashboard',
+      next_step: 'background_check_consent',
+      can_transition_to_cleaner_dashboard: false,
+    };
+  }
+
+  if (cleaner.contract_signed !== 1) {
+    return {
+      onboarding_state: 'contract_pending',
+      redirect_to: '/cleaner-pre-dashboard',
+      next_step: 'contract_sign',
+      can_transition_to_cleaner_dashboard: false,
+    };
+  }
+
+  if (cleaner.completed !== 1) {
+    return {
+      onboarding_state: 'training_pending',
+      redirect_to: '/cleaner-pre-dashboard',
+      next_step: 'training',
+      can_transition_to_cleaner_dashboard: false,
+    };
+  }
+
+  return {
+    onboarding_state: 'active',
+    redirect_to: '/cleaner-dashboard',
+    next_step: 'complete',
+    can_transition_to_cleaner_dashboard: true,
+  };
+}
+
 export async function POST(request: NextRequest) {
   const traceId = withTracing(request);
 
@@ -132,13 +210,29 @@ export async function POST(request: NextRequest) {
       return withSecurityHeaders(response, traceId);
     }
 
+    const onboardingStatus = await getCleanerOnboardingStatus(db, Number(cleaner.user_id));
     const accessToken = generateAccessToken(Number(cleaner.user_id), String(cleaner.email), String(cleaner.role || 'cleaner'));
     const refreshToken = generateRefreshToken(Number(cleaner.user_id), crypto.randomUUID());
+
+    try {
+      await db.prepare(
+        `INSERT INTO login_activity (user_id, stage, timestamp, success, ip_address, user_agent)
+         VALUES (?, ?, datetime('now'), 1, ?, ?)`
+      ).bind(
+        cleaner.user_id,
+        onboardingStatus.redirect_to === '/cleaner-dashboard' ? 'cleaner_dashboard' : 'pre_dashboard',
+        request.headers.get('x-forwarded-for') || 'unknown',
+        request.headers.get('user-agent')?.slice(0, 200) || 'unknown'
+      ).run();
+    } catch {
+    }
 
     const response = NextResponse.json({
       success: true,
       token: accessToken,
       role: cleaner.role || 'cleaner',
+      redirect_to: onboardingStatus.redirect_to,
+      onboarding: onboardingStatus,
       user: {
         id: cleaner.user_id,
         name: cleaner.name,

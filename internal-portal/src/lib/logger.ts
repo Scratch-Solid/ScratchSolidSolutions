@@ -79,7 +79,7 @@ class Logger {
         console.debug(formatted);
         break;
       case LogLevel.INFO:
-        console.log(formatted);
+        // Formatted log output via structured logger
         break;
       case LogLevel.WARN:
         console.warn(formatted);

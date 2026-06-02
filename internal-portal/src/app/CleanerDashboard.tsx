@@ -95,7 +95,40 @@ export default function CleanerDashboard() {
     async function fetchCleanerAndTasks() {
       setLoading(true);
       try {
-        // Get username from localStorage
+        const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+        if (!token) {
+          window.location.href = '/auth/cleaner-login';
+          return;
+        }
+
+        const onboardingRes = await fetch('/api/cleaner/pre-dashboard', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!onboardingRes.ok) {
+          if (onboardingRes.status === 401) {
+            window.location.href = '/auth/cleaner-login';
+            return;
+          }
+
+          localStorage.setItem('cleanerRedirectTo', '/cleaner-pre-dashboard');
+          window.location.href = '/cleaner-pre-dashboard';
+          return;
+        }
+
+        const onboardingData = await onboardingRes.json() as {
+          data?: {
+            can_transition_to_cleaner_dashboard?: boolean;
+          };
+        };
+
+        if (onboardingData.data?.can_transition_to_cleaner_dashboard !== true) {
+          localStorage.setItem('cleanerRedirectTo', '/cleaner-pre-dashboard');
+          window.location.href = '/cleaner-pre-dashboard';
+          return;
+        }
+
+        localStorage.setItem('cleanerRedirectTo', '/cleaner-dashboard');
         const storedUsername = typeof window !== 'undefined' ? localStorage.getItem("username") : null;
         const storedUserId = typeof window !== 'undefined' ? localStorage.getItem("user_id") : null;
         if (storedUsername) {

@@ -46,6 +46,32 @@ export async function GET(request: NextRequest) {
 
     const joiners = await db.prepare(query).bind(...params).all();
 
+    // Normalize rows to camelCase shape expected by the admin frontend
+    const normalizeRow = (row: any) => {
+      const name = row.name || row.full_name || '';
+      const paysheetCode = name
+        ? `${name.toLowerCase().replace(/[^a-z]/g, '').substring(0, 3)}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`
+        : '';
+      return {
+        id: row.id,
+        fullName: name,
+        idPassportNumber: row.id_number || row.id_passport_number || '',
+        contactNumber: row.phone || row.contact_number || row.contactNumber || '',
+        email: row.email || '',
+        whatsapp: row.whatsapp || row.phone || '',
+        address: row.address || '',
+        emergencyContact: row.emergency_contact || '',
+        bankDetails: row.bank_details || null,
+        positionAppliedFor: row.position_applied_for || 'Cleaner',
+        generatedUsername: paysheetCode,
+        status: row.status,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+      };
+    };
+
+    const data = ((joiners.results || []) as any[]).map(normalizeRow);
+
     // Log audit event
     log.audit('VIEW', 'new_joiners', {
       traceId,
@@ -57,7 +83,7 @@ export async function GET(request: NextRequest) {
 
     const response = NextResponse.json({
       success: true,
-      data: joiners.results || [],
+      data,
       pagination: calculatePagination(page, limit, total)
     });
     response.headers.set('Cache-Control', 'private, max-age=60');

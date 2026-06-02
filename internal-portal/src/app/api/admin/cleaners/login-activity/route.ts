@@ -13,6 +13,13 @@ export async function GET(request: NextRequest) {
 
   try {
     // Get login activity statistics
+    const dailyLoginsResult = await db.prepare(
+      `SELECT DATE(timestamp) as date, COUNT(*) as count
+       FROM login_activity
+       WHERE success = 1 AND DATE(timestamp) >= DATE('now', '-6 day')
+       GROUP BY DATE(timestamp)
+       ORDER BY DATE(timestamp) ASC`
+    ).all();
     const preDashboardLogins = await db.prepare(
       "SELECT COUNT(*) as count FROM login_activity WHERE stage = 'pre_dashboard' AND success = 1"
     ).first();
@@ -24,13 +31,18 @@ export async function GET(request: NextRequest) {
     const failedLogins = await db.prepare(
       'SELECT COUNT(*) as count FROM login_activity WHERE success = 0'
     ).first();
+    const dailyLogins = ((dailyLoginsResult.results || []) as Array<Record<string, unknown>>).map((day) => ({
+      date: String(day.date || ''),
+      count: Number(day.count || 0),
+    }));
 
     const response = NextResponse.json({
       success: true,
       data: {
         pre_dashboard_logins: (preDashboardLogins as any)?.count || 0,
         cleaner_dashboard_logins: (cleanerDashboardLogins as any)?.count || 0,
-        failed_logins: (failedLogins as any)?.count || 0
+        failed_logins: (failedLogins as any)?.count || 0,
+        daily_logins: dailyLogins
       }
     });
     response.headers.set('Cache-Control', 'private, max-age=300');

@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
+import { buildCleanerTrainingModules, ensureCleanerTrainingProgress } from '@/lib/cleaner-training';
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { log } from '@/lib/logger';
 
@@ -32,75 +33,15 @@ export async function GET(request: NextRequest) {
     const cleaner = cleanerProfile as any;
 
     // Get training progress
-    const trainingProgress = await db.prepare(
-      'SELECT * FROM training_progress WHERE employee_id = ?'
-    ).bind(cleaner.paysheet_code).first();
-
-    if (!trainingProgress) {
-      const response = NextResponse.json({
-        success: false,
-        error: {
-          code: 'NOT_FOUND',
-          message: 'Training progress not found',
-          suggestion: 'Please contact support'
-        }
-      }, { status: 404 });
-      return withSecurityHeaders(response, traceId);
-    }
-
-    const progress = trainingProgress as any;
-
-    // Parse JSON fields
-    const modulesCompleted = JSON.parse(progress.modules_completed || '[]');
-    const modulesPending = JSON.parse(progress.modules_pending || '[]');
-
-    // Get training modules from the training database
-    // TODO: Connect to training database and fetch actual modules
-    // For now, return placeholder modules
-    const trainingModules = [
-      {
-        id: 'module-1',
-        title: 'Introduction to Cleaning Services',
-        description: 'Learn about our cleaning standards and procedures',
-        duration: '30 minutes',
-        completed: modulesCompleted.includes('module-1')
-      },
-      {
-        id: 'module-2',
-        title: 'Safety Protocols',
-        description: 'Essential safety guidelines and procedures',
-        duration: '45 minutes',
-        completed: modulesCompleted.includes('module-2')
-      },
-      {
-        id: 'module-3',
-        title: 'Customer Service Excellence',
-        description: 'How to provide exceptional customer service',
-        duration: '40 minutes',
-        completed: modulesCompleted.includes('module-3')
-      },
-      {
-        id: 'module-4',
-        title: 'Equipment Handling',
-        description: 'Proper use and maintenance of cleaning equipment',
-        duration: '35 minutes',
-        completed: modulesCompleted.includes('module-4')
-      },
-      {
-        id: 'module-5',
-        title: 'Chemical Safety',
-        description: 'Safe handling of cleaning chemicals',
-        duration: '30 minutes',
-        completed: modulesCompleted.includes('module-5')
-      }
-    ];
+    const progress = await ensureCleanerTrainingProgress(db, cleaner.paysheet_code);
+    const trainingModules = buildCleanerTrainingModules(progress);
 
     const response = NextResponse.json({
       success: true,
       data: {
         modules: trainingModules,
         progress: {
-          completed: modulesCompleted.length,
+          completed: progress.modules_completed.length,
           total: trainingModules.length,
           percentage: progress.completion_percentage
         }

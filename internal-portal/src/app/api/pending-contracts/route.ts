@@ -254,8 +254,14 @@ export async function PUT(request: NextRequest) {
         }
       }
 
-      // @ts-ignore
-      await logAuditEvent(db, (user as any).id, 'approve_contract', 'pending_contract', parseInt(id), JSON.stringify({ contract_id: id }), request.headers.get('x-forwarded-for') || '');
+      await logAuditEvent(db, {
+        user_id: (user as any).id,
+        action: 'approve_contract',
+        resource: 'pending_contract',
+        resource_id: String(id),
+        details: JSON.stringify({ contract_id: id }),
+        ip_address: request.headers.get('x-forwarded-for') || ''
+      });
       return NextResponse.json(updated);
     }
 
@@ -309,8 +315,14 @@ export async function PUT(request: NextRequest) {
         }
       }
 
-      // @ts-ignore
-      await logAuditEvent(db, (user as any).id, 'reject_contract', 'pending_contract', parseInt(id), JSON.stringify({ contract_id: id, rejection_reason: sanitizedData.rejection_reason }), request.headers.get('x-forwarded-for') || '');
+      await logAuditEvent(db, {
+        user_id: (user as any).id,
+        action: 'reject_contract',
+        resource: 'pending_contract',
+        resource_id: String(id),
+        details: JSON.stringify({ contract_id: id, rejection_reason: sanitizedData.rejection_reason }),
+        ip_address: request.headers.get('x-forwarded-for') || ''
+      });
 
       const updated = await db.prepare('SELECT * FROM pending_contracts WHERE id = ?').bind(parseInt(id)).first();
       return NextResponse.json(updated);
@@ -318,8 +330,14 @@ export async function PUT(request: NextRequest) {
 
     const updated = await updatePendingContractStatus(db, parseInt(id), sanitizedData.status);
     if (updated) {
-      // @ts-ignore
-      await logAuditEvent(db, (user as any).id, 'update_contract_status', 'pending_contract', parseInt(id), JSON.stringify({ contract_id: id, status: sanitizedData.status }), request.headers.get('x-forwarded-for') || '');
+      await logAuditEvent(db, {
+        user_id: (user as any).id,
+        action: 'update_contract_status',
+        resource: 'pending_contract',
+        resource_id: String(id),
+        details: JSON.stringify({ contract_id: id, status: sanitizedData.status }),
+        ip_address: request.headers.get('x-forwarded-for') || ''
+      });
       return NextResponse.json(updated);
     }
   }
@@ -339,8 +357,14 @@ export async function DELETE(request: NextRequest) {
   const id = searchParams.get("id");
   if (id) {
     await deletePendingContract(db, parseInt(id));
-    // @ts-ignore
-    await logAuditEvent(db, (user as any).id, 'delete_contract', 'pending_contract', parseInt(id), JSON.stringify({ contract_id: id }), request.headers.get('x-forwarded-for') || '');
+    await logAuditEvent(db, {
+      user_id: (user as any).id,
+      action: 'delete_contract',
+      resource: 'pending_contract',
+      resource_id: String(id),
+      details: JSON.stringify({ contract_id: id }),
+      ip_address: request.headers.get('x-forwarded-for') || ''
+    });
     return NextResponse.json({ success: true });
   }
   return withSecurityHeaders(NextResponse.json({ error: "ID required" }, { status: 400 }), traceId);

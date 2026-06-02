@@ -87,12 +87,39 @@ export async function POST(request: NextRequest) {
       ).bind(passwordHash, cleaner.user_id).run();
     }
 
+    const onboardingRecord = await db.prepare(
+      `SELECT background_check_consent, contract_signed, completed
+       FROM training_progress
+       WHERE employee_id = ?`
+    ).bind(cleaner.paysheet_code).first() as {
+      background_check_consent?: number | null;
+      contract_signed?: number | null;
+      completed?: number | null;
+    } | null;
+
+    let redirectTo: '/cleaner-pre-dashboard' | '/cleaner-dashboard' = '/cleaner-pre-dashboard';
+    let onboardingState = 'training_record_missing';
+
+    if (onboardingRecord) {
+      if (onboardingRecord.background_check_consent !== 1) {
+        onboardingState = 'consent_pending';
+      } else if (onboardingRecord.contract_signed !== 1) {
+        onboardingState = 'contract_pending';
+      } else if (onboardingRecord.completed !== 1) {
+        onboardingState = 'training_pending';
+      } else {
+        onboardingState = 'active';
+        redirectTo = '/cleaner-dashboard';
+      }
+    }
+
     // Log login activity
     await db.prepare(
       `INSERT INTO login_activity (user_id, stage, timestamp, success, ip_address, user_agent)
-       VALUES (?, 'pre_dashboard', datetime('now'), 1, ?, ?)`
+       VALUES (?, ?, datetime('now'), 1, ?, ?)`
     ).bind(
       cleaner.user_id,
+      redirectTo === '/cleaner-dashboard' ? 'cleaner_dashboard' : 'pre_dashboard',
       request.headers.get('x-forwarded-for') || 'unknown',
       request.headers.get('user-agent')?.slice(0, 200) || 'unknown'
     ).run();
@@ -111,7 +138,13 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json({
       success: true,
       token,
+      redirect_to: redirectTo,
       message: 'Password set successfully',
+      onboarding: {
+        onboarding_state: onboardingState,
+        redirect_to: redirectTo,
+        can_transition_to_cleaner_dashboard: redirectTo === '/cleaner-dashboard'
+      },
       data: {
         token,
         user: {
@@ -121,7 +154,7 @@ export async function POST(request: NextRequest) {
           role: cleaner.role,
           paysheet_code: cleaner.paysheet_code
         },
-        redirect_to: '/dashboard/cleaner/pre'
+        redirect_to: redirectTo
       }
     });
     setAuthCookies(response, token, refreshToken);

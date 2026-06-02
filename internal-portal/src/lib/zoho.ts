@@ -1,7 +1,9 @@
-const ZOHO_ORG_ID = process.env.ZOHO_ORG_ID || '';
-const ZOHO_CLIENT_ID = process.env.ZOHO_CLIENT_ID || '';
-const ZOHO_CLIENT_SECRET = process.env.ZOHO_CLIENT_SECRET || '';
-const ZOHO_REFRESH_TOKEN = process.env.ZOHO_REFRESH_TOKEN || '';
+import { getEnvVarOptional } from './env';
+
+const ZOHO_ORG_ID = getEnvVarOptional('ZOHO_ORG_ID') || '';
+const ZOHO_CLIENT_ID = getEnvVarOptional('ZOHO_CLIENT_ID') || '';
+const ZOHO_CLIENT_SECRET = getEnvVarOptional('ZOHO_CLIENT_SECRET') || '';
+const ZOHO_REFRESH_TOKEN = getEnvVarOptional('ZOHO_REFRESH_TOKEN') || '';
 let accessToken = '';
 let tokenExpiry = 0;
 

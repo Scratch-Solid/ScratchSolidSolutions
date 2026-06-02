@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
 
 function getRedirectForStage(stage: string): string {
   const stageToPage: Record<string, string> = {
-    [ONBOARDING_STAGES.CONSENT_PENDING]: '/auth/employee-consent',
+    [ONBOARDING_STAGES.CONSENT_PENDING]: '/cleaner-pre-dashboard',
     [ONBOARDING_STAGES.CONSENT_APPROVED]: '/auth/create-profile',
     [ONBOARDING_STAGES.PROFILE_CREATED]: '/auth/sign-contract',
     [ONBOARDING_STAGES.CONTRACT_SIGNED]: '/cleaner-dashboard?training_required=true',

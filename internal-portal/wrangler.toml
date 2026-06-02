@@ -1,0 +1,67 @@
+name = "cleaning-service-backend"
+main = "src/index.ts"
+compatibility_date = "2026-05-20"
+compatibility_flags = ["nodejs_compat"]
+
+# Deploy trigger: Update to apply new scratchsolid-backend-db configuration
+
+[triggers]
+crons = ["0 0 * * *"]
+
+# Global Bindings (Production / Base)
+[[d1_databases]]
+binding = "scratchsolid_db"
+database_name = "scratchsolid-backend-db"
+database_id = "2a0b1e08-443e-46c4-8184-86ea180d4024"
+
+[[kv_namespaces]]
+binding = "RATE_LIMIT_KV"
+id = "899aa84ac7854b59b17c3058d2926170"
+
+[[r2_buckets]]
+binding = "UPLOADS_BUCKET"
+bucket_name = "backend-uploads"
+
+[vars]
+ENVIRONMENT = "production"
+NEXT_PUBLIC_BASE_URL = "https://scratchsolidsolutions.org"
+NEXT_PUBLIC_API_URL = "https://api.scratchsolidsolutions.org/api"
+
+[[routes]]
+pattern = "api.scratchsolidsolutions.org/*"
+zone_name = "scratchsolidsolutions.org"
+
+# Staging environment configuration
+[env.staging]
+name = "cleaning-service-backend-staging"
+
+[[env.staging.d1_databases]]
+binding = "scratchsolid_db"
+database_name = "scratchsolid-db-backend-staging"
+database_id = "67e66542-486a-442b-bbf6-9c3d4a503f4c"
+
+[[env.staging.kv_namespaces]]
+binding = "RATE_LIMIT_KV"
+id = "f077cd7dd76843e680853ffe41bdbdaa"
+
+[[env.staging.r2_buckets]]
+binding = "UPLOADS_BUCKET"
+bucket_name = "backend-uploads-staging"
+
+[env.staging.vars]
+ENVIRONMENT = "staging"
+NEXT_PUBLIC_BASE_URL = "https://staging.scratchsolidsolutions.org"
+NEXT_PUBLIC_API_URL = "https://api-staging.scratchsolidsolutions.org/api"
+
+[[env.staging.routes]]
+pattern = "api-staging.scratchsolidsolutions.org/*"
+zone_name = "scratchsolidsolutions.org"
+
+# Secrets (must be set via: wrangler secret put <SECRET_NAME>)
+# Required secrets:
+# - JWT_SECRET
+# - CSRF_SECRET
+# - RESEND_API_KEY
+# - ZOHO_CLIENT_SECRET
+# - ZOHO_ORG_ID
+# - ZOHO_REFRESH_TOKEN

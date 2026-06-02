@@ -32,7 +32,7 @@ function LoginContent() {
         body: JSON.stringify({ identifier: username, password })
       });
 
-      const data = await res.json() as { token?: string; role?: string; username?: string; user_id?: string; paysheet_code?: string; error?: string; mustChangePassword?: boolean };
+      const data = await res.json() as { token?: string; role?: string; username?: string; user_id?: string; paysheet_code?: string; redirect_to?: string; error?: string; mustChangePassword?: boolean };
       if (!res.ok) {
         setError(data.error || 'Login failed');
         return;
@@ -54,7 +54,8 @@ function LoginContent() {
         router.push("/admin-dashboard");
       } else if (data.role === 'cleaner') {
         localStorage.setItem("paysheetCode", data.paysheet_code || username);
-        router.push("/cleaner-dashboard");
+        localStorage.setItem("cleanerRedirectTo", data.redirect_to || "/cleaner-pre-dashboard");
+        router.push(data.redirect_to || "/cleaner-pre-dashboard");
       } else if (data.role === 'digital') {
         localStorage.setItem("paysheetCode", data.paysheet_code || username);
         router.push("/digital-dashboard");
@@ -145,7 +146,7 @@ function LoginContent() {
         </div>
         <button
           type="button"
-          onClick={() => router.push("/auth/employee-consent")}
+          onClick={() => router.push("/signup/cleaner")}
           className="w-full mt-6 secondary-button"
         >
           Become part of the Team

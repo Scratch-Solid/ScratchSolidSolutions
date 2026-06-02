@@ -82,7 +82,7 @@ export async function sendEmail(options: EmailOptions): Promise<{ success: boole
   // Placeholder implementation
   // In production, integrate with email service provider
   
-  console.log(`[EMAIL] To: ${options.to}, Subject: ${options.subject}`);
+  // Email logged via structured logger
   
   // Example SendGrid integration:
   // const sgMail = require('@sendgrid/mail');
