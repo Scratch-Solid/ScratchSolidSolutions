@@ -1,0 +1,160 @@
+version: "3.8"
+
+services:
+  backend:
+    image: frappe/erpnext:v15.30.0
+    deploy:
+      restart_policy:
+        condition: on-failure
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+      - logs:/home/frappe/frappe-bench/logs
+    environment:
+      DB_HOST: db
+      DB_PORT: "3306"
+      REDIS_CACHE: redis://redis-cache:6379/0
+      REDIS_QUEUE: redis://redis-queue:6379/0
+      REDIS_SOCKETIO: redis://redis-socketio:6379/0
+      SOCKETIO_PORT: "9000"
+    networks:
+      - erpnext-network
+
+  frontend:
+    image: frappe/erpnext:v15.30.0
+    deploy:
+      restart_policy:
+        condition: on-failure
+    command: nginx-entrypoint
+    environment:
+      BACKEND: backend:8000
+      FRAPPE_SITE_NAME_HEADER: scratchsolid.local
+      SOCKETIO: websocket:9000
+      UPSTREAM_REAL_IP_ADDRESS: 127.0.0.1
+      UPSTREAM_REAL_IP_HEADER: X-Forwarded-For
+      UPSTREAM_REAL_IP_RECURSIVE: "off"
+    ports:
+      - "8080:8080"
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites:ro
+    networks:
+      - erpnext-network
+    depends_on:
+      - backend
+      - websocket
+
+  websocket:
+    image: frappe/erpnext:v15.30.0
+    deploy:
+      restart_policy:
+        condition: on-failure
+    command: node /home/frappe/frappe-bench/apps/frappe/socketio.js
+    networks:
+      - erpnext-network
+
+  queue-default:
+    image: frappe/erpnext:v15.30.0
+    deploy:
+      restart_policy:
+        condition: on-failure
+    command: bench worker --queue default
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+      - logs:/home/frappe/frappe-bench/logs
+    networks:
+      - erpnext-network
+
+  queue-short:
+    image: frappe/erpnext:v15.30.0
+    deploy:
+      restart_policy:
+        condition: on-failure
+    command: bench worker --queue short
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+      - logs:/home/frappe/frappe-bench/logs
+    networks:
+      - erpnext-network
+
+  queue-long:
+    image: frappe/erpnext:v15.30.0
+    deploy:
+      restart_policy:
+        condition: on-failure
+    command: bench worker --queue long
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+      - logs:/home/frappe/frappe-bench/logs
+    networks:
+      - erpnext-network
+
+  scheduler:
+    image: frappe/erpnext:v15.30.0
+    deploy:
+      restart_policy:
+        condition: on-failure
+    command: bench schedule
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+      - logs:/home/frappe/frappe-bench/logs
+    networks:
+      - erpnext-network
+
+  db:
+    image: mariadb:10.6
+    deploy:
+      restart_policy:
+        condition: on-failure
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --skip-character-set-client-handshake
+      - --skip-innodb-read-only-compressed
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    volumes:
+      - db-data:/var/lib/mysql
+    networks:
+      - erpnext-network
+
+  redis-cache:
+    image: redis:7-alpine
+    deploy:
+      restart_policy:
+        condition: on-failure
+    volumes:
+      - redis-cache-data:/data
+    networks:
+      - erpnext-network
+
+  redis-queue:
+    image: redis:7-alpine
+    deploy:
+      restart_policy:
+        condition: on-failure
+    volumes:
+      - redis-queue-data:/data
+    networks:
+      - erpnext-network
+
+  redis-socketio:
+    image: redis:7-alpine
+    deploy:
+      restart_policy:
+        condition: on-failure
+    volumes:
+      - redis-socketio-data:/data
+    networks:
+      - erpnext-network
+
+volumes:
+  sites:
+  logs:
+  db-data:
+  redis-cache-data:
+  redis-queue-data:
+  redis-socketio-data:
+
+networks:
+  erpnext-network:
+    driver: bridge

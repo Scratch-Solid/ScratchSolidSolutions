@@ -76,81 +76,121 @@ function LoginContent() {
   };
 
   return (
-    <div className="center-container px-4">
-      <div className="glass-panel max-w-md w-full p-8" style={{ boxShadow: '0 16px 40px rgba(9,23,42,0.12)' }}>
-        <div className="text-center mb-8 flex flex-col items-center gap-3">
-          <img src="/logo-scratch-solid.png" alt="Scratch Solid" style={{ width: 96, height: 96, objectFit: 'contain' }} />
-          <div>
-            <h1 className="text-3xl font-bold mb-1" style={{ color: 'var(--text-h)' }}>Internal Portal</h1>
-            <p className="text-base font-medium" style={{ color: 'var(--text)' }}>Welcome back</p>
-          </div>
+    <div className="min-h-screen flex items-center justify-center px-4 py-8" style={{ background: 'linear-gradient(135deg, #f0f4f8 0%, #e6eef7 100%)' }}>
+      <div className="max-w-5xl w-full">
+        {/* Header */}
+        <div className="text-center mb-10">
+          <img src="/logo-scratch-solid.png" alt="Scratch Solid" className="mx-auto mb-4" style={{ width: 80, height: 80, objectFit: 'contain' }} />
+          <h1 className="text-3xl font-bold mb-1" style={{ color: 'var(--text-h)' }}>Internal Portal</h1>
+          <p className="text-base font-medium" style={{ color: 'var(--text)' }}>Your gateway to Scratch Solid Solutions</p>
         </div>
+
         {error && (
-          <div className="error-msg text-center font-semibold mb-6">
+          <div className="error-msg text-center font-semibold mb-6 max-w-md mx-auto">
             {error}
           </div>
         )}
         {successMessage && (
-          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6 text-center">
+          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6 text-center max-w-md mx-auto">
             {successMessage}
           </div>
         )}
-        <form onSubmit={handleLogin} className="space-y-5">
-          <div>
-            <label htmlFor="username" className="block text-sm font-semibold mb-2">
-              Username (Paysheet Code or Email)
-            </label>
-            <input
-              type="text"
-              id="username"
-              name="username"
-              autoComplete="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full"
-              required
-              placeholder="Enter paysheet code or email"
-            />
+
+        {/* Two-column layout */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Left: Staff Login */}
+          <div className="glass-panel p-8" style={{ boxShadow: '0 16px 40px rgba(9,23,42,0.12)' }}>
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold mb-1" style={{ color: 'var(--text-h)' }}>Staff Login</h2>
+              <p className="text-sm" style={{ color: 'var(--text)' }}>For existing employees, admins, and managers</p>
+            </div>
+            <form onSubmit={handleLogin} className="space-y-5">
+              <div>
+                <label htmlFor="username" className="block text-sm font-semibold mb-2">
+                  Username (Paysheet Code or Email)
+                </label>
+                <input
+                  type="text"
+                  id="username"
+                  name="username"
+                  autoComplete="username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="w-full"
+                  required
+                  placeholder="Enter paysheet code or email"
+                />
+              </div>
+              <div>
+                <label htmlFor="password" className="block text-sm font-semibold mb-2">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  id="password"
+                  name="password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full"
+                  required
+                  placeholder="Enter password"
+                />
+              </div>
+              <button
+                type="submit"
+                className="w-full primary-button"
+                disabled={loading}
+              >
+                {loading ? 'Signing in...' : 'Login'}
+              </button>
+            </form>
+            <div className="mt-4 text-center">
+              <button
+                type="button"
+                onClick={() => router.push("/auth/forgot-password")}
+                className="text-sm underline hover:text-blue-600"
+              >
+                Forgot Password?
+              </button>
+            </div>
           </div>
-          <div>
-            <label htmlFor="password" className="block text-sm font-semibold mb-2">
-              Password
-            </label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full"
-              required
-              placeholder="Enter password"
-            />
+
+          {/* Right: Become part of the team */}
+          <div className="glass-panel p-8 flex flex-col justify-between" style={{ boxShadow: '0 16px 40px rgba(9,23,42,0.12)', background: 'linear-gradient(160deg, #ffffff 0%, #f8fbff 100%)' }}>
+            <div>
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold mb-1" style={{ color: 'var(--text-h)' }}>Become part of the team</h2>
+                <p className="text-sm" style={{ color: 'var(--text)' }}>Join Scratch Solid Solutions as a cleaner</p>
+              </div>
+              <ul className="space-y-3 mb-8 text-sm" style={{ color: 'var(--text)' }}>
+                <li className="flex items-start gap-2">
+                  <span className="text-green-500 font-bold">&#10003;</span>
+                  <span>Competitive pay with weekly payslips</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-green-500 font-bold">&#10003;</span>
+                  <span>Flexible scheduling around your availability</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-green-500 font-bold">&#10003;</span>
+                  <span>Full training and onboarding support</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-green-500 font-bold">&#10003;</span>
+                  <span>Growth opportunities and bonuses</span>
+                </li>
+              </ul>
+            </div>
+            <button
+              type="button"
+              onClick={() => router.push("/signup/cleaner")}
+              className="w-full secondary-button"
+            >
+              Apply Now
+            </button>
           </div>
-          <button
-            type="submit"
-            className="w-full primary-button"
-          >
-            Login
-          </button>
-        </form>
-        <div className="mt-4 text-center">
-          <button
-            type="button"
-            onClick={() => router.push("/auth/forgot-password")}
-            className="text-sm underline hover:text-blue-600"
-          >
-            Forgot Password?
-          </button>
         </div>
-        <button
-          type="button"
-          onClick={() => router.push("/signup/cleaner")}
-          className="w-full mt-6 secondary-button"
-        >
-          Become part of the Team
-        </button>
       </div>
     </div>
   );

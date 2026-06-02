@@ -1,36 +1,59 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuth } from '@/lib/middleware';
-import { shouldPurge } from '@/lib/data-retention';
+import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
+import { cleanupExpiredData } from '@/lib/data-retention';
+import { log } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
+  const traceId = withTracing(request);
   const authResult = await withAuth(request, ['admin']);
-  if (authResult instanceof NextResponse) return authResult;
+  if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
+  const userId = authResult.user?.id;
 
   try {
-    const { results: oldSessions } = await db.prepare('SELECT id, created_at FROM sessions WHERE created_at < datetime("now", "-30 days")').all() as any;
-    let purged = 0;
-    for (const session of (oldSessions || [])) {
-      if (shouldPurge(session.created_at, 'sessions')) {
-        await db.prepare('DELETE FROM sessions WHERE id = ?').bind(session.id).run();
-        purged++;
-      }
+    const result = await cleanupExpiredData(db);
+
+    log.audit('DATA_RETENTION_CLEANUP', 'admin', {
+      traceId,
+      userId,
+      deleted: result.deleted,
+      errors: result.errors,
+    });
+
+    if (result.errors.length > 0) {
+      const response = NextResponse.json({
+        success: false,
+        error: {
+          code: 'PARTIAL_CLEANUP',
+          message: 'Some cleanup operations failed',
+          details: { errors: result.errors },
+          suggestion: 'Review the errors and retry if necessary'
+        }
+      }, { status: 207 });
+      return withSecurityHeaders(response, traceId);
     }
 
-    const { results: deletedUsers } = await db.prepare('SELECT id, soft_delete_at FROM users WHERE deleted = 1 AND soft_delete_at < datetime("now", "-30 days")').all() as any;
-    let hardDeleted = 0;
-    for (const user of (deletedUsers || [])) {
-      if (shouldPurge(user.soft_delete_at, 'soft_deleted_users')) {
-        await db.prepare('DELETE FROM users WHERE id = ?').bind(user.id).run();
-        await db.prepare('DELETE FROM cleaner_profiles WHERE user_id = ?').bind(user.id).run();
-        await db.prepare('DELETE FROM business_profiles WHERE user_id = ?').bind(user.id).run();
-        hardDeleted++;
+    const response = NextResponse.json({
+      success: true,
+      data: {
+        deleted: result.deleted,
+        message: 'Data retention cleanup completed successfully'
       }
-    }
-
-    return NextResponse.json({ purged_sessions: purged, hard_deleted_users: hardDeleted });
+    });
+    return withSecurityHeaders(response, traceId);
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to cleanup' }, { status: 500 });
+    log.error('Data retention cleanup failed', error instanceof Error ? error : new Error(String(error)), { traceId, userId });
+
+    const response = NextResponse.json({
+      success: false,
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'Failed to run data retention cleanup',
+        details: { error: error instanceof Error ? error.message : 'Unknown error' },
+        suggestion: 'Please try again later or contact support'
+      }
+    }, { status: 500 });
+    return withSecurityHeaders(response, traceId);
   }
 }

@@ -632,6 +632,13 @@ export default function CleanerDashboard() {
           Geolocation
         </button>
         <button
+          onClick={() => setActiveTile("shifts")}
+          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTile === "shifts" ? "bg-white/20" : "bg-white/10 hover:bg-white/15"}`}
+          style={{ color: activeTile === "shifts" ? '#09172a' : '#0e223a' }}
+        >
+          Shifts
+        </button>
+        <button
           onClick={() => setActiveTile("payslips")}
           className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTile === "payslips" ? "bg-white/20" : "bg-white/10 hover:bg-white/15"}`}
           style={{ color: activeTile === "payslips" ? '#09172a' : '#0e223a' }}
@@ -1265,6 +1272,48 @@ export default function CleanerDashboard() {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {activeTile === "shifts" && (
+        <div className="glass-card p-6">
+          <h3 className="font-bold text-lg mb-4" style={{ color: 'var(--text-h)' }}>Upcoming Shifts</h3>
+          {upcomingShifts.length === 0 ? (
+            <div className="text-center py-8" style={{ color: 'var(--text-light)' }}>
+              No upcoming shifts scheduled.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {upcomingShifts.map((shift: any) => (
+                <div key={shift.id} className="bg-white/5 rounded-lg p-4" style={{ borderColor: 'var(--border)' }}>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <div className="font-semibold" style={{ color: 'var(--text-h)' }}>
+                        {shift.client_name || shift.location || 'Assignment'}
+                      </div>
+                      <div className="text-sm" style={{ color: 'var(--text-light)' }}>
+                        {shift.shift_date || shift.date || new Date().toLocaleDateString()} &bull; {shift.time_slot || shift.time || 'TBD'}
+                      </div>
+                      {shift.address && (
+                        <div className="text-sm mt-1" style={{ color: 'var(--text-light)' }}>
+                          {shift.address}
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <span className={`badge ${
+                        shift.status === 'confirmed' ? 'badge-success' :
+                        shift.status === 'pending' ? 'badge-warning' :
+                        'badge-info'
+                      }`}>
+                        {shift.status || 'Scheduled'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

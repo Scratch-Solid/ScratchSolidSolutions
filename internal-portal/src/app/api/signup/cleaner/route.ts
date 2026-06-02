@@ -5,20 +5,8 @@ import { createSignupSignatureReference } from '@/lib/cleaner-integrations';
 import { withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { validateEmail, validatePhone, validateSaIdNumber, validateSaPassport, sanitizeInput } from '@/lib/validation';
 import { log } from '@/lib/logger';
-import crypto from 'crypto';
-
-// Simple encryption function for sensitive data (POPIA compliance)
-// In production, use proper encryption like AES-256-GCM with Cloudflare Workers secrets
-function encryptData(data: string): string {
-  const algorithm = 'aes-256-cbc';
-  const key = crypto.randomBytes(32);
-  const iv = crypto.randomBytes(16);
-  const cipher = crypto.createCipheriv(algorithm, key, iv);
-  let encrypted = cipher.update(data, 'utf8', 'hex');
-  encrypted += cipher.final('hex');
-  // For now, return base64 of iv + encrypted (key should be stored securely)
-  return Buffer.concat([iv, Buffer.from(encrypted, 'hex')]).toString('base64');
-}
+import { encryptField } from '@/lib/encryption';
+import { getEnvVarOptional } from '@/lib/env';
 
 export async function POST(request: NextRequest) {
   const traceId = withTracing(request);
@@ -188,8 +176,12 @@ export async function POST(request: NextRequest) {
     const sanitizedWhatsapp = whatsapp ? sanitizeInput(whatsapp) : phone;
 
     // Encrypt sensitive data (POPIA compliance)
-    const encryptedIdNumber = encryptData(id_number);
-    const encryptedBankDetails = encryptData(sanitizedBankDetails);
+    const encryptionKey = getEnvVarOptional('ENCRYPTION_KEY');
+    if (!encryptionKey) {
+      log.error('ENCRYPTION_KEY not configured', new Error('Missing ENCRYPTION_KEY'), { traceId });
+    }
+    const encryptedIdNumber = encryptionKey ? encryptField(id_number, encryptionKey) : id_number;
+    const encryptedBankDetails = encryptionKey ? encryptField(sanitizedBankDetails, encryptionKey) : sanitizedBankDetails;
 
     // TODO: Integrate with DocuSign for e-signature
     // For now, generate a placeholder signature ID

@@ -7,11 +7,36 @@ import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { log } from '@/lib/logger';
 import crypto from 'crypto';
 
-// Generate paysheet code (username) from name
-function generatePaysheetCode(name: string): string {
-  const normalized = name.toLowerCase().replace(/[^a-z]/g, '');
-  const randomSuffix = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-  return `${normalized.substring(0, 3)}${randomSuffix}`;
+// Generate paysheet code from first name per spec: abcX#####
+// Format: first 3 letters of first name (lowercase) + random uppercase letter + 4-6 random digits
+function generatePaysheetCode(firstName: string): string {
+  const normalized = firstName.toLowerCase().replace(/[^a-z]/g, '').substring(0, 3);
+  const randomUpper = String.fromCharCode(65 + Math.floor(Math.random() * 26)); // A-Z
+  const randomDigits = Math.floor(Math.random() * 900000 + 100000).toString(); // 100000-999999
+  return `${normalized}${randomUpper}${randomDigits}`;
+}
+
+async function generateUniquePaysheetCode(db: D1Database, name: string): Promise<string> {
+  const firstName = name.split(' ')[0] || name;
+  let attempts = 0;
+  const maxAttempts = 5;
+
+  while (attempts < maxAttempts) {
+    const code = generatePaysheetCode(firstName);
+    const existing = await db.prepare(
+      'SELECT 1 FROM cleaner_profiles WHERE paysheet_code = ? LIMIT 1'
+    ).bind(code).first();
+    if (!existing) {
+      return code;
+    }
+    attempts++;
+  }
+
+  // Fallback: append timestamp suffix if all retries collided
+  const fallbackSuffix = Date.now().toString().slice(-4);
+  const firstNameBase = firstName.toLowerCase().replace(/[^a-z]/g, '').substring(0, 3);
+  const randomUpper = String.fromCharCode(65 + Math.floor(Math.random() * 26));
+  return `${firstNameBase}${randomUpper}${fallbackSuffix}`;
 }
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
@@ -43,8 +68,8 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
     const joinerData = joiner as any;
 
-    // Generate paysheet code
-    const paysheetCode = generatePaysheetCode(joinerData.name);
+    // Generate paysheet code (unique, with collision retry)
+    const paysheetCode = await generateUniquePaysheetCode(db, joinerData.name);
 
     // Create user account
     const tempPassword = crypto.randomBytes(12).toString('hex');

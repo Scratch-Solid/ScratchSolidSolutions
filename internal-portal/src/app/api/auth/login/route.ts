@@ -14,7 +14,7 @@ import {
   createSecurityError,
   createRateLimitError
 } from '@/lib/security-middleware';
-import { recordFailedAttempt, isUserLockedOut, clearFailedAttempts } from '@/lib/auth';
+import { recordFailedAttempt, isUserLockedOut, clearFailedAttempts, isAdminEmailDomain } from '@/lib/auth';
 import { generateAccessToken, generateRefreshToken, setAuthCookies } from '@/lib/session';
 import crypto from 'crypto';
 
@@ -227,10 +227,28 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Admin routing: explicit admin role OR admin email domain
+    const resolvedRole = user.role === 'admin' || isAdminEmailDomain(user.email) ? 'admin' : user.role;
+    if (resolvedRole === 'admin') {
+      redirectTo = '/admin-dashboard';
+      try {
+        await db.prepare(
+          `INSERT INTO login_activity (user_id, stage, timestamp, success, ip_address, user_agent)
+           VALUES (?, ?, datetime('now'), 1, ?, ?)`
+        ).bind(
+          user.id,
+          'admin_dashboard',
+          request.headers.get('x-forwarded-for') || 'unknown',
+          request.headers.get('user-agent')?.slice(0, 200) || 'unknown'
+        ).run();
+      } catch {
+      }
+    }
+
     const response = NextResponse.json({
       success: true,
       token: accessToken,
-      role: user.role,
+      role: resolvedRole,
       username: user.email,
       user_id: user.id,
       paysheet_code: user.paysheet_code || user.phone || identifier,

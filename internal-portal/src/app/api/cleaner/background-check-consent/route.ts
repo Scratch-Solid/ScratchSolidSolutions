@@ -44,6 +44,28 @@ export async function POST(request: NextRequest) {
     ).bind(cleaner.paysheet_code).run();
     await setCleanerOnboardingStage(db, Number(userId), 'consent_approved');
 
+    // Persist consent record for POPIA compliance and retrievability
+    await db.prepare(
+      `INSERT INTO consent_records (user_id, consent_type, consent_given, consent_date, ip_address, user_agent, created_at)
+       VALUES (?, ?, 1, datetime('now'), ?, ?, datetime('now'))`
+    ).bind(
+      userId,
+      'background_check',
+      request.headers.get('x-forwarded-for') || 'unknown',
+      request.headers.get('user-agent')?.slice(0, 200) || 'unknown'
+    ).run();
+
+    // Log stage transition in onboarding_audit
+    await db.prepare(
+      `INSERT INTO onboarding_audit (user_id, from_stage, to_stage, event_type, metadata, ip_address, user_agent, created_at)
+       VALUES (?, 'consent_pending', 'consent_approved', 'stage_transition', ?, ?, ?, datetime('now'))`
+    ).bind(
+      userId,
+      JSON.stringify({ signature_id: signatureId, source: 'background-check-consent' }),
+      request.headers.get('x-forwarded-for') || 'unknown',
+      request.headers.get('user-agent')?.slice(0, 200) || 'unknown'
+    ).run();
+
     const notificationResult = await notifyCleanerConsent({
       traceId,
       phone: cleaner.cellphone || '',

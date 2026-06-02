@@ -28,6 +28,10 @@ export async function GET(request: NextRequest) {
       "SELECT COUNT(*) as count FROM login_activity WHERE stage = 'cleaner_dashboard' AND success = 1"
     ).first();
 
+    const adminDashboardLogins = await db.prepare(
+      "SELECT COUNT(*) as count FROM login_activity WHERE stage = 'admin_dashboard' AND success = 1"
+    ).first();
+
     const failedLogins = await db.prepare(
       'SELECT COUNT(*) as count FROM login_activity WHERE success = 0'
     ).first();
@@ -41,6 +45,7 @@ export async function GET(request: NextRequest) {
       data: {
         pre_dashboard_logins: (preDashboardLogins as any)?.count || 0,
         cleaner_dashboard_logins: (cleanerDashboardLogins as any)?.count || 0,
+        admin_dashboard_logins: (adminDashboardLogins as any)?.count || 0,
         failed_logins: (failedLogins as any)?.count || 0,
         daily_logins: dailyLogins
       }
