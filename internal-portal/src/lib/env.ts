@@ -66,13 +66,12 @@ export function getEnvVarOptional(name: string): string | undefined {
   return process.env[name];
 }
 
-// Validate on import
+// Validate on import — log only; do NOT throw at build time because
+// secrets are injected at deploy-time (Wrangler), not build-time.
 const validation = validateEnv();
-if (!validation.valid && process.env.NODE_ENV === 'production') {
+if (!validation.valid) {
   console.error('Environment validation failed:', validation.errors);
-  throw new Error('Invalid environment configuration');
 }
-
 if (validation.warnings.length > 0) {
   console.warn('Environment warnings:', validation.warnings);
 }

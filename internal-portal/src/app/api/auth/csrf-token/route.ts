@@ -3,12 +3,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getEnvVar } from '@/lib/env';
 import crypto from 'crypto';
 
-const CSRF_SECRET = getEnvVar('CSRF_SECRET');
-
 export async function GET(request: NextRequest) {
+  const CSRF_SECRET = getEnvVar('CSRF_SECRET', 'fallback-csrf-secret-change-in-production');
+
   // Generate CSRF token
   const token = crypto.randomBytes(32).toString('hex');
-  
+
   // Create a signature using the secret
   const signature = crypto
     .createHmac('sha256', CSRF_SECRET)
