@@ -1,0 +1,117 @@
+{
+  "name": "Cal.com to Portal: Booking Ingestion",
+  "nodes": [
+    {
+      "parameters": {
+        "events": [
+          "BOOKING_CREATED"
+        ],
+        "options": {}
+      },
+      "id": "calcom-trigger",
+      "name": "Cal.com Trigger",
+      "type": "n8n-nodes-base.calTrigger",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "calcom-bookings",
+      "credentials": {
+        "calApi": {
+          "id": "cal-api-creds",
+          "name": "Cal.com API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const booking = $input.first().json;\nconst responses = booking.responses || {};\nconst name = responses.name || booking.attendees?.[0]?.name || 'Unknown';\nconst email = responses.email || booking.attendees?.[0]?.email || '';\nconst phone = responses.phone || booking.attendees?.[0]?.phoneNumber || '';\nconst eventTypeMap = {\n  'studio-clean': 'studio',\n  '1-bedroom-clean': '1_bed',\n  '2-bedroom-clean': '2_bed',\n  '3-bedroom-clean': '3_bed',\n  '4-bedroom-clean': '4_plus_bed',\n  'commercial-clean': 'commercial',\n  'turnover-clean': '2_bed'\n};\nconst calEventType = booking.eventType?.slug || 'turnover-clean';\nconst propertyType = eventTypeMap[calEventType] || '2_bed';\nconst address = responses.address || booking.description || 'TBD';\nconst accessCode = responses['access-code'] || null;\nconst unitName = responses['unit-name'] || null;\nconst specialRequests = responses.notes || null;\nreturn {\n  json: {\n    calcom_uid: booking.uid,\n    client: { name, email, phone },\n    service: {\n      type: 'turnover_clean',\n      duration_minutes: booking.duration || 120,\n      scheduled_at: booking.startTime\n    },\n    property: {\n      type: propertyType,\n      address,\n      access_code: accessCode,\n      unit_name: unitName,\n      special_requests: specialRequests\n    }\n  }\n};"
+      },
+      "id": "transform-payload",
+      "name": "Transform to Portal Format",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://portal.scratchsolidsolutions.org/api/webhooks/n8n/booking-ingested",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "",
+              "value": "={{$json}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "portal-webhook",
+      "name": "Portal Webhook",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [650, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "portal-webhook-secret",
+          "name": "Portal Webhook Secret"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nif (response.status === 'scheduled') {\n  return { json: { action: 'send_confirmation', job_id: response.job_id } };\n}\nif (response.status === 'duplicate') {\n  return { json: { action: 'skip', reason: 'duplicate' } };\n}\nreturn { json: { action: 'alert_admin', error: response.error } };"
+      },
+      "id": "handle-response",
+      "name": "Handle Portal Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [850, 300]
+    }
+  ],
+  "connections": {
+    "Cal.com Trigger": {
+      "main": [
+        [
+          {
+            "node": "Transform to Portal Format",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform to Portal Format": {
+      "main": [
+        [
+          {
+            "node": "Portal Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Portal Webhook": {
+      "main": [
+        [
+          {
+            "node": "Handle Portal Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    "scratchsolid-v2",
+    "booking-ingestion"
+  ]
+}
