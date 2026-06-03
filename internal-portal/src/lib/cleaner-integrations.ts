@@ -156,6 +156,65 @@ export async function registerCleanerInErpNext(params: {
   }
 }
 
+export async function createShiftAssignmentInErpNext(params: {
+  traceId: string;
+  employeeId: string;
+  shiftType: string;
+  startDate: string;
+  endDate?: string;
+  jobReference?: string;
+}) {
+  if (!hasErpNextConfig()) {
+    return {
+      provider: 'erpnext',
+      status: 'pending',
+      reference: params.employeeId,
+      reason: 'ERPNext credentials not configured',
+    } satisfies CleanerIntegrationResult;
+  }
+
+  try {
+    const result = await erpNextRequest('/resource/Shift Assignment', {
+      method: 'POST',
+      body: JSON.stringify({
+        data: {
+          employee: params.employeeId,
+          shift_type: params.shiftType,
+          start_date: params.startDate,
+          end_date: params.endDate || params.startDate,
+          status: 'Active',
+          custom_job_reference: params.jobReference || '',
+        },
+      }),
+    });
+
+    log.audit('ERP_SHIFT_CREATED', 'workforce_dispatch', {
+      traceId: params.traceId,
+      employeeId: params.employeeId,
+      shiftName: result?.data?.name,
+      jobReference: params.jobReference,
+    });
+
+    return {
+      provider: 'erpnext',
+      status: 'configured',
+      reference: result?.data?.name || params.employeeId,
+    } satisfies CleanerIntegrationResult;
+  } catch (error) {
+    log.error('ERP_SHIFT_CREATE_FAILED', error instanceof Error ? error : new Error(String(error)), {
+      traceId: params.traceId,
+      employeeId: params.employeeId,
+    });
+
+    return {
+      provider: 'erpnext',
+      status: 'pending',
+      reference: params.employeeId,
+      reason: error instanceof Error ? error.message : 'ERPNext shift creation failed',
+    } satisfies CleanerIntegrationResult;
+  }
+}
+
 export async function setupCleanerPayrollInErpNext(params: {
   traceId: string;
   employeeId: string;

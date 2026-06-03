@@ -9,7 +9,7 @@ import { LogOut, Menu, X } from 'lucide-react';
 interface DashboardLayoutProps {
   children: ReactNode;
   title: string;
-  role?: 'admin' | 'cleaner' | 'digital' | 'transport';
+  role?: 'admin' | 'staff' | 'cleaner' | 'digital' | 'transport';
 }
 
 export default function DashboardLayout({ children, title, role = 'admin' }: DashboardLayoutProps) {
@@ -48,6 +48,12 @@ export default function DashboardLayout({ children, title, role = 'admin' }: Das
           { href: '/admin-dashboard?tab=employees', label: 'Employees' },
           { href: '/admin-dashboard?tab=services-banking', label: 'Services & Banking' },
           { href: '/admin-dashboard?tab=content', label: 'Content' },
+        ];
+      case 'staff':
+        return [
+          { href: '/supervisor-dashboard', label: 'Overview' },
+          { href: '/supervisor-dashboard?tab=jobs', label: 'Jobs' },
+          { href: '/supervisor-dashboard?tab=team', label: 'Team' },
         ];
       case 'cleaner':
         return [
