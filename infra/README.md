@@ -10,6 +10,8 @@ Unified Docker Compose stack for the ScratchSolid operational engine.
 | **Cal.com** | Client booking & scheduling | `booking.scratchsolidsolutions.org` |
 | **n8n** | Workflow orchestration hub | `n8n.scratchsolidsolutions.org` |
 | **ERPNext** | Workforce & payroll | `erp.scratchsolidsolutions.org` |
+| **Uptime Kuma** | Monitoring & alerting | `status.scratchsolidsolutions.org` |
+| **Backup** | Daily DB dumps to R2 | — (internal container) |
 
 ## Quick Start
 
@@ -62,6 +64,10 @@ openssl rand -hex 32
 | `ERPNEXT_DB_ROOT_PASSWORD` | MariaDB root password |
 | `RESEND_API_KEY` | Email delivery API key |
 | `INTERNAL_PORTAL_N8N_WEBHOOK_SECRET` | HMAC signature for Portal ↔ n8n |
+| `R2_ACCESS_KEY_ID` | Cloudflare R2 access key (backups) |
+| `R2_SECRET_ACCESS_KEY` | Cloudflare R2 secret key (backups) |
+| `R2_BUCKET_NAME` | R2 bucket for database backups |
+| `R2_ENDPOINT` | R2 S3-compatible endpoint URL |
 
 ## DNS Requirements
 
@@ -72,6 +78,7 @@ Point these A records to your server's public IP:
 | `booking.scratchsolidsolutions.org` | `<server-ip>` |
 | `n8n.scratchsolidsolutions.org` | `<server-ip>` |
 | `erp.scratchsolidsolutions.org` | `<server-ip>` |
+| `status.scratchsolidsolutions.org` | `<server-ip>` |
 
 ## Daily Operations
 
@@ -96,6 +103,20 @@ docker system df
 
 # Prune unused images (run monthly)
 docker image prune -f
+
+# Test backup manually
+docker exec scratch_backup /scripts/backup.sh
+
+# View backup logs
+docker compose logs -f backup
+
+# Access Uptime Kuma dashboard
+# Open https://status.scratchsolidsolutions.org
+# Create monitors for:
+#   - https://booking.scratchsolidsolutions.org
+#   - https://n8n.scratchsolidsolutions.org
+#   - https://erp.scratchsolidsolutions.org
+#   - https://portal.scratchsolidsolutions.org
 ```
 
 ## Security
@@ -120,6 +141,16 @@ Check Postgres health:
 ```bash
 docker compose logs calcom-postgres
 ```
+
+### Backups failing
+
+Check R2 credentials and endpoint:
+```bash
+docker compose logs backup
+docker exec scratch_backup /scripts/backup.sh
+```
+
+Ensure the R2 bucket exists and the access key has `Object Read & Write` permissions.
 
 ### ERPNext site not found
 

@@ -132,6 +132,13 @@ docker network inspect scratch_public &>/dev/null || docker network create scrat
 docker network inspect scratch_internal &>/dev/null || docker network create scratch_internal
 echo "✅ Docker networks ready"
 
+# ─── Prepare Scripts Directory ───
+echo ""
+echo "[6.5/7] Preparing backup scripts..."
+mkdir -p "$SCRIPT_DIR/scripts"
+chmod +x "$SCRIPT_DIR/scripts/backup.sh" 2>/dev/null || true
+echo "✅ Scripts directory ready"
+
 # ─── Pull Images & Deploy ───
 echo ""
 echo "[7/7] Pulling images and starting services..."
@@ -165,7 +172,8 @@ check_container() {
 
 for CONTAINER in scratch_traefik calcom_db calcom_engine n8n_db n8n_orchestrator \
                  erpnext_backend erpnext_frontend erpnext_websocket erpnext_db \
-                 erpnext_redis_cache erpnext_redis_queue erpnext_redis_socketio; do
+                 erpnext_redis_cache erpnext_redis_queue erpnext_redis_socketio \
+                 scratch_backup scratch_uptime_kuma; do
   check_container "$CONTAINER"
 done
 
@@ -181,15 +189,21 @@ echo "╠═══════════════════════�
 echo "║  Traefik Dashboard (via SSH tunnel):                         ║"
 echo "║    ssh -L 8080:localhost:8080 root@<server-ip>               ║"
 echo "║                                                                ║"
-echo "║  Cal.com:     https://booking.scratchsolidsolutions.org      ║"
-echo "║  n8n:          https://n8n.scratchsolidsolutions.org         ║"
-echo "║  ERPNext:      https://erp.scratchsolidsolutions.org         ║"
+echo "║  Cal.com:      https://booking.scratchsolidsolutions.org     ║"
+echo "║  n8n:           https://n8n.scratchsolidsolutions.org        ║"
+echo "║  ERPNext:       https://erp.scratchsolidsolutions.org        ║"
+echo "║  Monitoring:    https://status.scratchsolidsolutions.org     ║"
 echo "╠════════════════════════════════════════════════════════════════╣"
 echo "║  Next steps:                                                   ║"
 echo "║  1. Point DNS A records to this server's public IP             ║"
-echo "║  2. Configure Cal.com event types and webhook                  ║"
-echo "║  3. Set up n8n workflows                                      ║"
-echo "║  4. Run: ./verify.sh for continuous health checks             ║"
+echo "║     (booking, n8n, erp, status subdomains)                   ║"
+echo "║  2. Configure R2 backup credentials in .env                   ║"
+echo "║  3. Set up Uptime Kuma monitors at status.*                   ║"
+echo "║  4. Configure Cal.com event types and webhook                   ║"
+echo "║  5. Set up n8n workflows                                       ║"
+echo "║  6. Run: ./verify.sh for continuous health checks             ║"
+echo "║  7. Run: docker exec scratch_backup /scripts/backup.sh        ║"
+echo "║     (test backup manually)                                     ║"
 echo "╚════════════════════════════════════════════════════════════════╝"
 
 if [[ $HEALTH_ERRORS -gt 0 ]]; then

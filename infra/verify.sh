@@ -38,6 +38,8 @@ declare -A SERVICES=(
   ["erpnext-redis-cache"]="erpnext_redis_cache|exec|redis-cli ping|0"
   ["erpnext-redis-queue"]="erpnext_redis_queue|exec|redis-cli ping|0"
   ["erpnext-redis-socketio"]="erpnext_redis_socketio|exec|redis-cli ping|0"
+  ["backup"]="scratch_backup|exec|ps aux | grep -v grep | grep backup|0"
+  ["uptime-kuma"]="scratch_uptime_kuma|exec|wget --spider -q http://localhost:3001|200"
 )
 
 # ─── Check Functions ───
