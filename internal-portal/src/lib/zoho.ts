@@ -27,8 +27,33 @@ async function zohoRequest(endpoint: string, method: string, body?: any) {
   return fetch(`https://books.zoho.com/api/v3${endpoint}`, options);
 }
 
-export async function createInvoice(customerId: string, lineItems: any[]) {
-  const response = await zohoRequest('/invoices', 'POST', { customer_id: customerId, line_items: lineItems });
+export async function findCustomerByEmail(email: string) {
+  const response = await zohoRequest(`/contacts?email=${encodeURIComponent(email)}`, 'GET');
+  const json = await response.json();
+  const contacts = json.contacts || [];
+  return contacts.find((c: any) => c.contact_type === 'customer' && c.email?.toLowerCase() === email.toLowerCase()) || null;
+}
+
+export async function createCustomer(name: string, email: string, phone: string, billingAddress?: string) {
+  const body: any = {
+    contact_name: name,
+    contact_type: 'customer',
+    email: email,
+    phone: phone,
+  };
+  if (billingAddress) {
+    body.billing_address = { address: billingAddress, city: '', state: '', zip: '', country: 'South Africa' };
+  }
+  const response = await zohoRequest('/contacts', 'POST', body);
+  return response.json();
+}
+
+export async function createInvoice(customerId: string, lineItems: any[], options?: { reference?: string; notes?: string; date?: string }) {
+  const body: any = { customer_id: customerId, line_items: lineItems };
+  if (options?.reference) body.reference_number = options.reference;
+  if (options?.notes) body.notes = options.notes;
+  if (options?.date) body.date = options.date;
+  const response = await zohoRequest('/invoices', 'POST', body);
   return response.json();
 }
 
