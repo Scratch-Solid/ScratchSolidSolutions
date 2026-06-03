@@ -21,6 +21,11 @@ const ENV_CONFIG: EnvVarConfig[] = [
   { name: 'TWILIO_ACCOUNT_SID', required: false },
   { name: 'TWILIO_AUTH_TOKEN', required: false },
   { name: 'TWILIO_WHATSAPP_NUMBER', required: false },
+  { name: 'META_ACCESS_TOKEN', required: false },
+  { name: 'META_PHONE_NUMBER_ID', required: false },
+  { name: 'META_VERIFY_TOKEN', required: false },
+  { name: 'META_API_VERSION', required: false, defaultValue: 'v18.0' },
+  { name: 'INTERNAL_PORTAL_N8N_WEBHOOK_SECRET', required: false },
   { name: 'NEXT_PUBLIC_BUSINESS_DASHBOARD_URL', required: false },
 ];
 

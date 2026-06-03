@@ -1,0 +1,166 @@
+{
+  "name": "Zoho → Portal: Payment Status Webhook",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "zoho-payment",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "zoho-webhook-trigger",
+      "name": "Zoho Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "webhookId": "zoho-payment-webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Zoho Books webhook payload structure\nconst raw = $input.first().json;\nconst payload = raw.body || raw;\n\n// Zoho sends payment_id, invoice_id, amount, date, mode, status\nconst payment = {\n  payment_id: payload.payment_id || payload.PaymentID,\n  invoice_id: payload.invoice_id || payload.InvoiceID,\n  amount: payload.amount || payload.Amount,\n  payment_mode: (payload.payment_mode || payload.Mode || 'unknown').toLowerCase(),\n  payment_date: payload.date || payload.PaymentDate || new Date().toISOString(),\n  status: payload.status || 'success',\n  reference: payload.reference_number || payload.Reference || null,\n  description: payload.description || payload.Description || null\n};\n\nreturn { json: payment };"
+      },
+      "id": "transform-zoho-payload",
+      "name": "Transform Zoho Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://portal.scratchsolidsolutions.org/api/webhooks/n8n/payment-webhook",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "payment_id",
+              "value": "={{ $json.payment_id }}"
+            },
+            {
+              "name": "invoice_id",
+              "value": "={{ $json.invoice_id }}"
+            },
+            {
+              "name": "amount",
+              "value": "={{ $json.amount }}"
+            },
+            {
+              "name": "payment_mode",
+              "value": "={{ $json.payment_mode }}"
+            },
+            {
+              "name": "payment_date",
+              "value": "={{ $json.payment_date }}"
+            },
+            {
+              "name": "status",
+              "value": "={{ $json.status }}"
+            },
+            {
+              "name": "reference",
+              "value": "={{ $json.reference }}"
+            },
+            {
+              "name": "description",
+              "value": "={{ $json.description }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "portal-payment-webhook",
+      "name": "Portal Payment Webhook",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [650, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "portal-webhook-secret",
+          "name": "Portal Webhook Secret"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const portalRes = $input.first().json;\nif (portalRes.success) {\n  return {\n    json: {\n      status: 'forwarded',\n      job_id: portalRes.job_id,\n      payment_status: portalRes.payment_status,\n      trace_id: portalRes.traceId\n    }\n  };\n}\nreturn {\n  json: {\n    status: 'failed',\n    error: portalRes.error || 'portal_rejected',\n    trace_id: portalRes.traceId || 'none'\n  }\n};"
+      },
+      "id": "handle-portal-response",
+      "name": "Handle Portal Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "options": {
+          "statusCode": 200,
+          "responseBody": "={{'{\"status\":\"' + $json.status + '\",\"trace_id\":\"' + $json.trace_id + '\"}'}}"
+        }
+      },
+      "id": "respond-to-zoho",
+      "name": "Respond to Zoho",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1050, 300]
+    }
+  ],
+  "connections": {
+    "Zoho Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Transform Zoho Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform Zoho Payload": {
+      "main": [
+        [
+          {
+            "node": "Portal Payment Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Portal Payment Webhook": {
+      "main": [
+        [
+          {
+            "node": "Handle Portal Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Handle Portal Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Zoho",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    "scratchsolid-v2",
+    "zoho",
+    "payments"
+  ]
+}

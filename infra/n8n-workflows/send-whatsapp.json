@@ -1,0 +1,161 @@
+{
+  "name": "Portal → WhatsApp: Send Notifications",
+  "nodes": [
+    {
+      "parameters": {
+        "events": [
+          "*"
+        ],
+        "options": {}
+      },
+      "id": "portal-webhook-trigger",
+      "name": "Portal Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "webhookId": "portal-whatsapp-trigger",
+      "path": "portal-whatsapp",
+      "responseMode": "responseNode",
+      "method": "POST"
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $input.first().json;\nconst event = payload.event_type;\nconst job = payload.job;\n\n// Build message based on event\nconst templates = {\n  'job_assigned': {\n    body: `Hi ${job.cleaner_name || 'there'}, you've been assigned a job.\n\nDate: ${job.scheduled_at}\nAddress: ${job.property_address}\nDuration: ${job.duration_minutes} mins\n\nReply START when you're on your way. Reply HERE when you arrive. Reply DONE when finished.`,\n    fallback_subject: 'New Job Assignment - ScratchSolid'\n  },\n  'job_reminder': {\n    body: `Reminder: Your cleaning job is scheduled for ${job.scheduled_at}.\n\nAddress: ${job.property_address}\nAccess code: ${job.access_code || 'N/A'}\n\nPlease reply START when leaving.`,\n    fallback_subject: 'Job Reminder - ScratchSolid'\n  },\n  'job_completed': {\n    body: `Great work! Job ${job.id} is marked complete.\n\nThank you for your service.`,\n    fallback_subject: 'Job Complete - ScratchSolid'\n  },\n  'payment_received': {\n    body: `Payment confirmed for job ${job.id}. Thank you!`,\n    fallback_subject: 'Payment Confirmed - ScratchSolid'\n  },\n  'default': {\n    body: payload.message || 'Notification from ScratchSolid.',\n    fallback_subject: 'ScratchSolid Notification'\n  }\n};\n\nconst selected = templates[event] || templates['default'];\nreturn {\n  json: {\n    phone: payload.phone,\n    message: selected.body,\n    template_name: payload.template_name || null,\n    fallback_email: payload.email,\n    fallback_subject: selected.fallback_subject,\n    job_id: job?.id\n  }\n};"
+      },
+      "id": "build-message",
+      "name": "Build Message Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://portal.scratchsolidsolutions.org/api/webhooks/n8n/send-whatsapp",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "phone",
+              "value": "={{ $json.phone }}"
+            },
+            {
+              "name": "message",
+              "value": "={{ $json.message }}"
+            },
+            {
+              "name": "template_name",
+              "value": "={{ $json.template_name }}"
+            },
+            {
+              "name": "fallback_email",
+              "value": "={{ $json.fallback_email }}"
+            },
+            {
+              "name": "fallback_subject",
+              "value": "={{ $json.fallback_subject }}"
+            },
+            {
+              "name": "job_id",
+              "value": "={{ $json.job_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "send-whatsapp-webhook",
+      "name": "Portal Send-WhatsApp Webhook",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [650, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "portal-webhook-secret",
+          "name": "Portal Webhook Secret"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const res = $input.first().json;\nif (res.sent_via === 'whatsapp') {\n  return { json: { status: 'delivered', channel: 'whatsapp', trace_id: res.traceId } };\n}\nif (res.sent_via === 'email') {\n  return { json: { status: 'email_fallback', channel: 'email', reason: res.reason, trace_id: res.traceId } };\n}\nreturn { json: { status: 'failed', error: res.error || 'unknown' } };"
+      },
+      "id": "handle-whatsapp-response",
+      "name": "Handle WhatsApp Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "options": {
+          "statusCode": 200,
+          "responseBody": "={{'{\"status\":\"' + $json.status + '\",\"channel\":\"' + $json.channel + '\"}'}}"
+        }
+      },
+      "id": "respond-to-portal",
+      "name": "Respond to Portal",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1050, 300]
+    }
+  ],
+  "connections": {
+    "Portal Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Build Message Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Message Payload": {
+      "main": [
+        [
+          {
+            "node": "Portal Send-WhatsApp Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Portal Send-WhatsApp Webhook": {
+      "main": [
+        [
+          {
+            "node": "Handle WhatsApp Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Handle WhatsApp Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Portal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    "scratchsolid-v2",
+    "notifications",
+    "whatsapp"
+  ]
+}

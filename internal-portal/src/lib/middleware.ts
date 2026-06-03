@@ -3,8 +3,8 @@ import { getDb, validateSession } from './db';
 import { validateCsrfToken, generateCsrfToken } from './csrf';
 import { getUserPermissions, hasPermission, hasResourcePermission, hasRoleLevel, UserPermissions } from './rbac';
 
-const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
-const RATE_LIMIT_MAX = 100; // requests per window per IP
+export const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
+export const RATE_LIMIT_MAX = 100; // requests per window per IP
 
 const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
 

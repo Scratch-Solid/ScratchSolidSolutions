@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     // ─── Fetch job ───
     const job = await db
       .prepare(
-        `SELECT id, client_name, client_email, client_phone, property_address, service_type, status
+        `SELECT id, client_name, client_email, client_phone, property_address, service_type, status, scheduled_at
          FROM jobs WHERE id = ?`
       )
       .bind(job_id)
@@ -80,6 +80,7 @@ export async function POST(request: NextRequest) {
         property_address: string;
         service_type: string;
         status: string;
+        scheduled_at: string;
       }>();
 
     if (!job) {
@@ -111,7 +112,7 @@ export async function POST(request: NextRequest) {
     }
 
     // ─── Calculate total ───
-    const scheduledAt = new Date();
+    const scheduledAt = new Date(job.scheduled_at);
     const isWeekend = scheduledAt.getDay() === 0 || scheduledAt.getDay() === 6;
     const lineItems = [
       {

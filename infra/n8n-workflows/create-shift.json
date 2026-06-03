@@ -1,0 +1,129 @@
+{
+  "name": "Portal → ERPNext: Create Shift Assignment",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "// Poll every 5 min for jobs assigned but without erpnext_shift_id\n// OR wait for an HTTP webhook from the Portal after invoice creation\nreturn { json: { trigger: 'scheduled', interval_minutes: 5 } };"
+      },
+      "id": "schedule-trigger",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "interval": "5m"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://portal.scratchsolidsolutions.org/api/v2/supervisor/jobs",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "status",
+              "value": "assigned"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "fetch-assigned-jobs",
+      "name": "Fetch Assigned Jobs",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "portal-webhook-secret",
+          "name": "Portal Webhook Secret"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const jobs = $input.all()[0]?.json?.data || [];\nconst unshipped = jobs.filter(j => !j.erpnext_shift_id && j.team_members && j.team_members.length > 0);\nreturn unshipped.map(job => ({ json: job }));"
+      },
+      "id": "filter-unshipped",
+      "name": "Filter Jobs Without Shift",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://portal.scratchsolidsolutions.org/api/webhooks/n8n/create-shift",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "job_id",
+              "value": "={{ $json.id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "create-shift-webhook",
+      "name": "Create Shift Webhook",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [850, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "portal-webhook-secret",
+          "name": "Portal Webhook Secret"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch Assigned Jobs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Assigned Jobs": {
+      "main": [
+        [
+          {
+            "node": "Filter Jobs Without Shift",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Jobs Without Shift": {
+      "main": [
+        [
+          {
+            "node": "Create Shift Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    "scratchsolid-v2",
+    "workforce-dispatch",
+    "erpnext"
+  ]
+}
