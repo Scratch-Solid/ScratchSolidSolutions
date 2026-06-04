@@ -62,13 +62,71 @@
     },
     {
       "parameters": {
-        "jsCode": "const response = $input.first().json;\nif (response.status === 'scheduled') {\n  return { json: { action: 'send_confirmation', job_id: response.job_id } };\n}\nif (response.status === 'duplicate') {\n  return { json: { action: 'skip', reason: 'duplicate' } };\n}\nreturn { json: { action: 'alert_admin', error: response.error } };"
+        "jsCode": "const response = $input.first().json;\nif (response.status === 'scheduled') {\n  return { json: { action: 'trigger_invoice_and_shift', job_id: response.job_id } };\n}\nif (response.status === 'duplicate') {\n  return { json: { action: 'skip', reason: 'duplicate' } };\n}\nreturn { json: { action: 'alert_admin', error: response.error } };"
       },
       "id": "handle-response",
       "name": "Handle Portal Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://portal.scratchsolidsolutions.org/api/webhooks/n8n/create-invoice",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "job_id",
+              "value": "={{$json.job_id}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "trigger-create-invoice",
+      "name": "Trigger Create Invoice",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1050, 200],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "portal-webhook-secret",
+          "name": "Portal Webhook Secret"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://portal.scratchsolidsolutions.org/api/webhooks/n8n/create-shift",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "job_id",
+              "value": "={{$json.job_id}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "trigger-create-shift",
+      "name": "Trigger Create Shift",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1250, 200],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "portal-webhook-secret",
+          "name": "Portal Webhook Secret"
+        }
+      }
     }
   ],
   "connections": {
@@ -99,6 +157,28 @@
         [
           {
             "node": "Handle Portal Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Handle Portal Response": {
+      "main": [
+        [
+          {
+            "node": "Trigger Create Invoice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger Create Invoice": {
+      "main": [
+        [
+          {
+            "node": "Trigger Create Shift",
             "type": "main",
             "index": 0
           }
