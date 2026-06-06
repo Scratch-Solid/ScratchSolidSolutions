@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
 
   const db = await getDb();
   if (!db) {
-    return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+    const response = NextResponse.json({ error: 'Database not available' }, { status: 500 });
     logRequest(request, response, Date.now() - startTime, traceId);
     return withSecurityHeaders(response, traceId);
   }
@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     // Validate admin session
     const authHeader = request.headers.get('authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+      const response = NextResponse.json({ error: 'Authentication required' }, { status: 401 });
       logRequest(request, response, Date.now() - startTime, traceId);
       return withSecurityHeaders(response, traceId);
     }
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     const session = await validateSession(db, token);
 
     if (!session || (session as any).role !== 'admin' && (session as any).role !== 'super_admin') {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+      const response = NextResponse.json({ error: 'Admin access required' }, { status: 403 });
       logRequest(request, response, Date.now() - startTime, traceId);
       return withSecurityHeaders(response, traceId);
     }
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     // Get user permissions to check if they can manage roles
     const userPermissions = await getUserPermissions(db, (session as any).id);
     if (!canManageSystem(userPermissions)) {
-      return NextResponse.json({ error: 'Insufficient permissions to manage roles' }, { status: 403 });
+      const response = NextResponse.json({ error: 'Insufficient permissions to manage roles' }, { status: 403 });
       logRequest(request, response, Date.now() - startTime, traceId);
       return withSecurityHeaders(response, traceId);
     }
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (error) {
-      return NextResponse.json({ error }, { status: 400 });
+      const response = NextResponse.json({ error }, { status: 400 });
       logRequest(request, response, Date.now() - startTime, traceId);
       return withSecurityHeaders(response, traceId);
     }
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
       trace_id: traceId
     });
 
-    return NextResponse.json({ 
+    const response = NextResponse.json({
       message: 'Role created successfully',
       role: newRole
     }, { status: 201 });
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
       trace_id: traceId
     });
 
-    return NextResponse.json({ error: 'Failed to create role' }, { status: 500 });
+    const response = NextResponse.json({ error: 'Failed to create role' }, { status: 500 });
     logRequest(request, response, Date.now() - startTime, traceId);
     return withSecurityHeaders(response, traceId);
   }

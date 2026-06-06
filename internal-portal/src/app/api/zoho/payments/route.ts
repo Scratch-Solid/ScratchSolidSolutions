@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
       return withSecurityHeaders(response, traceId);
     }
 
-    const tokenData = await tokenResponse.json();
+    const tokenData = await tokenResponse.json() as any;
     const accessToken = tokenData.access_token;
 
     // Fetch payments from Zoho Books

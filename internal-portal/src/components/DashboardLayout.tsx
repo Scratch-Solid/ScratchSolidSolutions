@@ -75,7 +75,7 @@ export default function DashboardLayout({ children, title, role = 'admin' }: Das
   };
 
   const navItems = getNavItems();
-  const username = typeof window !== 'undefined' ? localStorage.getItem('username') : null || 'User';
+  const username = (typeof window !== 'undefined' ? localStorage.getItem('username') : '') || 'User';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/20 to-purple-50/20">

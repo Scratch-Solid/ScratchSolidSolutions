@@ -45,9 +45,9 @@ export async function POST(
       db,
       trainingDb,
       bookingId,
-      serviceType,
+      serviceType as any,
       assignmentDate,
-      timeSlot || null
+      (timeSlot || null) as any
     );
 
     return NextResponse.json(result);

@@ -137,6 +137,7 @@ describe('POST /api/webhooks/n8n/send-whatsapp', () => {
 
   test('returns 502 when window is closed and no template provided', async () => {
     mockIsWindowOpen.mockResolvedValue(false);
+    mockSendEmail.mockRejectedValue(new Error('Email send failed'));
 
     const req = createRequest(validPayload, 'Bearer test-secret-123');
     const res = await POST(req);

@@ -257,7 +257,7 @@ export function verifyTOTP(token: string, secret: string): boolean {
 export async function logAuthEvent(
   db: any,
   userId: number | null,
-  eventType: 'login_success' | 'login_failed' | 'logout' | '2fa_enabled' | '2fa_disabled' | 'password_changed',
+  eventType: 'login_success' | 'login_failed' | 'logout' | '2fa_enabled' | '2fa_disabled' | 'password_changed' | '2fa_enable_failed' | '2fa_verify_failed' | '2fa_backup_failed' | '2fa_verify_success' | 'password_change_failed',
   ipAddress: string,
   userAgent: string,
   details?: any
@@ -317,6 +317,21 @@ export async function hasPermission(db: any, userId: number, permission: string)
  */
 export function isAdminEmailDomain(email: string): boolean {
   return email.toLowerCase().endsWith('@scratchsolidsolution.org');
+}
+
+/**
+ * MFA enforcement: admin and supervisor roles MUST have 2FA enabled.
+ * Returns true if the user either (a) is not a privileged role, or (b) has 2FA enabled.
+ */
+export async function isAdminMFACompliant(db: any, userId: number, role: string): Promise<boolean> {
+  const privilegedRoles = ['admin', 'supervisor'];
+  if (!privilegedRoles.includes(role)) return true;
+
+  const user2fa = await db.prepare(
+    'SELECT enabled FROM user_2fa WHERE user_id = ?'
+  ).bind(userId).first() as { enabled: number } | null;
+
+  return user2fa?.enabled === 1;
 }
 
 /**

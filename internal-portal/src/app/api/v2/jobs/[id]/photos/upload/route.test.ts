@@ -30,7 +30,6 @@ jest.mock('@opennextjs/cloudflare', () => ({
     Promise.resolve({
       env: {
         CLEANER_PHOTOS_BUCKET: mockBucket,
-        R2_PUBLIC_DOMAIN: 'r2.scratchsolidsolutions.org',
       },
     })
   ),
@@ -82,7 +81,7 @@ describe('POST /api/v2/jobs/[id]/photos/upload', () => {
     const json = await res.json();
     expect(json.success).toBe(true);
     expect(json.message).toBe('Photo uploaded successfully');
-    expect(json.data.public_url).toContain('r2.scratchsolidsolutions.org');
+    expect(json.data.public_url).toContain('uploads.scratchsolidsolutions.org');
     expect(json.data.public_url).toContain('jobs/SS-2026-001/Kitchen/');
     expect(json.data.public_url).toContain('test.png');
     expect(mockBucket.put).toHaveBeenCalled();

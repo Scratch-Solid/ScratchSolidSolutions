@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
     const countResult = await db.prepare(countQuery).bind(...countParams).first();
     const total = (countResult as any)?.total || 0;
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       data: logs.results || [],
       pagination: {
         page,
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     console.error('Audit log fetch error:', error);
-    return NextResponse.json({ error: 'Failed to fetch audit logs' }, { status: 500 });
+    const response = NextResponse.json({ error: 'Failed to fetch audit logs' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

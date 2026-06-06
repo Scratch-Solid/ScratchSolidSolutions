@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
   try {
     const { question } = await request.json();
     if (!question) {
-      return NextResponse.json({ error: 'Missing question' }, { status: 400 });
+      const response = NextResponse.json({ error: 'Missing question' }, { status: 400 });
     }
 
     // AI chatbot response - uses predefined responses for common questions
@@ -35,11 +35,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ answer });
+    const response = NextResponse.json({ answer });
     logRequest(request, response, Date.now() - start, traceId);
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to process chatbot request' }, { status: 500 });
+    const response = NextResponse.json({ error: 'Failed to process chatbot request' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

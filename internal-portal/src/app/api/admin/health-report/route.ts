@@ -28,9 +28,9 @@ export async function POST(request: NextRequest) {
       },
       alerts: [] as any[],
       metrics: {
-        conversionRate: 0,
-        trainingRate: 0,
-        notificationFailureRate: 0,
+        conversionRate: 0 as any,
+        trainingRate: 0 as any,
+        notificationFailureRate: 0 as any,
       },
     };
 
@@ -55,8 +55,8 @@ export async function POST(request: NextRequest) {
     `).all();
 
     const notificationResults = notificationStats.results || [];
-    const sentCount = notificationResults.find((r: any) => r.status === 'sent')?.count || 0;
-    const failedCount = notificationResults.find((r: any) => r.status === 'failed')?.count || 0;
+    const sentCount = Number(notificationResults.find((r: any) => r.status === 'sent')?.count || 0);
+    const failedCount = Number(notificationResults.find((r: any) => r.status === 'failed')?.count || 0);
     report.summary.totalNotifications = sentCount + failedCount;
     report.summary.failedNotifications = failedCount;
 

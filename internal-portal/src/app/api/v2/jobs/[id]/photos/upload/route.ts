@@ -93,7 +93,7 @@ export async function POST(
       },
     });
 
-    const publicUrl = `https://${env.R2_PUBLIC_DOMAIN || 'r2.scratchsolidsolutions.org'}/${objectKey}`;
+    const publicUrl = `${(process.env.R2_PUBLIC_BASE || 'https://uploads.scratchsolidsolutions.org').replace(/\/$/, '')}/${objectKey}`;
 
     // Record in job_photos
     const uploadedBy = user?.paysheet_code || user?.name || 'unknown';

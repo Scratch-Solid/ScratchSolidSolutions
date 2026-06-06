@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
           completed: completed,
           in_progress: (inProgressUsers as any)?.count || 0,
           not_started: (notStartedUsers as any)?.count || 0,
-          completion_rate: parseFloat(completionRate)
+          completion_rate: parseFloat(completionRate as string)
         },
         recent_completions: (recentCompletions as any)?.count || 0,
         trend: trendData

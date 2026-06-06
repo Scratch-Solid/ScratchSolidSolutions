@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
 
     // Generate TOTP secret
     const secret = generateTOTPSecret();
-    const qrCodeURI = generateTOTPURI(userResult.email, secret);
+    const qrCodeURI = generateTOTPURI((userResult as any).email, secret);
 
     // Generate backup codes
     const backupCodes = Array.from({ length: 10 }, () => 

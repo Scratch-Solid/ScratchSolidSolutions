@@ -133,7 +133,7 @@ export default function CleanerDashboard() {
         const storedUserId = typeof window !== 'undefined' ? localStorage.getItem("user_id") : null;
         if (storedUsername) {
           setUsername(storedUsername);
-          const mustChange = typeof window !== 'undefined' ? localStorage.getItem('mustChangePassword') : null === 'true';
+          const mustChange = (typeof window !== 'undefined' ? localStorage.getItem('mustChangePassword') : '') === 'true';
           setMustChangePassword(mustChange);
 
           // Fetch cleaner profile

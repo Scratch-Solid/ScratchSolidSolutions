@@ -22,7 +22,7 @@ export default function ChangePasswordPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('authToken') : null || ''}`
+          'Authorization': `Bearer ${(typeof window !== 'undefined' ? localStorage.getItem('authToken') : '') || ''}`
         },
         body: JSON.stringify({ currentPassword, newPassword })
       });

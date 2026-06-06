@@ -109,7 +109,7 @@ export async function isConversationWindowOpen(
   db: any,
   phoneNumber: string
 ): Promise<boolean> {
-  const session = await db
+  const session = (await db
     .prepare(
       `SELECT conversation_expires_at
        FROM whatsapp_sessions
@@ -118,7 +118,7 @@ export async function isConversationWindowOpen(
        LIMIT 1`
     )
     .bind(phoneNumber)
-    .first<{ conversation_expires_at: string }>();
+    .first()) as { conversation_expires_at: string } | null;
 
   if (!session || !session.conversation_expires_at) return false;
 

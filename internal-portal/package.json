@@ -61,6 +61,7 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260422.1",
+    "@eslint/eslintrc": "^3.3.5",
     "@playwright/test": "^1.60.0",
     "@testing-library/jest-dom": "^6.1.0",
     "@testing-library/react": "^16.0.0",

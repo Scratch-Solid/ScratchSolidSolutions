@@ -1,15 +1,11 @@
 import { randomBytes, createHmac, timingSafeEqual } from 'crypto';
-import { getEnvVar } from './env';
 
 function getCsrfSecret(): string {
-  try {
-    return getEnvVar('CSRF_SECRET', 'dev-secret-fallback-do-not-use-in-production');
-  } catch {
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error('CSRF_SECRET environment variable is required in production');
-    }
-    return 'dev-secret-fallback-do-not-use-in-production';
+  const secret = process.env.CSRF_SECRET;
+  if (!secret) {
+    throw new Error('CSRF_SECRET environment variable is required');
   }
+  return secret;
 }
 
 export function generateCsrfToken(): string {

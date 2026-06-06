@@ -1,44 +1,32 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
 import { withAuth, withTracing, withSecurityHeaders, logRequest } from '@/lib/middleware';
+import { createCreditNote } from '@/lib/zoho';
 
 export async function POST(request: NextRequest) {
   const traceId = withTracing(request);
   const start = Date.now();
   const authResult = await withAuth(request, ['admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
-  const { db } = authResult;
-
-  const zohoAuthToken = process.env.ZOHO_AUTH_TOKEN;
-  if (!zohoAuthToken) {
-    return NextResponse.json({ error: 'Zoho integration not configured' }, { status: 503 });
-    return withSecurityHeaders(response, traceId);
-  }
 
   try {
-    const { user_id, amount } = await request.json();
+    const { user_id, amount, reference } = await request.json() as { user_id?: string; amount?: number; reference?: string };
     if (!user_id || !amount) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+      const response = NextResponse.json({ error: 'Missing required fields: user_id, amount' }, { status: 400 });
+      return withSecurityHeaders(response, traceId);
     }
-    // Process refund via Zoho Books API
-    const zohoResponse = await fetch('https://books.zoho.com/api/v3/creditnotes', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Zoho-authtoken ${zohoAuthToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        customer_id: user_id,
-        line_items: [{ item_id: 'default_service', rate: amount, quantity: 1 }],
-      }),
-    });
-    const data = await zohoResponse.json();
-    return NextResponse.json(data, { status: zohoResponse.ok ? 201 : 502 });
+
+    const data = await createCreditNote(
+      user_id,
+      [{ item_id: 'default_service', rate: amount, quantity: 1 }],
+      reference || `refund-${Date.now()}`
+    );
+
+    const response = NextResponse.json(data, { status: data.code === 0 ? 201 : 502 });
     logRequest(request, response, Date.now() - start, traceId);
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to process refund' }, { status: 500 });
+    const response = NextResponse.json({ error: 'Failed to process refund' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

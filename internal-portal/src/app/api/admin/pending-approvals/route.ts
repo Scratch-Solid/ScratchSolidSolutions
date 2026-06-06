@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
 
   const db = await getDb();
   if (!db) {
-    return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+    const response = NextResponse.json({ error: 'Database not available' }, { status: 500 });
     logRequest(request, response, Date.now() - startTime, traceId);
     return withSecurityHeaders(response, traceId);
   }
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     // Validate admin session
     const authHeader = request.headers.get('authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+      const response = NextResponse.json({ error: 'Authentication required' }, { status: 401 });
       logRequest(request, response, Date.now() - startTime, traceId);
       return withSecurityHeaders(response, traceId);
     }
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     const session = await validateSession(db, token);
 
     if (!session || (session as any).role !== 'admin' && (session as any).role !== 'super_admin') {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+      const response = NextResponse.json({ error: 'Admin access required' }, { status: 403 });
       logRequest(request, response, Date.now() - startTime, traceId);
       return withSecurityHeaders(response, traceId);
     }
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
       trace_id: traceId
     });
 
-    return NextResponse.json({ 
+    const response = NextResponse.json({ 
       pendingApprovals,
       count: pendingApprovals.length
     });
@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
       trace_id: traceId
     });
 
-    return NextResponse.json({ error: 'Failed to fetch pending approvals' }, { status: 500 });
+    const response = NextResponse.json({ error: 'Failed to fetch pending approvals' }, { status: 500 });
     logRequest(request, response, Date.now() - startTime, traceId);
     return withSecurityHeaders(response, traceId);
   }

@@ -14,7 +14,7 @@ import {
   createSecurityError,
   createRateLimitError
 } from '@/lib/security-middleware';
-import { recordFailedAttempt, isUserLockedOut, clearFailedAttempts, isAdminEmailDomain } from '@/lib/auth';
+import { recordFailedAttempt, isUserLockedOut, clearFailedAttempts, isAdminEmailDomain, isAdminMFACompliant } from '@/lib/auth';
 import { generateAccessToken, generateRefreshToken, setAuthCookies } from '@/lib/session';
 import crypto from 'crypto';
 
@@ -171,6 +171,22 @@ export async function POST(request: NextRequest) {
     // Clear failed attempts on successful login
     await clearFailedAttempts(db, identifier);
 
+    // MFA enforcement for admin/supervisor accounts
+    const resolvedRole = user.role === 'admin' || isAdminEmailDomain(user.email) ? 'admin' : user.role;
+    const mfaCompliant = await isAdminMFACompliant(db, user.id, resolvedRole);
+    if (!mfaCompliant) {
+      await logAuditEvent(db, {
+        user_id: user.id,
+        action: 'login_failed',
+        resource: 'auth',
+        ip_address: request.headers.get('x-forwarded-for') || 'unknown',
+        user_agent: request.headers.get('user-agent')?.slice(0, 200) || 'unknown',
+        details: `MFA enforcement: admin/supervisor login rejected due to missing 2FA`,
+        success: false
+      });
+      return createSecurityError('Multi-factor authentication is required for admin accounts. Please enable 2FA before logging in.', 403);
+    }
+
     // Log successful login for audit
     try {
       await logAuditEvent(db, {
@@ -227,8 +243,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Admin routing: explicit admin role OR admin email domain
-    const resolvedRole = user.role === 'admin' || isAdminEmailDomain(user.email) ? 'admin' : user.role;
     if (resolvedRole === 'admin') {
       redirectTo = '/admin-dashboard';
       try {

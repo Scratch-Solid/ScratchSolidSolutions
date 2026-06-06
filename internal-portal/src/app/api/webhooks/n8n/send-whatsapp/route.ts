@@ -109,12 +109,11 @@ export async function POST(request: NextRequest) {
     let emailResult: { success: boolean; error?: string } = { success: false };
     if (!waResult.success && fallback_email) {
       try {
-        await sendEmail({
-          to: fallback_email,
-          subject: fallback_subject,
-          body: `${message}\n\n---\nYou received this email because a WhatsApp message could not be delivered (window closed or API error).`,
-          html: `<p>${message.replace(/\n/g, '<br>')}</p><hr><p><small>You received this email because a WhatsApp message could not be delivered (window closed or API error).</small></p>`,
-        });
+        await sendEmail(
+          fallback_email,
+          fallback_subject,
+          `<p>${message.replace(/\n/g, '<br>')}</p><hr><p><small>You received this email because a WhatsApp message could not be delivered (window closed or API error).</small></p>`
+        );
         emailResult = { success: true };
       } catch (e) {
         emailResult = { success: false, error: e instanceof Error ? e.message : 'Email send failed' };

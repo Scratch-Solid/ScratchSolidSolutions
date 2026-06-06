@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
 
   const uptimeMs = Date.now() - new Date(STARTED_AT).getTime();
 
-  return NextResponse.json({
+  const response = NextResponse.json({
     service: 'internal-portal',
     version: VERSION,
     status: overall,

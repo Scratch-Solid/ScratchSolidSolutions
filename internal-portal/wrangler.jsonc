@@ -49,11 +49,11 @@
 	"r2_buckets": [
 		{
 			"binding": "UPLOADS_BUCKET",
-			"bucket_name": "portal-uploads"
+			"bucket_name": "scratchsolid-uploads"
 		},
 		{
 			"binding": "CLEANER_PHOTOS_BUCKET",
-			"bucket_name": "cleaner-photos"
+			"bucket_name": "scratchsolid-uploads"
 		}
 	],
 	"vars": {
@@ -107,11 +107,11 @@
 			"r2_buckets": [
 				{
 					"binding": "UPLOADS_BUCKET",
-					"bucket_name": "scratchsolid-uploads-portal-staging"
+					"bucket_name": "marketing-uploads-staging"
 				},
 				{
 					"binding": "CLEANER_PHOTOS_BUCKET",
-					"bucket_name": "cleaner-photos-staging"
+					"bucket_name": "marketing-uploads-staging"
 				}
 			],
 			"vars": {

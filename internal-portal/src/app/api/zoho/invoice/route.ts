@@ -12,14 +12,15 @@ export async function POST(request: NextRequest) {
 
   const zohoAuthToken = process.env.ZOHO_AUTH_TOKEN;
   if (!zohoAuthToken) {
-    return NextResponse.json({ error: 'Zoho integration not configured' }, { status: 503 });
+    const response = NextResponse.json({ error: 'Zoho integration not configured' }, { status: 503 });
     return withSecurityHeaders(response, traceId);
   }
 
   try {
-    const { user_id, amount } = await request.json();
+    const { user_id, amount } = await request.json() as { user_id?: string; amount?: number };
     if (!user_id || !amount) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+      const response = NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+      return withSecurityHeaders(response, traceId);
     }
     // Create invoice via Zoho Books API
     const zohoResponse = await fetch('https://books.zoho.com/api/v3/invoices', {
@@ -34,11 +35,11 @@ export async function POST(request: NextRequest) {
       }),
     });
     const data = await zohoResponse.json();
-    return NextResponse.json(data, { status: zohoResponse.ok ? 201 : 502 });
+    const response = NextResponse.json(data, { status: zohoResponse.ok ? 201 : 502 });
     logRequest(request, response, Date.now() - start, traceId);
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to create invoice' }, { status: 500 });
+    const response = NextResponse.json({ error: 'Failed to create invoice' }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

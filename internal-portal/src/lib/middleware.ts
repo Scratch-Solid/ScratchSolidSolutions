@@ -6,6 +6,8 @@ import { getUserPermissions, hasPermission, hasResourcePermission, hasRoleLevel,
 export const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
 export const RATE_LIMIT_MAX = 100; // requests per window per IP
 
+// Rate limiting now prefers KV-backed storage for distributed enforcement
+// in serverless environments, falling back to in-memory only for local dev.
 const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
 
 // API Versioning
@@ -268,6 +270,17 @@ export function handleClassifiedError(classifiedError: ClassifiedError, traceId?
   return response;
 }
 
+async function isRateLimitedKV(ip: string, kv: KVNamespace): Promise<boolean> {
+  const key = `ratelimit:${ip}:${Math.floor(Date.now() / RATE_LIMIT_WINDOW)}`;
+  const current = await kv.get(key);
+  const count = current ? parseInt(current) : 0;
+  if (count >= RATE_LIMIT_MAX) {
+    return true;
+  }
+  await kv.put(key, String(count + 1), { expirationTtl: Math.ceil(RATE_LIMIT_WINDOW / 1000) });
+  return false;
+}
+
 function isRateLimited(ip: string): boolean {
   const now = Date.now();
   const record = rateLimitStore.get(ip);
@@ -354,8 +367,17 @@ export function generateCsrfTokenForClient(): string {
   return generateCsrfToken();
 }
 
-export async function withRateLimit(request: NextRequest): Promise<NextResponse | null> {
+export async function withRateLimit(request: NextRequest, kv?: KVNamespace): Promise<NextResponse | null> {
   const ip = getClientIP(request);
+  // Auto-detect KV binding from Cloudflare Worker runtime if not explicitly passed
+  const effectiveKv = kv || (globalThis as any).RATE_LIMIT_KV as KVNamespace | undefined;
+  if (effectiveKv) {
+    const limited = await isRateLimitedKV(ip, effectiveKv);
+    if (limited) {
+      return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 });
+    }
+    return null;
+  }
   if (isRateLimited(ip)) {
     return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 });
   }

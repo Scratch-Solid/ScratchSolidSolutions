@@ -35,7 +35,7 @@
 	"r2_buckets": [
 		{
 			"binding": "UPLOADS_BUCKET",
-			"bucket_name": "marketing-uploads"
+			"bucket_name": "scratchsolid-uploads"
 		}
 	],
 	"routes": [
@@ -79,10 +79,6 @@
 				{
 					"binding": "UPLOADS_BUCKET",
 					"bucket_name": "marketing-uploads-staging"
-				},
-				{
-					"binding": "cleaner_photos_staging",
-					"bucket_name": "cleaner-photos-staging"
 				}
 			],
 			"routes": [

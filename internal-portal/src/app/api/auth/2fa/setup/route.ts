@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/middleware';
-import { generateSecret, generateURI } from 'otplib';
+import { authenticator } from 'otplib';
 import QRCode from 'qrcode';
 import crypto from 'crypto';
 
@@ -11,12 +11,12 @@ export async function POST(request: NextRequest) {
   const { user, db } = authResult;
 
   try {
-    const secret = generateSecret();
-    const otpAuthUrl = generateURI({
-      label: (user as any).email,
-      issuer: 'Scratch Solid Portal',
+    const secret = authenticator.generateSecret();
+    const otpAuthUrl = authenticator.keyuri(
+      (user as any).email,
+      'Scratch Solid Portal',
       secret
-    });
+    );
     const qrCodeDataUrl = await QRCode.toDataURL(otpAuthUrl);
 
     const backupCodes: string[] = Array.from({ length: 10 }, () =>

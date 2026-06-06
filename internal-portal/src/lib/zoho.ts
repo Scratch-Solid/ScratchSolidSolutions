@@ -14,7 +14,7 @@ async function getZohoToken() {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({ refresh_token: ZOHO_REFRESH_TOKEN, client_id: ZOHO_CLIENT_ID, client_secret: ZOHO_CLIENT_SECRET, grant_type: 'refresh_token' }),
   });
-  const json = await response.json();
+  const json = await response.json() as any;
   accessToken = json.access_token;
   tokenExpiry = Date.now() + (json.expires_in * 1000) - 60000;
   return accessToken;
@@ -29,7 +29,7 @@ async function zohoRequest(endpoint: string, method: string, body?: any) {
 
 export async function findCustomerByEmail(email: string) {
   const response = await zohoRequest(`/contacts?email=${encodeURIComponent(email)}`, 'GET');
-  const json = await response.json();
+  const json = await response.json() as any;
   const contacts = json.contacts || [];
   return contacts.find((c: any) => c.contact_type === 'customer' && c.email?.toLowerCase() === email.toLowerCase()) || null;
 }
@@ -64,7 +64,7 @@ export async function recordPayment(invoiceId: string, amount: number, paymentMo
 
 export async function verifyPOP(invoiceId: string, popReference: string) {
   const response = await zohoRequest(`/invoices/${invoiceId}`, 'GET');
-  const json = await response.json();
+  const json = await response.json() as any;
   const payments = json.invoice?.payments || [];
   const match = payments.find((p: any) => p.description?.includes(popReference));
   return { verified: !!match, payment: match || null };

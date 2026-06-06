@@ -65,9 +65,9 @@ describe('GET /api/v2/supervisor/dashboard', () => {
 
     const json = await res.json();
     expect(json.success).toBe(true);
-    expect(json.data.summary.total_jobs).toBe(10);
-    expect(json.data.summary.paid).toBe(5);
-    expect(json.data.active_cleaners).toBe(8);
+    expect(json.data.jobs.total).toBe(10);
+    expect(json.data.jobs.paid).toBe(5);
+    expect(json.data.workforce.active_cleaners).toBe(8);
     expect(json.data.todays_jobs).toHaveLength(1);
     expect(json.data.todays_jobs[0].team_members).toEqual(['abcX123']);
   });

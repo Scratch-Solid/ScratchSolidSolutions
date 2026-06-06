@@ -120,8 +120,8 @@ export async function GET(request: NextRequest) {
     `).all();
 
     const notificationResults = notificationStats.results || [];
-    const sentCount = notificationResults.find((r: any) => r.status === 'sent')?.count || 0;
-    const failedCount = notificationResults.find((r: any) => r.status === 'failed')?.count || 0;
+    const sentCount = Number(notificationResults.find((r: any) => r.status === 'sent')?.count || 0);
+    const failedCount = Number(notificationResults.find((r: any) => r.status === 'failed')?.count || 0);
     const totalNotifications = sentCount + failedCount;
 
     if (totalNotifications > 0) {
