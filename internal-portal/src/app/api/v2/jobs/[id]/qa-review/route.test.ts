@@ -39,7 +39,7 @@ describe('POST /api/v2/jobs/[id]/qa-review', () => {
     mockDb.first.mockResolvedValue(null);
 
     const req = createRequest('SS-2026-001', { client_score: 80 });
-    const res = await POST(req, { params: { id: 'SS-2026-001' } });
+    const res = await POST(req, { params: Promise.resolve({ id: 'SS-2026-001' }) });
     expect(res.status).toBe(404);
     const json = await res.json();
     expect(json.error).toBe('Job not found');
@@ -56,7 +56,7 @@ describe('POST /api/v2/jobs/[id]/qa-review', () => {
       ops_score: 92,
       notes: 'Excellent work!',
     });
-    const res = await POST(req, { params: { id: 'SS-2026-001' } });
+    const res = await POST(req, { params: Promise.resolve({ id: 'SS-2026-001' }) });
     expect(res.status).toBe(200);
 
     const json = await res.json();

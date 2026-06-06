@@ -1,12 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
+import { withAuth, withTracing, withSecurityHeaders, withCsrf, withRateLimit } from '@/lib/middleware';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { content_key: string } }
+  { params }: { params: Promise<{ content_key: string }> }
 ) {
+  const traceId = withTracing(request);
+
+  const rateLimitResponse = await withRateLimit(request);
+  if (rateLimitResponse) return withSecurityHeaders(rateLimitResponse, traceId);
+
   try {
-    const contentKey = params.content_key;
+    const { content_key: contentKey } = await params;
     const db = await getDb();
 
     const result = await db.prepare(`
@@ -37,10 +43,21 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { content_key: string } }
+  { params }: { params: Promise<{ content_key: string }> }
 ) {
+  const traceId = withTracing(request);
+
+  const rateLimitResponse = await withRateLimit(request);
+  if (rateLimitResponse) return withSecurityHeaders(rateLimitResponse, traceId);
+
+  const csrfResult = await withCsrf(request);
+  if (csrfResult) return withSecurityHeaders(csrfResult, traceId);
+
+  const authResult = await withAuth(request, ['admin']);
+  if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
+
   try {
-    const contentKey = params.content_key;
+    const { content_key: contentKey } = await params;
     const body = await request.json();
     const { content, contentType } = body;
 

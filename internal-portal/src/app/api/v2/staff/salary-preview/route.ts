@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const staffId = auth.user.id;
-    const erpnextUrl = `${process.env.ERPNEXT_URL}/api/resource/Salary Slip?fields=["gross_pay","total_deductions","net_pay","start_date","end_date"]&filters=[["employee","=",${staffId}],["docstatus","=","Submitted"]]&order_by=creation desc&limit=1`;
+    const erpnextUrl = `${process.env.ERPNEXT_API_URL}/api/resource/Salary Slip?fields=["gross_pay","total_deductions","net_pay","start_date","end_date"]&filters=[["employee","=",${staffId}],["docstatus","=","Submitted"]]&order_by=creation desc&limit=1`;
 
     const response = await fetch(erpnextUrl, {
       method: "GET",

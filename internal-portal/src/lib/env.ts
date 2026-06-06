@@ -27,6 +27,11 @@ const ENV_CONFIG: EnvVarConfig[] = [
   { name: 'META_API_VERSION', required: false, defaultValue: 'v18.0' },
   { name: 'INTERNAL_PORTAL_N8N_WEBHOOK_SECRET', required: false },
   { name: 'NEXT_PUBLIC_BUSINESS_DASHBOARD_URL', required: false },
+  { name: 'ERPNEXT_API_URL', required: false },
+  { name: 'ERPNEXT_API_KEY', required: false },
+  { name: 'ERPNEXT_API_SECRET', required: false },
+  { name: 'DOCUSIGN_INTEGRATION_KEY', required: false },
+  { name: 'DOCUSIGN_ACCOUNT_ID', required: false },
 ];
 
 const errors: string[] = [];

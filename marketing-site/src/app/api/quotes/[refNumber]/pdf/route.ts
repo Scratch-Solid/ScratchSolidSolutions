@@ -120,11 +120,11 @@ function generateQuotePDF(quote: Record<string, unknown>): Uint8Array {
   const baselinePrice = quote.baseline_price as number;
 
   // Helper function for text
-  const addText = (text: string, x: number, fontSize: number = 10, isBold: boolean = false) => {
+  const addText = (text: string, x: number, lineY: number, fontSize: number = 10, isBold: boolean = false) => {
     pdf.setFontSize(fontSize);
     if (isBold) pdf.setFont('helvetica', 'bold');
     else pdf.setFont('helvetica', 'normal');
-    pdf.text(text, x, y);
+    pdf.text(text, x, lineY);
   };
 
   // Header

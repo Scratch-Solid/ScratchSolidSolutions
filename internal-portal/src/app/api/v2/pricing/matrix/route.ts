@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
+import { withTracing, withSecurityHeaders, withRateLimit } from '@/lib/middleware';
 
 export async function GET(request: NextRequest) {
+  const traceId = withTracing(request);
+
+  const rateLimitResponse = await withRateLimit(request);
+  if (rateLimitResponse) return withSecurityHeaders(rateLimitResponse, traceId);
+
   try {
     const db = await getDb();
 

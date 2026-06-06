@@ -5,15 +5,16 @@ import { notifyCleanerRejection } from '@/lib/cleaner-integrations';
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { log } from '@/lib/logger';
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
   const userId = authResult.user?.id;
 
+  const { id } = await params;
   try {
-    const joinerId = parseInt(params.id);
+    const joinerId = parseInt(id);
     const body = await request.json() as { reason?: string };
     const { reason } = body;
 
@@ -81,7 +82,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
   } catch (error) {
     console.error('Application rejection error:', error);
-    log.error('Failed to reject application', error instanceof Error ? error : new Error(String(error)), { traceId, userId, joinerId: params.id });
+    log.error('Failed to reject application', error instanceof Error ? error : new Error(String(error)), { traceId, userId, joinerId: id });
     
     const response = NextResponse.json({
       success: false,

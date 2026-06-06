@@ -39,15 +39,16 @@ async function generateUniquePaysheetCode(db: D1Database, name: string): Promise
   return `${firstNameBase}${randomUpper}${fallbackSuffix}`;
 }
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
   const userId = authResult.user?.id;
 
+  const { id } = await params;
   try {
-    const joinerId = parseInt(params.id);
+    const joinerId = parseInt(id);
 
     // Check if joiner exists and is pending
     const joiner = await db.prepare(
@@ -182,7 +183,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
   } catch (error) {
     console.error('Application approval error:', error);
-    log.error('Failed to approve application', error instanceof Error ? error : new Error(String(error)), { traceId, userId, joinerId: params.id });
+    log.error('Failed to approve application', error instanceof Error ? error : new Error(String(error)), { traceId, userId, joinerId: id });
     
     const response = NextResponse.json({
       success: false,

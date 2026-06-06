@@ -49,7 +49,7 @@ describe('GET /api/v2/jobs/[id]/checklist', () => {
     });
 
     const req = createGetRequest('SS-2026-001');
-    const res = await GET(req, { params: { id: 'SS-2026-001' } });
+    const res = await GET(req, { params: Promise.resolve({ id: 'SS-2026-001' }) });
     expect(res.status).toBe(200);
 
     const json = await res.json();
@@ -68,7 +68,7 @@ describe('POST /api/v2/jobs/[id]/checklist', () => {
 
   test('returns 400 when body is missing fields', async () => {
     const req = createPostRequest('SS-2026-001', { is_completed: true });
-    const res = await POST(req, { params: { id: 'SS-2026-001' } });
+    const res = await POST(req, { params: Promise.resolve({ id: 'SS-2026-001' }) });
     expect(res.status).toBe(400);
     const json = await res.json();
     expect(json.error).toBe('Missing checklist_item_id or is_completed');
@@ -78,7 +78,7 @@ describe('POST /api/v2/jobs/[id]/checklist', () => {
     mockDb.first.mockResolvedValue({ job_id: 'SS-2026-999' });
 
     const req = createPostRequest('SS-2026-001', { checklist_item_id: 1, is_completed: true });
-    const res = await POST(req, { params: { id: 'SS-2026-001' } });
+    const res = await POST(req, { params: Promise.resolve({ id: 'SS-2026-001' }) });
     expect(res.status).toBe(404);
     const json = await res.json();
     expect(json.error).toBe('Checklist item not found for this job');
@@ -88,7 +88,7 @@ describe('POST /api/v2/jobs/[id]/checklist', () => {
     mockDb.first.mockResolvedValue({ job_id: 'SS-2026-001' });
 
     const req = createPostRequest('SS-2026-001', { checklist_item_id: 1, is_completed: true, photo_url: 'http://r2/photo.jpg' });
-    const res = await POST(req, { params: { id: 'SS-2026-001' } });
+    const res = await POST(req, { params: Promise.resolve({ id: 'SS-2026-001' }) });
     expect(res.status).toBe(200);
 
     const json = await res.json();

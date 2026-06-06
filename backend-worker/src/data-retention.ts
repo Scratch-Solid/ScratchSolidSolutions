@@ -14,7 +14,8 @@ function getReadSession(env) {
 }
 
 export class DataRetentionCleanup {
-  constructor(env) {
+  env: any;
+  constructor(env: any) {
     this.env = env;
   }
 
@@ -195,16 +196,44 @@ export class DataRetentionCleanup {
   }
 
   /**
+   * POPIA: Purge transient tracking metadata after 48 hours
+   */
+  async cleanupTransientTracking() {
+    const cutoffDate = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000); // 48 hours
+
+    // Clean whatsapp_sessions
+    const waResult = await this.env.scratchsolid_db.prepare(`
+      DELETE FROM whatsapp_sessions WHERE conversation_expires_at < ?
+    `).bind(cutoffDate.toISOString()).run();
+    console.log(`Deleted ${waResult.meta.changes || 0} expired whatsapp_sessions (POPIA 48h)`);
+
+    // Clean job_tracking_metadata if table exists
+    let jtResult;
+    try {
+      jtResult = await this.env.scratchsolid_db.prepare(`
+        DELETE FROM job_tracking_metadata WHERE created_at < ?
+      `).bind(cutoffDate.toISOString()).run();
+      console.log(`Deleted ${jtResult.meta.changes || 0} expired job_tracking_metadata (POPIA 48h)`);
+    } catch {
+      // Table may not exist yet
+      jtResult = { meta: { changes: 0 } };
+    }
+
+    return { whatsappSessions: waResult, jobTracking: jtResult };
+  }
+
+  /**
    * Run all cleanup tasks
    */
   async runAllCleanup() {
     console.log('Starting data retention cleanup...');
     const startTime = Date.now();
-    
-    const results = {
+
+    const results: any = {
       sessions: await this.cleanupSessions(),
       refreshTokens: await this.cleanupRefreshTokens(),
       cacheData: await this.cleanupCacheData(),
+      transientTracking: await this.cleanupTransientTracking(),
     };
 
     // Archive operations (run less frequently)
@@ -223,7 +252,7 @@ export class DataRetentionCleanup {
 
     const duration = Date.now() - startTime;
     console.log(`Data retention cleanup completed in ${duration}ms`);
-    
+
     return results;
   }
 }

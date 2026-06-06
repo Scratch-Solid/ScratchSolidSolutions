@@ -8,6 +8,9 @@ export const DATA_RETENTION_POLICIES: Record<string, { retentionDays: number; ac
   gallery_images: { retentionDays: 1095, action: 'delete' }, // 3 years
   notifications: { retentionDays: 90, action: 'delete' },
   refresh_tokens: { retentionDays: 30, action: 'delete' },
+  // POPIA: transient tracking metadata must expire within 48 hours of job completion
+  whatsapp_sessions: { retentionDays: 2, action: 'delete' },
+  job_tracking_metadata: { retentionDays: 2, action: 'delete' },
 };
 
 export function shouldPurge(lastUpdated: string | Date, policyKey: string): boolean {
@@ -52,6 +55,25 @@ export async function cleanupExpiredData(db: D1Database): Promise<{ deleted: Rec
       'UPDATE audit_logs SET archived = 1 WHERE created_at < ? AND archived = 0'
     ).bind(auditLogCutoff.toISOString()).run();
     results.audit_logs = auditLogsArchived.meta.changes || 0;
+
+    // POPIA: purge transient tracking metadata after 48 hours
+    const trackingCutoff = new Date(now);
+    trackingCutoff.setDate(trackingCutoff.getDate() - DATA_RETENTION_POLICIES.whatsapp_sessions.retentionDays);
+    const whatsappSessionsDeleted = await db.prepare(
+      'DELETE FROM whatsapp_sessions WHERE conversation_expires_at < ?'
+    ).bind(trackingCutoff.toISOString()).run();
+    results.whatsapp_sessions = whatsappSessionsDeleted.meta.changes || 0;
+
+    // Also clean any job_tracking_metadata table if it exists
+    try {
+      const jobTrackingDeleted = await db.prepare(
+        'DELETE FROM job_tracking_metadata WHERE created_at < ?'
+      ).bind(trackingCutoff.toISOString()).run();
+      results.job_tracking_metadata = jobTrackingDeleted.meta.changes || 0;
+    } catch {
+      // Table may not exist yet; ignore
+      results.job_tracking_metadata = 0;
+    }
 
   } catch (error) {
     errors.push(error instanceof Error ? error.message : 'Unknown error during cleanup');

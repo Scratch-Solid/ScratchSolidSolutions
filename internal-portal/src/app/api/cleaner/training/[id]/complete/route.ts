@@ -5,15 +5,16 @@ import { completeCleanerTrainingModule, ensureCleanerTrainingProgress, setCleane
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { log } from '@/lib/logger';
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['cleaner']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
   const userId = authResult.user?.id;
 
+  const { id } = await params;
   try {
-    const moduleId = params.id;
+    const moduleId = id;
 
     // Get cleaner profile
     const cleanerProfile = await db.prepare(
@@ -94,7 +95,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
   } catch (error) {
     console.error('Training module completion error:', error);
-    log.error('Failed to complete training module', error instanceof Error ? error : new Error(String(error)), { traceId, userId, moduleId: params.id });
+    log.error('Failed to complete training module', error instanceof Error ? error : new Error(String(error)), { traceId, userId, moduleId: id });
     
     const response = NextResponse.json({
       success: false,

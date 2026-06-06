@@ -5,12 +5,13 @@ import { getDb, getTrainingDb } from '@/lib/db';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const auth = await checkAuthAndRole(request, 'admin');
   if (!auth.authenticated || !auth.authorized) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const bookingId = parseInt(params.id);
+  const { id } = await params;
+  const bookingId = parseInt(id);
   if (isNaN(bookingId)) {
     return NextResponse.json({ error: 'Invalid booking ID' }, { status: 400 });
   }

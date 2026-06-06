@@ -88,31 +88,33 @@ export async function POST(request: NextRequest) {
     // ─── Check conversation window ───
     const windowOpen = await isConversationWindowOpen(db, phone);
 
-    let waResult: { success: boolean; messageId?: string; error?: string };
+    let waResult: { success: boolean; messageId?: string; error?: string; errorCode?: number };
 
     if (windowOpen) {
-      // Send free-form message
+      // Send free-form message within the 24h service conversation window (free tier)
       waResult = await sendWhatsAppMessage(phone, message);
     } else {
-      // Window closed: use template (if provided) or skip
-      if (template_name) {
-        waResult = await sendWhatsAppTemplate(phone, template_name, language_code);
-      } else {
-        waResult = {
-          success: false,
-          error: 'Conversation window closed and no template provided',
-        };
-      }
+      // Window closed — per the free-tier strategy we NEVER send paid templates.
+      // Immediately trigger email fallback to avoid per-message template fees.
+      waResult = {
+        success: false,
+        error: 'Conversation window closed — free-form message not allowed.',
+        errorCode: 131047,
+      };
     }
 
     // ─── Email fallback ───
+    // Trigger on ANY WhatsApp failure (window closed, Meta API error, Error 131047, etc.)
     let emailResult: { success: boolean; error?: string } = { success: false };
     if (!waResult.success && fallback_email) {
+      const reason = waResult.errorCode === 131047
+        ? 'WhatsApp 24-hour window expired (Error 131047)'
+        : 'WhatsApp message could not be delivered';
       try {
         await sendEmail(
           fallback_email,
           fallback_subject,
-          `<p>${message.replace(/\n/g, '<br>')}</p><hr><p><small>You received this email because a WhatsApp message could not be delivered (window closed or API error).</small></p>`
+          `<p>${message.replace(/\n/g, '<br>')}</p><hr><p><small>You received this email because ${reason}. We have routed your notification via email to ensure you stay informed.</small></p>`
         );
         emailResult = { success: true };
       } catch (e) {

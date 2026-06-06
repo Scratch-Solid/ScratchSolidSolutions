@@ -5,14 +5,15 @@ import { logger } from '@/lib/logger';
 
 export const dynamic = "force-dynamic";
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db, user } = authResult;
 
   try {
-    const photoId = parseInt(params.id);
+  const { id } = await params;
+    const photoId = parseInt(id);
     const body = await request.json() as {
       verified?: boolean;
     };
@@ -36,14 +37,15 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['admin', 'cleaner']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db, user } = authResult;
 
   try {
-    const photoId = parseInt(params.id);
+  const { id } = await params;
+    const photoId = parseInt(id);
     const userId = (user as any).id;
     const userRole = (user as any).role;
 

@@ -1,7 +1,8 @@
-const WHATSAPP_API_KEY = process.env.WHATSAPP_API_KEY || '';
-const WHATSAPP_PHONE_ID = process.env.WHATSAPP_PHONE_ID || '';
-const EMAIL_API_KEY = process.env.EMAIL_API_KEY || '';
-const EMAIL_FROM = process.env.EMAIL_FROM || 'noreply@scratchsolid.co.za';
+import { getEnvVarOptional } from './env';
+import { sendWhatsAppMessage } from './whatsapp/meta-cloud';
+
+const RESEND_API_KEY = getEnvVarOptional('RESEND_API_KEY') || '';
+const EMAIL_FROM = getEnvVarOptional('EMAIL_FROM') || 'Scratch Solid Solutions <customerservice@scratchsolidsolutions.org>';
 
 export interface NotificationResult {
   success: boolean;
@@ -16,47 +17,56 @@ export interface NotificationPreferences {
   email: boolean;
 }
 
+// Simple template-to-text mapping for free-form messages (no paid templates)
+function buildFreeformMessage(templateName: string, params: Record<string, string>): string {
+  const mappings: Record<string, (p: Record<string, string>) => string> = {
+    status_update: (p) => `Status Update: ${p.status}${p.booking_id ? ` for booking ${p.booking_id}` : ''}.`,
+    payment_reminder: (p) => `Payment Reminder: Amount ${p.amount} due by ${p.due_date}.`,
+    consent_submitted: (p) => `Hi ${p.name}, your background check consent has been submitted successfully.`,
+    admin_approved: (p) => `Hi ${p.name}, your application has been approved! Welcome to the team.`,
+    admin_rejected: (p) => `Hi ${p.name}, unfortunately your application was not approved. Reason: ${p.reason || 'Not specified'}.`,
+    cleaner_welcome: (p) => `Welcome ${p.name}! Your paysheet code: ${p.paysheet_code}. Portal: ${p.portal_url || 'https://portal.scratchsolidsolutions.org'}`,
+    profile_created: (p) => `Hi ${p.name}, your profile has been created successfully.`,
+    contract_signed: (p) => `Hi ${p.name}, your contract has been signed and recorded.`,
+    training_completed: (p) => `Congratulations ${p.name}! Training completed. Certificate: ${p.cert_hash}.`,
+  };
+  const builder = mappings[templateName];
+  return builder ? builder(params) : `${templateName}: ${Object.entries(params).map(([k, v]) => `${k}=${v}`).join(', ')}`;
+}
+
 export async function sendWhatsApp(to: string, templateName: string, params: Record<string, string>, preferences?: NotificationPreferences): Promise<NotificationResult> {
   if (preferences && !preferences.whatsapp) {
     return { success: false, skipped: true, skipReason: 'WhatsApp notifications disabled' };
   }
-  if (!WHATSAPP_API_KEY || !WHATSAPP_PHONE_ID) return { success: false, error: 'WhatsApp not configured' };
-  try {
-    const response = await fetch(`https://graph.facebook.com/v18.0/${WHATSAPP_PHONE_ID}/messages`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${WHATSAPP_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        messaging_product: 'whatsapp',
-        recipient_type: 'individual',
-        to,
-        type: 'template',
-        template: { name: templateName, language: { code: 'en' }, components: [{ type: 'body', parameters: Object.entries(params).map(([_, value]) => ({ type: 'text', text: value })) }] }
-      }),
-    });
-    const data = await response.json() as { messages?: Array<{ id: string }> };
-    return { success: response.ok, messageId: data.messages?.[0]?.id };
-  } catch (error) {
-    console.error('WhatsApp send failed:', error);
-    return { success: false, error: String(error) };
-  }
+  const body = buildFreeformMessage(templateName, params);
+  const result = await sendWhatsAppMessage(to, body);
+  return {
+    success: result.success,
+    messageId: result.messageId,
+    error: result.error,
+  };
 }
 
 export async function sendEmail(to: string, subject: string, body: string, preferences?: NotificationPreferences): Promise<NotificationResult> {
   if (preferences && !preferences.email) {
     return { success: false, skipped: true, skipReason: 'Email notifications disabled' };
   }
-  if (!EMAIL_API_KEY) return { success: false, error: 'Email not configured' };
+  if (!RESEND_API_KEY) return { success: false, error: 'Email not configured' };
   try {
     const hasHtml = /<[a-z][\s\S]*>/i.test(body);
-    const content = hasHtml
-      ? [{ type: 'text/plain', value: body.replace(/<[^>]*>/g, '').replace(/\n\s*\n/g, '\n').trim() }, { type: 'text/html', value: body }]
-      : [{ type: 'text/plain', value: body }];
-    const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+    const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${EMAIL_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ personalizations: [{ to: [{ email: to }] }], from: { email: EMAIL_FROM }, subject, content }),
+      headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: EMAIL_FROM,
+        to: [to],
+        subject,
+        html: hasHtml ? body : undefined,
+        text: hasHtml ? body.replace(/<[^>]*>/g, '').replace(/\n\s*\n/g, '\n').trim() : body,
+      }),
     });
-    return { success: response.ok };
+    const data = await response.json() as { id?: string };
+    return { success: response.ok, messageId: data.id };
   } catch (error) {
     console.error('Email send failed:', error);
     return { success: false, error: String(error) };

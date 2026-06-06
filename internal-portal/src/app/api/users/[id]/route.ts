@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuth, withTracing, withSecurityHeaders, withCsrf } from '@/lib/middleware';
 import { logAuditEvent } from '@/lib/db';
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
@@ -14,7 +14,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   if (csrfResult) return withSecurityHeaders(csrfResult, traceId);
 
   try {
-    const userId = parseInt(params.id);
+  const { id } = await params;
+    const userId = parseInt(id);
     const requestingUserId = (user as any).userId;
     const requestingUserRole = (user as any).role;
 
@@ -189,14 +190,15 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { user, db } = authResult;
 
   try {
-    const userId = parseInt(params.id);
+  const { id } = await params;
+    const userId = parseInt(id);
     const requestingUserId = (user as any).userId;
     const requestingUserRole = (user as any).role;
 

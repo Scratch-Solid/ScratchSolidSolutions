@@ -47,7 +47,7 @@ describe('GET /api/v2/jobs/[id]/photos', () => {
     });
 
     const req = createGetRequest('SS-2026-001');
-    const res = await GET(req, { params: { id: 'SS-2026-001' } });
+    const res = await GET(req, { params: Promise.resolve({ id: 'SS-2026-001' }) });
     expect(res.status).toBe(200);
 
     const json = await res.json();
@@ -63,7 +63,7 @@ describe('GET /api/v2/jobs/[id]/photos', () => {
     });
 
     const req = createGetRequest('SS-2026-001', '?room=Kitchen');
-    const res = await GET(req, { params: { id: 'SS-2026-001' } });
+    const res = await GET(req, { params: Promise.resolve({ id: 'SS-2026-001' }) });
     expect(res.status).toBe(200);
 
     const json = await res.json();
@@ -79,7 +79,7 @@ describe('POST /api/v2/jobs/[id]/photos', () => {
 
   test('returns 400 when room_name or photo_url is missing', async () => {
     const req = createPostRequest('SS-2026-001', { room_name: 'Kitchen' });
-    const res = await POST(req, { params: { id: 'SS-2026-001' } });
+    const res = await POST(req, { params: Promise.resolve({ id: 'SS-2026-001' }) });
     expect(res.status).toBe(400);
     const json = await res.json();
     expect(json.error).toBe('Missing room_name or photo_url');
@@ -87,7 +87,7 @@ describe('POST /api/v2/jobs/[id]/photos', () => {
 
   test('records photo URL with uploaded_by', async () => {
     const req = createPostRequest('SS-2026-001', { room_name: 'Kitchen', photo_url: 'http://r2/new.jpg' });
-    const res = await POST(req, { params: { id: 'SS-2026-001' } });
+    const res = await POST(req, { params: Promise.resolve({ id: 'SS-2026-001' }) });
     expect(res.status).toBe(200);
 
     const json = await res.json();

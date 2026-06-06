@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { createSignupSignatureReference } from '@/lib/cleaner-integrations';
-import { withTracing, withSecurityHeaders } from '@/lib/middleware';
+import { withTracing, withSecurityHeaders, withRateLimit } from '@/lib/middleware';
 import { validateEmail, validatePhone, validateSaIdNumber, validateSaPassport, sanitizeInput } from '@/lib/validation';
 import { log } from '@/lib/logger';
 import { encryptField } from '@/lib/encryption';
@@ -10,6 +10,9 @@ import { getEnvVarOptional } from '@/lib/env';
 
 export async function POST(request: NextRequest) {
   const traceId = withTracing(request);
+
+  const rateLimitResponse = await withRateLimit(request);
+  if (rateLimitResponse) return withSecurityHeaders(rateLimitResponse, traceId);
 
   try {
     const db = await getDb();

@@ -1,11 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
+import { withAuth, withTracing, withSecurityHeaders, withCsrf } from '@/lib/middleware';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const staffId = parseInt(params.id);
+  const traceId = withTracing(request);
+
+  const csrfResult = await withCsrf(request);
+  if (csrfResult) return withSecurityHeaders(csrfResult, traceId);
+
+  const authResult = await withAuth(request, ['admin']);
+  if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
+
+  const { id } = await params;
+  const staffId = parseInt(id);
   if (isNaN(staffId)) {
     return NextResponse.json({ error: 'Invalid staff ID' }, { status: 400 });
   }
@@ -35,7 +45,7 @@ export async function POST(
 
     // Update ERPNext with KPI data
     try {
-      const erpnextUrl = `${process.env.ERPNEXT_URL}/api/resource/Employee/${staffId}`;
+      const erpnextUrl = `${process.env.ERPNEXT_API_URL}/api/resource/Employee/${staffId}`;
       const response = await fetch(erpnextUrl, {
         method: "PUT",
         headers: {

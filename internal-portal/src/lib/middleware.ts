@@ -326,7 +326,7 @@ export async function withSecurityHeaders(response: NextResponse, traceId: strin
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-XSS-Protection', '1; mode=block');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-  response.headers.set('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self'; connect-src 'self' https://books.zoho.com https://graph.facebook.com https://api.sendgrid.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self';");
+  response.headers.set('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self'; connect-src 'self' https://books.zoho.com https://graph.facebook.com https://api.resend.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self';");
   response.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(self)');
   const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'https://portal.scratchsolidsolutions.org').split(',').map(o => o.trim());

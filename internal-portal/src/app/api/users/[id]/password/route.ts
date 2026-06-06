@@ -4,7 +4,7 @@ import { withAuth, withTracing, withSecurityHeaders, withCsrf } from '@/lib/midd
 import { logAuditEvent } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
@@ -15,7 +15,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   if (csrfResult) return withSecurityHeaders(csrfResult, traceId);
 
   try {
-    const userId = parseInt(params.id);
+  const { id } = await params;
+    const userId = parseInt(id);
     const requestingUserId = (user as any).userId;
     const requestingUserRole = (user as any).role;
 

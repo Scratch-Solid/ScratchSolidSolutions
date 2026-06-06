@@ -25,7 +25,9 @@ async function verifyJWTToken(request, env) {
   
   try {
     const token = authHeader.substring(7);
-    const payload = await jwt.verify(token, env.JWT_SECRET);
+    const isValid = await jwt.verify(token, env.JWT_SECRET);
+    if (!isValid) return null;
+    const { payload } = jwt.decode(token);
     return { type: 'jwt', payload };
   } catch (error) {
     return null;

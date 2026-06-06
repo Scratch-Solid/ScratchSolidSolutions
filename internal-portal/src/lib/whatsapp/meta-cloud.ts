@@ -34,7 +34,7 @@ export async function sendWhatsAppMessage(
   to: string,
   body: string,
   options?: { templateName?: string; languageCode?: string }
-): Promise<{ success: boolean; messageId?: string; error?: string }> {
+): Promise<{ success: boolean; messageId?: string; error?: string; errorCode?: number }> {
   if (!META_ACCESS_TOKEN || !META_PHONE_NUMBER_ID) {
     return { success: false, error: 'Meta Cloud API credentials not configured' };
   }
@@ -74,9 +74,12 @@ export async function sendWhatsAppMessage(
     const data = await response.json() as any;
 
     if (!response.ok) {
+      const metaErrorCode = data.error?.code;
+      const metaErrorMessage = data.error?.message || `Meta API error ${response.status}`;
       return {
         success: false,
-        error: data.error?.message || `Meta API error ${response.status}`,
+        error: metaErrorMessage,
+        errorCode: metaErrorCode,
       };
     }
 
@@ -97,7 +100,7 @@ export async function sendWhatsAppTemplate(
   templateName: string,
   languageCode: string = 'en',
   components?: any[]
-): Promise<{ success: boolean; messageId?: string; error?: string }> {
+): Promise<{ success: boolean; messageId?: string; error?: string; errorCode?: number }> {
   return sendWhatsAppMessage(to, '', { templateName, languageCode });
 }
 

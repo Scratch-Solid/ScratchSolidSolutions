@@ -65,7 +65,8 @@ export async function handleOverdueCancellations() {
           `OVERDUE-${booking.id}-${Date.now()}`
         );
         
-        if (creditNote && creditNote.creditnote) {
+        const cn = creditNote as any;
+        if (cn && cn.creditnote) {
           // Update booking with credit note reference
           await db.prepare(`
             UPDATE bookings 

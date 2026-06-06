@@ -10,19 +10,11 @@ const JWT_SECRET = process.env.JWT_SECRET || '';
 // In production, users should be created through proper admin interfaces
 const SEED_KEY = process.env.SEED_KEY;
 
-function getSeedKey(): string {
-  if (!SEED_KEY) {
-    throw new Error('SEED_KEY environment variable is required for seed-users endpoint');
-  }
-  return SEED_KEY;
-}
-
-function getJWTSecret(): string {
-  if (!JWT_SECRET) throw new Error('JWT_SECRET environment variable is required');
-  return JWT_SECRET;
-}
-
 export async function POST(request: NextRequest) {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not available in production' }, { status: 403 });
+  }
+
   try {
     const body = await request.json() as { seedKey?: string; userType?: string; email?: string; password?: string; name?: string; phone?: string; department?: string; paysheetCode?: string };
     const { seedKey, userType, email, password, name, phone, department, paysheetCode } = body;
@@ -115,4 +107,16 @@ export async function POST(request: NextRequest) {
     console.error('Seed user error:', error);
     return NextResponse.json({ error: 'Failed to seed user' }, { status: 500 });
   }
+}
+
+function getSeedKey(): string {
+  if (!SEED_KEY) {
+    throw new Error('SEED_KEY environment variable is required for seed-users endpoint');
+  }
+  return SEED_KEY;
+}
+
+function getJWTSecret(): string {
+  if (!JWT_SECRET) throw new Error('JWT_SECRET environment variable is required');
+  return JWT_SECRET;
 }

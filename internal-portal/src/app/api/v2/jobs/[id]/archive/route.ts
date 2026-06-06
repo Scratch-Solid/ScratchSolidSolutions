@@ -16,7 +16,7 @@ import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['admin', 'staff', 'cleaner']);
@@ -24,7 +24,8 @@ export async function GET(
   const { db, user } = authResult;
 
   try {
-    const jobId = params.id;
+  const { id } = await params;
+    const jobId = id;
 
     // ─── Job details ───
     const job = await db

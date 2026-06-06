@@ -5,13 +5,14 @@ import { logAuditEvent } from '@/lib/db';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const authResult = await withAuth(request, ['admin']);
   if (authResult instanceof NextResponse) return authResult;
   const { user: adminUser, db } = authResult;
 
-  const userId = parseInt(params.id, 10);
+  const { id } = await params;
+  const userId = parseInt(id, 10);
   if (isNaN(userId)) {
     return NextResponse.json({ error: 'Invalid user ID' }, { status: 400 });
   }

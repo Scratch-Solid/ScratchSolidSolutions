@@ -48,7 +48,7 @@ describe('GET /api/v2/jobs/[id]/tracking', () => {
     });
 
     const req = createGetRequest('SS-2026-001');
-    const res = await GET(req, { params: { id: 'SS-2026-001' } });
+    const res = await GET(req, { params: Promise.resolve({ id: 'SS-2026-001' }) });
     expect(res.status).toBe(200);
 
     const json = await res.json();
@@ -66,7 +66,7 @@ describe('POST /api/v2/jobs/[id]/tracking', () => {
 
   test('returns 400 for invalid coordinates', async () => {
     const req = createPostRequest('SS-2026-001', { latitude: 999, longitude: 0 });
-    const res = await POST(req, { params: { id: 'SS-2026-001' } });
+    const res = await POST(req, { params: Promise.resolve({ id: 'SS-2026-001' }) });
     expect(res.status).toBe(400);
     const json = await res.json();
     expect(json.error).toBe('Invalid latitude or longitude');
@@ -74,7 +74,7 @@ describe('POST /api/v2/jobs/[id]/tracking', () => {
 
   test('records valid tracking point', async () => {
     const req = createPostRequest('SS-2026-001', { latitude: -33.9, longitude: 18.4, accuracy: 5 });
-    const res = await POST(req, { params: { id: 'SS-2026-001' } });
+    const res = await POST(req, { params: Promise.resolve({ id: 'SS-2026-001' }) });
     expect(res.status).toBe(200);
 
     const json = await res.json();

@@ -38,7 +38,7 @@ describe('POST /api/v2/supervisor/jobs/[id]/assign', () => {
 
   test('returns 400 when cleaner_ids is missing', async () => {
     const req = createRequest('SS-2026-001', {});
-    const res = await POST(req, { params: { id: 'SS-2026-001' } });
+    const res = await POST(req, { params: Promise.resolve({ id: 'SS-2026-001' }) });
     expect(res.status).toBe(400);
     const json = await res.json();
     expect(json.error).toBe('Missing cleaner_ids array');
@@ -48,7 +48,7 @@ describe('POST /api/v2/supervisor/jobs/[id]/assign', () => {
     mockDb.all.mockResolvedValue({ results: [] });
 
     const req = createRequest('SS-2026-001', { cleaner_ids: ['badId'] });
-    const res = await POST(req, { params: { id: 'SS-2026-001' } });
+    const res = await POST(req, { params: Promise.resolve({ id: 'SS-2026-001' }) });
     expect(res.status).toBe(400);
     const json = await res.json();
     expect(json.error).toBe('Invalid cleaner IDs');
@@ -61,7 +61,7 @@ describe('POST /api/v2/supervisor/jobs/[id]/assign', () => {
     });
 
     const req = createRequest('SS-2026-001', { cleaner_ids: ['abcX123456', 'defY789012'] });
-    const res = await POST(req, { params: { id: 'SS-2026-001' } });
+    const res = await POST(req, { params: Promise.resolve({ id: 'SS-2026-001' }) });
     expect(res.status).toBe(200);
 
     const json = await res.json();

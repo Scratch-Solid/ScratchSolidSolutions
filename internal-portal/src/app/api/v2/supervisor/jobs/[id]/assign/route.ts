@@ -11,7 +11,7 @@ import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['admin', 'staff']);
@@ -20,7 +20,8 @@ export async function POST(
   const userId = authResult.user?.id;
 
   try {
-    const jobId = params.id;
+  const { id } = await params;
+    const jobId = id;
     const body = (await request.json()) as unknown;
 
     if (

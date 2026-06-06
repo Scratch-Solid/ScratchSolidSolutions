@@ -1,10 +1,15 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuth } from '@/lib/middleware';
+import { withAuth, withTracing, withSecurityHeaders, withCsrf } from '@/lib/middleware';
 
 export async function POST(request: NextRequest) {
+  const traceId = withTracing(request);
+
+  const csrfResult = await withCsrf(request);
+  if (csrfResult) return withSecurityHeaders(csrfResult, traceId);
+
   const authResult = await withAuth(request, ['admin']);
-  if (authResult instanceof NextResponse) return authResult;
+  if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
 
   try {

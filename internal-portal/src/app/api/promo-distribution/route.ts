@@ -1,7 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
+import { withAuth, withTracing, withSecurityHeaders, withCsrf, withRateLimit } from '@/lib/middleware';
 
 export async function POST(request: NextRequest) {
+  const traceId = withTracing(request);
+
+  const rateLimitResponse = await withRateLimit(request);
+  if (rateLimitResponse) return withSecurityHeaders(rateLimitResponse, traceId);
+
+  const csrfResult = await withCsrf(request);
+  if (csrfResult) return withSecurityHeaders(csrfResult, traceId);
+
+  const authResult = await withAuth(request, ['admin']);
+  if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
+
   try {
     const body = await request.json() as {
       promoCodeId: number;

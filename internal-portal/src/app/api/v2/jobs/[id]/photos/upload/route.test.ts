@@ -55,7 +55,7 @@ describe('POST /api/v2/jobs/[id]/photos/upload', () => {
 
   test('returns 400 when room_name or base64_image is missing', async () => {
     const req = createRequest('SS-2026-001', { room_name: 'Kitchen' });
-    const res = await POST(req, { params: { id: 'SS-2026-001' } });
+    const res = await POST(req, { params: Promise.resolve({ id: 'SS-2026-001' }) });
     expect(res.status).toBe(400);
     const json = await res.json();
     expect(json.error).toBe('Missing room_name or base64_image');
@@ -65,7 +65,7 @@ describe('POST /api/v2/jobs/[id]/photos/upload', () => {
     mockDb.first.mockResolvedValue(null);
 
     const req = createRequest('SS-2026-001', { room_name: 'Kitchen', base64_image: sampleBase64Image });
-    const res = await POST(req, { params: { id: 'SS-2026-001' } });
+    const res = await POST(req, { params: Promise.resolve({ id: 'SS-2026-001' }) });
     expect(res.status).toBe(404);
     const json = await res.json();
     expect(json.error).toBe('Job not found');
@@ -75,7 +75,7 @@ describe('POST /api/v2/jobs/[id]/photos/upload', () => {
     mockDb.first.mockResolvedValue({ id: 'SS-2026-001', status: 'assigned' });
 
     const req = createRequest('SS-2026-001', { room_name: 'Kitchen', base64_image: sampleBase64Image, file_name: 'test.png' });
-    const res = await POST(req, { params: { id: 'SS-2026-001' } });
+    const res = await POST(req, { params: Promise.resolve({ id: 'SS-2026-001' }) });
     expect(res.status).toBe(200);
 
     const json = await res.json();

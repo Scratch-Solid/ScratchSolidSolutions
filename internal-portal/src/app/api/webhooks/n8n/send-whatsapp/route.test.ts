@@ -91,20 +91,19 @@ describe('POST /api/webhooks/n8n/send-whatsapp', () => {
     expect(mockSendEmail).not.toHaveBeenCalled();
   });
 
-  test('sends template when window is closed and template is provided', async () => {
+  test('falls back to email when window is closed (never sends paid templates)', async () => {
     mockIsWindowOpen.mockResolvedValue(false);
 
-    const req = createRequest(
-      { ...validPayload, template_name: 'job_reminder_v1' },
-      'Bearer test-secret-123'
-    );
+    const req = createRequest(validPayload, 'Bearer test-secret-123');
     const res = await POST(req);
     expect(res.status).toBe(200);
 
     const json = await res.json();
     expect(json.delivered).toBe(true);
-    expect(mockSendTemplate).toHaveBeenCalledWith('+27123456789', 'job_reminder_v1', 'en');
-    expect(mockSendEmail).not.toHaveBeenCalled();
+    expect(json.whatsapp.errorCode).toBe(131047);
+    expect(mockSendMessage).not.toHaveBeenCalled();
+    expect(mockSendTemplate).not.toHaveBeenCalled();
+    expect(mockSendEmail).toHaveBeenCalled();
   });
 
   test('falls back to email when WhatsApp fails and fallback_email is provided', async () => {
@@ -135,16 +134,18 @@ describe('POST /api/webhooks/n8n/send-whatsapp', () => {
     expect(json.delivered).toBe(false);
   });
 
-  test('returns 502 when window is closed and no template provided', async () => {
+  test('returns 502 when window is closed and no fallback email available', async () => {
     mockIsWindowOpen.mockResolvedValue(false);
-    mockSendEmail.mockRejectedValue(new Error('Email send failed'));
 
-    const req = createRequest(validPayload, 'Bearer test-secret-123');
+    const req = createRequest(
+      { phone: '+27123456789', message: 'Test' }, // no fallback_email
+      'Bearer test-secret-123'
+    );
     const res = await POST(req);
     expect(res.status).toBe(502);
 
     const json = await res.json();
     expect(json.delivered).toBe(false);
-    expect(json.whatsapp.error).toContain('Conversation window closed');
+    expect(json.whatsapp.errorCode).toBe(131047);
   });
 });

@@ -303,8 +303,58 @@ async function findUserByEmail(db, email) {
 router.options('*', (request) => new Response(null, { headers: getCorsHeaders(request) }));
 
 // Health check (no auth required)
-router.get('/api/health', (request) => {
-  return new Response(JSON.stringify({ status: 'ok', service: 'cloudflare-worker' }), {
+router.get('/api/health', async (request, env) => {
+  const checks: Record<string, string> = {};
+  let overall = 'ok';
+
+  // D1 check
+  try {
+    await env.scratchsolid_db.prepare("SELECT 1").first();
+    checks.d1 = 'ok';
+  } catch (e) {
+    checks.d1 = 'error';
+    overall = 'degraded';
+  }
+
+  // Resend check
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: 'health@scratchsolidsolutions.org',
+        to: 'health@scratchsolidsolutions.org',
+        subject: 'Health Check',
+        html: '<p>Health check</p>'
+      })
+    });
+    // Resend will return 422 for invalid to address, but if unauthorized it returns 401
+    checks.resend = res.status === 401 ? 'unauthorized' : 'ok';
+    if (checks.resend === 'unauthorized') { overall = 'degraded'; }
+  } catch (e) {
+    checks.resend = 'error';
+    overall = 'degraded';
+  }
+
+  // Zoho check
+  try {
+    const zohoRes = await fetch(`https://books.zoho.com/api/v3/organizations?organization_id=${env.ZOHO_ORG_ID}`, {
+      headers: { 'Authorization': `Zoho-oauthtoken ${env.ZOHO_REFRESH_TOKEN}` }
+    });
+    checks.zoho = zohoRes.status === 401 ? 'token_expired' : 'ok';
+    if (checks.zoho === 'token_expired') { overall = 'degraded'; }
+  } catch (e) {
+    checks.zoho = 'error';
+    overall = 'degraded';
+  }
+
+  return new Response(JSON.stringify({
+    status: overall,
+    service: 'cloudflare-worker',
+    version: '2.0.0',
+    checks,
+    timestamp: new Date().toISOString()
+  }), {
     headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
   });
 });

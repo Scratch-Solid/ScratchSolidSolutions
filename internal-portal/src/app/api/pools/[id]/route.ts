@@ -4,14 +4,15 @@ import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { validateRequestBodyLengths, sanitizeInput } from '@/lib/validation';
 import { log } from '@/lib/logger';
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
 
   try {
-    const poolId = parseInt(params.id);
+  const { id } = await params;
+    const poolId = parseInt(id);
     const body = await request.json() as { name?: string; pool_type?: string; description?: string; max_cleaners?: number; status?: string };
     const { name, pool_type, description, max_cleaners, status } = body;
     const userId = authResult.user?.id;
@@ -154,14 +155,15 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
 
   try {
-    const poolId = parseInt(params.id);
+  const { id } = await params;
+    const poolId = parseInt(id);
     const userId = authResult.user?.id;
 
     // Check if pool exists

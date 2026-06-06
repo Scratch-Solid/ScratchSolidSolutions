@@ -1,14 +1,13 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
+import { setupCleanerPayrollInErpNext } from '@/lib/cleaner-integrations';
 import { log } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
-  const { db } = authResult;
   const userId = authResult.user?.id;
 
   try {
@@ -22,7 +21,7 @@ export async function POST(request: NextRequest) {
       tax_number?: string;
     };
 
-    const { employee_id, paysheet_code, bank_name, account_number, branch_code, account_holder, tax_number } = body;
+    const { employee_id, paysheet_code, bank_name, account_number } = body;
 
     if (!employee_id || !paysheet_code || !bank_name || !account_number) {
       const response = NextResponse.json({
@@ -36,23 +35,31 @@ export async function POST(request: NextRequest) {
       return withSecurityHeaders(response, traceId);
     }
 
-    // TODO: Integrate with ERPNext API to setup payroll
-    // For now, return placeholder response
+    const bankDetailsPresent = Boolean(bank_name && account_number);
+    const result = await setupCleanerPayrollInErpNext({
+      traceId,
+      employeeId: employee_id,
+      paysheetCode: paysheet_code,
+      bankDetailsPresent,
+    });
+
     const response = NextResponse.json({
-      success: true,
-      message: 'ERPNext payroll setup endpoint - API integration pending',
+      success: result.status === 'configured',
+      message: result.status === 'configured' ? 'Payroll setup in ERPNext' : 'ERPNext payroll integration pending',
       data: {
         employee_id,
         paysheet_code,
-        status: 'pending_integration'
+        erpnext_reference: result.reference,
+        status: result.status,
+        reason: result.reason,
       }
-    });
+    }, { status: result.status === 'configured' ? 201 : 503 });
     return withSecurityHeaders(response, traceId);
 
   } catch (error) {
     console.error('ERPNext payroll setup error:', error);
     log.error('Failed to setup ERPNext payroll', error instanceof Error ? error : new Error(String(error)), { traceId, userId });
-    
+
     const response = NextResponse.json({
       success: false,
       error: {

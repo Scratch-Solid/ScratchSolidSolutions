@@ -35,8 +35,8 @@ describe('QR Code API Endpoint', () => {
       (QRCode.toDataURL as jest.Mock).mockResolvedValue('data:image/png;base64,testqr');
 
       const request = new NextRequest('http://localhost:3000/api/promo-codes/1/qr-code');
-      const response = await GET(request, { params: { id: '1' } });
-      const data = await response.json();
+      const response = await GET(request, { params: Promise.resolve({ id: '1' }) });
+      const data = await response.json() as any;
 
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
@@ -49,8 +49,8 @@ describe('QR Code API Endpoint', () => {
 
     it('should return 400 for invalid promo code ID', async () => {
       const request = new NextRequest('http://localhost:3000/api/promo-codes/invalid/qr-code');
-      const response = await GET(request, { params: { id: 'invalid' } });
-      const data = await response.json();
+      const response = await GET(request, { params: Promise.resolve({ id: 'invalid' }) });
+      const data = await response.json() as any;
 
       expect(response.status).toBe(400);
       expect(data.error).toBe('Invalid promo code ID');
@@ -65,8 +65,8 @@ describe('QR Code API Endpoint', () => {
       (getDb as jest.Mock).mockResolvedValue(mockDb);
 
       const request = new NextRequest('http://localhost:3000/api/promo-codes/999/qr-code');
-      const response = await GET(request, { params: { id: '999' } });
-      const data = await response.json();
+      const response = await GET(request, { params: Promise.resolve({ id: '999' }) });
+      const data = await response.json() as any;
 
       expect(response.status).toBe(404);
       expect(data.error).toBe('Promo code not found');
@@ -76,8 +76,8 @@ describe('QR Code API Endpoint', () => {
       (getDb as jest.Mock).mockResolvedValue(null);
 
       const request = new NextRequest('http://localhost:3000/api/promo-codes/1/qr-code');
-      const response = await GET(request, { params: { id: '1' } });
-      const data = await response.json();
+      const response = await GET(request, { params: Promise.resolve({ id: '1' }) });
+      const data = await response.json() as any;
 
       expect(response.status).toBe(500);
       expect(data.error).toBe('Database not available');
@@ -96,8 +96,8 @@ describe('QR Code API Endpoint', () => {
       (QRCode.toDataURL as jest.Mock).mockRejectedValue(new Error('QR generation failed'));
 
       const request = new NextRequest('http://localhost:3000/api/promo-codes/1/qr-code');
-      const response = await GET(request, { params: { id: '1' } });
-      const data = await response.json();
+      const response = await GET(request, { params: Promise.resolve({ id: '1' }) });
+      const data = await response.json() as any;
 
       expect(response.status).toBe(500);
       expect(data.error).toBe('Failed to generate QR code');
@@ -118,8 +118,8 @@ describe('QR Code API Endpoint', () => {
       (QRCode.toDataURL as jest.Mock).mockResolvedValue('data:image/png;base64,testqr');
 
       const request = new NextRequest('http://localhost:3000/api/promo-codes/1/qr-code');
-      const response = await GET(request, { params: { id: '1' } });
-      const data = await response.json();
+      const response = await GET(request, { params: Promise.resolve({ id: '1' }) });
+      const data = await response.json() as any;
 
       expect(data.shareUrl).toBe('https://example.com/services?promo=SAVE30');
     });
@@ -139,8 +139,8 @@ describe('QR Code API Endpoint', () => {
       (QRCode.toDataURL as jest.Mock).mockResolvedValue('data:image/png;base64,testqr');
 
       const request = new NextRequest('http://localhost:3000/api/promo-codes/1/qr-code');
-      const response = await GET(request, { params: { id: '1' } });
-      const data = await response.json();
+      const response = await GET(request, { params: Promise.resolve({ id: '1' }) });
+      const data = await response.json() as any;
 
       expect(data.shareUrl).toBe('https://scratchsolidsolutions.org/services?promo=SAVE30');
     });

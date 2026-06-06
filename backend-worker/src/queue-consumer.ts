@@ -3,7 +3,7 @@
 // (audit logs, notifications, analytics) and reduce single-writer contention
 
 export interface Env {
-  DB: D1Database;
+  scratchsolid_db: D1Database;
 }
 
 export interface WriteMessage {

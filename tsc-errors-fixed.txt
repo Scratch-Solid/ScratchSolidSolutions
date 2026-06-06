@@ -1,0 +1,296 @@
+internal-portal/.next/types/validator.ts(459,31): error TS2344: Type 'typeof import("C:/Users/jason/ScratchSolidSolutions/internal-portal/src/app/api/admin/bookings/[id]/auto-assign/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/admin/bookings/[id]/auto-assign">'.
+  Types of property 'POST' are incompatible.
+    Type '(request: NextRequest, { params }: { params: { id: string; }; }) => Promise<NextResponse<{ error: string; }> | NextResponse<{ success: boolean; assignedStaffId?: number; message: string; }>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type '{ params: { id: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+internal-portal/.next/types/validator.ts(612,31): error TS2344: Type 'typeof import("C:/Users/jason/ScratchSolidSolutions/internal-portal/src/app/api/admin/new-joiners/[id]/approve/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/admin/new-joiners/[id]/approve">'.
+  Types of property 'POST' are incompatible.
+    Type '(request: NextRequest, { params }: { params: { id: string; }; }) => Promise<NextResponse<unknown>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type '{ params: { id: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+internal-portal/.next/types/validator.ts(621,31): error TS2344: Type 'typeof import("C:/Users/jason/ScratchSolidSolutions/internal-portal/src/app/api/admin/new-joiners/[id]/reject/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/admin/new-joiners/[id]/reject">'.
+  Types of property 'POST' are incompatible.
+    Type '(request: NextRequest, { params }: { params: { id: string; }; }) => Promise<NextResponse<unknown>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type '{ params: { id: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+internal-portal/.next/types/validator.ts(882,31): error TS2344: Type 'typeof import("C:/Users/jason/ScratchSolidSolutions/internal-portal/src/app/api/admin/users/[id]/delete/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/admin/users/[id]/delete">'.
+  Types of property 'POST' are incompatible.
+    Type '(request: NextRequest, { params }: { params: { id: string; }; }) => Promise<NextResponse<unknown>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type '{ params: { id: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+internal-portal/.next/types/validator.ts(891,31): error TS2344: Type 'typeof import("C:/Users/jason/ScratchSolidSolutions/internal-portal/src/app/api/admin/users/[id]/restore/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/admin/users/[id]/restore">'.
+  Types of property 'POST' are incompatible.
+    Type '(request: NextRequest, { params }: { params: { id: string; }; }) => Promise<NextResponse<unknown>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type '{ params: { id: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+internal-portal/.next/types/validator.ts(1386,31): error TS2344: Type 'typeof import("C:/Users/jason/ScratchSolidSolutions/internal-portal/src/app/api/cleaner/training/[id]/complete/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/cleaner/training/[id]/complete">'.
+  Types of property 'POST' are incompatible.
+    Type '(request: NextRequest, { params }: { params: { id: string; }; }) => Promise<NextResponse<unknown>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type '{ params: { id: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+internal-portal/.next/types/validator.ts(1602,31): error TS2344: Type 'typeof import("C:/Users/jason/ScratchSolidSolutions/internal-portal/src/app/api/photos/[id]/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/photos/[id]">'.
+  Types of property 'PUT' are incompatible.
+    Type '(request: NextRequest, { params }: { params: { id: string; }; }) => Promise<NextResponse<unknown>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type '{ params: { id: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+internal-portal/.next/types/validator.ts(1629,31): error TS2344: Type 'typeof import("C:/Users/jason/ScratchSolidSolutions/internal-portal/src/app/api/pools/[id]/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/pools/[id]">'.
+  Types of property 'PUT' are incompatible.
+    Type '(request: NextRequest, { params }: { params: { id: string; }; }) => Promise<NextResponse<unknown>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type '{ params: { id: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+internal-portal/.next/types/validator.ts(1818,31): error TS2344: Type 'typeof import("C:/Users/jason/ScratchSolidSolutions/internal-portal/src/app/api/users/[id]/password/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/users/[id]/password">'.
+  Types of property 'PUT' are incompatible.
+    Type '(request: NextRequest, { params }: { params: { id: string; }; }) => Promise<NextResponse<unknown>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type '{ params: { id: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+internal-portal/.next/types/validator.ts(1827,31): error TS2344: Type 'typeof import("C:/Users/jason/ScratchSolidSolutions/internal-portal/src/app/api/users/[id]/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/users/[id]">'.
+  Types of property 'GET' are incompatible.
+    Type '(request: NextRequest, { params }: { params: { id: string; }; }) => Promise<NextResponse<unknown>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type '{ params: { id: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+internal-portal/.next/types/validator.ts(1845,31): error TS2344: Type 'typeof import("C:/Users/jason/ScratchSolidSolutions/internal-portal/src/app/api/v2/cms/[content_key]/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/v2/cms/[content_key]">'.
+  Types of property 'GET' are incompatible.
+    Type '(request: NextRequest, { params }: { params: { content_key: string; }; }) => Promise<NextResponse<{ error: string; }> | NextResponse<{ contentKey: string; content: string; contentType: string; updatedAt: string; }>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ content_key: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ content_key: string; }>; }' is not assignable to type '{ params: { content_key: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'content_key' is missing in type 'Promise<{ content_key: string; }>' but required in type '{ content_key: string; }'.
+internal-portal/.next/types/validator.ts(1854,31): error TS2344: Type 'typeof import("C:/Users/jason/ScratchSolidSolutions/internal-portal/src/app/api/v2/jobs/[id]/archive/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/v2/jobs/[id]/archive">'.
+  Types of property 'GET' are incompatible.
+    Type '(request: NextRequest, { params }: { params: { id: string; }; }) => Promise<NextResponse<unknown>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type '{ params: { id: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+internal-portal/.next/types/validator.ts(1863,31): error TS2344: Type 'typeof import("C:/Users/jason/ScratchSolidSolutions/internal-portal/src/app/api/v2/jobs/[id]/checklist/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/v2/jobs/[id]/checklist">'.
+  Types of property 'GET' are incompatible.
+    Type '(request: NextRequest, { params }: { params: { id: string; }; }) => Promise<NextResponse<unknown>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type '{ params: { id: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+internal-portal/.next/types/validator.ts(1872,31): error TS2344: Type 'typeof import("C:/Users/jason/ScratchSolidSolutions/internal-portal/src/app/api/v2/jobs/[id]/photos/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/v2/jobs/[id]/photos">'.
+  Types of property 'GET' are incompatible.
+    Type '(request: NextRequest, { params }: { params: { id: string; }; }) => Promise<NextResponse<unknown>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type '{ params: { id: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+internal-portal/.next/types/validator.ts(1881,31): error TS2344: Type 'typeof import("C:/Users/jason/ScratchSolidSolutions/internal-portal/src/app/api/v2/jobs/[id]/photos/upload/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/v2/jobs/[id]/photos/upload">'.
+  Types of property 'POST' are incompatible.
+    Type '(request: NextRequest, { params }: { params: { id: string; }; }) => Promise<NextResponse<unknown>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type '{ params: { id: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+internal-portal/.next/types/validator.ts(1890,31): error TS2344: Type 'typeof import("C:/Users/jason/ScratchSolidSolutions/internal-portal/src/app/api/v2/jobs/[id]/qa-review/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/v2/jobs/[id]/qa-review">'.
+  Types of property 'POST' are incompatible.
+    Type '(request: NextRequest, { params }: { params: { id: string; }; }) => Promise<NextResponse<unknown>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type '{ params: { id: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+internal-portal/.next/types/validator.ts(1899,31): error TS2344: Type 'typeof import("C:/Users/jason/ScratchSolidSolutions/internal-portal/src/app/api/v2/jobs/[id]/tracking/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/v2/jobs/[id]/tracking">'.
+  Types of property 'GET' are incompatible.
+    Type '(request: NextRequest, { params }: { params: { id: string; }; }) => Promise<NextResponse<unknown>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type '{ params: { id: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+internal-portal/.next/types/validator.ts(1917,31): error TS2344: Type 'typeof import("C:/Users/jason/ScratchSolidSolutions/internal-portal/src/app/api/v2/staff/[id]/sync-kpi/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/v2/staff/[id]/sync-kpi">'.
+  Types of property 'POST' are incompatible.
+    Type '(request: NextRequest, { params }: { params: { id: string; }; }) => Promise<NextResponse<{ error: string; }> | NextResponse<{ success: boolean; kpi: { overall: number; clientSatisfaction: number; punctuality: number; quality: number; communication: number; }; message: string; }>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type '{ params: { id: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+internal-portal/.next/types/validator.ts(1962,31): error TS2344: Type 'typeof import("C:/Users/jason/ScratchSolidSolutions/internal-portal/src/app/api/v2/supervisor/jobs/[id]/assign/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/v2/supervisor/jobs/[id]/assign">'.
+  Types of property 'POST' are incompatible.
+    Type '(request: NextRequest, { params }: { params: { id: string; }; }) => Promise<NextResponse<unknown>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type '{ params: { id: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+internal-portal/src/app/api/admin/alerts/check/route.ts(125,32): error TS2365: Operator '+' cannot be applied to types 'unknown' and 'unknown'.
+internal-portal/src/app/api/admin/alerts/check/route.ts(128,28): error TS2362: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+internal-portal/src/app/api/admin/approve-admin/route.ts(18,25): error TS2552: Cannot find name 'response'. Did you mean 'Response'?
+internal-portal/src/app/api/admin/approve-admin/route.ts(19,32): error TS2552: Cannot find name 'response'. Did you mean 'Response'?
+internal-portal/src/app/api/admin/approve-admin/route.ts(27,27): error TS2552: Cannot find name 'response'. Did you mean 'Response'?
+internal-portal/src/app/api/admin/approve-admin/route.ts(28,34): error TS2552: Cannot find name 'response'. Did you mean 'Response'?
+internal-portal/src/app/api/admin/approve-admin/route.ts(36,27): error TS2552: Cannot find name 'response'. Did you mean 'Response'?
+internal-portal/src/app/api/admin/approve-admin/route.ts(37,34): error TS2552: Cannot find name 'response'. Did you mean 'Response'?
+internal-portal/src/app/api/admin/approve-admin/route.ts(49,27): error TS2552: Cannot find name 'response'. Did you mean 'Response'?
+internal-portal/src/app/api/admin/approve-admin/route.ts(50,34): error TS2552: Cannot find name 'response'. Did you mean 'Response'?
+internal-portal/src/app/api/admin/approve-admin/route.ts(75,25): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/approve-admin/route.ts(76,32): error TS2552: Cannot find name 'response'. Did you mean 'Response'?
+internal-portal/src/app/api/admin/approve-admin/route.ts(91,25): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/approve-admin/route.ts(92,32): error TS2552: Cannot find name 'response'. Did you mean 'Response'?
+internal-portal/src/app/api/admin/audit/route.ts(59,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/audit/route.ts(63,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/bookings/[id]/auto-assign/route.ts(48,7): error TS2345: Argument of type 'string' is not assignable to parameter of type 'ServiceType'.
+internal-portal/src/app/api/admin/contracts/[id]/update/route.ts(15,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/contracts/[id]/update/route.ts(19,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/contracts/[id]/update/route.ts(41,34): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/contracts/[id]/update/route.ts(56,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/contracts/[id]/update/route.ts(60,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/contracts/[id]/update/route.ts(83,34): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/contracts/[id]/update/route.ts(99,34): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/contracts/[id]/update/route.ts(103,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/contracts/[id]/update/route.ts(107,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/health-report/route.ts(60,41): error TS2365: Operator '+' cannot be applied to types 'unknown' and 'unknown'.
+internal-portal/src/app/api/admin/health-report/route.ts(61,5): error TS2322: Type 'unknown' is not assignable to type 'number'.
+internal-portal/src/app/api/admin/health-report/route.ts(64,5): error TS2322: Type 'string | 0' is not assignable to type 'number'.
+  Type 'string' is not assignable to type 'number'.
+internal-portal/src/app/api/admin/health-report/route.ts(67,5): error TS2322: Type 'string | 0' is not assignable to type 'number'.
+  Type 'string' is not assignable to type 'number'.
+internal-portal/src/app/api/admin/health-report/route.ts(70,5): error TS2322: Type 'string | 0' is not assignable to type 'number'.
+  Type 'string' is not assignable to type 'number'.
+internal-portal/src/app/api/admin/health-report/route.ts(98,20): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'.
+internal-portal/src/app/api/admin/pending-approvals/route.ts(17,25): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/pending-approvals/route.ts(18,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/pending-approvals/route.ts(26,27): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/pending-approvals/route.ts(27,34): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/pending-approvals/route.ts(35,27): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/pending-approvals/route.ts(36,34): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/pending-approvals/route.ts(58,25): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/pending-approvals/route.ts(59,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/pending-approvals/route.ts(74,25): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/pending-approvals/route.ts(75,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/reject-admin/route.ts(18,25): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/reject-admin/route.ts(19,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/reject-admin/route.ts(27,27): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/reject-admin/route.ts(28,34): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/reject-admin/route.ts(36,27): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/reject-admin/route.ts(37,34): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/reject-admin/route.ts(49,27): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/reject-admin/route.ts(50,34): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/reject-admin/route.ts(75,25): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/reject-admin/route.ts(76,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/reject-admin/route.ts(91,25): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/reject-admin/route.ts(92,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/[id]/permissions/route.ts(19,25): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/[id]/permissions/route.ts(20,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/[id]/permissions/route.ts(28,27): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/[id]/permissions/route.ts(29,34): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/[id]/permissions/route.ts(37,27): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/[id]/permissions/route.ts(38,34): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/[id]/permissions/route.ts(45,27): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/[id]/permissions/route.ts(46,34): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/[id]/permissions/route.ts(58,27): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/[id]/permissions/route.ts(59,34): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/[id]/permissions/route.ts(84,25): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/[id]/permissions/route.ts(85,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/[id]/permissions/route.ts(100,25): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/[id]/permissions/route.ts(101,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/create/route.ts(19,25): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/create/route.ts(20,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/create/route.ts(28,27): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/create/route.ts(29,34): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/create/route.ts(37,27): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/create/route.ts(38,34): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/create/route.ts(45,27): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/create/route.ts(46,34): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/create/route.ts(58,27): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/create/route.ts(59,34): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/create/route.ts(84,25): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/create/route.ts(85,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/create/route.ts(100,25): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/create/route.ts(101,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/training/completion-rate/route.ts(116,39): error TS2345: Argument of type 'string | 0' is not assignable to parameter of type 'string'.
+  Type 'number' is not assignable to type 'string'.
+internal-portal/src/app/api/auth/2fa/confirm/route.ts(60,46): error TS2345: Argument of type '"2fa_enable_failed"' is not assignable to parameter of type '"login_success" | "login_failed" | "logout" | "2fa_enabled" | "2fa_disabled" | "password_changed"'.
+internal-portal/src/app/api/auth/2fa/enable/route.ts(54,39): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string'.
+internal-portal/src/app/api/auth/2fa/setup/route.ts(4,10): error TS2305: Module '"otplib"' has no exported member 'generateSecret'.
+internal-portal/src/app/api/auth/2fa/setup/route.ts(4,26): error TS2305: Module '"otplib"' has no exported member 'generateURI'.
+internal-portal/src/app/api/auth/2fa/verify/route.ts(62,48): error TS2345: Argument of type '"2fa_verify_failed"' is not assignable to parameter of type '"login_success" | "login_failed" | "logout" | "2fa_enabled" | "2fa_disabled" | "password_changed"'.
+internal-portal/src/app/api/auth/2fa/verify/route.ts(77,48): error TS2345: Argument of type '"2fa_backup_failed"' is not assignable to parameter of type '"login_success" | "login_failed" | "logout" | "2fa_enabled" | "2fa_disabled" | "password_changed"'.
+internal-portal/src/app/api/auth/2fa/verify/route.ts(88,44): error TS2345: Argument of type '"2fa_verify_success"' is not assignable to parameter of type '"login_success" | "login_failed" | "logout" | "2fa_enabled" | "2fa_disabled" | "password_changed"'.
+internal-portal/src/app/api/auth/password/change/route.ts(86,46): error TS2345: Argument of type '"password_change_failed"' is not assignable to parameter of type '"login_success" | "login_failed" | "logout" | "2fa_enabled" | "2fa_disabled" | "password_changed"'.
+internal-portal/src/app/api/chatbot/route.ts(39,25): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/chatbot/route.ts(40,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/chatbot/route.ts(43,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/cleaner-details/route.ts(24,7): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/cleaner-details/route.ts(25,34): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/cleaner-details/route.ts(28,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/cleaner-details/route.ts(32,30): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/cleaner-profile/[username]/route.ts(19,7): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/cleaner-profile/[username]/route.ts(20,34): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/cleaner-profile/[username]/route.ts(23,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/cleaner-profile/[username]/route.ts(47,3): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/cleaner-profile/[username]/route.ts(48,30): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/cleaner-profile/[username]/route.ts(69,49): error TS2554: Expected 2 arguments, but got 7.
+internal-portal/src/app/api/cleaner-profile/[username]/route.ts(71,34): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/cleaner-profile/[username]/route.ts(81,49): error TS2554: Expected 2 arguments, but got 7.
+internal-portal/src/app/api/cleaner-profile/[username]/route.ts(83,34): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/cleaner-profile/[username]/route.ts(87,30): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/cleaner-profile/[username]/route.ts(109,49): error TS2554: Expected 2 arguments, but got 7.
+internal-portal/src/app/api/cleaner-profile/[username]/route.ts(112,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/cleaner-profile/[username]/route.ts(116,30): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/cleaner-profiles/route.ts(42,34): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/cleaner-profiles/route.ts(83,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/cleaner-profiles/route.ts(87,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/cleaner-profiles/route.ts(100,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/cleaner-profiles/route.ts(104,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/data-rights/route.ts(60,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/data-rights/route.ts(64,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/data-rights/route.ts(86,34): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/data-rights/route.ts(110,7): error TS2554: Expected 2 arguments, but got 7.
+internal-portal/src/app/api/data-rights/route.ts(123,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/data-rights/route.ts(127,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/notifications/[id]/route.ts(29,5): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/notifications/[id]/route.ts(30,25): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/notifications/[id]/route.ts(31,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/notifications/[id]/route.ts(34,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/notifications/[id]/route.ts(57,25): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/notifications/[id]/route.ts(58,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/notifications/[id]/route.ts(61,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/payroll/route.ts(104,5): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/payroll/route.ts(105,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/payroll/route.ts(108,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/payroll/route.ts(155,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/payroll/route.ts(158,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/payroll/route.ts(180,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/payroll/route.ts(183,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/status/route.ts(83,3): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/status/route.ts(84,10): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/templates/route.ts(38,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/templates/route.ts(41,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/templates/route.ts(68,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/templates/route.ts(71,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/templates/route.ts(104,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/templates/route.ts(107,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/webhooks/n8n/send-whatsapp/route.ts(112,15): error TS2554: Expected 3-4 arguments, but got 1.
+internal-portal/src/app/auth/change-password/page.tsx(25,106): error TS2873: This kind of expression is always falsy.
+internal-portal/src/app/CleanerDashboard.tsx(137,33): error TS2345: Argument of type 'string | boolean' is not assignable to parameter of type 'SetStateAction<boolean>'.
+  Type 'string' is not assignable to type 'SetStateAction<boolean>'.
+internal-portal/src/app/contract-form/page.tsx(19,100): error TS2873: This kind of expression is always falsy.
+internal-portal/src/components/DashboardLayout.tsx(78,87): error TS2873: This kind of expression is always falsy.
+internal-portal/src/components/QRCodeDisplay.test.tsx(34,62): error TS2339: Property 'toBeInTheDocument' does not exist on type 'JestMatchers<HTMLElement>'.
+internal-portal/src/components/QRCodeDisplay.test.tsx(35,44): error TS2339: Property 'toBeInTheDocument' does not exist on type 'JestMatchers<HTMLElement>'.
+internal-portal/src/components/QRCodeDisplay.test.tsx(36,44): error TS2339: Property 'toBeInTheDocument' does not exist on type 'JestMatchers<HTMLElement>'.
+internal-portal/src/components/QRCodeDisplay.test.tsx(49,22): error TS2339: Property 'toBeInTheDocument' does not exist on type 'JestMatchers<HTMLElement>'.
+internal-portal/src/components/QRCodeDisplay.test.tsx(50,22): error TS2339: Property 'toHaveAttribute' does not exist on type 'JestMatchers<HTMLElement>'.
+internal-portal/src/components/QRCodeDisplay.test.tsx(93,50): error TS2339: Property 'toBeInTheDocument' does not exist on type 'JestMatchers<HTMLElement>'.
+internal-portal/src/components/QRCodeDisplay.test.tsx(94,43): error TS2339: Property 'toBeInTheDocument' does not exist on type 'JestMatchers<HTMLElement>'.
+internal-portal/src/components/QRCodeDisplay.test.tsx(169,28): error TS2339: Property 'toBeInTheDocument' does not exist on type 'JestMatchers<HTMLElement>'.
+internal-portal/src/components/QRCodeDisplay.test.tsx(181,75): error TS2339: Property 'toBeInTheDocument' does not exist on type 'JestMatchers<HTMLElement>'.

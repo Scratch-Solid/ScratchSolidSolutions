@@ -34,7 +34,7 @@ describe('GET /api/v2/jobs/[id]/archive', () => {
     mockDb.first.mockResolvedValue(null);
 
     const req = createRequest('SS-2026-001');
-    const res = await GET(req, { params: { id: 'SS-2026-001' } });
+    const res = await GET(req, { params: Promise.resolve({ id: 'SS-2026-001' }) });
     expect(res.status).toBe(404);
     const json = await res.json();
     expect(json.error).toBe('Job not found');
@@ -76,7 +76,7 @@ describe('GET /api/v2/jobs/[id]/archive', () => {
       });
 
     const req = createRequest('SS-2026-001');
-    const res = await GET(req, { params: { id: 'SS-2026-001' } });
+    const res = await GET(req, { params: Promise.resolve({ id: 'SS-2026-001' }) });
     expect(res.status).toBe(200);
 
     const json = await res.json();

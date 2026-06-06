@@ -1,14 +1,13 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
+import { registerCleanerInErpNext } from '@/lib/cleaner-integrations';
 import { log } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
-  const { db } = authResult;
   const userId = authResult.user?.id;
 
   try {
@@ -25,7 +24,7 @@ export async function POST(request: NextRequest) {
       marital_status?: string;
     };
 
-    const { employee_id, first_name, last_name, email, phone, department, position, date_of_birth, gender, marital_status } = body;
+    const { employee_id, first_name, last_name, email, phone, department, position } = body;
 
     if (!employee_id || !first_name || !last_name || !email) {
       const response = NextResponse.json({
@@ -39,22 +38,33 @@ export async function POST(request: NextRequest) {
       return withSecurityHeaders(response, traceId);
     }
 
-    // TODO: Integrate with ERPNext API to create employee
-    // For now, return placeholder response
+    const result = await registerCleanerInErpNext({
+      traceId,
+      employeeId: employee_id,
+      firstName: first_name,
+      lastName: last_name,
+      email,
+      phone: phone || '',
+      department: department || 'cleaning',
+      position: position || 'Cleaner',
+    });
+
     const response = NextResponse.json({
-      success: true,
-      message: 'ERPNext employee creation endpoint - API integration pending',
+      success: result.status === 'configured',
+      message: result.status === 'configured' ? 'Employee created in ERPNext' : 'ERPNext integration pending',
       data: {
         employee_id,
-        status: 'pending_integration'
+        erpnext_reference: result.reference,
+        status: result.status,
+        reason: result.reason,
       }
-    });
+    }, { status: result.status === 'configured' ? 201 : 503 });
     return withSecurityHeaders(response, traceId);
 
   } catch (error) {
     console.error('ERPNext employee creation error:', error);
     log.error('Failed to create ERPNext employee', error instanceof Error ? error : new Error(String(error)), { traceId, userId });
-    
+
     const response = NextResponse.json({
       success: false,
       error: {

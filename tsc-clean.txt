@@ -1,0 +1,141 @@
+internal-portal/src/app/api/admin/alerts/check/route.ts(125,32): error TS2365: Operator '+' cannot be applied to types 'unknown' and 'unknown'.
+internal-portal/src/app/api/admin/alerts/check/route.ts(128,28): error TS2362: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+internal-portal/src/app/api/admin/approve-admin/route.ts(18,25): error TS2552: Cannot find name 'response'. Did you mean 'Response'?
+internal-portal/src/app/api/admin/approve-admin/route.ts(19,32): error TS2552: Cannot find name 'response'. Did you mean 'Response'?
+internal-portal/src/app/api/admin/approve-admin/route.ts(27,27): error TS2552: Cannot find name 'response'. Did you mean 'Response'?
+internal-portal/src/app/api/admin/approve-admin/route.ts(28,34): error TS2552: Cannot find name 'response'. Did you mean 'Response'?
+internal-portal/src/app/api/admin/approve-admin/route.ts(36,27): error TS2552: Cannot find name 'response'. Did you mean 'Response'?
+internal-portal/src/app/api/admin/approve-admin/route.ts(37,34): error TS2552: Cannot find name 'response'. Did you mean 'Response'?
+internal-portal/src/app/api/admin/approve-admin/route.ts(49,27): error TS2552: Cannot find name 'response'. Did you mean 'Response'?
+internal-portal/src/app/api/admin/approve-admin/route.ts(50,34): error TS2552: Cannot find name 'response'. Did you mean 'Response'?
+internal-portal/src/app/api/admin/approve-admin/route.ts(75,25): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/approve-admin/route.ts(76,32): error TS2552: Cannot find name 'response'. Did you mean 'Response'?
+internal-portal/src/app/api/admin/approve-admin/route.ts(91,25): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/approve-admin/route.ts(92,32): error TS2552: Cannot find name 'response'. Did you mean 'Response'?
+internal-portal/src/app/api/admin/audit/route.ts(59,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/audit/route.ts(63,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/bookings/[id]/auto-assign/route.ts(48,7): error TS2345: Argument of type 'string' is not assignable to parameter of type 'ServiceType'.
+internal-portal/src/app/api/admin/contracts/[id]/update/route.ts(15,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/contracts/[id]/update/route.ts(19,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/contracts/[id]/update/route.ts(41,34): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/contracts/[id]/update/route.ts(56,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/contracts/[id]/update/route.ts(60,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/contracts/[id]/update/route.ts(83,34): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/contracts/[id]/update/route.ts(99,34): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/contracts/[id]/update/route.ts(103,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/contracts/[id]/update/route.ts(107,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/health-report/route.ts(60,41): error TS2365: Operator '+' cannot be applied to types 'unknown' and 'unknown'.
+internal-portal/src/app/api/admin/health-report/route.ts(61,5): error TS2322: Type 'unknown' is not assignable to type 'number'.
+internal-portal/src/app/api/admin/health-report/route.ts(64,5): error TS2322: Type 'string | 0' is not assignable to type 'number'.
+  Type 'string' is not assignable to type 'number'.
+internal-portal/src/app/api/admin/health-report/route.ts(67,5): error TS2322: Type 'string | 0' is not assignable to type 'number'.
+  Type 'string' is not assignable to type 'number'.
+internal-portal/src/app/api/admin/health-report/route.ts(70,5): error TS2322: Type 'string | 0' is not assignable to type 'number'.
+  Type 'string' is not assignable to type 'number'.
+internal-portal/src/app/api/admin/health-report/route.ts(98,20): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'.
+internal-portal/src/app/api/admin/pending-approvals/route.ts(17,25): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/pending-approvals/route.ts(18,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/pending-approvals/route.ts(26,27): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/pending-approvals/route.ts(27,34): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/pending-approvals/route.ts(35,27): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/pending-approvals/route.ts(36,34): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/pending-approvals/route.ts(58,25): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/pending-approvals/route.ts(59,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/pending-approvals/route.ts(74,25): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/pending-approvals/route.ts(75,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/reject-admin/route.ts(18,25): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/reject-admin/route.ts(19,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/reject-admin/route.ts(27,27): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/reject-admin/route.ts(28,34): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/reject-admin/route.ts(36,27): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/reject-admin/route.ts(37,34): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/reject-admin/route.ts(49,27): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/reject-admin/route.ts(50,34): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/reject-admin/route.ts(75,25): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/reject-admin/route.ts(76,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/reject-admin/route.ts(91,25): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/reject-admin/route.ts(92,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/[id]/permissions/route.ts(19,25): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/[id]/permissions/route.ts(20,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/[id]/permissions/route.ts(28,27): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/[id]/permissions/route.ts(29,34): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/[id]/permissions/route.ts(37,27): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/[id]/permissions/route.ts(38,34): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/[id]/permissions/route.ts(45,27): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/[id]/permissions/route.ts(46,34): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/[id]/permissions/route.ts(58,27): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/[id]/permissions/route.ts(59,34): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/[id]/permissions/route.ts(84,25): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/[id]/permissions/route.ts(85,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/[id]/permissions/route.ts(100,25): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/[id]/permissions/route.ts(101,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/create/route.ts(19,25): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/create/route.ts(20,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/create/route.ts(28,27): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/create/route.ts(29,34): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/create/route.ts(37,27): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/create/route.ts(38,34): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/create/route.ts(45,27): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/create/route.ts(46,34): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/create/route.ts(58,27): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/create/route.ts(59,34): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/create/route.ts(84,25): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/create/route.ts(85,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/create/route.ts(100,25): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/roles/create/route.ts(101,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/admin/training/completion-rate/route.ts(116,39): error TS2345: Argument of type 'string | 0' is not assignable to parameter of type 'string'.
+  Type 'number' is not assignable to type 'string'.
+internal-portal/src/app/api/auth/2fa/enable/route.ts(54,39): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string'.
+internal-portal/src/app/api/chatbot/route.ts(39,25): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/chatbot/route.ts(40,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/chatbot/route.ts(43,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/cleaner-details/route.ts(24,7): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/cleaner-details/route.ts(25,34): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/cleaner-details/route.ts(28,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/cleaner-details/route.ts(32,30): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/cleaner-profile/[username]/route.ts(19,7): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/cleaner-profile/[username]/route.ts(20,34): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/cleaner-profile/[username]/route.ts(23,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/cleaner-profile/[username]/route.ts(47,3): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/cleaner-profile/[username]/route.ts(48,30): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/cleaner-profile/[username]/route.ts(69,49): error TS2554: Expected 2 arguments, but got 7.
+internal-portal/src/app/api/cleaner-profile/[username]/route.ts(71,34): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/cleaner-profile/[username]/route.ts(81,49): error TS2554: Expected 2 arguments, but got 7.
+internal-portal/src/app/api/cleaner-profile/[username]/route.ts(83,34): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/cleaner-profile/[username]/route.ts(87,30): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/cleaner-profile/[username]/route.ts(109,49): error TS2554: Expected 2 arguments, but got 7.
+internal-portal/src/app/api/cleaner-profile/[username]/route.ts(112,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/cleaner-profile/[username]/route.ts(116,30): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/cleaner-profiles/route.ts(42,34): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/cleaner-profiles/route.ts(83,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/cleaner-profiles/route.ts(87,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/cleaner-profiles/route.ts(100,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/cleaner-profiles/route.ts(104,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/data-rights/route.ts(60,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/data-rights/route.ts(64,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/data-rights/route.ts(86,34): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/data-rights/route.ts(110,7): error TS2554: Expected 2 arguments, but got 7.
+internal-portal/src/app/api/data-rights/route.ts(123,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/data-rights/route.ts(127,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/notifications/[id]/route.ts(29,5): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/notifications/[id]/route.ts(30,25): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/notifications/[id]/route.ts(31,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/notifications/[id]/route.ts(34,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/notifications/[id]/route.ts(57,25): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/notifications/[id]/route.ts(58,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/notifications/[id]/route.ts(61,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/payroll/route.ts(104,5): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/payroll/route.ts(105,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/payroll/route.ts(108,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/payroll/route.ts(155,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/payroll/route.ts(158,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/payroll/route.ts(180,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/payroll/route.ts(183,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/status/route.ts(83,3): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/status/route.ts(84,10): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/templates/route.ts(38,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/templates/route.ts(41,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/templates/route.ts(68,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/templates/route.ts(71,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/templates/route.ts(104,32): error TS2304: Cannot find name 'response'.
+internal-portal/src/app/api/templates/route.ts(107,32): error TS2304: Cannot find name 'response'.

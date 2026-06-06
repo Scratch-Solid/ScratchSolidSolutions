@@ -14,7 +14,7 @@ import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['admin', 'staff', 'cleaner']);
@@ -22,7 +22,8 @@ export async function GET(
   const { db } = authResult;
 
   try {
-    const jobId = params.id;
+  const { id } = await params;
+    const jobId = id;
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '100', 10);
 
@@ -58,7 +59,7 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['admin', 'staff', 'cleaner']);
@@ -66,7 +67,8 @@ export async function POST(
   const { db } = authResult;
 
   try {
-    const jobId = params.id;
+  const { id } = await params;
+    const jobId = id;
     const body = (await request.json()) as any;
 
     const { latitude, longitude, accuracy, source = 'mobile_app' } = body;
