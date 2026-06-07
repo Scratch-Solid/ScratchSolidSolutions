@@ -359,10 +359,11 @@ router.get('/api/health', async (request, env) => {
       overall = 'degraded';
     } else {
       const tokenData = await tokenRes.json() as { access_token: string };
-      const zohoRes = await fetch(`https://books.zoho.com/api/v3/organizations?organization_id=${env.ZOHO_ORG_ID}`, {
+      // Verify token works using Zoho Profile API (compatible with AaaServer.profile.Read scope)
+      const profileRes = await fetch('https://accounts.zoho.com/oauth/user/info', {
         headers: { 'Authorization': `Zoho-oauthtoken ${tokenData.access_token}` }
       });
-      checks.zoho = zohoRes.ok ? 'ok' : zohoRes.status === 401 ? 'token_expired' : 'error';
+      checks.zoho = profileRes.ok ? 'ok' : profileRes.status === 401 ? 'token_expired' : 'error';
       if (checks.zoho !== 'ok') { overall = 'degraded'; }
     }
   } catch (e) {
