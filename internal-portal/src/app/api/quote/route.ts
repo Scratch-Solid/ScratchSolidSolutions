@@ -130,9 +130,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
     const limit = searchParams.get('limit');
 
-    let query = `SELECT q.*, s.name as service_icon, s.icon as service_icon 
-                FROM quotes q 
-                LEFT JOIN services s ON q.service_id = s.id`;
+    let query = `SELECT q.* FROM quotes q`;
     const conditions: string[] = [];
     const params: unknown[] = [];
 
