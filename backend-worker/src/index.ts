@@ -340,13 +340,31 @@ router.get('/api/health', async (request, env) => {
     overall = 'degraded';
   }
 
-  // Zoho check
+  // Zoho check — exchange refresh token for access token first
   try {
-    const zohoRes = await fetch(`https://books.zoho.com/api/v3/organizations?organization_id=${env.ZOHO_ORG_ID}`, {
-      headers: { 'Authorization': `Zoho-oauthtoken ${env.ZOHO_REFRESH_TOKEN}` }
+    const tokenRes = await fetch('https://accounts.zoho.com/oauth/v2/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        refresh_token: env.ZOHO_REFRESH_TOKEN,
+        client_id: env.ZOHO_CLIENT_ID,
+        client_secret: env.ZOHO_CLIENT_SECRET,
+        grant_type: 'refresh_token'
+      })
     });
-    checks.zoho = zohoRes.status === 401 ? 'token_expired' : 'ok';
-    if (checks.zoho === 'token_expired') { overall = 'degraded'; }
+
+    if (!tokenRes.ok) {
+      const errText = await tokenRes.text().catch(() => '');
+      checks.zoho = tokenRes.status === 401 || errText.includes('invalid_token') ? 'token_expired' : 'error';
+      overall = 'degraded';
+    } else {
+      const tokenData = await tokenRes.json() as { access_token: string };
+      const zohoRes = await fetch(`https://books.zoho.com/api/v3/organizations?organization_id=${env.ZOHO_ORG_ID}`, {
+        headers: { 'Authorization': `Zoho-oauthtoken ${tokenData.access_token}` }
+      });
+      checks.zoho = zohoRes.ok ? 'ok' : zohoRes.status === 401 ? 'token_expired' : 'error';
+      if (checks.zoho !== 'ok') { overall = 'degraded'; }
+    }
   } catch (e) {
     checks.zoho = 'error';
     overall = 'degraded';
