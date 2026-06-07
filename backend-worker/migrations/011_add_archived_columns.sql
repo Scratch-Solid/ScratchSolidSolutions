@@ -1,13 +1,12 @@
 -- Add archived columns to existing tables for data retention
 -- These columns are needed by data-retention.js
 
--- Add archived columns to bookings table
-ALTER TABLE bookings ADD COLUMN archived INTEGER DEFAULT 0;
-ALTER TABLE bookings ADD COLUMN archived_at TEXT;
-
--- Add archived columns to audit_logs table (if not already added)
-ALTER TABLE audit_logs ADD COLUMN archived INTEGER DEFAULT 0;
-ALTER TABLE audit_logs ADD COLUMN archived_at TEXT;
+-- archived columns already present on bookings and audit_logs
+-- (bookings.archived added by earlier migration, audit_logs.archived added in 010)
+-- ALTER TABLE bookings ADD COLUMN archived INTEGER DEFAULT 0;
+-- ALTER TABLE bookings ADD COLUMN archived_at TEXT;
+-- ALTER TABLE audit_logs ADD COLUMN archived INTEGER DEFAULT 0;
+-- ALTER TABLE audit_logs ADD COLUMN archived_at TEXT;
 
 -- Create refresh_tokens table if it doesn't exist
 CREATE TABLE IF NOT EXISTS refresh_tokens (
