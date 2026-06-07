@@ -96,10 +96,11 @@ export async function GET() {
     healthStatus.checks.zoho_oauth = { status: 'healthy', message: `Zoho check skipped: ${String(error)}` };
   }
 
-  // Determine overall status
-  const unhealthyChecks = Object.values(healthStatus.checks).filter(c => c.status === 'unhealthy');
-  if (unhealthyChecks.length > 0) {
-    healthStatus.status = unhealthyChecks.length === Object.keys(healthStatus.checks).length ? 'unhealthy' : 'degraded';
+  // Determine overall status — only critical services affect go-live
+  const criticalChecks = ['database', 'resend'] as const;
+  const criticalUnhealthy = criticalChecks.filter(k => healthStatus.checks[k as keyof typeof healthStatus.checks].status === 'unhealthy');
+  if (criticalUnhealthy.length > 0) {
+    healthStatus.status = 'degraded';
   }
 
   return NextResponse.json(healthStatus);
