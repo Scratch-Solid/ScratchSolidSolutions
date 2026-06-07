@@ -340,7 +340,7 @@ router.get('/api/health', async (request, env) => {
     overall = 'degraded';
   }
 
-  // Zoho check — exchange refresh token for access token first
+  // Zoho check — optional (invoices fall back to local DB if unavailable)
   try {
     const tokenRes = await fetch('https://accounts.zoho.com/oauth/v2/token', {
       method: 'POST',
@@ -355,20 +355,27 @@ router.get('/api/health', async (request, env) => {
 
     if (!tokenRes.ok) {
       const errText = await tokenRes.text().catch(() => '');
+      console.error('[health] Zoho token exchange failed:', tokenRes.status, errText);
       checks.zoho = tokenRes.status === 401 || errText.includes('invalid_token') ? 'token_expired' : 'error';
-      overall = 'degraded';
+      // Zoho is optional — don't degrade overall status
     } else {
-      const tokenData = await tokenRes.json() as { access_token: string };
-      // Verify token works using Zoho Profile API (compatible with AaaServer.profile.Read scope)
-      const profileRes = await fetch('https://accounts.zoho.com/oauth/user/info', {
-        headers: { 'Authorization': `Zoho-oauthtoken ${tokenData.access_token}` }
-      });
-      checks.zoho = profileRes.ok ? 'ok' : profileRes.status === 401 ? 'token_expired' : 'error';
-      if (checks.zoho !== 'ok') { overall = 'degraded'; }
+      const tokenData = await tokenRes.json() as { access_token: string; error?: string };
+      if (tokenData.error) {
+        console.error('[health] Zoho token exchange error:', tokenData.error);
+        checks.zoho = 'token_expired';
+        // Zoho is optional — don't degrade overall status
+      } else {
+        // Verify token works using Zoho Profile API (compatible with AaaServer.profile.Read scope)
+        const profileRes = await fetch('https://accounts.zoho.com/oauth/user/info', {
+          headers: { 'Authorization': `Zoho-oauthtoken ${tokenData.access_token}` }
+        });
+        checks.zoho = profileRes.ok ? 'ok' : profileRes.status === 401 ? 'token_expired' : 'error';
+        // Zoho is optional — don't degrade overall status
+      }
     }
   } catch (e) {
     checks.zoho = 'error';
-    overall = 'degraded';
+    // Zoho is optional — don't degrade overall status
   }
 
   return new Response(JSON.stringify({
