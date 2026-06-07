@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
         // Send WhatsApp notification
         const preferences = await getNotificationPreferences(db, userId);
         if ((userData as any).phone) {
-          const notifyResult = await notifyAdminApproved((userData as any).phone, (userData as any).name, preferences);
+          const notifyResult = await notifyAdminApproved((userData as any).phone, (userData as any).name, preferences, db);
           await logNotification(db, {
             user_id: userId,
             phone_number: (userData as any).phone,

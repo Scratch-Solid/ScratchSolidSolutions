@@ -1,5 +1,8 @@
 import { getEnvVarOptional } from './env';
-import { sendWhatsAppMessage } from './whatsapp/meta-cloud';
+import {
+  sendWhatsAppMessage,
+  isConversationWindowOpen,
+} from './whatsapp/meta-cloud';
 
 const RESEND_API_KEY = getEnvVarOptional('RESEND_API_KEY') || '';
 const EMAIL_FROM = getEnvVarOptional('EMAIL_FROM') || 'Scratch Solid Solutions <customerservice@scratchsolidsolutions.org>';
@@ -34,10 +37,33 @@ function buildFreeformMessage(templateName: string, params: Record<string, strin
   return builder ? builder(params) : `${templateName}: ${Object.entries(params).map(([k, v]) => `${k}=${v}`).join(', ')}`;
 }
 
-export async function sendWhatsApp(to: string, templateName: string, params: Record<string, string>, preferences?: NotificationPreferences): Promise<NotificationResult> {
+/**
+ * Send a WhatsApp message enforcing free-tier policy:
+ * - Only sends free-form messages within the 24h conversation window
+ * - Outside the window, returns failure so callers fall back to Resend email
+ */
+export async function sendWhatsApp(
+  to: string,
+  templateName: string,
+  params: Record<string, string>,
+  preferences?: NotificationPreferences,
+  db?: any
+): Promise<NotificationResult> {
   if (preferences && !preferences.whatsapp) {
     return { success: false, skipped: true, skipReason: 'WhatsApp notifications disabled' };
   }
+
+  // Free-tier enforcement: check conversation window before sending
+  if (db) {
+    const windowOpen = await isConversationWindowOpen(db, to);
+    if (!windowOpen) {
+      return {
+        success: false,
+        error: 'WhatsApp conversation window closed (free-tier enforced)',
+      };
+    }
+  }
+
   const body = buildFreeformMessage(templateName, params);
   const result = await sendWhatsAppMessage(to, body);
   return {
@@ -73,14 +99,14 @@ export async function sendEmail(to: string, subject: string, body: string, prefe
   }
 }
 
-export async function notifyCleanerStatusChange(cleanerPhone: string, status: string, bookingId: string, preferences?: NotificationPreferences): Promise<NotificationResult> {
-  const wa = await sendWhatsApp(cleanerPhone, 'status_update', { status, booking_id: bookingId }, preferences);
+export async function notifyCleanerStatusChange(cleanerPhone: string, status: string, bookingId: string, preferences?: NotificationPreferences, db?: any): Promise<NotificationResult> {
+  const wa = await sendWhatsApp(cleanerPhone, 'status_update', { status, booking_id: bookingId }, preferences, db);
   if (!wa.success && !wa.skipped) await sendEmail(cleanerPhone + '@fallback.com', 'Status Update', `Status changed to ${status} for booking ${bookingId}`, preferences);
   return wa;
 }
 
-export async function notifyPaymentReminder(clientPhone: string, clientEmail: string, amount: string, dueDate: string, preferences?: NotificationPreferences): Promise<NotificationResult> {
-  const wa = await sendWhatsApp(clientPhone, 'payment_reminder', { amount, due_date: dueDate }, preferences);
+export async function notifyPaymentReminder(clientPhone: string, clientEmail: string, amount: string, dueDate: string, preferences?: NotificationPreferences, db?: any): Promise<NotificationResult> {
+  const wa = await sendWhatsApp(clientPhone, 'payment_reminder', { amount, due_date: dueDate }, preferences, db);
   if (!wa.success && !wa.skipped) await sendEmail(clientEmail, 'Payment Reminder', `Payment of ${amount} due by ${dueDate}`, preferences);
   return wa;
 }
@@ -90,15 +116,15 @@ export async function notifyAdminFailure(adminEmail: string, action: string, err
 }
 
 // Onboarding notification functions
-export async function notifyConsentSubmitted(phone: string, name: string, preferences?: NotificationPreferences): Promise<NotificationResult> {
-  return sendWhatsApp(phone, 'consent_submitted', { name }, preferences);
+export async function notifyConsentSubmitted(phone: string, name: string, preferences?: NotificationPreferences, db?: any): Promise<NotificationResult> {
+  return sendWhatsApp(phone, 'consent_submitted', { name }, preferences, db);
 }
 
-export async function notifyAdminApproved(phone: string, name: string, preferences?: NotificationPreferences): Promise<NotificationResult> {
-  return sendWhatsApp(phone, 'admin_approved', { name }, preferences);
+export async function notifyAdminApproved(phone: string, name: string, preferences?: NotificationPreferences, db?: any): Promise<NotificationResult> {
+  return sendWhatsApp(phone, 'admin_approved', { name }, preferences, db);
 }
 
-export async function sendCleanerWelcome(phone: string, email: string, name: string, paysheetCode: string, tempPassword: string, preferences?: NotificationPreferences): Promise<{ whatsapp: NotificationResult; email: NotificationResult }> {
+export async function sendCleanerWelcome(phone: string, email: string, name: string, paysheetCode: string, tempPassword: string, preferences?: NotificationPreferences, db?: any): Promise<{ whatsapp: NotificationResult; email: NotificationResult }> {
   const portalUrl = process.env.NEXT_PUBLIC_PORTAL_URL || 'https://portal.scratchsolidsolutions.org';
 
   // WhatsApp: concise welcome with key credentials
@@ -108,7 +134,7 @@ export async function sendCleanerWelcome(phone: string, email: string, name: str
     temp_password: tempPassword,
     portal_url: portalUrl,
   };
-  const waResult = await sendWhatsApp(phone, 'cleaner_welcome', waParams, preferences);
+  const waResult = await sendWhatsApp(phone, 'cleaner_welcome', waParams, preferences, db);
 
   // Email: comprehensive welcome with full instructions
   const emailSubject = 'Welcome to Scratch Solid Solutions - Your Account is Ready!';
@@ -218,18 +244,18 @@ Welcome aboard!
   return { whatsapp: waResult, email: emailResult };
 }
 
-export async function notifyAdminRejected(phone: string, name: string, reason?: string, preferences?: NotificationPreferences): Promise<NotificationResult> {
-  return sendWhatsApp(phone, 'admin_rejected', { name, reason: reason || 'Not specified' }, preferences);
+export async function notifyAdminRejected(phone: string, name: string, reason?: string, preferences?: NotificationPreferences, db?: any): Promise<NotificationResult> {
+  return sendWhatsApp(phone, 'admin_rejected', { name, reason: reason || 'Not specified' }, preferences, db);
 }
 
-export async function notifyProfileCreated(phone: string, name: string, preferences?: NotificationPreferences): Promise<NotificationResult> {
-  return sendWhatsApp(phone, 'profile_created', { name }, preferences);
+export async function notifyProfileCreated(phone: string, name: string, preferences?: NotificationPreferences, db?: any): Promise<NotificationResult> {
+  return sendWhatsApp(phone, 'profile_created', { name }, preferences, db);
 }
 
-export async function notifyContractSigned(phone: string, name: string, preferences?: NotificationPreferences): Promise<NotificationResult> {
-  return sendWhatsApp(phone, 'contract_signed', { name }, preferences);
+export async function notifyContractSigned(phone: string, name: string, preferences?: NotificationPreferences, db?: any): Promise<NotificationResult> {
+  return sendWhatsApp(phone, 'contract_signed', { name }, preferences, db);
 }
 
-export async function notifyTrainingCompleted(phone: string, name: string, certHash: string, preferences?: NotificationPreferences): Promise<NotificationResult> {
-  return sendWhatsApp(phone, 'training_completed', { name, cert_hash: certHash }, preferences);
+export async function notifyTrainingCompleted(phone: string, name: string, certHash: string, preferences?: NotificationPreferences, db?: any): Promise<NotificationResult> {
+  return sendWhatsApp(phone, 'training_completed', { name, cert_hash: certHash }, preferences, db);
 }

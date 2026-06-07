@@ -14,6 +14,16 @@ binding = "scratchsolid_db"
 database_name = "scratchsolid-backend-db"
 database_id = "2a0b1e08-443e-46c4-8184-86ea180d4024"
 
+[[d1_databases]]
+binding = "portal_db"
+database_name = "scratchsolid-portal-db"
+database_id = "a08f16f5-9d75-47f9-973c-35bade106b47"
+
+[[d1_databases]]
+binding = "training_db"
+database_name = "scratchsolid-training-db"
+database_id = "030e033d-0f97-42bf-9309-6583ceeb33ed"
+
 [[kv_namespaces]]
 binding = "RATE_LIMIT_KV"
 id = "899aa84ac7854b59b17c3058d2926170"
@@ -39,6 +49,16 @@ name = "cleaning-service-backend-staging"
 binding = "scratchsolid_db"
 database_name = "scratchsolid-db-backend-staging"
 database_id = "67e66542-486a-442b-bbf6-9c3d4a503f4c"
+
+[[env.staging.d1_databases]]
+binding = "portal_db"
+database_name = "scratchsolid-portal-db"
+database_id = "a08f16f5-9d75-47f9-973c-35bade106b47"
+
+[[env.staging.d1_databases]]
+binding = "training_db"
+database_name = "scratchsolid-training-db"
+database_id = "030e033d-0f97-42bf-9309-6583ceeb33ed"
 
 [[env.staging.kv_namespaces]]
 binding = "RATE_LIMIT_KV"

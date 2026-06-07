@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
 
     // Send WhatsApp notification for contract signed
     if (user && (user as any).phone) {
-      const notifyResult = await notifyContractSigned((user as any).phone, (user as any).name);
+      const notifyResult = await notifyContractSigned((user as any).phone, (user as any).name, undefined, db);
       await logNotification(db, {
         user_id: decoded.userId,
         phone_number: (user as any).phone,

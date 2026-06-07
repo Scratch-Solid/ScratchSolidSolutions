@@ -9,6 +9,10 @@ import { bytesToHex } from '@noble/hashes/utils';
 import jwt from '@tsndr/cloudflare-worker-jwt';
 import bcrypt from 'bcryptjs';
 import DataRetentionCleanup from './data-retention';
+import {
+  cleanupPortalExpiredData,
+  cleanupTrainingExpiredData,
+} from './portal-data-retention';
 import { handleHardDeleteAccounts } from './hard-delete-accounts';
 import { handleOverdueCancellations } from './overdue-cancellation';
 import { handleRetentionPolicies } from './retention-policies';
@@ -1284,19 +1288,45 @@ export default {
     setDbInstance(env.scratchsolid_db);
     setEnvInstance(env);
 
-    // 1. Data retention cleanup task (existing)
+    // 1. Data retention cleanup task (main backend DB)
     const cleanup = new DataRetentionCleanup(env);
     await cleanup.runAllCleanup();
-    
-    // 2. Hard delete accounts (30-day grace period)
+
+    // 2. Portal DB cleanup (POPIA compliance for internal-portal tables)
+    if (env.portal_db) {
+      try {
+        const portalResult = await cleanupPortalExpiredData(env.portal_db);
+        console.log('Portal cleanup completed:', portalResult.deleted);
+        if (portalResult.errors.length > 0) {
+          console.error('Portal cleanup errors:', portalResult.errors);
+        }
+      } catch (error) {
+        console.error('Portal cleanup failed:', error);
+      }
+    }
+
+    // 3. Training DB cleanup
+    if (env.training_db) {
+      try {
+        const trainingResult = await cleanupTrainingExpiredData(env.training_db);
+        console.log('Training cleanup completed:', trainingResult.deleted);
+        if (trainingResult.errors.length > 0) {
+          console.error('Training cleanup errors:', trainingResult.errors);
+        }
+      } catch (error) {
+        console.error('Training cleanup failed:', error);
+      }
+    }
+
+    // 4. Hard delete accounts (30-day grace period)
     await handleHardDeleteAccounts();
 
-    // 3. Overdue cancellations and credits
+    // 5. Overdue cancellations and credits
     await handleOverdueCancellations();
 
-    // 4. Detailed retention policies
+    // 6. Detailed retention policies
     await handleRetentionPolicies();
-    
+
     console.log('All scheduled tasks completed');
   },
   async queue(batch, env, ctx) {

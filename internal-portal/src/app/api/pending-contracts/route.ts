@@ -156,7 +156,7 @@ export async function POST(request: NextRequest) {
       });
 
       // Send WhatsApp notification for consent submitted
-      const notifyResult = await notifyConsentSubmitted(contactNumber, data.fullName || data.full_name || username);
+      const notifyResult = await notifyConsentSubmitted(contactNumber, data.fullName || data.full_name || username, undefined, db);
       await logNotification(db, {
         user_id: userId,
         phone_number: contactNumber,
@@ -237,7 +237,7 @@ export async function PUT(request: NextRequest) {
             const contactNumber = (contract as any).contact_number;
             const fullName = (contract as any).full_name;
             if (contactNumber) {
-              const notifyResult = await notifyAdminApproved(contactNumber, fullName);
+              const notifyResult = await notifyAdminApproved(contactNumber, fullName, undefined, db);
               await logNotification(db, {
                 user_id: (user as any).id,
                 phone_number: contactNumber,
@@ -299,7 +299,7 @@ export async function PUT(request: NextRequest) {
           const contactNumber = (contract as any).contact_number;
           const fullName = (contract as any).full_name;
           if (contactNumber) {
-            const notifyResult = await notifyAdminRejected(contactNumber, fullName, sanitizedData.rejection_reason);
+            const notifyResult = await notifyAdminRejected(contactNumber, fullName, sanitizedData.rejection_reason, undefined, db);
             await logNotification(db, {
               user_id: (user as any).id,
               phone_number: contactNumber,

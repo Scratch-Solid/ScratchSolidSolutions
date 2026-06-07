@@ -148,7 +148,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Send WhatsApp notification for profile created
-    const notifyResult = await notifyProfileCreated(cellphone, fullName);
+    const notifyResult = await notifyProfileCreated(cellphone, fullName, undefined, db);
     await logNotification(db, {
       user_id: (user as any).id,
       phone_number: cellphone,

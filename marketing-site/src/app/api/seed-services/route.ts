@@ -2,8 +2,16 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 
-// No authentication required for seeding - this is a one-time setup endpoint
+// This endpoint should only be used in development or staging
+// In production, services should be configured through admin interfaces
 export async function POST(request: NextRequest) {
+  // Block in production
+  const isProduction = process.env.NODE_ENV === 'production' ||
+    (request.headers.get('host') || '').includes('scratchsolidsolutions.org');
+  if (isProduction) {
+    return NextResponse.json({ error: 'Not available in production' }, { status: 403 });
+  }
+
   try {
     const db = await getDb();
     if (!db) {
