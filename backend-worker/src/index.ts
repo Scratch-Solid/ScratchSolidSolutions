@@ -200,20 +200,30 @@ async function sendAdminAlert(env, { clientName, bookingDate, bookingTime, locat
 }
 
 // CORS middleware - restrict to known origins only
-const ALLOWED_ORIGINS = [
+const PRODUCTION_ORIGINS = [
   'https://scratchsolidsolutions.org',
   'https://portal.scratchsolidsolutions.org',
   'https://www.scratchsolidsolutions.org',
   'https://scratchsolid.com',
   'https://portal.scratchsolid.com',
-  'https://www.scratchsolid.com',
-  'http://localhost:3000',
-  'http://localhost:3001'
+  'https://www.scratchsolid.com'
 ];
 
-function getCorsHeaders(request) {
+const DEV_ORIGINS = [
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://localhost:8787'
+];
+
+function getAllowedOrigins(env: any) {
+  const isDev = env.ENVIRONMENT === 'development' || env.ENVIRONMENT === 'staging';
+  return isDev ? [...PRODUCTION_ORIGINS, ...DEV_ORIGINS] : PRODUCTION_ORIGINS;
+}
+
+function getCorsHeaders(request, env?: any) {
   const origin = request.headers.get('Origin') || '';
-  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  const allowedOrigins = env ? getAllowedOrigins(env) : PRODUCTION_ORIGINS;
+  const allowed = allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
   return {
     'Access-Control-Allow-Origin': allowed,
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
@@ -225,8 +235,9 @@ function getCorsHeaders(request) {
 
 // JWT utilities
 function createToken(userId: number, role: string, env: any) {
+  const now = Math.floor(Date.now() / 1000);
   return jwt.sign(
-    { sub: String(userId), role },
+    { sub: String(userId), role, iat: now, exp: now + 900 },
     env.JWT_SECRET
   );
 }
@@ -236,13 +247,18 @@ async function verifyToken(request: any, env: any) {
   if (!authHeader?.startsWith('Bearer ')) {
     return null;
   }
-  
+
   try {
     const token = authHeader.substring(7);
     const isValid = await jwt.verify(token, env.JWT_SECRET);
     if (!isValid) return null;
-    const payload = jwt.decode(token);
-    return payload.payload;
+    const decoded = jwt.decode(token);
+    const payload = decoded?.payload;
+    // Reject expired tokens explicitly
+    if (payload?.exp && Date.now() / 1000 > payload.exp) {
+      return null;
+    }
+    return payload;
   } catch (error) {
     return null;
   }
@@ -320,21 +336,14 @@ router.get('/api/health', async (request, env) => {
     overall = 'degraded';
   }
 
-  // Resend check
+  // Resend check (verify API key is valid without sending an email)
   try {
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        from: 'health@scratchsolidsolutions.org',
-        to: 'health@scratchsolidsolutions.org',
-        subject: 'Health Check',
-        html: '<p>Health check</p>'
-      })
+    const res = await fetch('https://api.resend.com/api-keys', {
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}` }
     });
-    // Resend will return 422 for invalid to address, but if unauthorized it returns 401
-    checks.resend = res.status === 401 ? 'unauthorized' : 'ok';
-    if (checks.resend === 'unauthorized') { overall = 'degraded'; }
+    checks.resend = res.status === 401 ? 'unauthorized' : res.ok ? 'ok' : 'error';
+    if (checks.resend === 'unauthorized' || checks.resend === 'error') { overall = 'degraded'; }
   } catch (e) {
     checks.resend = 'error';
     overall = 'degraded';

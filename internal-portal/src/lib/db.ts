@@ -18,9 +18,6 @@ export async function getDb(): Promise<D1Database | null> {
     const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
     const envAny = env as any;
     
-    // Log available env keys for debugging
-    // Available env keys logged via structured logger in development
-    
     const db = envAny?.scratchsolid_db || envAny?.scratchsolidDb || envAny?.scratchsolid_db_portal_staging || envAny?.DB || envAny?.db || envAny?.database;
     if (db) {
       return db as D1Database;
@@ -48,8 +45,6 @@ export async function getTrainingDb(): Promise<D1Database | null> {
     if (db) {
       return db as D1Database;
     }
-    console.error('Training D1 binding missing: expected training_db');
-    console.error('Available env keys:', Object.keys(envAny || {}));
   } catch (error) {
     console.error('Error getting training database from Cloudflare context', error);
   }

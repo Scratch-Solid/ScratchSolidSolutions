@@ -60,7 +60,8 @@
 		"NEXT_PUBLIC_BASE_URL": "https://portal.scratchsolidsolutions.org",
 		"NEXT_PUBLIC_API_URL": "https://api.scratchsolidsolutions.org/api",
 		"ALLOWED_ORIGINS": "https://portal.scratchsolidsolutions.org",
-		"R2_PUBLIC_BASE": "https://uploads.scratchsolidsolutions.org"
+		"R2_PUBLIC_BASE": "https://uploads.scratchsolidsolutions.org",
+		"NODE_ENV": "production"
 	},
 	"observability": {
 		"enabled": true
