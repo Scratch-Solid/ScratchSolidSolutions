@@ -399,10 +399,40 @@ router.get('/api/health', async (request, env) => {
 });
 
 // Auth endpoints
+function sanitizeInput(input: string | undefined): string {
+  if (!input || typeof input !== 'string') return '';
+  return input
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<[^>]+>/g, '')
+    .trim();
+}
+
 router.post('/api/auth/signup', async (request: any, env: any) => {
   try {
-    const { name, email, password, role, phone, address, business_name, business_info } = await request.json() as any;
-    
+    const body = await request.json() as any;
+    const name = sanitizeInput(body.name);
+    const email = (body.email || '').toLowerCase().trim();
+    const password = body.password;
+    const role = sanitizeInput(body.role) || 'client';
+    const phone = sanitizeInput(body.phone);
+    const address = sanitizeInput(body.address);
+    const business_name = sanitizeInput(body.business_name);
+    const business_info = sanitizeInput(body.business_info);
+
+    if (!email || !password || password.length < 8) {
+      return new Response(JSON.stringify({ error: 'Valid email and password (min 8 chars) required' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
+      });
+    }
+
+    if (!name || name.length < 2) {
+      return new Response(JSON.stringify({ error: 'Name is required (min 2 chars)' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
+      });
+    }
+
     // Check if user exists
     const existingUser = await findUserByEmail(env.scratchsolid_db, email);
     if (existingUser) {
