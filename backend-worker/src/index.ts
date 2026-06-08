@@ -302,14 +302,14 @@ async function createUser(db, userData) {
     INSERT INTO users (role, name, email, password_hash, phone, address, business_name, business_info, created_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
   `).bind(
-    userData.role,
+    userData.role || 'client',
     userData.name,
     userData.email,
     hashedPassword,
-    userData.phone,
-    userData.address,
-    userData.business_name,
-    userData.business_info
+    userData.phone || '',
+    userData.address || '',
+    userData.business_name || '',
+    userData.business_info || ''
   ).run();
   
   return result.meta.last_row_id;
@@ -438,6 +438,13 @@ router.post('/api/auth/signup', async (request: any, env: any) => {
 router.post('/api/auth/login', async (request: any, env: any) => {
   try {
     const { email, password } = await request.json() as any;
+    
+    if (!email || !password) {
+      return new Response(JSON.stringify({ error: 'Email and password are required' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
+      });
+    }
     
     const user = await findUserByEmail(env.scratchsolid_db, email);
     if (!user || !await verifyPassword(password, user.password_hash)) {
