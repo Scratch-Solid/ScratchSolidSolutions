@@ -426,8 +426,9 @@ router.post('/api/auth/signup', async (request: any, env: any) => {
     }), {
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
     });
-  } catch (error) {
-    return new Response(JSON.stringify({ error: 'Signup failed' }), {
+  } catch (error: any) {
+    console.error('[signup] error:', error?.message || error);
+    return new Response(JSON.stringify({ error: 'Signup failed', detail: error?.message || String(error) }), {
       status: 500,
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
     });
@@ -455,8 +456,9 @@ router.post('/api/auth/login', async (request: any, env: any) => {
     }), {
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
     });
-  } catch (error) {
-    return new Response(JSON.stringify({ error: 'Login failed' }), {
+  } catch (error: any) {
+    console.error('[login] error:', error?.message || error);
+    return new Response(JSON.stringify({ error: 'Login failed', detail: error?.message || String(error) }), {
       status: 500,
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
     });
