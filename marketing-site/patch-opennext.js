@@ -34,3 +34,26 @@ if (fs.existsSync(file2)) {
 } else {
   console.error('[patch] File not found:', file2);
 }
+
+// Patch pg/lib/stream.js to make pg-cloudflare an optional dependency
+// This prevents esbuild from failing when it can't resolve pg-cloudflare
+const file3 = path.join(__dirname, 'node_modules', 'pg', 'lib', 'stream.js');
+if (fs.existsSync(file3)) {
+  let content = fs.readFileSync(file3, 'utf8');
+  const original3 = "const { CloudflareSocket } = require('pg-cloudflare')";
+  const patched3 = `let CloudflareSocket;
+  try {
+    CloudflareSocket = require('pg-cloudflare').CloudflareSocket;
+  } catch (e) {
+    CloudflareSocket = undefined;
+  }`;
+  if (content.includes(original3)) {
+    content = content.replace(original3, patched3);
+    fs.writeFileSync(file3, content);
+    console.log('[patch] pg/lib/stream.js: Made pg-cloudflare optional');
+  } else {
+    console.log('[patch] pg/lib/stream.js: Already patched or format changed');
+  }
+} else {
+  console.error('[patch] File not found:', file3);
+}
