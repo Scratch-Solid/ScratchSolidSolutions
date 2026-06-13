@@ -17,16 +17,13 @@
  * (`expires_at > datetime('now')`) and `new Date(value)` parsing keep working.
  */
 
-import { Pool } from 'pg';
-import type { PoolClient } from 'pg';
+// Dynamic import of pg to avoid bundling it in Cloudflare Workers builds.
+// pg is only used in standalone/PostgreSQL mode (DATABASE_URL set), not in D1 mode.
+let pool: any = null;
 
-// Canonical SQLite-style timestamp format used across the codebase.
-const PG_NOW = `to_char((now() at time zone 'utc'), 'YYYY-MM-DD HH24:MI:SS')`;
-
-let pool: Pool | null = null;
-
-export function getPool(): Pool {
+async function getPgPool() {
   if (!pool) {
+    const { Pool } = await import('pg');
     const connectionString = process.env.DATABASE_URL;
     if (!connectionString) {
       throw new Error('DATABASE_URL environment variable is required for PostgreSQL');
@@ -37,10 +34,18 @@ export function getPool(): Pool {
       idleTimeoutMillis: 30_000,
       connectionTimeoutMillis: 10_000,
     });
-    pool.on('error', (err) => {
+    pool.on('error', (err: any) => {
       // Prevent an idle-client error from crashing the process.
       console.error('[pg-d1] idle client error', err);
     });
+  }
+  return pool;
+}
+
+// Re-export for backward compat with existing callers.
+export function getPool(): any {
+  if (!pool) {
+    throw new Error('getPool() called before async initialization. Use getPgPool() instead.');
   }
   return pool;
 }
@@ -133,7 +138,7 @@ class PgBoundStatement {
 
   private async query(): Promise<{ rows: any[]; rowCount: number; duration: number }> {
     const started = Date.now();
-    const client = getPool();
+    const client = await getPgPool();
     const res = await client.query(this.sql, this.params as any[]);
     return { rows: res.rows, rowCount: res.rowCount ?? 0, duration: Date.now() - started };
   }
@@ -220,7 +225,7 @@ export class PgD1Database {
   async batch<T = Record<string, unknown>>(
     statements: PgBoundStatement[]
   ): Promise<D1Result<T>[]> {
-    const client: PoolClient = await getPool().connect();
+    const client = await getPgPool().connect();
     try {
       await client.query('BEGIN');
       const results: D1Result<T>[] = [];
@@ -239,7 +244,8 @@ export class PgD1Database {
 
   async exec(sql: string): Promise<{ count: number; duration: number }> {
     const started = Date.now();
-    const res = await getPool().query(translateSql(sql));
+    const client = await getPgPool();
+    const res = await client.query(translateSql(sql));
     return { count: res.rowCount ?? 0, duration: Date.now() - started };
   }
 }

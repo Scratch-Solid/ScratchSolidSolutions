@@ -7,18 +7,18 @@
  * (RATE_LIMIT_KV, GPS_KV, PUSH_KV); each namespace is isolated by a key prefix.
  */
 
-import Redis from 'ioredis';
+// Dynamic import of ioredis to avoid bundling it in Cloudflare Workers builds.
+let redis: any = null;
 
-let redis: Redis | null = null;
-
-function getRedis(): Redis {
+async function getRedis(): Promise<any> {
   if (!redis) {
+    const { default: Redis } = await import('ioredis');
     const url = process.env.REDIS_URL || 'redis://localhost:6379';
     redis = new Redis(url, {
       maxRetriesPerRequest: 3,
       lazyConnect: false,
     });
-    redis.on('error', (err) => console.error('[redis-kv] error', err));
+    redis.on('error', (err: any) => console.error('[redis-kv] error', err));
   }
   return redis;
 }
@@ -45,31 +45,35 @@ export class RedisKVNamespace {
   }
 
   async get(key: string, _type?: 'text' | 'json' | 'arrayBuffer' | 'stream'): Promise<string | null> {
-    return getRedis().get(this.k(key));
+    const redis = await getRedis();
+    return redis.get(this.k(key));
   }
 
   async put(key: string, value: string, options?: KVPutOptions): Promise<void> {
+    const redis = await getRedis();
     const fullKey = this.k(key);
     if (options?.expirationTtl && options.expirationTtl > 0) {
-      await getRedis().set(fullKey, value, 'EX', Math.ceil(options.expirationTtl));
+      await redis.set(fullKey, value, 'EX', Math.ceil(options.expirationTtl));
     } else if (options?.expiration && options.expiration > 0) {
       const ttl = Math.max(1, Math.ceil(options.expiration - Date.now() / 1000));
-      await getRedis().set(fullKey, value, 'EX', ttl);
+      await redis.set(fullKey, value, 'EX', ttl);
     } else {
-      await getRedis().set(fullKey, value);
+      await redis.set(fullKey, value);
     }
   }
 
   async delete(key: string): Promise<void> {
-    await getRedis().del(this.k(key));
+    const redis = await getRedis();
+    await redis.del(this.k(key));
   }
 
   async list(options?: { prefix?: string; limit?: number; cursor?: string }): Promise<KVListResult> {
+    const redis = await getRedis();
     const matchPrefix = `${this.prefix}${options?.prefix ?? ''}`;
     const keys: { name: string }[] = [];
     let cursor = '0';
     do {
-      const [next, batch] = await getRedis().scan(cursor, 'MATCH', `${matchPrefix}*`, 'COUNT', 200);
+      const [next, batch] = await redis.scan(cursor, 'MATCH', `${matchPrefix}*`, 'COUNT', 200);
       cursor = next;
       for (const fullKey of batch) {
         // Strip the namespace prefix to mirror Cloudflare KV semantics.
