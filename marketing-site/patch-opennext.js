@@ -1,19 +1,36 @@
-﻿const fs = require('fs');
+const fs = require('fs');
 const path = require('path');
 
 // Patch OpenNext AWS createServerBundle to externalize pg and pg-cloudflare
-const file = path.join(__dirname, 'node_modules', '@opennextjs', 'cloudflare', 'node_modules', '@opennextjs', 'aws', 'dist', 'build', 'createServerBundle.js');
-if (fs.existsSync(file)) {
-  let content = fs.readFileSync(file, 'utf8');
-  const original = 'external: [\"next\", \"./middleware.mjs\", \"./next-server.runtime.prod.js\"]';
-  const patched = 'external: [\"next\", \"./middleware.mjs\", \"./next-server.runtime.prod.js\", \"pg\", \"pg-cloudflare\"]';
-  if (content.includes(original)) {
-    content = content.replace(original, patched);
-    fs.writeFileSync(file, content);
-    console.log('[patch] Added pg and pg-cloudflare to esbuild externals');
+const file1 = path.join(__dirname, 'node_modules', '@opennextjs', 'cloudflare', 'node_modules', '@opennextjs', 'aws', 'dist', 'build', 'createServerBundle.js');
+if (fs.existsSync(file1)) {
+  let content = fs.readFileSync(file1, 'utf8');
+  const original1 = 'external: ["next", "./middleware.mjs", "./next-server.runtime.prod.js"]';
+  const patched1 = 'external: ["next", "./middleware.mjs", "./next-server.runtime.prod.js", "pg", "pg-cloudflare"]';
+  if (content.includes(original1)) {
+    content = content.replace(original1, patched1);
+    fs.writeFileSync(file1, content);
+    console.log('[patch] createServerBundle: Added pg and pg-cloudflare to esbuild externals');
   } else {
-    console.log('[patch] Already patched or format changed');
+    console.log('[patch] createServerBundle: Already patched or format changed');
   }
 } else {
-  console.error('[patch] File not found:', file);
+  console.error('[patch] File not found:', file1);
+}
+
+// Patch OpenNext AWS bundleNextServer to externalize pg and pg-cloudflare
+const file2 = path.join(__dirname, 'node_modules', '@opennextjs', 'cloudflare', 'node_modules', '@opennextjs', 'aws', 'dist', 'build', 'bundleNextServer.js');
+if (fs.existsSync(file2)) {
+  let content = fs.readFileSync(file2, 'utf8');
+  const original2 = '"next/dist/compiled/compression",';
+  const patched2 = '"next/dist/compiled/compression",\n    "pg",\n    "pg-cloudflare",';
+  if (content.includes(original2) && !content.includes('"pg",')) {
+    content = content.replace(original2, patched2);
+    fs.writeFileSync(file2, content);
+    console.log('[patch] bundleNextServer: Added pg and pg-cloudflare to esbuild externals');
+  } else {
+    console.log('[patch] bundleNextServer: Already patched or format changed');
+  }
+} else {
+  console.error('[patch] File not found:', file2);
 }
