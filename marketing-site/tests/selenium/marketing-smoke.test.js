@@ -3,6 +3,7 @@
  * Verifies key public pages render without 500 errors or console issues.
  */
 const http = require('http');
+const https = require('https');
 const { Builder, By, until } = require('selenium-webdriver');
 const edge = require('selenium-webdriver/edge');
 
@@ -10,7 +11,8 @@ const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 
 function isServerReachable(url) {
   return new Promise((resolve) => {
-    const req = http.get(url, (res) => {
+    const client = url.startsWith('https:') ? https : http;
+    const req = client.get(url, (res) => {
       resolve(res.statusCode < 500);
       req.destroy();
     });
