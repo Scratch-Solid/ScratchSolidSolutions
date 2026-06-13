@@ -5,7 +5,6 @@ import type { D1Database } from '@cloudflare/workers-types';
 import bcrypt from 'bcryptjs';
 import { logger } from './logger';
 import { getCloudflareContext } from '@/lib/runtime-context';
-import { getPgD1 } from '@/lib/server/pg-d1';
 
 // Helper to get the D1 database — Cloudflare context first, then PostgreSQL fallback
 export async function getDb(): Promise<D1Database | null> {
@@ -35,6 +34,7 @@ export async function getDb(): Promise<D1Database | null> {
   // Standalone / Docker fallback: PostgreSQL via pg-d1 adapter
   const pgUrl = process.env.DATABASE_URL || process.env.DB_URL;
   if (pgUrl) {
+    const { getPgD1 } = await import('@/lib/server/pg-d1');
     return getPgD1(pgUrl) as unknown as D1Database;
   }
 

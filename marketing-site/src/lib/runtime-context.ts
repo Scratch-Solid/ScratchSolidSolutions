@@ -1,22 +1,14 @@
 /**
  * @module runtime-context
- * @description Drop-in replacement for `@opennextjs/cloudflare`'s
- * `getCloudflareContext()` for the self-hosted (Hetzner) deployment.
+ * @description Universal runtime context that works in both Cloudflare Workers
+ * (via @opennextjs/cloudflare) and self-hosted (Hetzner/Node.js) deployments.
  *
- * It returns the same `{ env, cf, ctx }` shape the application expects, but the
- * bindings are backed by server infrastructure instead of Cloudflare bindings:
- *   - `scratchsolid_db`  -> PostgreSQL (via the D1-compatible adapter)
- *   - `RATE_LIMIT_KV` / `GPS_KV` / `PUSH_KV` -> Redis
- *   - `UPLOADS_BUCKET`   -> S3-compatible object storage (R2/MinIO)
- *   - all string vars    -> `process.env`
+ * In Cloudflare Workers: delegates to `@opennextjs/cloudflare` for real bindings.
+ * In standalone mode: lazily loads PostgreSQL, Redis, and S3 facades so they
+ * are invisible to bundlers targeting Cloudflare Workers.
  *
- * Existing imports of `getCloudflareContext` from `@opennextjs/cloudflare`
- * are repointed to this module, so call sites remain unchanged.
+ * Returns the same `{ env, cf, ctx }` shape the application expects.
  */
-
-import { getPgD1 } from './server/pg-d1';
-import { getKVNamespace } from './server/redis-kv';
-import { getR2Bucket } from './server/s3-r2';
 
 export interface RuntimeEnv {
   [key: string]: unknown;
@@ -29,10 +21,19 @@ export interface CloudflareContext {
 }
 
 let cachedEnv: RuntimeEnv | null = null;
+let standaloneEnvPromise: Promise<RuntimeEnv> | null = null;
 
-function buildEnv(): RuntimeEnv {
+async function buildEnvAsync(): Promise<RuntimeEnv> {
   if (cachedEnv) return cachedEnv;
+
   const env: RuntimeEnv = { ...process.env };
+
+  // Lazily import standalone adapters so Cloudflare builds never trace them.
+  const [{ getPgD1 }, { getKVNamespace }, { getR2Bucket }] = await Promise.all([
+    import('./server/pg-d1'),
+    import('./server/redis-kv'),
+    import('./server/s3-r2'),
+  ]);
 
   try {
     env.scratchsolid_db = getPgD1();
@@ -60,7 +61,7 @@ function buildEnv(): RuntimeEnv {
   return cachedEnv;
 }
 
-const ctx = {
+const standaloneCtx = {
   waitUntil: (_p: Promise<unknown>) => {
     /* no-op: long-lived Node process, promises resolve naturally */
   },
@@ -70,16 +71,34 @@ const ctx = {
 };
 
 /**
- * Returns the runtime context. Accepts the same optional `{ async }` argument as
- * the Cloudflare implementation. The returned object can be used directly or
- * awaited (awaiting a non-promise yields the value), so both call styles work.
+ * Returns the runtime context.
+ *
+ * In Cloudflare Workers this delegates to `@opennextjs/cloudflare`.
+ * In standalone (Hetzner) mode it lazily loads the server adapters.
  */
-export function getCloudflareContext(_options?: { async?: boolean }): CloudflareContext {
-  return {
-    env: buildEnv(),
-    cf: {},
-    ctx,
-  };
+export async function getCloudflareContext(
+  _options?: { async?: boolean }
+): Promise<CloudflareContext> {
+  try {
+    // Cloudflare Workers: the real implementation is available.
+    // Use require inside the function so standalone bundlers don't trace it
+    // at the top-level, but in the Cloudflare build it resolves correctly.
+    const { getCloudflareContext: realGetCloudflareContext } =
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      require('@opennextjs/cloudflare');
+    return realGetCloudflareContext(_options);
+  } catch {
+    // Standalone mode: fall back to our custom env.
+    if (!standaloneEnvPromise) {
+      standaloneEnvPromise = buildEnvAsync();
+    }
+    const env = await standaloneEnvPromise;
+    return {
+      env,
+      cf: {},
+      ctx: standaloneCtx,
+    };
+  }
 }
 
 export default getCloudflareContext;
