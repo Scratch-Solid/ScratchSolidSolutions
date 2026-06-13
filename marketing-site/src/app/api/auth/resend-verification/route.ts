@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, getUserByEmail, createEmailVerificationToken } from "@/lib/db";
 import { sanitizeEmail } from "@/lib/sanitization";
-import { getCloudflareContext } from '@opennextjs/cloudflare';
+import { getCloudflareContext } from '@/lib/runtime-context';
 
 // Direct Resend API call
 async function sendEmailVerificationEmailDirect(to: string, name: string, verifyLink: string) {

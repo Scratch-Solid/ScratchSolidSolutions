@@ -234,12 +234,78 @@ function getCorsHeaders(request, env?: any) {
 }
 
 // JWT utilities
-function createToken(userId: number, role: string, env: any) {
+function bytesToBase64Url(bytes: Uint8Array): string {
+  const binary = Array.from(bytes).map(b => String.fromCharCode(b)).join('');
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+}
+
+async function createToken(userId: number, role: string, env: any) {
   const now = Math.floor(Date.now() / 1000);
-  return jwt.sign(
-    { sub: String(userId), role, iat: now, exp: now + 900 },
-    env.JWT_SECRET
+  const header = JSON.stringify({ alg: 'HS256', typ: 'JWT' });
+  const payload = JSON.stringify({ sub: String(userId), role, iat: now, exp: now + 900 });
+
+  const headerB64 = bytesToBase64Url(new TextEncoder().encode(header));
+  const payloadB64 = bytesToBase64Url(new TextEncoder().encode(payload));
+  const partialToken = `${headerB64}.${payloadB64}`;
+
+  const secretBytes = new TextEncoder().encode(env.JWT_SECRET);
+  const key = await crypto.subtle.importKey(
+    'raw',
+    secretBytes,
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
   );
+  const signature = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(partialToken));
+  const signatureB64 = bytesToBase64Url(new Uint8Array(signature));
+
+  return `${partialToken}.${signatureB64}`;
+}
+
+function base64UrlToBytes(b64url: string): Uint8Array {
+  const b64 = b64url.replace(/-/g, '+').replace(/_/g, '/').replace(/\s/g, '');
+  const padded = b64 + '='.repeat((4 - b64.length % 4) % 4);
+  const binary = atob(padded);
+  return new Uint8Array(binary.length).map((_, i) => binary.charCodeAt(i));
+}
+
+async function verifyJwtSignature(token: string, secret: string): Promise<boolean> {
+  const [header, payload, signature] = token.split('.');
+  if (!header || !payload || !signature) {
+    console.error('[verifyJwtSignature] malformed token');
+    return false;
+  }
+
+  const data = new TextEncoder().encode(`${header}.${payload}`);
+  const secretBytes = new TextEncoder().encode(secret);
+
+  console.error('[verifyJwtSignature] secret length:', secretBytes.length, 'data length:', data.length);
+
+  const key = await crypto.subtle.importKey(
+    'raw',
+    secretBytes,
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+
+  const computed = await crypto.subtle.sign('HMAC', key, data);
+  const computedBytes = new Uint8Array(computed);
+  const signatureBytes = base64UrlToBytes(signature);
+
+  console.error('[verifyJwtSignature] computed sig length:', computedBytes.length, 'provided sig length:', signatureBytes.length);
+
+  if (computedBytes.length !== signatureBytes.length) {
+    console.error('[verifyJwtSignature] length mismatch');
+    return false;
+  }
+  let match = 0;
+  for (let i = 0; i < computedBytes.length; i++) {
+    match |= computedBytes[i] ^ signatureBytes[i];
+  }
+  const result = match === 0;
+  console.error('[verifyJwtSignature] signature valid:', result);
+  return result;
 }
 
 async function verifyToken(request: any, env: any) {
@@ -250,16 +316,21 @@ async function verifyToken(request: any, env: any) {
 
   try {
     const token = authHeader.substring(7);
-    const isValid = await jwt.verify(token, env.JWT_SECRET);
-    if (!isValid) return null;
+    const isValid = await verifyJwtSignature(token, env.JWT_SECRET);
+    if (!isValid) {
+      console.error('[verifyToken] signature verification failed');
+      return null;
+    }
     const decoded = jwt.decode(token);
     const payload = decoded?.payload;
     // Reject expired tokens explicitly
     if (payload?.exp && Date.now() / 1000 > payload.exp) {
+      console.error('[verifyToken] token expired, exp:', payload.exp, 'now:', Date.now() / 1000);
       return null;
     }
     return payload;
-  } catch (error) {
+  } catch (error: any) {
+    console.error('[verifyToken] error:', error?.message || error);
     return null;
   }
 }
@@ -447,7 +518,7 @@ router.post('/api/auth/signup', async (request: any, env: any) => {
       name, email, password, role, phone, address, business_name, business_info
     });
     
-    const token = createToken(userId, role, env);
+    const token = await createToken(userId, role, env);
     
     return new Response(JSON.stringify({ 
       access_token: token, 
@@ -484,7 +555,7 @@ router.post('/api/auth/login', async (request: any, env: any) => {
       });
     }
     
-    const token = createToken(user.id, user.role, env);
+    const token = await createToken(user.id, user.role, env);
     
     return new Response(JSON.stringify({ 
       access_token: token, 
@@ -504,9 +575,11 @@ router.post('/api/auth/login', async (request: any, env: any) => {
 
 // Get current user
 router.get('/api/auth/me', async (request: any, env: any) => {
+  const authHeader = request.headers.get('Authorization');
+  const token = authHeader?.substring(7) || 'none';
   const payload: any = await verifyToken(request, env);
   if (!payload) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+    return new Response(JSON.stringify({ error: 'Unauthorized', debug: { tokenPrefix: token.slice(0, 20), secretSet: !!env.JWT_SECRET } }), {
       status: 401,
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
     });

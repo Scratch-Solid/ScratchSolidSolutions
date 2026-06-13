@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb, getUserByEmail, getUserByPhone, createPasswordResetToken } from "@/lib/db";
 import { sanitizeEmail, sanitizePhone } from "@/lib/sanitization";
 import { withRateLimit, rateLimits } from "@/lib/middleware";
-import { getCloudflareContext } from '@opennextjs/cloudflare';
+import { getCloudflareContext } from '@/lib/runtime-context';
 
 // Direct Resend API call - bulletproof approach
 async function sendPasswordResetEmail(to: string, resetLink: string) {

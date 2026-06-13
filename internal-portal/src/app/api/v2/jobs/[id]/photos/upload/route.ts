@@ -69,7 +69,7 @@ export async function POST(
     const objectKey = `jobs/${jobId}/${room_name}/${timestamp}_${sanitizedFileName}`;
 
     // Get R2 bucket binding from Cloudflare context
-    const { env } = await import('@opennextjs/cloudflare').then((m) =>
+    const { env } = await import('@/lib/runtime-context').then((m) =>
       m.getCloudflareContext({ async: true })
     ) as unknown as { env: any };
 

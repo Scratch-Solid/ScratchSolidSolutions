@@ -1,9 +1,8 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, deleteSession } from "@/lib/db";
-import jwt from 'jsonwebtoken';
 import { logger } from "@/lib/logger";
-import { getJWTSecret } from "@/lib/env";
+import { ACCESS_COOKIE_NAME, clearAuthCookies } from "@/lib/session";
 import { withRateLimit, rateLimits, withCsrf } from "@/lib/middleware";
 
 export async function POST(request: NextRequest) {
@@ -33,26 +32,26 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    // Accept the access token from the Authorization header or the auth cookie.
     const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'No token provided' }, { status: 401 });
+    const token = authHeader?.startsWith('Bearer ')
+      ? authHeader.substring(7)
+      : request.cookies.get(ACCESS_COOKIE_NAME)?.value;
+
+    // Best-effort revoke the DB-backed session, then always clear cookies.
+    if (token) {
+      try {
+        await deleteSession(db, token);
+      } catch {
+        // Ignore: logout should succeed even if the session row is already gone.
+      }
     }
 
-    const token = authHeader.substring(7);
-    
-    // Verify token
-    try {
-      jwt.verify(token, getJWTSecret());
-    } catch {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
-    }
-
-    // Delete session from database
-    await deleteSession(db, token);
-
-    return NextResponse.json({ message: 'Logged out successfully' }, { status: 200 });
+    const response = NextResponse.json({ message: 'Logged out successfully' }, { status: 200 });
+    return clearAuthCookies(response);
   } catch (error) {
     logger.error('Error during logout', error as Error);
-    return NextResponse.json({ error: 'Logout failed' }, { status: 500 });
+    const response = NextResponse.json({ error: 'Logout failed' }, { status: 500 });
+    return clearAuthCookies(response);
   }
 }

@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
   try {
     // Get cleaner profile
     const cleanerProfile = await db.prepare(
-      'SELECT cp.paysheet_code, cp.first_name, cp.last_name, cp.status FROM cleaner_profiles cp WHERE cp.user_id = ?'
+      'SELECT cp.id, cp.paysheet_code, cp.first_name, cp.last_name, cp.status FROM cleaner_profiles cp WHERE cp.user_id = ?'
     ).bind(userId).first();
 
     if (!cleanerProfile) {
@@ -36,17 +36,17 @@ export async function GET(request: NextRequest) {
       'SELECT completion_percentage, completed FROM training_progress WHERE employee_id = ?'
     ).bind(cleaner.paysheet_code).first();
 
-    // Get upcoming shifts count
+    // Get upcoming shifts count (cleaner_id references cleaner_profiles.id)
     const upcomingShifts = await db.prepare(
       `SELECT COUNT(*) as count FROM booking_assignments ba 
        JOIN bookings b ON ba.booking_id = b.id 
-       WHERE ba.cleaner_id = ? AND b.scheduled_date >= date('now') AND b.status != 'cancelled'`
-    ).bind(cleaner.paysheet_code).first();
+       WHERE ba.cleaner_id = ? AND b.booking_date >= date('now') AND b.status != 'cancelled'`
+    ).bind(cleaner.id).first();
 
-    // Get average rating
+    // Get average rating (staff_id references cleaner_profiles.id)
     const ratingResult = await db.prepare(
-      'SELECT AVG(rating) as avg_rating FROM job_performance_metrics WHERE employee_id = ?'
-    ).bind(cleaner.paysheet_code).first();
+      'SELECT AVG(client_star_rating) as avg_rating FROM job_performance_metrics WHERE staff_id = ?'
+    ).bind(cleaner.id).first();
 
     const response = NextResponse.json({
       success: true,

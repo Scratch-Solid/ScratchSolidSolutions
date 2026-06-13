@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
 
     // Get audit logs related to this user
     const auditLogs = await db.prepare(
-      'SELECT action, resource_type, resource_id, details, created_at FROM audit_logs WHERE admin_id = ?'
+      'SELECT action, resource_type, resource_id, details, created_at FROM audit_logs WHERE user_id = ?'
     ).bind(userId).all();
 
     const response = NextResponse.json({

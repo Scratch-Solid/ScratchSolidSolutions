@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import { getCloudflareContext } from '@opennextjs/cloudflare';
+import { getCloudflareContext } from '@/lib/runtime-context';
 
 /**
  * n8n / Zoho → Internal Portal: Payment Status Update

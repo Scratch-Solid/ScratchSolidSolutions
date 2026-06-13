@@ -402,11 +402,202 @@ services:
       retries: 3
       start_period: 10s
 
+  # ═══════════════════════════════════════════════════════════════
+  #  MARKETING SITE — Public Next.js app (migrated off Cloudflare)
+  # ═══════════════════════════════════════════════════════════════
+  marketing-postgres:
+    image: postgres:15-alpine
+    container_name: marketing_db
+    restart: always
+    expose:
+      - "5432"
+    environment:
+      POSTGRES_USER: ${MARKETING_DB_USER:-marketing}
+      POSTGRES_PASSWORD: ${MARKETING_DB_PASSWORD}
+      POSTGRES_DB: ${MARKETING_DB_NAME:-marketing}
+    volumes:
+      - marketing_db_data:/var/lib/postgresql/data
+    networks:
+      - scratch_internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${MARKETING_DB_USER:-marketing} -d ${MARKETING_DB_NAME:-marketing}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  marketing-redis:
+    image: redis:7-alpine
+    container_name: marketing_redis
+    restart: always
+    volumes:
+      - marketing_redis_data:/data
+    networks:
+      - scratch_internal
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  marketing-web:
+    build:
+      context: ../marketing-site
+      dockerfile: Dockerfile
+    image: scratchsolid-web:latest
+    container_name: marketing_web
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.marketing.rule=Host(`scratchsolidsolutions.org`) || Host(`www.scratchsolidsolutions.org`)"
+      - "traefik.http.routers.marketing.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.marketing.entrypoints=websecure"
+      - "traefik.http.services.marketing.loadbalancer.server.port=3000"
+      # Redirect www.* -> apex
+      - "traefik.http.middlewares.marketing-www.redirectregex.regex=^https://www\\.(.+)"
+      - "traefik.http.middlewares.marketing-www.redirectregex.replacement=https://$${1}"
+      - "traefik.http.middlewares.marketing-www.redirectregex.permanent=true"
+      - "traefik.http.routers.marketing.middlewares=marketing-www"
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      HOSTNAME: "0.0.0.0"
+      DATABASE_URL: postgresql://${MARKETING_DB_USER:-marketing}:${MARKETING_DB_PASSWORD}@marketing-postgres:5432/${MARKETING_DB_NAME:-marketing}
+      REDIS_URL: redis://marketing-redis:6379
+      # Object storage (Cloudflare R2 over the S3 API, or self-hosted MinIO)
+      S3_ENDPOINT: ${R2_ENDPOINT}
+      S3_REGION: ${S3_REGION:-auto}
+      S3_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID}
+      S3_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY}
+      S3_BUCKET: ${MARKETING_UPLOADS_BUCKET:-scratchsolid-uploads}
+      S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-false}
+      R2_PUBLIC_BASE: ${R2_PUBLIC_BASE:-https://uploads.scratchsolidsolutions.org}
+      # Public URLs
+      NEXT_PUBLIC_BASE_URL: ${MARKETING_BASE_URL:-https://scratchsolidsolutions.org}
+      NEXT_PUBLIC_API_URL: ${MARKETING_API_URL:-https://api.scratchsolidsolutions.org/api}
+      # Auth / integrations
+      JWT_SECRET: ${JWT_SECRET}
+      CSRF_SECRET: ${CSRF_SECRET}
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      ZOHO_ORG_ID: ${ZOHO_ORG_ID:-}
+      ZOHO_CLIENT_ID: ${ZOHO_CLIENT_ID:-}
+      ZOHO_CLIENT_SECRET: ${ZOHO_CLIENT_SECRET:-}
+      ZOHO_REFRESH_TOKEN: ${ZOHO_REFRESH_TOKEN:-}
+    depends_on:
+      marketing-postgres:
+        condition: service_healthy
+      marketing-redis:
+        condition: service_started
+    networks:
+      - scratch_internal
+      - scratch_public
+
+  # ═══════════════════════════════════════════════════════════════
+  #  INTERNAL PORTAL — Staff/admin/cleaner Next.js app
+  # ═══════════════════════════════════════════════════════════════
+  portal-postgres:
+    image: postgres:15-alpine
+    container_name: portal_db
+    restart: always
+    expose:
+      - "5432"
+    environment:
+      POSTGRES_USER: ${PORTAL_DB_USER:-portal}
+      POSTGRES_PASSWORD: ${PORTAL_DB_PASSWORD}
+      POSTGRES_DB: ${PORTAL_DB_NAME:-portal}
+    volumes:
+      - portal_db_data:/var/lib/postgresql/data
+    networks:
+      - scratch_internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PORTAL_DB_USER:-portal} -d ${PORTAL_DB_NAME:-portal}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  portal-redis:
+    image: redis:7-alpine
+    container_name: portal_redis
+    restart: always
+    volumes:
+      - portal_redis_data:/data
+    networks:
+      - scratch_internal
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  portal-web:
+    build:
+      context: ../internal-portal
+      dockerfile: Dockerfile
+    image: scratchsolid-portal:latest
+    container_name: portal_web
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.portal.rule=Host(`portal.scratchsolidsolutions.org`)"
+      - "traefik.http.routers.portal.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.portal.entrypoints=websecure"
+      - "traefik.http.services.portal.loadbalancer.server.port=3000"
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      HOSTNAME: "0.0.0.0"
+      # Both logical DBs (scratchsolid_db + training_db) share one Postgres
+      # instance; training tables live alongside portal tables.
+      DATABASE_URL: postgresql://${PORTAL_DB_USER:-portal}:${PORTAL_DB_PASSWORD}@portal-postgres:5432/${PORTAL_DB_NAME:-portal}
+      REDIS_URL: redis://portal-redis:6379
+      S3_ENDPOINT: ${R2_ENDPOINT}
+      S3_REGION: ${S3_REGION:-auto}
+      S3_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID}
+      S3_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY}
+      S3_BUCKET: ${PORTAL_UPLOADS_BUCKET:-scratchsolid-uploads}
+      S3_PHOTOS_BUCKET: ${PORTAL_PHOTOS_BUCKET:-scratchsolid-uploads}
+      S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-false}
+      R2_PUBLIC_BASE: ${R2_PUBLIC_BASE:-https://uploads.scratchsolidsolutions.org}
+      NEXT_PUBLIC_BASE_URL: ${PORTAL_BASE_URL:-https://portal.scratchsolidsolutions.org}
+      NEXT_PUBLIC_API_URL: ${MARKETING_API_URL:-https://api.scratchsolidsolutions.org/api}
+      ALLOWED_ORIGINS: ${PORTAL_BASE_URL:-https://portal.scratchsolidsolutions.org}
+      JWT_SECRET: ${JWT_SECRET}
+      CSRF_SECRET: ${CSRF_SECRET}
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      INTERNAL_PORTAL_N8N_WEBHOOK_SECRET: ${INTERNAL_PORTAL_N8N_WEBHOOK_SECRET}
+      # Zoho Books / CRM
+      ZOHO_ORG_ID: ${ZOHO_ORG_ID:-}
+      ZOHO_CLIENT_ID: ${ZOHO_CLIENT_ID:-}
+      ZOHO_CLIENT_SECRET: ${ZOHO_CLIENT_SECRET:-}
+      ZOHO_REFRESH_TOKEN: ${ZOHO_REFRESH_TOKEN:-}
+      # ERPNext
+      ERPNEXT_BASE_URL: ${ERPNEXT_BASE_URL:-}
+      ERPNEXT_API_KEY: ${ERPNEXT_API_KEY:-}
+      ERPNEXT_API_SECRET: ${ERPNEXT_API_SECRET:-}
+      # Meta WhatsApp Cloud API
+      META_WABA_ID: ${META_WABA_ID:-}
+      META_PHONE_NUMBER_ID: ${META_PHONE_NUMBER_ID:-}
+      META_ACCESS_TOKEN: ${META_ACCESS_TOKEN:-}
+      META_VERIFY_TOKEN: ${META_VERIFY_TOKEN:-}
+    depends_on:
+      portal-postgres:
+        condition: service_healthy
+      portal-redis:
+        condition: service_started
+    networks:
+      - scratch_internal
+      - scratch_public
+
 # ═════════════════════════════════════════════════════════════════
 #  VOLUMES
 # ═════════════════════════════════════════════════════════════════
 volumes:
   traefik_certs:
+  marketing_db_data:
+  marketing_redis_data:
+  portal_db_data:
+  portal_redis_data:
   calcom_db_data:
   n8n_db_data:
   n8n_storage:

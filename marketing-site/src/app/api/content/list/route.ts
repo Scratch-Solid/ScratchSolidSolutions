@@ -5,8 +5,6 @@ import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { withRateLimit, rateLimits } from "@/lib/middleware";
 import { getDb } from '@/lib/db';
 
-export const runtime = "edge";
-
 export async function GET(request: NextRequest) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['admin']);

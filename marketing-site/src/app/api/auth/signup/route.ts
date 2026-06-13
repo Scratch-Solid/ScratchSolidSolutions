@@ -6,7 +6,7 @@ import bcrypt from 'bcryptjs';
 import { logger } from "@/lib/logger";
 import { validateEmail, validatePassword } from "@/lib/validation";
 import { withRateLimit, rateLimits } from "@/lib/middleware";
-import { getCloudflareContext } from '@opennextjs/cloudflare';
+import { getCloudflareContext } from '@/lib/runtime-context';
 
 // Direct Resend API call - bulletproof approach
 async function sendEmailVerificationEmailDirect(to: string, name: string, verifyLink: string) {

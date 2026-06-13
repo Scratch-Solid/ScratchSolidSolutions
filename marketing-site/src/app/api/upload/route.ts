@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from "uuid";
 import { withAuth, withTracing, withSecurityHeaders } from "@/lib/middleware";
 import { logger } from "@/lib/logger";
 import { withRateLimit, rateLimits } from "@/lib/middleware";
-import { getCloudflareContext } from '@opennextjs/cloudflare';
+import { getCloudflareContext } from '@/lib/runtime-context';
 
 export const dynamic = "force-dynamic";
 

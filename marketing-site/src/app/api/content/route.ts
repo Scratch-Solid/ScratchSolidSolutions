@@ -6,8 +6,6 @@ import { withRateLimit, rateLimits } from "@/lib/middleware";
 import { validateString } from '@/lib/validation';
 import { getDb } from '@/lib/db';
 
-export const runtime = "edge";
-
 function getSlugFromType(type: string): string {
   const slugMap: Record<string, string> = {
     privacy: "privacy-policy",
@@ -122,7 +120,7 @@ export async function PUT(request: NextRequest) {
     const existing = await db.prepare('SELECT id FROM content WHERE slug = ?').bind(slug).first();
 
     if (existing) {
-      await db.prepare('UPDATE content SET text = ?, title = ?, updated_at = datetime("now") WHERE slug = ?')
+      await db.prepare('UPDATE content SET text = ?, title = ?, updated_at = datetime(\'now\') WHERE slug = ?')
         .bind(content, title || type.charAt(0).toUpperCase() + type.slice(1), slug).run();
     } else {
       await db.prepare('INSERT INTO content (collection, slug, title, text) VALUES (?, ?, ?, ?)')

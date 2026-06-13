@@ -1,0 +1,10 @@
+export default function Forbidden() {
+  return (
+    <html>
+      <body>
+        <h1>403 Forbidden</h1>
+        <p>Access denied.</p>
+      </body>
+    </html>
+  );
+}

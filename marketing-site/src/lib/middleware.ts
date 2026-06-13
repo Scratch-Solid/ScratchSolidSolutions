@@ -17,8 +17,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, validateSession } from './db';
-import { getCloudflareContext } from '@opennextjs/cloudflare';
+import { getCloudflareContext } from '@/lib/runtime-context';
 import { validateCsrfToken } from './csrf';
+import { ACCESS_COOKIE_NAME } from './session';
 
 // ─── Internal helpers ────────────────────────────────────────────────────────
 
@@ -179,7 +180,11 @@ export async function withAuth(
     return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
   }
 
-  const token = request.headers.get('Authorization')?.replace('Bearer ', '');
+  // Accept the access token from the Authorization header (legacy/localStorage
+  // clients) or the httpOnly auth cookie.
+  const token =
+    request.headers.get('Authorization')?.replace('Bearer ', '') ||
+    request.cookies.get(ACCESS_COOKIE_NAME)?.value;
   if (!token) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }

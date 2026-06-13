@@ -12,10 +12,20 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
+  outputFileTracingRoot: process.cwd(),
   typescript: {
     ignoreBuildErrors: true,
   },
-  serverExternalPackages: ['@aws-sdk/client-s3', '@aws-sdk/s3-request-presigner', 'resend'],
+  serverExternalPackages: ['@aws-sdk/client-s3', '@aws-sdk/s3-request-presigner', 'pg', 'ioredis'],
+  serverActions: {
+    allowedOrigins: [
+      'localhost:3000',
+      'scratchsolidsolutions.org',
+      '*.scratchsolidsolutions.org',
+      '*.workers.dev',
+    ],
+  },
   async headers() {
     return [
       {

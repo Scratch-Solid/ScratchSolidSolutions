@@ -3,7 +3,7 @@
  * Handles WhatsApp (primary) and email (fallback) notifications
  */
 
-import { getCloudflareContext } from '@opennextjs/cloudflare';
+import { getCloudflareContext } from '@/lib/runtime-context';
 
 interface NotificationPayload {
   recipient: {

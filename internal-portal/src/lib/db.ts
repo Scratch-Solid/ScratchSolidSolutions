@@ -4,20 +4,21 @@
 import { D1Database } from '@cloudflare/workers-types';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
-import { getCloudflareContext } from '@opennextjs/cloudflare';
+import { getCloudflareContext } from '@/lib/runtime-context';
+import { getPgD1 } from '@/lib/server/pg-d1';
 
 export interface Env {
   scratchsolid_db: D1Database;
   training_db: D1Database;
 }
 
-// Helper to get the D1 database from the OpenNext Cloudflare context
+// Helper to get the D1 database — Cloudflare context first, then PostgreSQL fallback
 export async function getDb(): Promise<D1Database | null> {
   try {
     // Use getCloudflareContext for OpenNext.js on Cloudflare Pages
     const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
     const envAny = env as any;
-    
+
     const db = envAny?.scratchsolid_db || envAny?.scratchsolidDb || envAny?.scratchsolid_db_portal_staging || envAny?.DB || envAny?.db || envAny?.database;
     if (db) {
       return db as D1Database;
@@ -30,13 +31,20 @@ export async function getDb(): Promise<D1Database | null> {
     if (candidateKey) {
       return (envAny as any)[candidateKey] as D1Database;
     }
-  } catch (error) {
-    // Error logged via structured logger
+  } catch {
+    // Not in Cloudflare environment — fall through to PostgreSQL
   }
+
+  // Standalone / Docker fallback: PostgreSQL via pg-d1 adapter
+  const pgUrl = process.env.DATABASE_URL || process.env.DB_URL;
+  if (pgUrl) {
+    return getPgD1(pgUrl) as unknown as D1Database;
+  }
+
   return null;
 }
 
-// Helper to get the training D1 database from the OpenNext Cloudflare context
+// Helper to get the training database — Cloudflare context first, then PostgreSQL fallback
 export async function getTrainingDb(): Promise<D1Database | null> {
   try {
     const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
@@ -45,9 +53,16 @@ export async function getTrainingDb(): Promise<D1Database | null> {
     if (db) {
       return db as D1Database;
     }
-  } catch (error) {
-    console.error('Error getting training database from Cloudflare context', error);
+  } catch {
+    // Not in Cloudflare environment — fall through to PostgreSQL
   }
+
+  // Standalone / Docker fallback: reuse main PostgreSQL connection (training data can live in same DB with prefix, or use TRAINING_DATABASE_URL)
+  const pgUrl = process.env.TRAINING_DATABASE_URL || process.env.TRAINING_DB_URL || process.env.DATABASE_URL || process.env.DB_URL;
+  if (pgUrl) {
+    return getPgD1(pgUrl) as unknown as D1Database;
+  }
+
   return null;
 }
 
@@ -167,7 +182,9 @@ export async function incrementFailedAttempts(db: D1Database, email: string): Pr
   const user = await getUserByEmail(db, email);
   if (!user) return 0;
   const attempts = ((user as any).failed_attempts || 0) + 1;
-  const lockedUntil = attempts >= MAX_FAILED_ATTEMPTS ? `datetime('now', '+${LOCKOUT_DURATION_MINUTES} minutes')` : (user as any).locked_until;
+  const lockedUntil = attempts >= MAX_FAILED_ATTEMPTS
+    ? new Date(Date.now() + LOCKOUT_DURATION_MINUTES * 60_000).toISOString()
+    : (user as any).locked_until;
   await db.prepare('UPDATE users SET failed_attempts = ?, locked_until = ? WHERE email = ?')
     .bind(attempts, lockedUntil || null, email).run();
   return attempts;
@@ -332,14 +349,11 @@ export async function initializeStaffTable(db: D1Database) {
 // Add onboarding columns to staff table if they don't exist
 export async function addOnboardingColumnsToStaff(db: D1Database) {
   try {
-    // Check if table exists first
-    const tableCheck = await db.prepare(`
-      SELECT name FROM sqlite_master WHERE type='table' AND name='staff'
-    `).first();
-    
-    if (!tableCheck) {
-      // Table doesn't exist, initialize it
-      return await initializeStaffTable(db);
+    // Ensure table exists (Postgres-compatible: try init, swallow if exists)
+    try {
+      await initializeStaffTable(db);
+    } catch {
+      // Table already exists or other init error — proceed with column adds
     }
 
     // Add columns if they don't exist
@@ -422,7 +436,7 @@ export async function createOrUpdateStaffRecord(db: D1Database, data: {
       
       updates.push('pool_type = ?');
       values.push(poolType);
-      updates.push('updated_at = datetime("now")');
+      updates.push('updated_at = datetime(\'now\')');
       values.push(data.user_id);
       
       if (updates.length > 2) { // More than just pool_type and updated_at
@@ -1089,11 +1103,12 @@ export async function logAuditEvent(db: D1Database, event: {
   trace_id?: string;
 }) {
   await db.prepare(
-    `INSERT INTO audit_logs (user_id, action, resource, resource_id, ip_address, user_agent, details, success, error_message, session_id, trace_id)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO audit_logs (user_id, action, resource, resource_type, resource_id, ip_address, user_agent, details, success, error_message, session_id, trace_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(
     event.user_id ?? null,
     event.action,
+    event.resource ?? null,
     event.resource ?? null,
     event.resource_id ?? null,
     event.ip_address ?? null,
@@ -1131,7 +1146,7 @@ export async function getAuditLogs(db: D1Database, filters?: {
     params.push(filters.resource);
   }
   
-  query += ` ORDER BY timestamp DESC`;
+  query += ` ORDER BY created_at DESC`;
   
   if (filters?.limit) {
     query += ` LIMIT ?`;

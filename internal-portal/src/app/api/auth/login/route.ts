@@ -285,6 +285,7 @@ export async function POST(request: NextRequest) {
     return response;
 
   } catch (error) {
-    return createSecurityError('Login failed', 500);
+    console.error('Login error:', error);
+    return createSecurityError('Login failed: ' + (error instanceof Error ? error.message : String(error)), 500);
   }
 }

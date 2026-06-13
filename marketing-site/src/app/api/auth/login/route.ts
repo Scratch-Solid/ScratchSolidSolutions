@@ -4,8 +4,10 @@ import { getDb, getUserByEmail, createSession, deleteSession, validateLogin, val
 import { sanitizeEmail, sanitizePhone } from "@/lib/sanitization";
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { logger } from "@/lib/logger";
 import { getJWTSecret } from "@/lib/env";
+import { generateRefreshToken, setAuthCookies } from "@/lib/session";
 import { validateEmail } from "@/lib/validation";
 import { withRateLimit, rateLimits } from "@/lib/middleware";
 
@@ -74,10 +76,13 @@ export async function POST(request: NextRequest) {
     // Generate JWT token
     const token = jwt.sign({ id: (user as any).id, email: (user as any).email, role: (user as any).role }, getJWTSecret(), { expiresIn: '7d' });
 
-    // Create session
+    // Create DB-backed session for the access token
     await createSession(db, (user as any).id, token);
 
-    return NextResponse.json({ 
+    // Issue a long-lived refresh token so clients can renew without re-login
+    const refreshToken = generateRefreshToken((user as any).id, crypto.randomUUID());
+
+    const response = NextResponse.json({ 
       id: (user as any).id,
       email: (user as any).email,
       role: (user as any).role,
@@ -87,6 +92,11 @@ export async function POST(request: NextRequest) {
       token: token,
       message: 'Login successful' 
     }, { status: 200 });
+
+    // Set httpOnly cookies (secure) in addition to the body token (backward compat)
+    setAuthCookies(response, token, refreshToken);
+
+    return response;
   } catch (error) {
     logger.error('Error during login', error as Error);
     console.error('Login error details:', {

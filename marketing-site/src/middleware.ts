@@ -1,6 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const PUBLIC_PATHS = ['/api/health', '/api/status', '/api/auth/login', '/api/auth/signup', '/api/auth/verify-email', '/api/auth/forgot-password', '/api/auth/reset-password', '/api/auth/resend-verification', '/api/content/', '/api/pricing', '/api/reviews', '/api/cleaners', '/api/cleaner-details', '/api/test-forgot-password', '/api/test-db', '/api/test-simple', '/api/services', '/api/service-pricing', '/api/promo-codes', '/api/quote', '/api/quote-test', '/api/test-services', '/api/seed-services'];
+const PUBLIC_PATHS = [
+  '/api/health',
+  '/api/status',
+  '/api/auth/login',
+  '/api/auth/signup',
+  '/api/auth/verify-email',
+  '/api/auth/forgot-password',
+  '/api/auth/reset-password',
+  '/api/auth/resend-verification',
+  '/api/auth/refresh',
+  '/api/auth/logout',
+  '/api/content',
+  '/api/pricing',
+  '/api/reviews',
+  '/api/cleaners',
+  '/api/cleaner-details',
+  '/api/services',
+  '/api/service-pricing',
+  '/api/promo-codes',
+  '/api/quote',
+];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -15,8 +35,10 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // For API routes that require auth, check for token
+  // For API routes that require auth, check for token (Bearer header or the
+  // httpOnly access cookie set by the login/refresh endpoints).
   const token = request.headers.get('Authorization')?.replace('Bearer ', '') ||
+                request.cookies.get('client_auth_token')?.value ||
                 request.cookies.get('authToken')?.value;
 
   if (!token) {

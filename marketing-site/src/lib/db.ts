@@ -4,9 +4,10 @@
 import type { D1Database } from '@cloudflare/workers-types';
 import bcrypt from 'bcryptjs';
 import { logger } from './logger';
-import { getCloudflareContext } from '@opennextjs/cloudflare';
+import { getCloudflareContext } from '@/lib/runtime-context';
+import { getPgD1 } from '@/lib/server/pg-d1';
 
-// Helper to get the D1 database from the OpenNext Cloudflare context
+// Helper to get the D1 database — Cloudflare context first, then PostgreSQL fallback
 export async function getDb(): Promise<D1Database | null> {
   try {
     // Use getCloudflareContext for OpenNext.js on Cloudflare Pages
@@ -30,6 +31,13 @@ export async function getDb(): Promise<D1Database | null> {
   } catch (error) {
     logger.error('Error getting database from Cloudflare context', error as Error);
   }
+
+  // Standalone / Docker fallback: PostgreSQL via pg-d1 adapter
+  const pgUrl = process.env.DATABASE_URL || process.env.DB_URL;
+  if (pgUrl) {
+    return getPgD1(pgUrl) as unknown as D1Database;
+  }
+
   return null;
 }
 
@@ -122,7 +130,7 @@ export async function incrementFailedAttempts(db: D1Database, email: string): Pr
   const user = await getUserByEmail(db, email);
   if (!user) return 0;
   const attempts = ((user as any).failed_attempts || 0) + 1;
-  const lockedUntil = attempts >= 5 ? `datetime('now', '+15 minutes')` : (user as any).locked_until;
+  const lockedUntil = attempts >= 5 ? new Date(Date.now() + 15 * 60 * 1000).toISOString() : (user as any).locked_until;
   await db.prepare('UPDATE users SET failed_attempts = ?, locked_until = ? WHERE email = ?')
     .bind(attempts, lockedUntil || null, email).run();
   return attempts;
@@ -132,7 +140,7 @@ export async function incrementFailedAttemptsByPhone(db: D1Database, phone: stri
   const user = await getUserByPhone(db, phone);
   if (!user) return 0;
   const attempts = ((user as any).failed_attempts || 0) + 1;
-  const lockedUntil = attempts >= 5 ? `datetime('now', '+15 minutes')` : (user as any).locked_until;
+  const lockedUntil = attempts >= 5 ? new Date(Date.now() + 15 * 60 * 1000).toISOString() : (user as any).locked_until;
   // Update by phone since email may not exist
   await db.prepare('UPDATE users SET failed_attempts = ?, locked_until = ? WHERE phone = ?')
     .bind(attempts, lockedUntil || null, phone).run();
@@ -199,12 +207,14 @@ export async function verifyEmailToken(db: D1Database, token: string): Promise<b
 // Password reset operations
 export async function createPasswordResetToken(db: D1Database, userId: number, otp: string | null, method: 'whatsapp' | 'email'): Promise<string> {
   const token = crypto.randomUUID();
-  const expiresAt = method === 'whatsapp' ? `datetime('now', '+15 minutes')` : `datetime('now', '+1 hour')`;
-  
+  const expiresAt = method === 'whatsapp'
+    ? new Date(Date.now() + 15 * 60 * 1000).toISOString()
+    : new Date(Date.now() + 60 * 60 * 1000).toISOString();
+
   await db.prepare(
     `INSERT INTO password_reset_tokens (user_id, token, otp, expires_at, method) VALUES (?, ?, ?, ?, ?)`
   ).bind(userId, token, otp || null, expiresAt, method).run();
-  
+
   return token;
 }
 

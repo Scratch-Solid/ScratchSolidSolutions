@@ -2,14 +2,23 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import CookieConsent from "@/components/CookieConsent";
+import { getDb } from "@/lib/db";
 
+// Read the active background image directly from the database. A server-side
+// relative fetch (e.g. fetch('/api/content?...')) does not work under the
+// self-hosted Node runtime, so we query the content table directly.
 async function getBackgroundUrl(): Promise<string | null> {
   try {
-    const res = await fetch(`/api/content?type=background-image`, { cache: 'no-store' });
-    if (!res.ok) return null;
-    const data = await res.json() as { content?: string };
-    return data?.content || null;
+    const db = await getDb();
+    if (!db) return null;
+    const row = await db
+      .prepare('SELECT text as content FROM content WHERE slug = ?')
+      .bind('site-background')
+      .first();
+    return (row as { content?: string } | null)?.content || null;
   } catch (err) {
+    // Log for diagnostics but never let a decorative background query crash the layout
+    console.error('[layout] Background URL query failed:', err);
     return null;
   }
 }

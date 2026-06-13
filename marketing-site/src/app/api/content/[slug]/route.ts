@@ -5,8 +5,6 @@ import { withAuth, withTracing, withSecurityHeaders, withRateLimit, rateLimits }
 import { validateString } from '@/lib/validation';
 import { getDb } from '@/lib/db';
 
-export const runtime = "edge";
-
 export async function GET(request: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['admin']);

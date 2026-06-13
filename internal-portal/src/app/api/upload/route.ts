@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
 import { withAuth, withTracing, withSecurityHeaders, withCsrf } from "@/lib/middleware";
-import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { getCloudflareContext } from "@/lib/runtime-context";
 
 export const dynamic = "force-dynamic";
 
