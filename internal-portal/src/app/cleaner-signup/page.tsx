@@ -17,6 +17,8 @@ export default function CleanerSignup() {
     account_holder: '',
     account_number: '',
     branch_code: '',
+    popia_consent: false,
+    background_check_consent: false,
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -26,6 +28,13 @@ export default function CleanerSignup() {
     e.preventDefault();
     setError('');
     setLoading(true);
+
+    // Validate consents
+    if (!formData.popia_consent) {
+      setError('You must consent to the POPIA privacy policy to proceed');
+      setLoading(false);
+      return;
+    }
 
     // Validate bank details before submission
     if (!formData.bank_name || !formData.account_holder || !formData.account_number || !formData.branch_code) {
@@ -212,6 +221,37 @@ export default function CleanerSignup() {
                   </div>
                 </div>
               </div>
+            </div>
+
+            <div className="space-y-3 pt-2">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  required
+                  checked={formData.popia_consent}
+                  onChange={(e) => setFormData({ ...formData, popia_consent: e.target.checked })}
+                  className="mt-1 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-600">
+                  I consent to Scratch Solid Solutions collecting and processing my personal information in accordance with the
+                  {' '}<a href="/privacy-policy" target="_blank" className="text-blue-600 hover:underline">POPIA Privacy Policy</a>.
+                  I understand my data will be stored securely and I may request deletion at any time.
+                </span>
+              </label>
+
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.background_check_consent}
+                  onChange={(e) => setFormData({ ...formData, background_check_consent: e.target.checked })}
+                  className="mt-1 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-600">
+                  I consent to a background check (criminal record, credit, and reference verification) being conducted
+                  should my application proceed to the final stage. I understand this is optional at application time and
+                  may be requested later.
+                </span>
+              </label>
             </div>
 
             <button

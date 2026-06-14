@@ -65,6 +65,8 @@ export async function GET(request: NextRequest) {
         positionAppliedFor: row.position_applied_for || 'Cleaner',
         generatedUsername: paysheetCode,
         status: row.status,
+        popiaConsent: Boolean(row.popia_consent),
+        backgroundCheckConsent: Boolean(row.background_check_consent),
         createdAt: row.created_at,
         updatedAt: row.updated_at,
       };

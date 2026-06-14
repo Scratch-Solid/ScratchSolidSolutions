@@ -8,32 +8,56 @@ export type CleanerTrainingModule = {
 export const CLEANER_TRAINING_MODULES: CleanerTrainingModule[] = [
   {
     id: 'module-1',
-    title: 'Introduction to Cleaning Services',
-    description: 'Learn about our cleaning standards and procedures',
-    duration_minutes: 30,
-  },
-  {
-    id: 'module-2',
-    title: 'Safety Protocols',
-    description: 'Essential safety guidelines and procedures',
+    title: 'POPIA, Privacy & Data Protection',
+    description:
+      'Understand the Protection of Personal Information Act (POPIA). Learn how to handle client data, ' +
+      'obtain consent, report breaches within 48 hours, and securely dispose of records. ' +
+      'Includes Scratch Solid\'s data-retention and right-to-be-forgotten policies.',
     duration_minutes: 45,
   },
   {
+    id: 'module-2',
+    title: 'Occupational Health & Safety (OHS)',
+    description:
+      'South African OHS Act compliance for cleaners. Covers PPE requirements, slip-trip-fall prevention, ' +
+      'hazardous chemical handling (GHS labels), emergency procedures, and incident reporting. ' +
+      'Includes COID Act basics and employer/employee duties.',
+    duration_minutes: 50,
+  },
+  {
     id: 'module-3',
-    title: 'Customer Service Excellence',
-    description: 'How to provide exceptional customer service',
-    duration_minutes: 40,
+    title: 'Cleaning Standards & Service Delivery',
+    description:
+      'Scratch Solid\'s 5-star service standard: room-by-room checklists, colour-coded cloth systems, ' +
+      'cross-contamination prevention, high-touch disinfection, and post-construction clean-up protocols. ' +
+      'Aligns with SANS 10049 and ISO 9001 quality principles.',
+    duration_minutes: 55,
   },
   {
     id: 'module-4',
-    title: 'Equipment Handling',
-    description: 'Proper use and maintenance of cleaning equipment',
-    duration_minutes: 35,
+    title: 'Equipment, Chemicals & Sustainability',
+    description:
+      'Correct use and daily maintenance of vacuum cleaners, floor scrubbers, pressure washers, and ' +
+      'micro-fibre systems. Chemical dilution ratios, SDS sheets, green-cleaning alternatives, ' +
+      'and water-saving practices for the South African context.',
+    duration_minutes: 40,
   },
   {
     id: 'module-5',
-    title: 'Chemical Safety',
-    description: 'Safe handling of cleaning chemicals',
+    title: 'Customer Relations, Complaints & WhatsApp Protocol',
+    description:
+      'Professional communication with residential and commercial clients. Escalation paths, ' +
+      'complaint resolution within 24 hours, WhatsApp Business etiquette, photo-reporting standards, ' +
+      'and maintaining a 4.8+ star review average.',
+    duration_minutes: 35,
+  },
+  {
+    id: 'module-6',
+    title: 'Booking App, GPS Check-In & Shift Adherence',
+    description:
+      'How to use the Scratch Solid mobile portal: accept bookings, GPS check-in (START/HERE/DONE), ' +
+      'adherence scoring, 13th-cheque eligibility rules, pool-transition requests, and payslip access ' +
+      'via the ERPNext integration.',
     duration_minutes: 30,
   },
 ];

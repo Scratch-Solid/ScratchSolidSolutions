@@ -37,9 +37,11 @@ export async function POST(request: NextRequest) {
       address?: string;
       emergency_contact?: string;
       bank_details?: string;
+      popia_consent?: boolean;
+      background_check_consent?: boolean;
     };
 
-    const { name, id_number, email, phone, whatsapp, address, emergency_contact, bank_details } = body;
+    const { name, id_number, email, phone, whatsapp, address, emergency_contact, bank_details, popia_consent, background_check_consent } = body;
 
     // Validate required fields
     if (!name || !id_number || !email || !phone || !address || !emergency_contact || !bank_details) {
@@ -171,6 +173,19 @@ export async function POST(request: NextRequest) {
       return withSecurityHeaders(response, traceId);
     }
 
+    // Validate POPIA consent (mandatory)
+    if (!popia_consent) {
+      const response = NextResponse.json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'POPIA consent required',
+          details: { errors: ['You must consent to the POPIA privacy policy to proceed'] }
+        }
+      }, { status: 400 });
+      return withSecurityHeaders(response, traceId);
+    }
+
     // Sanitize inputs
     const sanitizedName = sanitizeInput(name);
     const sanitizedAddress = sanitizeInput(address);
@@ -190,12 +205,16 @@ export async function POST(request: NextRequest) {
     // For now, generate a placeholder signature ID
     const { signatureId, integration } = await createSignupSignatureReference(traceId);
 
+    // Ensure consent columns exist (backward-compatible migration)
+    await db.prepare(`ALTER TABLE new_joiners ADD COLUMN popia_consent INTEGER DEFAULT 0`).run().catch(() => {});
+    await db.prepare(`ALTER TABLE new_joiners ADD COLUMN background_check_consent INTEGER DEFAULT 0`).run().catch(() => {});
+
     // Insert into new_joiners table
     await db.prepare(
       `INSERT INTO new_joiners (
-        name, id_number, email, phone, whatsapp, address, emergency_contact, 
-        bank_details, signature_id, status, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', datetime('now'), datetime('now'))`
+        name, id_number, email, phone, whatsapp, address, emergency_contact,
+        bank_details, signature_id, status, popia_consent, background_check_consent, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, datetime('now'), datetime('now'))`
     ).bind(
       sanitizedName,
       encryptedIdNumber,
@@ -205,7 +224,9 @@ export async function POST(request: NextRequest) {
       sanitizedAddress,
       sanitizedEmergencyContact,
       encryptedBankDetails,
-      signatureId
+      signatureId,
+      popia_consent ? 1 : 0,
+      background_check_consent ? 1 : 0
     ).run();
 
     // Log audit event
