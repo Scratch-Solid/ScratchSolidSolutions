@@ -1,6 +1,7 @@
 import { log } from '@/lib/logger';
 import { notifyAdminApproved, notifyAdminRejected, notifyConsentSubmitted, notifyContractSigned, sendCleanerWelcome } from '@/lib/notifications';
 import { getEnvVarOptional } from '@/lib/env';
+import { createEnvelope, getSigningUrl, isDocusignFullyConfigured } from '@/lib/docusign';
 
 async function erpNextRequest(path: string, options: RequestInit = {}): Promise<any> {
   const baseUrl = getEnvVarOptional('ERPNEXT_BASE_URL') || getEnvVarOptional('ERPNEXT_API_URL');
@@ -46,12 +47,84 @@ function hasErpNextConfig() {
 }
 
 function hasDocusignConfig() {
-  return Boolean(getEnvVarOptional('DOCUSIGN_INTEGRATION_KEY') && getEnvVarOptional('DOCUSIGN_ACCOUNT_ID'));
+  return isDocusignFullyConfigured();
 }
 
-export async function createOnboardingSignatureReference(traceId: string, step: 'consent' | 'contract') {
+export async function createOnboardingSignatureReference(
+  traceId: string,
+  step: 'consent' | 'contract',
+  params?: {
+    cleanerEmail?: string;
+    cleanerName?: string;
+    returnUrl?: string;
+  }
+) {
   const configured = hasDocusignConfig();
   const prefix = step === 'consent' ? 'CONSENT' : 'CONTRACT';
+
+  if (configured && step === 'contract' && params?.cleanerEmail && params?.cleanerName) {
+    try {
+      const contractHtml = buildEmploymentContractHtml(params.cleanerName);
+      const envelope = await createEnvelope({
+        subject: 'Scratch Solid Solutions — Employment Contract',
+        emailBlurb: `Hi ${params.cleanerName},\n\nPlease review and sign your employment contract with Scratch Solid Solutions.\n\nBest regards,\nThe Scratch Solid Solutions Team`,
+        documentName: 'Employment Contract',
+        documentBase64: btoa(contractHtml),
+        recipients: [
+          {
+            email: params.cleanerEmail,
+            name: params.cleanerName,
+            recipientId: '1',
+            routingOrder: '1',
+          },
+        ],
+      });
+
+      const signingUrl = await getSigningUrl({
+        envelopeId: envelope.envelopeId,
+        recipientEmail: params.cleanerEmail,
+        recipientName: params.cleanerName,
+        returnUrl: params.returnUrl || 'https://portal.scratchsolidsolutions.org/onboarding/contract-complete',
+      });
+
+      log.audit('DOCUSIGN_CONTRACT_ENVELOPE_CREATED', 'cleaner_onboarding', {
+        traceId,
+        envelopeId: envelope.envelopeId,
+        cleanerEmail: params.cleanerEmail,
+        step,
+      });
+
+      return {
+        signatureId: envelope.envelopeId,
+        signingUrl,
+        integration: {
+          provider: 'docusign',
+          status: 'sent',
+          reference: envelope.envelopeId,
+        } satisfies CleanerIntegrationResult,
+      };
+    } catch (error) {
+      log.error('DOCUSIGN_CONTRACT_ENVELOPE_FAILED', error instanceof Error ? error : new Error(String(error)), {
+        traceId,
+        cleanerEmail: params.cleanerEmail,
+        step,
+      });
+
+      // Fallback to internal reference on DocuSign failure
+      const reference = buildReference(prefix);
+      return {
+        signatureId: reference,
+        signingUrl: undefined,
+        integration: {
+          provider: 'internal',
+          status: 'pending',
+          reference,
+          reason: error instanceof Error ? error.message : 'DocuSign envelope creation failed',
+        } satisfies CleanerIntegrationResult,
+      };
+    }
+  }
+
   const reference = configured ? buildReference(`DOCUSIGN_${prefix}`) : buildReference(prefix);
 
   log.audit('ONBOARDING_SIGNATURE_REFERENCE_CREATED', 'cleaner_onboarding', {
@@ -63,6 +136,7 @@ export async function createOnboardingSignatureReference(traceId: string, step: 
 
   return {
     signatureId: reference,
+    signingUrl: undefined,
     integration: {
       provider: configured ? 'docusign' : 'internal',
       status: configured ? 'configured' : 'pending',
@@ -70,6 +144,55 @@ export async function createOnboardingSignatureReference(traceId: string, step: 
       reason: configured ? undefined : 'DocuSign credentials not configured',
     } satisfies CleanerIntegrationResult,
   };
+}
+
+function buildEmploymentContractHtml(cleanerName: string): string {
+  return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Employment Contract</title>
+<style>
+body { font-family: Arial, sans-serif; line-height: 1.6; margin: 40px; }
+h1 { text-align: center; }
+.section { margin-bottom: 20px; }
+.signature-block { margin-top: 40px; }
+</style>
+</head>
+<body>
+<h1>Employment Contract</h1>
+<div class="section">
+<p><strong>Between:</strong> Scratch Solid Solutions (Pty) Ltd<br>
+<strong>And:</strong> ${cleanerName}</p>
+</div>
+<div class="section">
+<h2>1. Position</h2>
+<p>The Employee is engaged as a Cleaning Services Professional.</p>
+</div>
+<div class="section">
+<h2>2. Term</h2>
+<p>This contract is effective from the date of signature and continues until terminated in accordance with clause 5.</p>
+</div>
+<div class="section">
+<h2>3. Duties</h2>
+<p>The Employee shall perform cleaning services at client premises as assigned by the Employer.</p>
+</div>
+<div class="section">
+<h2>4. Remuneration</h2>
+<p>The Employee shall be paid in accordance with the paysheet code assigned upon approval.</p>
+</div>
+<div class="section">
+<h2>5. Termination</h2>
+<p>Either party may terminate this contract with 30 days written notice.</p>
+</div>
+<div class="signature-block">
+<p><strong>Employer Signature:</strong> ##SIGN_HERE##</p>
+<p><strong>Date:</strong> ##DATE_SIGNED##</p>
+<p><strong>Employee Signature:</strong> ##SIGN_HERE##</p>
+<p><strong>Date:</strong> ##DATE_SIGNED##</p>
+</div>
+</body>
+</html>`;
 }
 
 export async function createSignupSignatureReference(traceId: string) {

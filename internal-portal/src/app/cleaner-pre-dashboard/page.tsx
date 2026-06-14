@@ -76,7 +76,20 @@ export default function PreCleanerDashboard() {
         body: JSON.stringify({}),
       });
       if (response.ok) {
+        const data = await response.json() as {
+          data?: {
+            signing_url?: string;
+            redirect_to_docusign?: boolean;
+          };
+        };
+        if (data.data?.redirect_to_docusign && data.data?.signing_url) {
+          window.location.href = data.data.signing_url;
+          return;
+        }
         window.location.reload();
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        setError(errorData.error?.message || 'Failed to sign contract');
       }
     } catch (err) {
       setError('Failed to sign contract');

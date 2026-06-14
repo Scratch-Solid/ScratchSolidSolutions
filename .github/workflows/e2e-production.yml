@@ -1,0 +1,86 @@
+name: E2E Production Tests
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+  schedule:
+    # Run every 6 hours
+    - cron: '0 */6 * * *'
+
+jobs:
+  marketing-site-e2e:
+    name: Marketing Site E2E (Playwright)
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+        cache: 'npm'
+        cache-dependency-path: marketing-site/package-lock.json
+
+    - name: Install dependencies
+      working-directory: ./marketing-site
+      run: npm ci
+
+    - name: Install Playwright browsers
+      working-directory: ./marketing-site
+      run: npx playwright install --with-deps
+
+    - name: Run Playwright E2E tests against production
+      working-directory: ./marketing-site
+      run: npx playwright test
+      env:
+        BASE_URL: https://scratchsolidsolutions.org
+
+    - name: Upload Playwright report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: marketing-playwright-report
+        path: marketing-site/playwright-report/
+        retention-days: 7
+
+  internal-portal-e2e:
+    name: Internal Portal E2E (Playwright)
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+        cache: 'npm'
+        cache-dependency-path: internal-portal/package-lock.json
+
+    - name: Install dependencies
+      working-directory: ./internal-portal
+      run: npm ci
+
+    - name: Install Playwright browsers
+      working-directory: ./internal-portal
+      run: npx playwright install --with-deps
+
+    - name: Run Playwright E2E tests against production
+      working-directory: ./internal-portal
+      run: npx playwright test
+      env:
+        PORTAL_URL: https://portal.scratchsolidsolutions.org
+
+    - name: Upload Playwright report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: portal-playwright-report
+        path: internal-portal/playwright-report/
+        retention-days: 7

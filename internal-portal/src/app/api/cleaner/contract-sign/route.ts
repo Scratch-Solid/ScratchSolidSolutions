@@ -16,9 +16,9 @@ export async function POST(request: NextRequest) {
   try {
     await request.json().catch(() => ({}));
 
-    // Get cleaner profile
+    // Get cleaner profile + user email
     const cleanerProfile = await db.prepare(
-      'SELECT cp.paysheet_code, cp.first_name, cp.last_name, cp.cellphone FROM cleaner_profiles cp WHERE cp.user_id = ?'
+      'SELECT cp.paysheet_code, cp.first_name, cp.last_name, cp.cellphone, u.email FROM cleaner_profiles cp JOIN users u ON cp.user_id = u.id WHERE cp.user_id = ?'
     ).bind(userId).first();
 
     if (!cleanerProfile) {
@@ -34,7 +34,12 @@ export async function POST(request: NextRequest) {
     }
 
     const cleaner = cleanerProfile as any;
-    const { signatureId, integration } = await createOnboardingSignatureReference(traceId, 'contract');
+    const cleanerName = `${cleaner.first_name || ''} ${cleaner.last_name || ''}`.trim() || cleaner.paysheet_code;
+    const { signatureId, signingUrl, integration } = await createOnboardingSignatureReference(traceId, 'contract', {
+      cleanerEmail: cleaner.email || '',
+      cleanerName,
+      returnUrl: 'https://portal.scratchsolidsolutions.org/onboarding/contract-complete',
+    });
 
     // Update training progress
     await db.prepare(
@@ -80,15 +85,22 @@ export async function POST(request: NextRequest) {
       signatureId
     });
 
+    const responseData: Record<string, any> = {
+      signature_id: signatureId,
+      integration,
+      notifications: notificationResult,
+      next_step: 'training',
+    };
+
+    if (signingUrl) {
+      responseData.signing_url = signingUrl;
+      responseData.redirect_to_docusign = true;
+    }
+
     const response = NextResponse.json({
       success: true,
-      message: 'Contract signed successfully',
-      data: {
-        signature_id: signatureId,
-        integration,
-        notifications: notificationResult,
-        next_step: 'training'
-      }
+      message: signingUrl ? 'Contract sent via DocuSign. Please complete signing.' : 'Contract signed successfully',
+      data: responseData
     });
     return withSecurityHeaders(response, traceId);
 

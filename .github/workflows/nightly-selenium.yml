@@ -1,0 +1,61 @@
+name: Nightly Selenium Regression
+
+on:
+  schedule:
+    # Run every night at 02:00 UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  marketing-selenium:
+    name: Marketing Site Selenium Regression
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+        cache: 'npm'
+        cache-dependency-path: marketing-site/package-lock.json
+
+    - name: Install dependencies
+      working-directory: ./marketing-site
+      run: npm ci
+
+    - name: Run Selenium smoke tests
+      working-directory: ./marketing-site
+      run: npm run test:selenium
+      env:
+        BASE_URL: https://scratchsolidsolutions.org
+        PORTAL_URL: https://portal.scratchsolidsolutions.org
+
+    - name: Upload Selenium test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: selenium-test-results
+        path: |
+          marketing-site/test-results/
+          marketing-site/tests/selenium/
+        retention-days: 7
+
+  report:
+    name: Compile Regression Report
+    runs-on: ubuntu-latest
+    needs: [marketing-selenium]
+    if: always()
+
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+
+    - name: Post summary
+      run: |
+        echo "## Nightly Selenium Regression Report" >> $GITHUB_STEP_SUMMARY
+        echo "- Marketing Site: tested against production" >> $GITHUB_STEP_SUMMARY
+        echo "- Artifacts available for download" >> $GITHUB_STEP_SUMMARY

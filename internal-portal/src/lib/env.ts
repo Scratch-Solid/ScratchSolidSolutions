@@ -31,7 +31,12 @@ const ENV_CONFIG: EnvVarConfig[] = [
   { name: 'ERPNEXT_API_KEY', required: false },
   { name: 'ERPNEXT_API_SECRET', required: false },
   { name: 'DOCUSIGN_INTEGRATION_KEY', required: false },
+  { name: 'DOCUSIGN_SECRET_KEY', required: false },
   { name: 'DOCUSIGN_ACCOUNT_ID', required: false },
+  { name: 'DOCUSIGN_PRIVATE_KEY', required: false },
+  { name: 'DOCUSIGN_USER_ID', required: false },
+  { name: 'DOCUSIGN_BASE_URL', required: false, defaultValue: 'https://demo.docusign.net/restapi' },
+  { name: 'DOCUSIGN_CONNECT_SECRET', required: false },
 ];
 
 const errors: string[] = [];
