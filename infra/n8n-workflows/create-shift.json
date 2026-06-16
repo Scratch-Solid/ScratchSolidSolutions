@@ -64,6 +64,10 @@
             {
               "name": "job_id",
               "value": "={{ $json.id }}"
+            },
+            {
+              "name": "cleaner_ids",
+              "value": "={{ JSON.stringify($json.team_members || []) }}"
             }
           ]
         },

@@ -1,6 +1,5 @@
 /** @type {import('next').NextConfig} */
 import type { NextConfig } from 'next';
-import path from 'node:path';
 
 const securityHeaders = [
   { key: 'X-Content-Type-Options', value: 'nosniff' },
@@ -47,9 +46,6 @@ const nextConfig: NextConfig = {
   },
     compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
-  },
-  turbopack: {
-    root: path.resolve(process.cwd()),
   },
 };
 

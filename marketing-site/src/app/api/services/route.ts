@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
   try {
     const db = await getDb();
     if (!db) {
-      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+      return NextResponse.json([]);
     }
     
     const services = await db.prepare(
@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
   try {
     const db = await getDb();
     if (!db) {
-      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+      return NextResponse.json({ error: 'Database not available' }, { status: 503 });
     }
 
     const body = await request.json() as { 

@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { getDb, getTrainingDb } from '@/lib/db';
 import { getCloudflareContext } from '@/lib/runtime-context';
+import {
+  determinePoolFromServiceType,
+  scoreAssignmentCandidates,
+} from '@/lib/pool-management/pool-assignment';
 
 /**
  * n8n → Internal Portal: Booking Ingestion Webhook
@@ -210,6 +214,61 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // ─── Auto-assign cleaners for INDIVIDUAL pool jobs ───
+    let assignedCleaners: string[] = [];
+    const serviceType = (body.service.type || 'RESIDENTIAL').toUpperCase() as any;
+    const poolType = determinePoolFromServiceType(serviceType);
+    const jobDate = body.service.scheduled_at.split('T')[0];
+    const timeSlot = body.service.scheduled_at.split('T')[1]?.slice(0, 5) || null;
+
+    if (poolType === 'INDIVIDUAL') {
+      try {
+        const trainingDb = await getTrainingDb();
+        if (trainingDb) {
+          const candidates = await scoreAssignmentCandidates(
+            db,
+            trainingDb,
+            poolType,
+            serviceType,
+            jobDate,
+            timeSlot as any
+          );
+
+          if (candidates.length > 0) {
+            // Get paysheet codes for the best candidate(s)
+            const staffIds = candidates.slice(0, 2).map((c) => c.staffId);
+            const placeholders = staffIds.map(() => '?').join(',');
+            const paysheetResult = await db
+              .prepare(
+                `SELECT cp.paysheet_code
+                 FROM cleaner_profiles cp
+                 JOIN staff s ON s.user_id = cp.user_id
+                 WHERE s.id IN (${placeholders})`
+              )
+              .bind(...staffIds)
+              .all<{ paysheet_code: string }>();
+
+            assignedCleaners = (paysheetResult.results || [])
+              .map((r) => r.paysheet_code)
+              .filter(Boolean);
+
+            if (assignedCleaners.length > 0) {
+              await db
+                .prepare(
+                  `UPDATE jobs
+                   SET team_members = ?, status = 'assigned', updated_at = datetime('now')
+                   WHERE id = ?`
+                )
+                .bind(JSON.stringify(assignedCleaners), jobId)
+                .run();
+            }
+          }
+        }
+      } catch (assignErr) {
+        console.warn(`[${traceId}] Auto-assign failed for job ${jobId}:`, assignErr);
+      }
+    }
+
     // ─── Log audit event ───
     await db
       .prepare(
@@ -236,8 +295,9 @@ export async function POST(request: NextRequest) {
       {
         job_id: jobId,
         calcom_uid: body.calcom_uid,
-        status: 'scheduled',
+        status: assignedCleaners.length > 0 ? 'assigned' : 'scheduled',
         checklist_items: taskOrder,
+        team_members: assignedCleaners,
         traceId,
       },
       { status: 201 }

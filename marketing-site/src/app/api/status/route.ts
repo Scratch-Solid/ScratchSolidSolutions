@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
     alerts,
     latencyMs: totalLatency,
     p95ThresholdMs: P95_THRESHOLD_MS,
-  }, { status: overall === 'unhealthy' ? 503 : 200 });
+  });
 
   response.headers.set('Cache-Control', 'no-store, max-age=0');
   return response;

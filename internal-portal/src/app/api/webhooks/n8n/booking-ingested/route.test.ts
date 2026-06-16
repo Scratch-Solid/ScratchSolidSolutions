@@ -11,12 +11,18 @@ const mockDb = {
 
 jest.mock('@/lib/db', () => ({
   getDb: jest.fn(() => Promise.resolve(mockDb)),
+  getTrainingDb: jest.fn(() => Promise.resolve(mockDb)),
 }));
 
-jest.mock('@opennextjs/cloudflare', () => ({
+jest.mock('@/lib/runtime-context', () => ({
   getCloudflareContext: jest.fn(() =>
     Promise.resolve({ env: { INTERNAL_PORTAL_N8N_WEBHOOK_SECRET: 'test-secret-123' } })
   ),
+}));
+
+jest.mock('@/lib/pool-management/pool-assignment', () => ({
+  determinePoolFromServiceType: jest.fn(() => 'INDIVIDUAL'),
+  scoreAssignmentCandidates: jest.fn(() => Promise.resolve([])),
 }));
 
 function createRequest(body: object, authHeader?: string): NextRequest {

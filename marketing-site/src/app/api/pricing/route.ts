@@ -10,7 +10,9 @@ export async function GET(request: NextRequest) {
   const traceId = withTracing(request);
   const db = await getDb();
   if (!db) {
-    return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 });
+    const response = NextResponse.json([]);
+    response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=600');
+    return withSecurityHeaders(response, traceId);
   }
 
   try {

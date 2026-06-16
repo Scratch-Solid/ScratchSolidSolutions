@@ -13,7 +13,7 @@ import { createShiftAssignmentInErpNext } from '@/lib/cleaner-integrations';
 
 interface CreateShiftPayload {
   job_id: string;
-  cleaner_ids: string[]; // paysheet_codes
+  cleaner_ids?: string[]; // paysheet_codes — optional, looked up from job if omitted
   shift_type?: string;
 }
 
@@ -54,22 +54,14 @@ export async function POST(request: NextRequest) {
     if (
       typeof body !== 'object' ||
       body === null ||
-      !('job_id' in body) ||
-      !('cleaner_ids' in body)
+      !('job_id' in body)
     ) {
       return NextResponse.json(
-        { error: 'Missing job_id or cleaner_ids', traceId },
+        { error: 'Missing job_id', traceId },
         { status: 400 }
       );
     }
-    const { job_id, cleaner_ids, shift_type = 'Full Day' } = body as CreateShiftPayload;
-
-    if (!Array.isArray(cleaner_ids) || cleaner_ids.length === 0) {
-      return NextResponse.json(
-        { error: 'cleaner_ids must be a non-empty array', traceId },
-        { status: 400 }
-      );
-    }
+    let { job_id, cleaner_ids, shift_type = 'Full Day' } = body as CreateShiftPayload;
 
     const db = await getDb();
     if (!db) {
@@ -82,7 +74,7 @@ export async function POST(request: NextRequest) {
     // ─── Fetch job ───
     const job = await db
       .prepare(
-        `SELECT id, scheduled_at, property_address, status FROM jobs WHERE id = ?`
+        `SELECT id, scheduled_at, property_address, status, team_members FROM jobs WHERE id = ?`
       )
       .bind(job_id)
       .first<{
@@ -90,12 +82,34 @@ export async function POST(request: NextRequest) {
         scheduled_at: string;
         property_address: string;
         status: string;
+        team_members: string | null;
       }>();
 
     if (!job) {
       return NextResponse.json(
         { error: 'Job not found', job_id, traceId },
         { status: 404 }
+      );
+    }
+
+    // ─── Resolve cleaner_ids from job if not provided ───
+    if (!cleaner_ids || cleaner_ids.length === 0) {
+      if (job.team_members) {
+        try {
+          const parsed = JSON.parse(job.team_members);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            cleaner_ids = parsed;
+          }
+        } catch {
+          // ignore parse error
+        }
+      }
+    }
+
+    if (!cleaner_ids || cleaner_ids.length === 0) {
+      return NextResponse.json(
+        { error: 'No cleaners assigned to this job', job_id, traceId },
+        { status: 400 }
       );
     }
 

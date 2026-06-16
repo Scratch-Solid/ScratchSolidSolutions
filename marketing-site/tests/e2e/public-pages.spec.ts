@@ -3,10 +3,10 @@ import { test, expect } from '@playwright/test';
 const PUBLIC_PAGES = [
   { path: '/', titleContains: 'Scratch' },
   { path: '/services', titleContains: 'Service' },
-  { path: '/pricing', titleContains: 'Price' },
+  { path: '/book', titleContains: 'Book' },
   { path: '/contact', titleContains: 'Contact' },
   { path: '/login', titleContains: 'Login' },
-  { path: '/signup', titleContains: 'Sign' },
+  { path: '/client-signup', titleContains: 'Sign' },
   { path: '/forgot-password', titleContains: 'Forgot' },
   { path: '/gallery', titleContains: 'Gallery' },
   { path: '/privacy', titleContains: 'Privacy' },

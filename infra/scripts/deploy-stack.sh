@@ -178,9 +178,18 @@ check_container() {
 for CONTAINER in scratch_traefik calcom_db calcom_engine n8n_db n8n_orchestrator \
                  erpnext_backend erpnext_frontend erpnext_websocket erpnext_db \
                  erpnext_redis_cache erpnext_redis_queue erpnext_redis_socketio \
+                 marketing_db marketing_redis portal_db portal_redis \
                  scratch_backup scratch_uptime_kuma; do
   check_container "$CONTAINER"
 done
+
+# NOTE: the marketing-web / portal-web Next.js containers are intentionally NOT
+# started here. They are gated behind the compose "apps" profile because the
+# public site and portal currently run on Cloudflare. Bring up their databases
+# (above) so the server is "ready", then perform the cutover deliberately:
+#   1. Migrate data:   scripts/migrate-d1-to-postgres.sh <d1-db> <pg-service> <user> <db>
+#   2. Build + start:  docker compose --profile apps up -d marketing-web portal-web
+#   3. Point DNS for scratchsolidsolutions.org / portal.* at this server.
 
 # ─── ERPNext First-Time Setup ───
 echo ""

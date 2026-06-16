@@ -37,6 +37,7 @@ const ENV_CONFIG: EnvVarConfig[] = [
   { name: 'DOCUSIGN_USER_ID', required: false },
   { name: 'DOCUSIGN_BASE_URL', required: false, defaultValue: 'https://demo.docusign.net/restapi' },
   { name: 'DOCUSIGN_CONNECT_SECRET', required: false },
+  { name: 'ENCRYPTION_KEY', required: false, validator: (v) => v.length >= 32 },
 ];
 
 const errors: string[] = [];

@@ -1,21 +1,69 @@
-import crypto from 'crypto';
-
 // Data Encryption at Rest
-// Provides AES-256-GCM encryption for sensitive data storage
+// Provides AES-256-GCM encryption using Web Crypto API (Cloudflare Workers compatible)
 
-const ALGORITHM = 'aes-256-gcm';
-const KEY_LENGTH = 32; // 256 bits
-const IV_LENGTH = 16; // 128 bits
+const ALGORITHM = 'AES-GCM';
+const KEY_LENGTH = 256;
 const SALT_LENGTH = 16;
-const TAG_LENGTH = 16;
-const TAG_POSITION = SALT_LENGTH + IV_LENGTH;
-const ENCRYPTED_POSITION = TAG_POSITION + TAG_LENGTH;
+const IV_LENGTH = 12; // 96-bit IV recommended for GCM
 
-/**
- * Derive encryption key from password and salt
- */
-function deriveKey(password: string, salt: Buffer): Buffer {
-  return crypto.pbkdf2Sync(password, salt, 100000, KEY_LENGTH, 'sha256');
+// Helpers to support both Cloudflare Workers and Node.js test environments
+function getSubtle(): SubtleCrypto {
+  if (typeof crypto !== 'undefined' && crypto.subtle) {
+    return crypto.subtle;
+  }
+  // Fallback for Node.js test environments (jsdom without subtle)
+  const nodeCrypto = require('crypto');
+  return nodeCrypto.webcrypto.subtle;
+}
+
+function getRandomValues<T extends ArrayBufferView | null>(array: T): T {
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    return crypto.getRandomValues(array);
+  }
+  const nodeCrypto = require('crypto');
+  return nodeCrypto.webcrypto.getRandomValues(array);
+}
+
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+function base64ToArrayBuffer(base64: string): ArrayBuffer {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes.buffer;
+}
+
+async function deriveKey(password: string, salt: Uint8Array): Promise<CryptoKey> {
+  const subtle = getSubtle();
+  const keyMaterial = await subtle.importKey(
+    'raw',
+    new TextEncoder().encode(password),
+    'PBKDF2',
+    false,
+    ['deriveBits', 'deriveKey']
+  );
+
+  return subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt,
+      iterations: 100000,
+      hash: 'SHA-256',
+    },
+    keyMaterial,
+    { name: ALGORITHM, length: KEY_LENGTH },
+    false,
+    ['encrypt', 'decrypt']
+  );
 }
 
 /**
@@ -24,33 +72,27 @@ function deriveKey(password: string, salt: Buffer): Buffer {
  * @param password - Encryption key (use environment variable)
  * @returns Base64 encoded encrypted data with salt, IV, and auth tag
  */
-export function encrypt(plaintext: string, password: string): string {
+export async function encrypt(plaintext: string, password: string): Promise<string> {
   if (!password) {
     throw new Error('Encryption password required');
   }
 
-  const salt = crypto.randomBytes(SALT_LENGTH);
-  const iv = crypto.randomBytes(IV_LENGTH);
-  const key = deriveKey(password, salt);
+  const salt = getRandomValues(new Uint8Array(SALT_LENGTH));
+  const iv = getRandomValues(new Uint8Array(IV_LENGTH));
+  const key = await deriveKey(password, salt);
 
-  const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
-  
-  const encrypted = Buffer.concat([
-    cipher.update(plaintext, 'utf8'),
-    cipher.final()
-  ]);
-  
-  const tag = cipher.getAuthTag();
+  const encrypted = await getSubtle().encrypt(
+    { name: ALGORITHM, iv },
+    key,
+    new TextEncoder().encode(plaintext)
+  );
 
-  // Combine salt + iv + tag + encrypted
-  const combined = Buffer.concat([
-    salt,
-    iv,
-    tag,
-    encrypted
-  ]);
+  const combined = new Uint8Array(SALT_LENGTH + IV_LENGTH + encrypted.byteLength);
+  combined.set(salt, 0);
+  combined.set(iv, SALT_LENGTH);
+  combined.set(new Uint8Array(encrypted), SALT_LENGTH + IV_LENGTH);
 
-  return combined.toString('base64');
+  return arrayBufferToBase64(combined.buffer);
 }
 
 /**
@@ -59,39 +101,39 @@ export function encrypt(plaintext: string, password: string): string {
  * @param password - Decryption key (must match encryption key)
  * @returns Decrypted plaintext
  */
-export function decrypt(ciphertext: string, password: string): string {
+export async function decrypt(ciphertext: string, password: string): Promise<string> {
   if (!password) {
     throw new Error('Decryption password required');
   }
 
-  const combined = Buffer.from(ciphertext, 'base64');
+  const combined = new Uint8Array(base64ToArrayBuffer(ciphertext));
 
-  // Extract components
   const salt = combined.slice(0, SALT_LENGTH);
-  const iv = combined.slice(SALT_LENGTH, TAG_POSITION);
-  const tag = combined.slice(TAG_POSITION, ENCRYPTED_POSITION);
-  const encrypted = combined.slice(ENCRYPTED_POSITION);
+  const iv = combined.slice(SALT_LENGTH, SALT_LENGTH + IV_LENGTH);
+  const encrypted = combined.slice(SALT_LENGTH + IV_LENGTH);
 
-  const key = deriveKey(password, salt);
+  const key = await deriveKey(password, salt);
 
-  const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
-  decipher.setAuthTag(tag);
+  const decrypted = await getSubtle().decrypt(
+    { name: ALGORITHM, iv },
+    key,
+    encrypted
+  );
 
-  const decrypted = Buffer.concat([
-    decipher.update(encrypted),
-    decipher.final()
-  ]);
-
-  return decrypted.toString('utf8');
+  return new TextDecoder().decode(decrypted);
 }
 
 /**
- * Hash sensitive data for comparison (one-way)
+ * Hash sensitive data for comparison (one-way) using Web Crypto
  * @param data - Data to hash
  * @returns Hex encoded hash
  */
-export function hashData(data: string): string {
-  return crypto.createHash('sha256').update(data).digest('hex');
+export async function hashData(data: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const digest = await getSubtle().digest('SHA-256', encoder.encode(data));
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
 }
 
 /**
@@ -100,8 +142,8 @@ export function hashData(data: string): string {
  * @param hash - Hash to compare against
  * @returns True if data matches hash
  */
-export function verifyHash(data: string, hash: string): boolean {
-  return hashData(data) === hash;
+export async function verifyHash(data: string, hash: string): Promise<boolean> {
+  return (await hashData(data)) === hash;
 }
 
 /**
@@ -109,19 +151,29 @@ export function verifyHash(data: string, hash: string): boolean {
  * @returns Hex encoded random key
  */
 export function generateEncryptionKey(): string {
-  return crypto.randomBytes(KEY_LENGTH).toString('hex');
+  const bytes = getRandomValues(new Uint8Array(32));
+  return Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+function getEncryptionKey(): string {
+  const key = process.env.ENCRYPTION_KEY;
+  if (!key) {
+    throw new Error('ENCRYPTION_KEY environment variable is required for sensitive data encryption');
+  }
+  return key;
 }
 
 /**
  * Encrypt sensitive field for database storage
  * @param value - Value to encrypt
- * @param encryptionKey - Encryption key from environment
  * @returns Encrypted value or null if value is empty
  */
-export function encryptField(value: string | null | undefined, encryptionKey: string): string | null {
+export async function encryptField(value: string | null | undefined): Promise<string | null> {
   if (!value) return null;
   try {
-    return encrypt(value, encryptionKey);
+    return await encrypt(value, getEncryptionKey());
   } catch (error) {
     console.error('Encryption failed:', error);
     throw new Error('Failed to encrypt sensitive data');
@@ -131,13 +183,12 @@ export function encryptField(value: string | null | undefined, encryptionKey: st
 /**
  * Decrypt sensitive field from database storage
  * @param encryptedValue - Encrypted value from database
- * @param encryptionKey - Decryption key from environment
  * @returns Decrypted value or null if value is empty
  */
-export function decryptField(encryptedValue: string | null | undefined, encryptionKey: string): string | null {
+export async function decryptField(encryptedValue: string | null | undefined): Promise<string | null> {
   if (!encryptedValue) return null;
   try {
-    return decrypt(encryptedValue, encryptionKey);
+    return await decrypt(encryptedValue, getEncryptionKey());
   } catch (error) {
     console.error('Decryption failed:', error);
     throw new Error('Failed to decrypt sensitive data');
@@ -149,10 +200,14 @@ export function decryptField(encryptedValue: string | null | undefined, encrypti
  */
 export const ENCRYPTED_FIELDS = [
   'id_passport_number',
+  'id_number',
   'bank_account_number',
+  'bank_account',
   'tax_id',
   'medical_information',
-  'emergency_contact_details'
+  'emergency_contact_details',
+  'phone',
+  'cellphone',
 ];
 
 /**

@@ -426,10 +426,10 @@ export function calculateQuote(
   const totalDiscounts = specialDiscount + promoDiscount + loyaltyDiscount;
 
   // Calculate total surcharges
-  const totalSurcharges = afterHoursSurcharge + (subtotal * (demandMultiplier - 1));
+  const totalSurcharges = Math.round((afterHoursSurcharge + (subtotal * (demandMultiplier - 1))) * 100) / 100;
 
   // Calculate final price
-  const finalPrice = Math.max(0, subtotal - totalDiscounts + totalSurcharges);
+  const finalPrice = Math.max(0, Math.round((subtotal - totalDiscounts + totalSurcharges) * 100) / 100);
 
   // Build breakdown
   const breakdown = {
@@ -444,7 +444,7 @@ export function calculateQuote(
     },
     surcharges: {
       afterHours: afterHoursSurcharge,
-      demand: subtotal * (demandMultiplier - 1),
+      demand: Math.round((subtotal * (demandMultiplier - 1)) * 100) / 100,
       total: totalSurcharges
     },
     final: finalPrice

@@ -7,7 +7,7 @@ const https = require('https');
 const { Builder, By, until } = require('selenium-webdriver');
 const edge = require('selenium-webdriver/edge');
 
-const BASE_URL = process.env.BASE_URL || 'https://scratchsolidsolutions.org';
+const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 
 function isServerReachable(url) {
   return new Promise((resolve) => {
@@ -23,7 +23,7 @@ function isServerReachable(url) {
 
 const CMS_PAGES = [
   { path: '/services', api: '/api/services', contentCheck: (text) => text.length > 200 },
-  { path: '/pricing', api: '/api/pricing', contentCheck: (text) => text.length > 200 },
+  { path: '/book', api: '/api/pricing', contentCheck: (text) => text.length > 200 },
   { path: '/gallery', api: null, contentCheck: (text) => text.length > 100 },
   { path: '/', api: '/api/content', contentCheck: (text) => text.length > 500 },
 ];
@@ -74,6 +74,10 @@ describe('CMS Content Cross-Browser', () => {
       // Fetch API data
       const apiRes = await fetch(`${BASE_URL}${page.api}`);
       expect(apiRes.status).toBeLessThan(500);
+      if (apiRes.status === 200) {
+        const data = await apiRes.json();
+        expect(data).toBeDefined();
+      }
 
       // Load page
       await driver.get(`${BASE_URL}${page.path}`);
@@ -85,7 +89,7 @@ describe('CMS Content Cross-Browser', () => {
 
   test('Content updates do not cause 500 errors', async () => {
     if (!driverAvailable) { console.log('[SKIP] Content updates'); return; }
-    const dynamicPaths = ['/services', '/pricing', '/gallery'];
+    const dynamicPaths = ['/services', '/book', '/gallery'];
     for (const path of dynamicPaths) {
       await driver.get(`${BASE_URL}${path}`);
       await driver.wait(until.elementLocated(By.css('body')), 10000);

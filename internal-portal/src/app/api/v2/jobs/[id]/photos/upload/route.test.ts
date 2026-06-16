@@ -25,7 +25,7 @@ jest.mock('@/lib/middleware', () => ({
   withSecurityHeaders: jest.fn((res: Response, _traceId: string) => res),
 }));
 
-jest.mock('@opennextjs/cloudflare', () => ({
+jest.mock('@/lib/runtime-context', () => ({
   getCloudflareContext: jest.fn(() =>
     Promise.resolve({
       env: {

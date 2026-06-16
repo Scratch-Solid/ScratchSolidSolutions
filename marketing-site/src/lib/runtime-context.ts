@@ -36,7 +36,11 @@ async function buildEnvAsync(): Promise<RuntimeEnv> {
   ]);
 
   try {
-    env.scratchsolid_db = getPgD1();
+    if (process.env.DATABASE_URL) {
+      env.scratchsolid_db = getPgD1();
+    } else {
+      env.scratchsolid_db = null;
+    }
   } catch (err) {
     console.error('[runtime-context] PostgreSQL unavailable:', err);
     env.scratchsolid_db = null;

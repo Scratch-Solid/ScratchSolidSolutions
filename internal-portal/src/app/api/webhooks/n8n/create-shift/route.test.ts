@@ -13,7 +13,7 @@ jest.mock('@/lib/db', () => ({
   getDb: jest.fn(() => Promise.resolve(mockDb)),
 }));
 
-jest.mock('@opennextjs/cloudflare', () => ({
+jest.mock('@/lib/runtime-context', () => ({
   getCloudflareContext: jest.fn(() =>
     Promise.resolve({ env: { INTERNAL_PORTAL_N8N_WEBHOOK_SECRET: 'test-secret-123' } })
   ),
@@ -68,12 +68,40 @@ describe('POST /api/webhooks/n8n/create-shift', () => {
     expect(json.error).toContain('Missing job_id');
   });
 
-  test('returns 400 when cleaner_ids is empty', async () => {
-    const req = createRequest({ job_id: 'SS-2026-1234', cleaner_ids: [] }, 'Bearer test-secret-123');
+  test('returns 400 when no cleaners assigned and job has no team_members', async () => {
+    mockDb.first.mockResolvedValueOnce({
+      id: 'SS-2026-1234',
+      scheduled_at: '2026-06-15T09:00:00Z',
+      property_address: '123 Main St',
+      status: 'assigned',
+      team_members: null,
+    });
+
+    const req = createRequest({ job_id: 'SS-2026-1234' }, 'Bearer test-secret-123');
     const res = await POST(req);
     expect(res.status).toBe(400);
     const json = await res.json();
-    expect(json.error).toContain('cleaner_ids must be a non-empty array');
+    expect(json.error).toContain('No cleaners assigned');
+  });
+
+  test('looks up cleaner_ids from job team_members when not provided', async () => {
+    mockDb.first.mockResolvedValueOnce({
+      id: 'SS-2026-1234',
+      scheduled_at: '2026-06-15T09:00:00Z',
+      property_address: '123 Main St',
+      status: 'assigned',
+      team_members: JSON.stringify(['abcX123456', 'defY789012']),
+    });
+
+    const req = createRequest({ job_id: 'SS-2026-1234' }, 'Bearer test-secret-123');
+    const res = await POST(req);
+    expect(res.status).toBe(201);
+
+    const json = await res.json();
+    expect(json.job_id).toBe('SS-2026-1234');
+    expect(json.successful).toBe(2);
+    expect(json.failed).toBe(0);
+    expect(mockCreateShiftAssignment).toHaveBeenCalledTimes(2);
   });
 
   test('returns 404 when job does not exist', async () => {
@@ -92,6 +120,7 @@ describe('POST /api/webhooks/n8n/create-shift', () => {
       scheduled_at: '2026-06-15T09:00:00Z',
       property_address: '123 Main St',
       status: 'assigned',
+      team_members: JSON.stringify(['abcX123456', 'defY789012']),
     });
 
     const req = createRequest(validPayload, 'Bearer test-secret-123');
@@ -116,6 +145,7 @@ describe('POST /api/webhooks/n8n/create-shift', () => {
       scheduled_at: '2026-06-15T09:00:00Z',
       property_address: '123 Main St',
       status: 'assigned',
+      team_members: JSON.stringify(['abcX123456', 'defY789012']),
     });
 
     mockCreateShiftAssignment

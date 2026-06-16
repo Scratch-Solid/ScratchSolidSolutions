@@ -3,6 +3,11 @@ node_modules/
 dist/
 .env
 .env.secrets
+
+# Generated test artifacts (Playwright/Selenium) — never commit to production repo
+test-results/
+playwright-report/
+jest-out.txt
 .vscode/
 .venv/
 __pycache__/

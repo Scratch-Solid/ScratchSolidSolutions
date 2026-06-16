@@ -26,8 +26,8 @@ describe('Pricing Engine', () => {
     });
 
     it('should calculate residential deep pricing correctly', () => {
-      const price = calculateBasePrice('residential-deep', 100);
-      expect(price).toBe(2450); // 950 + (100 * 15)
+      const price = calculateBasePrice('residential-deep', 5);
+      expect(price).toBe(1700); // 950 + (5 * 150)
     });
 
     it('should calculate post-construction pricing correctly', () => {
@@ -50,11 +50,11 @@ describe('Pricing Engine', () => {
     });
 
     it('should throw error for quantity below minimum', () => {
-      expect(() => calculateBasePrice('residential-deep', 10)).toThrow('Quantity must be at least 50');
+      expect(() => calculateBasePrice('post-construction', 10)).toThrow('Quantity must be at least 50');
     });
 
     it('should throw error for quantity above maximum', () => {
-      expect(() => calculateBasePrice('residential-standard', 10)).toThrow('Quantity must not exceed 5');
+      expect(() => calculateBasePrice('residential-standard', 11)).toThrow('Quantity must not exceed 10');
     });
   });
 
@@ -170,8 +170,8 @@ describe('Pricing Engine', () => {
 
   describe('validateSpecialPricing', () => {
     it('should return true for valid date range', () => {
-      const validFrom = '2026-05-01T00:00:00';
-      const validUntil = '2026-05-31T23:59:59';
+      const validFrom = '2026-06-01T00:00:00';
+      const validUntil = '2027-05-31T23:59:59';
       expect(validateSpecialPricing(validFrom, validUntil)).toBe(true);
     });
 
@@ -356,7 +356,7 @@ describe('Pricing Engine', () => {
       };
       const result = calculateQuote(request);
       expect(result.demandMultiplier).toBe(1.10);
-      expect(result.breakdown.surcharges.demand).toBe(80); // 800 * 0.10
+      expect(result.breakdown.surcharges.demand).toBeCloseTo(88, 0); // (750+50)*1.10 * 0.10
     });
 
     it('should return detailed breakdown', () => {

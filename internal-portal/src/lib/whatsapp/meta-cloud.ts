@@ -165,3 +165,68 @@ export async function recordInboundMessage(
 
   // Also log the message itself (optional - could add a whatsapp_messages table later)
 }
+
+/**
+ * Download media (image, video, document) from Meta's CDN.
+ * Step 1: GET media metadata by media_id
+ * Step 2: GET binary from the returned URL
+ */
+export async function downloadMediaFromMeta(
+  mediaId: string
+): Promise<{ buffer: ArrayBuffer; contentType: string; fileName: string } | null> {
+  if (!META_ACCESS_TOKEN) {
+    console.warn('[Meta Cloud] META_ACCESS_TOKEN not configured');
+    return null;
+  }
+
+  try {
+    // 1. Get media URL
+    const infoUrl = `https://graph.facebook.com/${META_API_VERSION}/${mediaId}`;
+    const infoResponse = await fetch(infoUrl, {
+      headers: { Authorization: `Bearer ${META_ACCESS_TOKEN}` },
+    });
+
+    if (!infoResponse.ok) {
+      console.warn('[Meta Cloud] Failed to get media URL:', infoResponse.status);
+      return null;
+    }
+
+    const info = (await infoResponse.json()) as any;
+    if (!info.url) {
+      console.warn('[Meta Cloud] No download URL in media info');
+      return null;
+    }
+
+    // 2. Download binary
+    const binaryResponse = await fetch(info.url, {
+      headers: { Authorization: `Bearer ${META_ACCESS_TOKEN}` },
+    });
+
+    if (!binaryResponse.ok) {
+      console.warn('[Meta Cloud] Failed to download media binary:', binaryResponse.status);
+      return null;
+    }
+
+    const buffer = await binaryResponse.arrayBuffer();
+    const contentType = info.mime_type || binaryResponse.headers.get('content-type') || 'application/octet-stream';
+    const fileName = info.file_name || `media_${mediaId}.${mimeToExt(contentType)}`;
+
+    return { buffer, contentType, fileName };
+  } catch (error) {
+    console.error('[Meta Cloud] Media download error:', error);
+    return null;
+  }
+}
+
+function mimeToExt(mime: string): string {
+  const map: Record<string, string> = {
+    'image/jpeg': 'jpg',
+    'image/jpg': 'jpg',
+    'image/png': 'png',
+    'image/webp': 'webp',
+    'image/gif': 'gif',
+    'video/mp4': 'mp4',
+    'application/pdf': 'pdf',
+  };
+  return map[mime] || 'bin';
+}

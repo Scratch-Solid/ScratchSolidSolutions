@@ -1,22 +1,23 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Auth Flows', () => {
-  test('Login page has email and password fields', async ({ page }) => {
-    await page.goto('/login');
-    await expect(page.locator('input[type="email"], input[name="email"]')).toBeVisible();
+  test('Auth page has login inputs', async ({ page }) => {
+    await page.goto('/auth');
+    // Auth page has phone input (individual tab default) and password
+    await expect(page.locator('input[type="tel"], input[type="email"]')).toBeVisible();
     await expect(page.locator('input[type="password"], input[name="password"]')).toBeVisible();
     await expect(page.locator('button[type="submit"]')).toBeVisible();
   });
 
-  test('Signup page has registration fields', async ({ page }) => {
-    await page.goto('/signup');
-    await expect(page.locator('input[type="email"], input[name="email"]')).toBeVisible();
-    await expect(page.locator('input[type="password"], input[name="password"]')).toBeVisible();
+  test('Client signup page has registration fields', async ({ page }) => {
+    await page.goto('/client-signup');
+    await expect(page.locator('input[name="email"], input[type="email"]')).toBeVisible();
+    await expect(page.locator('input[name="password"]')).toBeVisible();
   });
 
-  test('Forgot password page accepts email', async ({ page }) => {
+  test('Forgot password page has identifier input', async ({ page }) => {
     await page.goto('/forgot-password');
-    await expect(page.locator('input[type="email"], input[name="email"]')).toBeVisible();
+    await expect(page.locator('input[type="tel"], input[type="email"]')).toBeVisible();
     const submit = page.locator('button[type="submit"]');
     await expect(submit).toBeVisible();
   });

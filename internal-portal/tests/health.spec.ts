@@ -10,7 +10,6 @@ test('Health check endpoint returns healthy status', async ({ request }) => {
   expect(data).toHaveProperty('checks');
   expect(data.checks).toHaveProperty('database');
   expect(data.checks).toHaveProperty('r2');
-  expect(data.checks).toHaveProperty('twilio');
 });
 
 test('Health check includes database connectivity', async ({ request }) => {

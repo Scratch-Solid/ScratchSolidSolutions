@@ -13,7 +13,7 @@ jest.mock('@/lib/db', () => ({
   getDb: jest.fn(() => Promise.resolve(mockDb)),
 }));
 
-jest.mock('@opennextjs/cloudflare', () => ({
+jest.mock('@/lib/runtime-context', () => ({
   getCloudflareContext: jest.fn(() =>
     Promise.resolve({ env: { INTERNAL_PORTAL_N8N_WEBHOOK_SECRET: 'test-secret-123' } })
   ),

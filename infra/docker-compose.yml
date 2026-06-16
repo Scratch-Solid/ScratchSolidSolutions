@@ -441,6 +441,11 @@ services:
       retries: 5
 
   marketing-web:
+    # Gated behind the "apps" profile so the default `docker compose up -d`
+    # readies infra + databases WITHOUT building/starting the heavy Next.js
+    # image or cutting traffic over from Cloudflare. Enable the cutover with:
+    #   docker compose --profile apps up -d marketing-web
+    profiles: ["apps"]
     build:
       context: ../marketing-site
       dockerfile: Dockerfile
@@ -531,6 +536,11 @@ services:
       retries: 5
 
   portal-web:
+    # Gated behind the "apps" profile (see marketing-web). The portal currently
+    # runs on Cloudflare Workers (restored via the universal runtime-context);
+    # only enable this container during a deliberate Hetzner cutover:
+    #   docker compose --profile apps up -d portal-web
+    profiles: ["apps"]
     build:
       context: ../internal-portal
       dockerfile: Dockerfile

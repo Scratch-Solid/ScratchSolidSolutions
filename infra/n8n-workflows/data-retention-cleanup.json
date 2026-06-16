@@ -1,0 +1,152 @@
+{
+  "name": "POPIA Data Retention Cleanup",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 24
+            }
+          ]
+        }
+      },
+      "id": "cron-trigger",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://portal.scratchsolidsolutions.org/api/cron/data-retention",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ $credentials.authorization }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "http-request",
+      "name": "Call Data Retention Endpoint",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-1",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": 200,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ]
+        }
+      },
+      "id": "if-success",
+      "name": "If Success",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "subject": "POPIA Data Retention Cleanup - Success",
+        "message": "=The POPIA data retention cleanup ran successfully.\n\nDeleted records:\n{{ JSON.stringify($json.body.deleted, null, 2) }}\n\nTrace ID: {{ $json.body.traceId }}",
+        "to": "admin@scratchsolidsolutions.org"
+      },
+      "id": "email-success",
+      "name": "Send Success Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [850, 200]
+    },
+    {
+      "parameters": {
+        "subject": "POPIA Data Retention Cleanup - FAILED",
+        "message": "=The POPIA data retention cleanup FAILED.\n\nResponse:\n{{ JSON.stringify($json.body, null, 2) }}\n\nPlease investigate immediately.",
+        "to": "admin@scratchsolidsolutions.org"
+      },
+      "id": "email-failure",
+      "name": "Send Failure Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [850, 400]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Call Data Retention Endpoint",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Data Retention Endpoint": {
+      "main": [
+        [
+          {
+            "node": "If Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Success": {
+      "main": [
+        [
+          {
+            "node": "Send Success Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Failure Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "POPIA",
+      "id": "popia-tag"
+    },
+    {
+      "name": "compliance",
+      "id": "compliance-tag"
+    }
+  ]
+}

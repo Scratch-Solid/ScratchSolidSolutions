@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const BASE_URL = process.env.BASE_URL || 'https://scratchsolidsolutions.org';
+const BASE_URL = ''; // Use Playwright baseURL (relative paths)
 
 /**
  * Booking Flow E2E Tests

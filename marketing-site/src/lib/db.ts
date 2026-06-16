@@ -14,6 +14,12 @@ export async function getDb(): Promise<D1Database | null> {
     const envAny = env as any;
     const db = envAny?.scratchsolid_db || envAny?.scratchsolidDb || envAny?.scratchsolid_db_marketing_staging || envAny?.DB || envAny?.db || envAny?.database;
     if (db) {
+      // Verify database has been migrated (users table exists)
+      try {
+        await (db as any).prepare("SELECT 1 FROM users WHERE 1=0").first();
+      } catch {
+        return null;
+      }
       return db as D1Database;
     }
     // As a last resort, scan env for a D1-like binding (has prepare method)
@@ -23,7 +29,13 @@ export async function getDb(): Promise<D1Database | null> {
     });
     if (candidateKey) {
       logger.warn(`D1 binding not found under expected names; using candidate binding '${candidateKey}'`);
-      return (envAny as any)[candidateKey] as D1Database;
+      const candidateDb = (envAny as any)[candidateKey];
+      try {
+        await candidateDb.prepare("SELECT 1 FROM users WHERE 1=0").first();
+      } catch {
+        return null;
+      }
+      return candidateDb as D1Database;
     }
     logger.error('D1 binding missing: expected scratchsolid_db or DB');
     logger.error('Available env keys:', Object.keys(envAny || {}));

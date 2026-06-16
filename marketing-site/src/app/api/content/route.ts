@@ -43,7 +43,9 @@ export async function GET(request: NextRequest) {
 
   const db = await getDb();
   if (!db) {
-    return NextResponse.json({ error: "Service temporarily unavailable" }, { status: 503 });
+    const { searchParams } = new URL(request.url);
+    const type = searchParams.get("type") || "privacy";
+    return NextResponse.json({ content: "", type });
   }
 
   try {

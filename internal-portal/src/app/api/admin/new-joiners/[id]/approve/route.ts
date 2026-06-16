@@ -5,7 +5,7 @@ import { ensureCleanerTrainingProgress, setCleanerOnboardingStage } from '@/lib/
 import { notifyCleanerApproval, registerCleanerInErpNext, setupCleanerPayrollInErpNext } from '@/lib/cleaner-integrations';
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { log } from '@/lib/logger';
-import crypto from 'crypto';
+import { decryptField } from '@/lib/encryption';
 
 // Generate paysheet code from first name per spec: abcX#####
 // Format: first 3 letters of first name (lowercase) + random uppercase letter + 4-6 random digits
@@ -69,11 +69,31 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const joinerData = joiner as any;
 
+    // Decrypt sensitive fields from new_joiners
+    const decryptedPhone = await decryptField(joinerData.phone) || joinerData.phone;
+    const decryptedEmergencyContact = await decryptField(joinerData.emergency_contact) || joinerData.emergency_contact;
+    const decryptedIdNumber = await decryptField(joinerData.id_number) || joinerData.id_number;
+    const decryptedBankDetails = joinerData.bank_details ? (await decryptField(joinerData.bank_details) || joinerData.bank_details) : null;
+
     // Generate paysheet code (unique, with collision retry)
     const paysheetCode = await generateUniquePaysheetCode(db, joinerData.name);
 
     // Create user account
-    const tempPassword = crypto.randomBytes(12).toString('hex');
+    // Cross-runtime random bytes helper (Cloudflare Workers crypto vs Node.js crypto)
+    const tempPasswordBytes = (() => {
+      const arr = new Uint8Array(18);
+      if (typeof crypto !== 'undefined' && 'getRandomValues' in crypto) {
+        crypto.getRandomValues(arr);
+      } else {
+        const nodeCrypto = require('crypto');
+        const buf = nodeCrypto.randomBytes(18);
+        arr.set(buf);
+      }
+      return arr;
+    })();
+    const tempPassword = Array.from(tempPasswordBytes)
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
     const bcrypt = require('bcryptjs');
     const passwordHash = await bcrypt.hash(tempPassword, 12);
 
@@ -84,7 +104,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       joinerData.name,
       joinerData.email,
       passwordHash,
-      joinerData.phone
+      decryptedPhone
     ).run();
 
     // Get the new user ID
@@ -103,10 +123,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       paysheetCode,
       joinerData.name.split(' ')[0] || joinerData.name,
       joinerData.name.split(' ').slice(1).join(' ') || '',
-      joinerData.phone,
-      joinerData.emergency_contact,
-      joinerData.phone,
-      joinerData.id_number
+      decryptedPhone,
+      decryptedEmergencyContact,
+      decryptedPhone,
+      decryptedIdNumber
     ).run();
 
     // Create training progress record
@@ -119,7 +139,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       firstName: joinerData.name.split(' ')[0] || joinerData.name,
       lastName: joinerData.name.split(' ').slice(1).join(' ') || '',
       email: joinerData.email,
-      phone: joinerData.phone,
+      phone: decryptedPhone,
       department: 'Scratch',
       position: 'Cleaner',
     });
@@ -127,11 +147,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       traceId,
       employeeId: paysheetCode,
       paysheetCode,
-      bankDetailsPresent: Boolean(joinerData.bank_details),
+      bankDetailsPresent: Boolean(decryptedBankDetails),
     });
     const notificationResult = await notifyCleanerApproval({
       traceId,
-      phone: joinerData.phone,
+      phone: decryptedPhone,
       email: joinerData.email,
       name: joinerData.name,
       paysheetCode,

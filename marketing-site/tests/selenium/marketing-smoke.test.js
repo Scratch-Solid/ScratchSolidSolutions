@@ -23,10 +23,10 @@ function isServerReachable(url) {
 const PAGES = [
   '/',
   '/services',
-  '/pricing',
+  '/book',
   '/contact',
   '/login',
-  '/signup',
+  '/client-signup',
   '/forgot-password',
   '/gallery',
   '/privacy',

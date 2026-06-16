@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs';
 import { generateAccessToken } from '@/lib/auth';
 import { notifyProfileCreated } from '@/lib/notifications';
 import { getExperimentAssignment, trackExperimentEvent } from '@/lib/ab-testing';
+import { encryptField } from '@/lib/encryption';
 
 export async function POST(request: NextRequest) {
   try {
@@ -54,6 +55,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
+    // Encrypt sensitive PII fields
+    const encryptedCellphone = await encryptField(cellphone);
+    const encryptedResidentialAddress = await encryptField(residentialAddress);
+
     // Update user profile
     const fullName = `${firstName} ${lastName}`;
     const userUpdates: string[] = [];
@@ -63,11 +68,11 @@ export async function POST(request: NextRequest) {
     userParams.push(fullName);
 
     userUpdates.push('phone = ?');
-    userParams.push(cellphone);
+    userParams.push(encryptedCellphone);
 
-    if (residentialAddress) {
+    if (encryptedResidentialAddress) {
       userUpdates.push('address = ?');
-      userParams.push(residentialAddress);
+      userParams.push(encryptedResidentialAddress);
     }
 
     // Update password (now required)
@@ -94,9 +99,9 @@ export async function POST(request: NextRequest) {
       profileUpdates.push('last_name = ?');
       profileParams.push(lastName);
       profileUpdates.push('residential_address = ?');
-      profileParams.push(residentialAddress);
+      profileParams.push(encryptedResidentialAddress);
       profileUpdates.push('cellphone = ?');
-      profileParams.push(cellphone);
+      profileParams.push(encryptedCellphone);
 
       if (profilePicture) {
         profileUpdates.push('profile_picture = ?');
@@ -112,7 +117,7 @@ export async function POST(request: NextRequest) {
       await db.prepare(
         `INSERT INTO cleaner_profiles (user_id, first_name, last_name, residential_address, cellphone, profile_picture, status, created_at, updated_at)
          VALUES (?, ?, ?, ?, ?, ?, 'idle', datetime('now'), datetime('now'))`
-      ).bind((user as any).id, firstName, lastName, residentialAddress, cellphone, profilePicture || '').run();
+      ).bind((user as any).id, firstName, lastName, encryptedResidentialAddress, encryptedCellphone, profilePicture || '').run();
     }
 
     // Ensure staff table has onboarding columns

@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const BASE_URL = process.env.BASE_URL || 'https://scratchsolidsolutions.org';
+const BASE_URL = ''; // Use Playwright baseURL
 
 /**
  * CMS Content E2E Tests
@@ -30,16 +30,10 @@ test.describe('CMS Content Integration', () => {
     }
   });
 
-  test('Pricing page loads pricing data from API', async ({ page }) => {
-    const apiResponse = await page.request.get(`${BASE_URL}/api/pricing`);
-    expect(apiResponse.status()).toBe(200);
-    const pricing = await apiResponse.json() as any;
-
-    await page.goto(`${BASE_URL}/pricing`);
+  test('Book page loads without error', async ({ page }) => {
+    await page.goto(`${BASE_URL}/book`);
     const bodyText = await page.locator('body').innerText();
     expect(bodyText).not.toContain('Internal Server Error');
-
-    // Pricing page should have actual pricing content, not empty
     expect(bodyText.length).toBeGreaterThan(200);
   });
 

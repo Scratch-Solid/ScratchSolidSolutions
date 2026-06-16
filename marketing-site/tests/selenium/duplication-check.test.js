@@ -7,7 +7,7 @@ const https = require('https');
 const { Builder, By, until } = require('selenium-webdriver');
 const edge = require('selenium-webdriver/edge');
 
-const BASE_URL = process.env.BASE_URL || 'https://scratchsolidsolutions.org';
+const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 
 function isServerReachable(url) {
   return new Promise((resolve) => {
@@ -74,7 +74,7 @@ describe('Duplication Prevention', () => {
 
   test('Signup page prevents duplicate accounts', async () => {
     if (!driverAvailable) { console.log('[SKIP] Signup duplication'); return; }
-    await driver.get(`${BASE_URL}/signup`);
+    await driver.get(`${BASE_URL}/client-signup`);
     await driver.wait(until.elementLocated(By.css('body')), 10000);
 
     const body = await driver.findElement(By.css('body')).getText();

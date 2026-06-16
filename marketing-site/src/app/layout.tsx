@@ -77,6 +77,9 @@ export default async function RootLayout({
     >
       <body className="min-h-full flex flex-col" style={backgroundStyle}>
         {children}
+        <footer className="w-full py-4 text-center text-white/70 text-sm bg-black/20 backdrop-blur-sm">
+          © {new Date().getFullYear()} Scratch Solid Solutions. All rights reserved.
+        </footer>
         <CookieConsent />
       </body>
     </html>

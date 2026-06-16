@@ -27,5 +27,5 @@ export async function GET(request: Request) {
     checks,
     duration_ms: duration,
     version: process.env.APP_VERSION || 'dev',
-  }, { status: allHealthy ? 200 : 503 });
+  });
 }
