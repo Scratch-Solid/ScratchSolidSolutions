@@ -1,1 +1,0 @@
-SELECT id, email, LENGTH(password_hash) as hash_len FROM users WHERE id = 1

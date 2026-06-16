@@ -8,6 +8,16 @@ dist/
 test-results/
 playwright-report/
 jest-out.txt
+
+# Debug / scratch artifacts — never commit (kept out of the production repo)
+tsc-*.txt
+*.log
+db_query*.txt
+login-debug-response.txt
+temp_deploy.txt
+services_export.json
+test_*.json
+test_*.bat
 .vscode/
 .venv/
 __pycache__/
