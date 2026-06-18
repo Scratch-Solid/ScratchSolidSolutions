@@ -21,6 +21,17 @@ function isServerReachable(url) {
   });
 }
 
+function buildDriverWithTimeout(ms = 8000) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('WebDriver build timeout')), ms);
+    const options = new edge.Options();
+    options.addArguments('--headless', '--no-sandbox', '--disable-dev-shm-usage');
+    new Builder().forBrowser('MicrosoftEdge').setEdgeOptions(options).build()
+      .then((drv) => { clearTimeout(timer); resolve(drv); })
+      .catch((err) => { clearTimeout(timer); reject(err); });
+  });
+}
+
 describe('Duplication Prevention', () => {
   let driver;
   let driverAvailable = false;
@@ -33,9 +44,7 @@ describe('Duplication Prevention', () => {
       return;
     }
     try {
-      const options = new edge.Options();
-      options.addArguments('--headless', '--no-sandbox', '--disable-dev-shm-usage');
-      driver = await new Builder().forBrowser('MicrosoftEdge').setEdgeOptions(options).build();
+      driver = await buildDriverWithTimeout(8000);
       driverAvailable = true;
     } catch (err) {
       console.warn('[Selenium] Edge driver unavailable:', err.message);
