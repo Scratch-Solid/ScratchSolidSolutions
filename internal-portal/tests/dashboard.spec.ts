@@ -8,7 +8,7 @@ test.describe('Admin Dashboard Tests', () => {
 
   test('Analytics page displays funnel data', async ({ page }) => {
     await page.goto('/admin/onboarding/analytics');
-    await expect(page.locator('text=Funnel Visualization')).toBeVisible();
+    await expect(page.locator('text=Onboarding Analytics')).toBeVisible();
   });
 
   test('Monitoring page shows health status', async ({ page }) => {

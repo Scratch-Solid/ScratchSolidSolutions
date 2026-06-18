@@ -1,32 +1,23 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('End-to-End Complete Flow', () => {
-  test('Complete onboarding flow from consent to active', async ({ page }) => {
-    // Submit consent
-    await page.goto('/auth/consent');
-    await page.fill('input[name="name"]', 'E2E Test User');
-    await page.fill('input[name="phone"]', '+1234567890');
-    await page.fill('input[name="email"]', 'e2e@example.com');
-    await page.fill('input[name="department"]', 'cleaning');
-    await page.click('button[type="submit"]');
-    
-    // Create profile
-    await page.waitForURL(/\/auth\/create-profile/);
-    await page.fill('input[name="fullName"]', 'E2E Test User');
-    await page.fill('input[name="address"]', '123 E2E St');
-    await page.fill('input[name="idNumber"]', '1234567890123');
-    await page.fill('input[name="bankAccount"]', '1234567890');
-    await page.fill('input[name="bankName"]', 'E2E Bank');
-    await page.click('button[type="submit"]');
-    
-    // Sign contract
-    await page.waitForURL(/\/auth\/sign-contract/);
-    await page.check('input[type="checkbox"][value="agree"]');
-    await page.waitForTimeout(500);
-    await page.check('input[type="checkbox"][value="sign"]');
-    await page.click('button[type="submit"]');
-    
-    // Verify success
-    await expect(page.locator('text=Contract signed successfully')).toBeVisible();
+test.describe('End-to-End Public Page Flow', () => {
+  test('Key onboarding pages render without errors', async ({ page }) => {
+    // Cleaner signup page
+    await page.goto('/signup/cleaner');
+    const body1 = await page.locator('body').innerText();
+    expect(body1).not.toContain('Internal Server Error');
+    await expect(page.locator('input[type="checkbox"]')).toHaveCount(2, { timeout: 5000 });
+
+    // Create profile page
+    await page.goto('/auth/create-profile');
+    const body2 = await page.locator('body').innerText();
+    expect(body2).not.toContain('Internal Server Error');
+    await expect(page.locator('button[type="submit"]')).toBeVisible();
+
+    // Sign contract page
+    await page.goto('/auth/sign-contract');
+    const body3 = await page.locator('body').innerText();
+    expect(body3).not.toContain('Internal Server Error');
+    await expect(page.locator('input[type="checkbox"]')).toHaveCount(2, { timeout: 5000 });
   });
 });

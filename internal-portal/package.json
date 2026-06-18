@@ -63,6 +63,7 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.11.3",
     "@cloudflare/workers-types": "^4.20260422.1",
     "@eslint/eslintrc": "^3.3.5",
     "@playwright/test": "^1.60.0",

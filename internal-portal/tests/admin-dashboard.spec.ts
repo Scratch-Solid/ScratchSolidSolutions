@@ -11,13 +11,13 @@ test.describe('Admin Dashboard', () => {
     await page.goto(`${PORTAL_URL}/auth/login`);
     const body = await page.locator('body').innerText();
     expect(body).not.toContain('Internal Server Error');
-    expect(await page.locator('input[type="email"], input[name="email"]').count()).toBeGreaterThan(0);
+    expect(await page.locator('input[name="username"], input[name="identifier"], input[type="text"]').count()).toBeGreaterThan(0);
     expect(await page.locator('input[type="password"], input[name="password"]').count()).toBeGreaterThan(0);
   });
 
   test('Admin login API validates credentials', async ({ request }) => {
     const response = await request.post(`${PORTAL_URL}/api/auth/login`, {
-      data: { email: 'admin@example.com', password: 'wrongpassword' }
+      data: { identifier: 'admin@example.com', password: 'wrongpassword' }
     });
     expect(response.status()).toBeGreaterThanOrEqual(400);
   });
