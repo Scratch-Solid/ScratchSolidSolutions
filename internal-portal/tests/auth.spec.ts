@@ -8,14 +8,15 @@ test.describe('Authentication Flow', () => {
 
   test('Create profile page has required form fields', async ({ page }) => {
     await page.goto('/auth/create-profile');
-    await expect(page.locator('input[name="fullName"], input[name="address"], input[name="idNumber"]').first()).toBeVisible();
+    await expect(page.locator('input[name="firstName"], input[name="lastName"], input[name="residentialAddress"]').first()).toBeVisible();
+    await expect(page.locator('input[name="cellphone"], input[type="tel"]').first()).toBeVisible();
     await expect(page.locator('button[type="submit"]')).toBeVisible();
   });
 
-  test('Sign contract page renders with checkboxes', async ({ page }) => {
+  test('Sign contract page requires auth and redirects to login', async ({ page }) => {
     await page.goto('/auth/sign-contract');
-    await expect(page.locator('input[type="checkbox"]')).toHaveCount(2, { timeout: 5000 });
-    await expect(page.locator('button[type="submit"]')).toBeVisible();
+    // Without auth token, page redirects to login
+    await expect(page).toHaveURL(/\/auth\/login/, { timeout: 10000 });
   });
 
   test('Unauthenticated user is redirected or protected', async ({ page }) => {

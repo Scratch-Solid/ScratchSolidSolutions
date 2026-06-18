@@ -15,7 +15,7 @@ const PAGES_TO_SCAN = [
   '/auth/forgot-password',
   '/signup/cleaner',
   '/auth/create-profile',
-  '/auth/sign-contract',
+  // '/auth/sign-contract' requires auth — redirects to login, skip in public scan
 ];
 
 test.describe('Accessibility - axe-core scan', () => {

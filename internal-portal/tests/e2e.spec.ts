@@ -14,10 +14,8 @@ test.describe('End-to-End Public Page Flow', () => {
     expect(body2).not.toContain('Internal Server Error');
     await expect(page.locator('button[type="submit"]')).toBeVisible();
 
-    // Sign contract page
+    // Sign contract page (requires auth, redirects to login)
     await page.goto('/auth/sign-contract');
-    const body3 = await page.locator('body').innerText();
-    expect(body3).not.toContain('Internal Server Error');
-    await expect(page.locator('input[type="checkbox"]')).toHaveCount(2, { timeout: 5000 });
+    await expect(page).toHaveURL(/\/auth\/login/, { timeout: 10000 });
   });
 });
