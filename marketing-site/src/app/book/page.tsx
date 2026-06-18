@@ -24,6 +24,7 @@ export default function BookingPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showIndemnity, setShowIndemnity] = useState(false);
+  const [indemnityAccepted, setIndemnityAccepted] = useState(false);
   const [indemnityContent, setIndemnityContent] = useState("");
 
   useEffect(() => {
@@ -38,7 +39,7 @@ export default function BookingPage() {
         setIndemnityContent(data.content || '');
       }
     } catch (error) {
-      console.error('Failed to fetch indemnity content:', error);
+      // Silently fail — decorative content should not block booking
     }
   };
 
@@ -345,14 +346,20 @@ export default function BookingPage() {
                   View Indemnity Form
                 </button>
                 <div className="flex items-start">
-                  <input type="checkbox" id="indemnity" className="mt-1" />
+                  <input
+                    type="checkbox"
+                    id="indemnity"
+                    className="mt-1"
+                    checked={indemnityAccepted}
+                    onChange={(e) => setIndemnityAccepted(e.target.checked)}
+                  />
                   <label htmlFor="indemnity" className="ml-2 text-sm text-gray-700">
                     I have read and agree to the indemnity terms
                   </label>
                 </div>
                 <div className="flex gap-4">
                   <button onClick={() => setStep(4)} className="flex-1 px-4 py-2 rounded-lg border-2 border-gray-300 hover:border-gray-400">Back</button>
-                  <button onClick={handleSubmit} disabled={loading} className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50">
+                  <button onClick={handleSubmit} disabled={loading || !indemnityAccepted} className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50">
                     {loading ? "Booking..." : "Confirm Booking"}
                   </button>
                 </div>
@@ -386,8 +393,7 @@ export default function BookingPage() {
                 <button 
                   onClick={() => {
                     setShowIndemnity(false);
-                    const checkbox = document.getElementById('indemnity') as HTMLInputElement;
-                    if (checkbox) checkbox.checked = true;
+                    setIndemnityAccepted(true);
                   }} 
                   className="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 font-semibold transition-colors"
                 >

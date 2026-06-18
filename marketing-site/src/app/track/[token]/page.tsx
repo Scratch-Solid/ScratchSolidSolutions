@@ -62,7 +62,6 @@ export default function PublicTrackingPage() {
       setGpsLocation((data as any).gpsLocation);
       setError("");
     } catch (err) {
-      console.error('Failed to fetch tracking data:', err);
       setError('Network error. Please try again.');
     } finally {
       setLoading(false);

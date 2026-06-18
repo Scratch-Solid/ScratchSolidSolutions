@@ -53,7 +53,7 @@ export default function AboutPage() {
         const statsData: Statistics | null = statsRes.ok ? await statsRes.json() as Statistics : null;
         setStatistics(statsData);
       } catch (err) {
-        console.error('Error fetching data:', err);
+        // Silently fail in production
       } finally {
         setLoading(false);
       }

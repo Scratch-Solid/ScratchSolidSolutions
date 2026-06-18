@@ -14,12 +14,14 @@ export default function BusinessSignupPage() {
     password: "",
     confirmPassword: "",
   });
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    setError('');
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match");
+      setError("Passwords do not match");
       return;
     }
 
@@ -44,10 +46,10 @@ export default function BusinessSignupPage() {
         window.location.href = "/auth?message=verify_email";
       } else {
         const error = await response.json() as { error?: string };
-        alert(error.error || "Signup failed");
+        setError(error.error || "Signup failed");
       }
     } catch (error) {
-      alert("Network error. Please try again.");
+      setError("Network error. Please try again.");
     }
   };
 
@@ -66,6 +68,11 @@ export default function BusinessSignupPage() {
           Business Registration
         </h1>
 
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm font-semibold text-red-600">{error}</p>
+          </div>
+        )}
         <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border-2 border-white/20 p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-4">

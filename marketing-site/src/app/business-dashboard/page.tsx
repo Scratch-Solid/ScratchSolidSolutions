@@ -21,6 +21,10 @@ export default function BusinessDashboard() {
   // Review upload state
   const [reviewImages, setReviewImages] = useState<string[]>([]);
   const [reviewText, setReviewText] = useState<string>('');
+  const [reviewRating, setReviewRating] = useState<number>(5);
+  const [selectedBookingForReview, setSelectedBookingForReview] = useState<string>('');
+  const [error, setError] = useState<string>('');
+  const [success, setSuccess] = useState<string>('');
   const [uploadingImages, setUploadingImages] = useState(false);
   const [reviewImagesLoading, setReviewImagesLoading] = useState(false);
 
@@ -72,7 +76,7 @@ export default function BusinessDashboard() {
         }
       }
     } catch (error) {
-      console.error("Failed to fetch weekend requests:", error);
+      // Non-critical background fetch
     }
   };
 
@@ -90,7 +94,7 @@ export default function BusinessDashboard() {
       const businessId = localStorage.getItem("userId");
       const token = localStorage.getItem("authToken");
       if (!businessId || !token) {
-        alert("Authentication required");
+        setError("Authentication required");
         setLoading(false);
         return;
       }
@@ -109,12 +113,13 @@ export default function BusinessDashboard() {
       if (response.ok) {
         const newRequest = await response.json();
         setWeekendRequests((prev: any[]) => [newRequest, ...prev]);
-        alert("Weekend request submitted successfully!");
+        setSuccess("Weekend request submitted successfully!");
+        setTimeout(() => setSuccess(''), 3000);
       } else {
-        alert("Failed to submit request. Please try again.");
+        setError("Failed to submit request. Please try again.");
       }
     } catch (error) {
-      alert("Network error. Please try again.");
+      setError("Network error. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -132,7 +137,7 @@ export default function BusinessDashboard() {
         setContracts(data);
       }
     } catch (error) {
-      console.error("Failed to fetch contracts:", error);
+      // Non-critical background fetch
     }
   };
 
@@ -148,7 +153,7 @@ export default function BusinessDashboard() {
         setRecurringBookings(data);
       }
     } catch (error) {
-      console.error("Failed to fetch recurring bookings:", error);
+      // Non-critical background fetch
     }
   };
 
@@ -164,7 +169,7 @@ export default function BusinessDashboard() {
         setUserProfile(data);
       }
     } catch (error) {
-      console.error("Failed to fetch user profile:", error);
+      // Non-critical background fetch
     }
   };
 
@@ -182,10 +187,10 @@ export default function BusinessDashboard() {
         localStorage.clear();
         router.push('/login');
       } else {
-        alert("Failed to delete account");
+        setError("Failed to delete account");
       }
     } catch (error) {
-      alert("Network error. Please try again.");
+      setError("Network error. Please try again.");
     }
   };
 
@@ -198,12 +203,13 @@ export default function BusinessDashboard() {
       });
       if (response.ok) {
         setWeekendRequests((prev: any[]) => prev.filter(req => req.id !== requestId));
-        alert("Request cancelled successfully");
+        setSuccess("Request cancelled successfully");
+        setTimeout(() => setSuccess(''), 3000);
       } else {
-        alert("Failed to cancel request.");
+        setError("Failed to cancel request.");
       }
     } catch (error) {
-      alert("Network error. Please try again.");
+      setError("Network error. Please try again.");
     }
   };
 
@@ -225,10 +231,10 @@ export default function BusinessDashboard() {
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
       } else {
-        alert("Failed to export contract PDF");
+        setError("Failed to export contract PDF");
       }
     } catch (error) {
-      alert("Network error. Please try again.");
+      setError("Network error. Please try again.");
     }
   };
 
@@ -247,7 +253,7 @@ export default function BusinessDashboard() {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length > 3) {
-      alert('Maximum 3 images allowed');
+      setError('Maximum 3 images allowed');
       return;
     }
 
@@ -278,8 +284,7 @@ export default function BusinessDashboard() {
 
       setReviewImages(prev => [...prev, ...uploadedUrls]);
     } catch (err) {
-      console.error('Image upload error:', err);
-      alert('Failed to upload images. Please try again.');
+      setError('Failed to upload images. Please try again.');
     } finally {
       setUploadingImages(false);
     }
@@ -287,33 +292,27 @@ export default function BusinessDashboard() {
 
   const handleReviewSubmit = async () => {
     if (reviewText.trim().length === 0) {
-      alert('Please enter a review');
+      setError('Please enter a review');
       return;
     }
-    
+
     if (reviewText.trim().split(/\s+/).filter(w => w.length > 0).length > 100) {
-      alert('Review must be 100 words or less');
+      setError('Review must be 100 words or less');
+      return;
+    }
+
+    if (!selectedBookingForReview) {
+      setError('Please select a booking to review');
       return;
     }
 
     if (reviewImages.length === 0) {
-      alert('Please upload at least one image');
+      setError('Please upload at least one image');
       return;
     }
 
     const userId = localStorage.getItem('userId');
     const token = localStorage.getItem('authToken');
-    
-    // Get first completed booking for review
-    const response = await fetch(`/api/bookings?client_id=${userId}&status=completed`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    const bookings = response.ok ? await response.json() as any[] : [];
-    
-    if (bookings.length === 0) {
-      alert('No completed bookings found to review');
-      return;
-    }
 
     setReviewImagesLoading(true);
     try {
@@ -325,8 +324,8 @@ export default function BusinessDashboard() {
         },
         body: JSON.stringify({
           user_id: userId,
-          booking_id: bookings[0].id,
-          rating: 5,
+          booking_id: parseInt(selectedBookingForReview),
+          rating: reviewRating,
           text: reviewText,
           images: reviewImages
         })
@@ -334,15 +333,18 @@ export default function BusinessDashboard() {
       if (!reviewRes.ok) {
         throw new Error('Review submission failed');
       }
-      
-      alert('Review submitted successfully! Gallery will be updated.');
-      
+
+      setSuccess('Review submitted successfully! Gallery will be updated.');
+      setTimeout(() => setSuccess(''), 3000);
+
       // Reset review form
       setReviewImages([]);
       setReviewText('');
-      
+      setReviewRating(5);
+      setSelectedBookingForReview('');
+
     } catch (error) {
-      alert('Failed to submit review');
+      setError('Failed to submit review');
     } finally {
       setReviewImagesLoading(false);
     }
@@ -367,6 +369,16 @@ export default function BusinessDashboard() {
           </button>
         </div>
         
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm font-semibold text-red-600">{error}</p>
+          </div>
+        )}
+        {success && (
+          <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <p className="text-sm font-semibold text-green-600">{success}</p>
+          </div>
+        )}
         <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border-2 border-white/20 p-8">
           <div className="space-y-6">
             <div className="text-center">
@@ -741,6 +753,45 @@ export default function BusinessDashboard() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Select Booking to Review
+                    </label>
+                    <select
+                      value={selectedBookingForReview}
+                      onChange={(e) => setSelectedBookingForReview(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Choose a booking...</option>
+                      {recurringBookings
+                        .filter((b: any) => b.status === 'completed')
+                        .map((b: any) => (
+                          <option key={b.id} value={String(b.id)}>
+                            {new Date(b.booking_date).toLocaleDateString()} — {b.booking_time}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Rating
+                    </label>
+                    <div className="flex items-center space-x-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => setReviewRating(star)}
+                          className={`text-2xl transition-colors ${star <= reviewRating ? 'text-yellow-400' : 'text-gray-300'} hover:text-yellow-400`}
+                        >
+                          ★
+                        </button>
+                      ))}
+                      <span className="ml-2 text-sm text-gray-600">{reviewRating}/5</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Your Review (100 words max)
                     </label>
                     <textarea
@@ -757,7 +808,7 @@ export default function BusinessDashboard() {
 
                   <button
                     onClick={handleReviewSubmit}
-                    disabled={reviewImagesLoading || reviewText.trim().length === 0 || reviewText.trim().split(/\s+/).filter(w => w.length > 0).length > 100}
+                    disabled={reviewImagesLoading || reviewText.trim().length === 0 || reviewText.trim().split(/\s+/).filter(w => w.length > 0).length > 100 || !selectedBookingForReview}
                     className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {reviewImagesLoading ? 'Submitting...' : 'Submit Review'}

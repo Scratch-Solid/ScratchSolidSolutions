@@ -6,6 +6,8 @@ import Link from "next/link";
 export default function BusinessEventsPage() {
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   useEffect(() => {
     fetchEvents();
@@ -19,7 +21,7 @@ export default function BusinessEventsPage() {
         setEvents(data);
       }
     } catch (error) {
-      console.error("Failed to fetch events:", error);
+      // Non-critical background fetch
     }
   };
 
@@ -44,13 +46,14 @@ export default function BusinessEventsPage() {
 
       if (response.ok) {
         const result = await response.json();
-        alert("Event request submitted successfully!");
+        setSuccess("Event request submitted successfully!");
         setEvents(prev => [result, ...prev]);
+        setTimeout(() => setSuccess(''), 3000);
       } else {
-        alert("Failed to submit event request");
+        setError("Failed to submit event request");
       }
     } catch (error) {
-      alert("Network error. Please try again.");
+      setError("Network error. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -62,7 +65,17 @@ export default function BusinessEventsPage() {
         <h1 className="text-4xl font-bold text-center text-blue-700 mb-8">
           Business Events & Extra Services
         </h1>
-        
+
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm font-semibold text-red-600">{error}</p>
+          </div>
+        )}
+        {success && (
+          <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <p className="text-sm font-semibold text-green-600">{success}</p>
+          </div>
+        )}
         <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border-2 border-white/20 p-8">
           <div className="mb-8">
             <h2 className="text-2xl font-semibold text-blue-700 mb-4">

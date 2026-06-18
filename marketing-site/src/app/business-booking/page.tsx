@@ -22,6 +22,8 @@ export default function BusinessBookingPage() {
   });
   const [cleaners, setCleaners] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   const contractDurations = [
     { value: "1_year", label: "1 Year" },
@@ -71,7 +73,7 @@ export default function BusinessBookingPage() {
 
       if (!res.ok) {
         const data = await res.json() as { error?: string };
-        alert(data.error || 'Contract creation failed');
+        setError(data.error || 'Contract creation failed');
         return;
       }
 
@@ -90,10 +92,10 @@ export default function BusinessBookingPage() {
         });
       }
 
-      alert("Contract created successfully!");
-      window.location.href = "/business-dashboard";
+      setSuccess("Contract created successfully!");
+      setTimeout(() => window.location.href = "/business-dashboard", 1500);
     } catch (error) {
-      alert("Network error. Please try again.");
+      setError("Network error. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -126,14 +128,14 @@ export default function BusinessBookingPage() {
 
       if (!res.ok) {
         const data = await res.json() as { error?: string };
-        alert(data.error || 'Booking failed');
+        setError(data.error || 'Booking failed');
         return;
       }
 
-      alert("Booking confirmed successfully!");
-      window.location.href = "/business-dashboard";
+      setSuccess("Booking confirmed successfully!");
+      setTimeout(() => window.location.href = "/business-dashboard", 1500);
     } catch (error) {
-      alert("Network error. Please try again.");
+      setError("Network error. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -146,6 +148,16 @@ export default function BusinessBookingPage() {
           Business Booking
         </h1>
 
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm font-semibold text-red-600">{error}</p>
+          </div>
+        )}
+        {success && (
+          <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <p className="text-sm font-semibold text-green-600">{success}</p>
+          </div>
+        )}
         {!bookingType ? (
           <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border-2 border-white/20 p-8">
             <h2 className="text-2xl font-semibold text-center text-gray-800 mb-6">

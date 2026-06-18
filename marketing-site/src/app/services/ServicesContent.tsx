@@ -65,7 +65,7 @@ export default function ServicesContent() {
         setServices(servicesData);
         setPricing(pricingData);
       } catch (err) {
-        console.error('Error fetching data:', err);
+        // Silently fail in production
       } finally {
         setLoading(false);
       }

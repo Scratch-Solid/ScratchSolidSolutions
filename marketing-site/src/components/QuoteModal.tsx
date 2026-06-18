@@ -103,6 +103,7 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
   const [quotesLoading, setQuotesLoading] = useState(false);
   const [quotesError, setQuotesError] = useState('');
   const [userEmail, setUserEmail] = useState('');
+  const [userId, setUserId] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     if (initialServiceId) setSelectedServiceId(initialServiceId);
@@ -137,7 +138,7 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
         area,
         quantity,
         promoCode: promoResult?.valid ? promoInput.trim() : undefined,
-        clientId: userEmail ? 1 : undefined, // TODO: Get actual client ID
+        clientId: userId,
         bookingDate: undefined // User can select booking date later
       };
 
@@ -169,13 +170,12 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
         const result = calculateQuote(request, specialPricing, promoData, loyaltyPoints, baseServicePrice, unitPrice);
         setPricingCalculation(result);
       } catch (error) {
-        console.error('Pricing calculation error:', error);
         setPricingCalculation(null);
       }
     } else {
       setPricingCalculation(null);
     }
-  }, [selectedServiceId, propertyType, area, quantity, promoResult, promoInput, loyaltyPoints, userEmail, getActivePricingRow]);
+  }, [selectedServiceId, propertyType, area, quantity, promoResult, promoInput, loyaltyPoints, userEmail, userId, getActivePricingRow]);
 
   // Fetch quote history when modal opens and user is authenticated
   useEffect(() => {
@@ -190,6 +190,7 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
       try {
         const decoded = JSON.parse(atob(token.split('.')[1]));
         setUserEmail(decoded.email);
+        setUserId(decoded.id || decoded.sub || undefined);
         setQuotesLoading(true);
         setQuotesError('');
         const res = await fetch('/api/customer/quotes', {
@@ -208,7 +209,6 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
         }
       } catch (err) {
         // Silently fail - don't show error to users
-        console.error('Failed to fetch quotes:', err);
       } finally {
         setQuotesLoading(false);
       }
@@ -361,7 +361,7 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (err) {
-      console.error('PDF download failed:', err);
+      setSubmitError('Failed to download PDF. Please try again.');
     }
   };
 
@@ -382,8 +382,7 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (err) {
-      console.error('PDF download failed:', err);
-      alert('Failed to download PDF. Please try again.');
+      setSubmitError('Failed to download PDF. Please try again.');
     }
   };
 

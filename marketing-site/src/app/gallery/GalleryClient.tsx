@@ -27,7 +27,6 @@ export default function GalleryClient() {
           const json = typeof raw === 'string' ? JSON.parse(raw) : raw;
           return Array.isArray(json) ? json : (json?.images || []);
         } catch (e) {
-          console.error('Error parsing CMS gallery images:', e);
           return [];
         }
       })();
@@ -43,7 +42,6 @@ export default function GalleryClient() {
             caption: review.text ? (review.text.length > 50 ? review.text.substring(0, 50) + '...' : review.text) : ''
           }));
         } catch (e) {
-          console.error('Error parsing review images:', e);
           return [];
         }
       }) || [];

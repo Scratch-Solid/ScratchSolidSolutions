@@ -215,7 +215,7 @@ export async function POST(request: NextRequest) {
         traceId,
         envelopeId,
         employeeId,
-        userId: targetUserId,
+        userId: targetUserId != null ? String(targetUserId) : null,
       });
     }
 
@@ -244,7 +244,7 @@ export async function POST(request: NextRequest) {
         traceId,
         envelopeId,
         employeeId: progress?.employee_id,
-        userId: targetUserId,
+        userId: targetUserId != null ? String(targetUserId) : null,
         status,
       });
     }

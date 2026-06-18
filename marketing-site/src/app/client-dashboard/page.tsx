@@ -35,6 +35,8 @@ export default function ClientDashboard() {
   const [zohoInvoices, setZohoInvoices] = useState<any[]>([]);
   const [reviewImages, setReviewImages] = useState<string[]>([]);
   const [reviewText, setReviewText] = useState<string>('');
+  const [reviewRating, setReviewRating] = useState<number>(5);
+  const [selectedBookingForReview, setSelectedBookingForReview] = useState<string>('');
   const [reviewImagesLoading, setReviewImagesLoading] = useState(false);
   const [zohoLoading, setZohoLoading] = useState(false);
   const [cleanerStatus, setCleanerStatus] = useState<'idle' | 'on_way' | 'arrived' | 'completed'>('idle');
@@ -94,12 +96,12 @@ export default function ClientDashboard() {
             id: c.user_id,
             name: c.first_name || c.username, // POPIA compliance: only first name
             rating: c.rating || 0,
-            specialties: JSON.parse(c.specialties || '[]'),
+            specialties: (() => { try { return JSON.parse(c.specialties || '[]'); } catch { return []; } })(),
             available: c.status === 'idle'
           })));
         }
       } catch (e) {
-        console.error('Failed to fetch cleaners:', e);
+        // Silently fail — cleaners list is non-critical
       }
 
       // Fetch real bookings for this client
@@ -112,14 +114,14 @@ export default function ClientDashboard() {
           setBookings(bookingsData);
         }
       } catch (e) {
-        console.error('Failed to fetch bookings:', e);
+        // Silently fail — bookings will retry on next poll
       }
 
       // Payments populated from real bookings data
       setPayments([]);
       setMonthlyStatement(null);
     } catch (error) {
-      console.error("Failed to fetch client data:", error);
+      // Non-critical background fetch failure
     }
   };
 
@@ -185,16 +187,6 @@ export default function ClientDashboard() {
 
       const assignedCleaner = availableCleaner;
       setAssignedCleaner(availableCleaner);
-
-      // Create booking payload as specified
-      const bookingPayload = {
-        user_id: userId,
-        cleaner_id: assignedCleaner,
-        type: bookingType,
-        start_time: `${selectedDate}T${selectedTimeSlot}:00`,
-        end_time: `${selectedDate}T${selectedTimeSlot === '08:00' ? '12:00' : '17:00'}:00`,
-        payment_method: paymentMethod
-      };
 
       // Create booking via real API
       const token = localStorage.getItem("authToken");
@@ -299,8 +291,7 @@ export default function ClientDashboard() {
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    console.log('[Upload] Files selected:', files.length);
-    
+
     if (files.length > 3) {
       setError('Maximum 3 images allowed');
       return;
@@ -311,10 +302,8 @@ export default function ClientDashboard() {
 
     try {
       const token = localStorage.getItem('authToken');
-      console.log('[Upload] Token exists:', !!token);
-      
+
       for (const file of files) {
-        console.log('[Upload] Uploading file:', file.name, file.size);
         const formData = new FormData();
         formData.append('file', file);
         formData.append('folder', 'review-images');
@@ -325,28 +314,17 @@ export default function ClientDashboard() {
           body: formData,
         });
 
-        console.log('[Upload] Response status:', response.status);
-        
         if (!response.ok) {
           const error = await response.json() as { error?: string };
-          console.error('[Upload] Upload failed:', error);
           throw new Error(error.error || 'Failed to upload image');
         }
 
         const data = await response.json() as { publicUrl: string };
-        console.log('[Upload] Upload successful, URL:', data.publicUrl);
         uploadedUrls.push(data.publicUrl);
       }
 
-      console.log('[Upload] Total uploaded URLs:', uploadedUrls.length);
-      setReviewImages(prev => {
-        console.log('[Upload] Previous images:', prev.length);
-        const newImages = [...prev, ...uploadedUrls];
-        console.log('[Upload] New total images:', newImages.length);
-        return newImages;
-      });
+      setReviewImages(prev => [...prev, ...uploadedUrls]);
     } catch (err) {
-      console.error('[Upload] Image upload error:', err);
       setError('Failed to upload images. Please try again.');
     } finally {
       setUploadingImages(false);
@@ -354,22 +332,23 @@ export default function ClientDashboard() {
   };
 
   const handleReviewSubmit = async () => {
-    console.log('[Review Submit] Current reviewImages:', reviewImages);
-    console.log('[Review Submit] reviewImages length:', reviewImages.length);
-    
     if (reviewText.trim().length === 0) {
       setError('Please enter a review');
       return;
     }
-    
+
     const wordCount = reviewText.trim().split(/\s+/).filter(w => w.length > 0).length;
     if (wordCount > 100) {
       setError('Review must be 100 words or less');
       return;
     }
 
+    if (!selectedBookingForReview) {
+      setError('Please select a booking to review');
+      return;
+    }
+
     if (reviewImages.length === 0) {
-      console.error('[Review Submit] No images in state');
       setError('Please upload at least one image');
       return;
     }
@@ -386,8 +365,8 @@ export default function ClientDashboard() {
         },
         body: JSON.stringify({
           user_id: userId,
-          booking_id: bookings[0]?.id,
-          rating: 5,
+          booking_id: parseInt(selectedBookingForReview),
+          rating: reviewRating,
           text: reviewText,
           images: reviewImages
         })
@@ -395,17 +374,19 @@ export default function ClientDashboard() {
       if (!reviewRes.ok) {
         throw new Error('Review submission failed');
       }
-      
+
       setSuccess('Review submitted successfully! Gallery will be updated.');
-      
+
       // Reset review form
       setReviewImages([]);
       setReviewText('');
-      
+      setReviewRating(5);
+      setSelectedBookingForReview('');
+
       setTimeout(() => {
         setSuccess('');
       }, 3000);
-      
+
     } catch (error) {
       setError('Failed to submit review');
     } finally {
@@ -444,13 +425,12 @@ export default function ClientDashboard() {
           headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` }
         });
         if (trackingResponse.ok) {
-          const trackingData = await trackingResponse.json();
-          // Store GPS data in state or use it for map display
-          console.log('GPS Tracking Data:', trackingData);
+          await trackingResponse.json();
+          // GPS data available for future map display
         }
       }
     } catch (error) {
-      console.error('Failed to fetch cleaner status:', error);
+      // Silently fail — tracking is non-critical
     }
   };
 
@@ -768,6 +748,45 @@ export default function ClientDashboard() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Select Booking to Review
+                    </label>
+                    <select
+                      value={selectedBookingForReview}
+                      onChange={(e) => setSelectedBookingForReview(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Choose a booking...</option>
+                      {bookings
+                        .filter((b: any) => b.status === 'completed')
+                        .map((b: any) => (
+                          <option key={b.id} value={String(b.id)}>
+                            {new Date(b.booking_date).toLocaleDateString()} — {b.booking_time}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Rating
+                    </label>
+                    <div className="flex items-center space-x-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => setReviewRating(star)}
+                          className={`text-2xl transition-colors ${star <= reviewRating ? 'text-yellow-400' : 'text-gray-300'} hover:text-yellow-400`}
+                        >
+                          ★
+                        </button>
+                      ))}
+                      <span className="ml-2 text-sm text-gray-600">{reviewRating}/5</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Your Review (100 words max)
                     </label>
                     <textarea
@@ -784,7 +803,7 @@ export default function ClientDashboard() {
 
                   <button
                     onClick={handleReviewSubmit}
-                    disabled={reviewImagesLoading || reviewText.trim().length === 0 || reviewText.trim().split(/\s+/).filter(w => w.length > 0).length > 100}
+                    disabled={reviewImagesLoading || reviewText.trim().length === 0 || reviewText.trim().split(/\s+/).filter(w => w.length > 0).length > 100 || !selectedBookingForReview}
                     className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {reviewImagesLoading ? 'Submitting...' : 'Submit Review'}

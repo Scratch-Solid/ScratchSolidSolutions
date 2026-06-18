@@ -375,6 +375,7 @@ CREATE TABLE IF NOT EXISTS ai_responses (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   question TEXT NOT NULL,
   response TEXT NOT NULL,
+  keywords TEXT DEFAULT '',
   category TEXT,
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
