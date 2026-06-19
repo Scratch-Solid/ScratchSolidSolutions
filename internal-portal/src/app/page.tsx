@@ -17,7 +17,7 @@ export default function RootPage() {
     }
 
     // Fallback: detect admin by email domain if role is missing or generic
-    const isAdminDomain = username && username.toLowerCase().endsWith('@scratchsolidsolution.org');
+    const isAdminDomain = username && username.toLowerCase().endsWith('@scratchsolidsolutions.org');
     const effectiveRole = userRole === 'admin' || isAdminDomain ? 'admin' : userRole;
 
     async function redirectUser() {
