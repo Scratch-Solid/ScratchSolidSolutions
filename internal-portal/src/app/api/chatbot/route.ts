@@ -11,6 +11,7 @@ export async function POST(request: NextRequest) {
     const { question } = await request.json();
     if (!question) {
       const response = NextResponse.json({ error: 'Missing question' }, { status: 400 });
+      return withSecurityHeaders(response, traceId);
     }
 
     // AI chatbot response - uses predefined responses for common questions
