@@ -10,28 +10,50 @@ export default function AdminOnboardingPage() {
 
   useEffect(() => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
-    if (!token || typeof window !== 'undefined' ? localStorage.getItem('userRole') : null !== 'admin') {
+    const role = typeof window !== 'undefined' ? localStorage.getItem('userRole') : null;
+    if (!token || role !== 'admin') {
       router.push('/auth/login');
       return;
     }
     fetchContracts();
   }, [router]);
 
+  const [error, setError] = useState('');
+
   const fetchContracts = async () => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
-    const res = await fetch('/api/pending-contracts', { headers: { 'Authorization': `Bearer ${token}` } });
-    if (res.ok) setContracts(await res.json());
-    setLoading(false);
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+      const res = await fetch('/api/pending-contracts', { headers: { 'Authorization': `Bearer ${token}` } });
+      if (res.ok) {
+        setContracts(await res.json());
+        setError('');
+      } else {
+        setError('Failed to load contracts');
+      }
+    } catch (err) {
+      setError('Network error while loading contracts');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const updateStatus = async (id: number, status: string) => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
-    await fetch(`/api/pending-contracts?id=${id}`, {
-      method: 'PUT',
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status })
-    });
-    fetchContracts();
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+      const res = await fetch(`/api/pending-contracts?id=${id}`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+      if (!res.ok) {
+        setError(`Failed to ${status} contract`);
+        return;
+      }
+      setError('');
+      fetchContracts();
+    } catch (err) {
+      setError(`Network error while ${status}ing contract`);
+    }
   };
 
   if (loading) return <div className="p-8">Loading...</div>;
@@ -43,6 +65,9 @@ export default function AdminOnboardingPage() {
         <a href="/admin" className="text-purple-600">Back to Dashboard</a>
       </div>
 
+      {error && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded">{error}</div>
+      )}
       {contracts.length === 0 ? (
         <p className="text-gray-500">No pending contracts</p>
       ) : (
