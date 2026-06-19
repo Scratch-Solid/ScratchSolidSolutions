@@ -59,6 +59,9 @@ export default function RootPage() {
         case "transport":
           router.push("/transport-dashboard");
           break;
+        case "supervisor":
+          router.push("/supervisor-dashboard");
+          break;
         case "client":
         case "user":
           window.location.href = process.env.NEXT_PUBLIC_CLIENT_DASHBOARD_URL || "https://scratchsolid.co.za/client-dashboard";
