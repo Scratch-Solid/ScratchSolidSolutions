@@ -25,7 +25,8 @@ export default function AdminOnboardingPage() {
       const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       const res = await fetch('/api/pending-contracts', { headers: { 'Authorization': `Bearer ${token}` } });
       if (res.ok) {
-        setContracts(await res.json());
+        const data = await res.json() as { data?: any[] };
+        setContracts(data.data || []);
         setError('');
       } else {
         setError('Failed to load contracts');
