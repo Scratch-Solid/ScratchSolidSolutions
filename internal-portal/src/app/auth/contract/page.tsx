@@ -52,13 +52,12 @@ export default function ContractPage() {
           idPassportNumber: consent.idPassportNumber || "",
         }));
 
-        // Check approval status from API
+        // Check approval status from public API
         try {
-          const response = await fetch("/api/pending-contracts");
+          const response = await fetch(`/api/pending-contracts/check?contactNumber=${encodeURIComponent(consent.contactNumber || '')}&idPassportNumber=${encodeURIComponent(consent.idPassportNumber || '')}`);
           if (response.ok) {
-            const contracts = await response.json() as any[];
-            const userContract = contracts.find((c: any) => c.generatedUsername === consent.generatedUsername);
-            if (userContract && userContract.status === "approved") {
+            const data = await response.json() as { status?: string };
+            if (data.status === 'approved') {
               setApproved(true);
             }
           }

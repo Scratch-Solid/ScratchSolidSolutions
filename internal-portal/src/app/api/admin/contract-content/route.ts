@@ -5,9 +5,10 @@ import { withAuth, withSecurityHeaders, withTracing } from '@/lib/middleware';
 
 export async function GET(request: NextRequest) {
   const traceId = withTracing(request);
-  const authResult = await withAuth(request, ['admin']);
-  if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
-  const { db } = authResult;
+  const db = await getDb();
+  if (!db) {
+    return withSecurityHeaders(NextResponse.json({ error: 'Database unavailable' }, { status: 503 }), traceId);
+  }
 
   try {
     const contractContent = await db.prepare('SELECT * FROM contract_content ORDER BY id DESC LIMIT 1').first();

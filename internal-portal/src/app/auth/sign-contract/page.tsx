@@ -49,7 +49,9 @@ export default function SignContractPage() {
     // Fetch contract content from database
     const fetchContractContent = async () => {
       try {
-        const response = await fetch('/api/admin/contract-content');
+        const response = await fetch('/api/admin/contract-content', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         if (response.ok) {
           const data = await response.json();
           setContractContent(data);
