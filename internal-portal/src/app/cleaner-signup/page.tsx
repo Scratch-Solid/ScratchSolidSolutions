@@ -99,8 +99,9 @@ export default function CleanerSignup() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
                 <input
+                  id="name"
                   type="text"
                   required
                   value={formData.name}
@@ -110,8 +111,9 @@ export default function CleanerSignup() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">ID Number / Passport *</label>
+                <label htmlFor="id_number" className="block text-sm font-medium text-gray-700 mb-2">ID Number / Passport *</label>
                 <input
+                  id="id_number"
                   type="text"
                   required
                   value={formData.id_number}
@@ -121,8 +123,9 @@ export default function CleanerSignup() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Email *</label>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">Email *</label>
                 <input
+                  id="email"
                   type="email"
                   required
                   value={formData.email}
@@ -132,8 +135,9 @@ export default function CleanerSignup() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number *</label>
+                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">Phone Number *</label>
                 <input
+                  id="phone"
                   type="tel"
                   required
                   value={formData.phone}
@@ -143,8 +147,9 @@ export default function CleanerSignup() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">WhatsApp Number</label>
+                <label htmlFor="whatsapp" className="block text-sm font-medium text-gray-700 mb-2">WhatsApp Number</label>
                 <input
+                  id="whatsapp"
                   type="tel"
                   value={formData.whatsapp}
                   onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
@@ -153,8 +158,9 @@ export default function CleanerSignup() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Address *</label>
+                <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">Address *</label>
                 <input
+                  id="address"
                   type="text"
                   required
                   value={formData.address}
@@ -164,8 +170,9 @@ export default function CleanerSignup() {
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Emergency Contact *</label>
+                <label htmlFor="emergency_contact" className="block text-sm font-medium text-gray-700 mb-2">Emergency Contact *</label>
                 <input
+                  id="emergency_contact"
                   type="text"
                   required
                   value={formData.emergency_contact}
@@ -178,8 +185,9 @@ export default function CleanerSignup() {
                 <h3 className="text-sm font-medium text-gray-700 mb-2">Bank Details *</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Bank Name</label>
+                    <label htmlFor="bank_name" className="block text-xs font-medium text-gray-600 mb-1">Bank Name</label>
                     <input
+                      id="bank_name"
                       type="text"
                       required
                       value={formData.bank_name}
@@ -188,8 +196,9 @@ export default function CleanerSignup() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Account Holder Name</label>
+                    <label htmlFor="account_holder" className="block text-xs font-medium text-gray-600 mb-1">Account Holder Name</label>
                     <input
+                      id="account_holder"
                       type="text"
                       required
                       value={formData.account_holder}
@@ -198,8 +207,9 @@ export default function CleanerSignup() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Account Number</label>
+                    <label htmlFor="account_number" className="block text-xs font-medium text-gray-600 mb-1">Account Number</label>
                     <input
+                      id="account_number"
                       type="text"
                       required
                       value={formData.account_number}
@@ -209,8 +219,9 @@ export default function CleanerSignup() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Branch Code</label>
+                    <label htmlFor="branch_code" className="block text-xs font-medium text-gray-600 mb-1">Branch Code</label>
                     <input
+                      id="branch_code"
                       type="text"
                       required
                       value={formData.branch_code}

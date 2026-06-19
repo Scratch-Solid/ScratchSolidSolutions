@@ -9,13 +9,7 @@ import {
   createSecurityError,
   createRateLimitError
 } from '@/lib/security-middleware';
-import { withCsrf } from '@/lib/middleware';
-
 export async function POST(request: NextRequest) {
-  // CSRF protection
-  const csrfResult = await withCsrf(request);
-  if (csrfResult) return csrfResult;
-
   const db = await getDb();
   if (!db) {
     return createSecurityError('Database unavailable', 503);

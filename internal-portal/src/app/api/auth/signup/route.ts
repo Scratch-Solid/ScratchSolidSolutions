@@ -16,18 +16,12 @@ import {
   createSecurityError,
   createRateLimitError
 } from '@/lib/security-middleware';
-import { withCsrf } from '@/lib/middleware';
-
 export async function POST(request: NextRequest) {
   // CRITICAL: Get DB BEFORE ANY other operation to ensure AsyncLocalStorage context is preserved
   const db = await getDb();
   if (!db) {
     return createSecurityError('Database unavailable', 503);
   }
-
-  // CSRF protection
-  const csrfResult = await withCsrf(request);
-  if (csrfResult) return csrfResult;
 
   // Get client identifier for rate limiting
   const clientId = request.headers.get('x-forwarded-for') ||
