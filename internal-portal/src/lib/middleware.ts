@@ -351,6 +351,15 @@ export async function withCsrf(request: NextRequest): Promise<NextResponse | nul
     return null;
   }
 
+  // Bearer-token authenticated requests are inherently CSRF-safe:
+  // 1. Token is in localStorage, not an auto-sent cookie
+  // 2. Cross-origin requests cannot read localStorage or set Authorization headers
+  // 3. CORS preflight blocks unauthorized cross-origin custom-header requests
+  const hasBearerAuth = request.headers.get('Authorization')?.startsWith('Bearer ');
+  if (hasBearerAuth) {
+    return null;
+  }
+
   const csrfToken = request.headers.get('X-CSRF-Token') || request.headers.get('x-csrf-token');
   if (!csrfToken) {
     return NextResponse.json({ error: 'CSRF token required' }, { status: 403 });
@@ -664,6 +673,12 @@ export async function withAllPermissions(
 export async function withCSRF(request: NextRequest): Promise<NextResponse | null> {
   // Skip CSRF for GET, HEAD, OPTIONS
   if (['GET', 'HEAD', 'OPTIONS'].includes(request.method)) {
+    return null;
+  }
+
+  // Bearer-token authenticated requests are inherently CSRF-safe
+  const hasBearerAuth = request.headers.get('Authorization')?.startsWith('Bearer ');
+  if (hasBearerAuth) {
     return null;
   }
 

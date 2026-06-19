@@ -18,7 +18,7 @@ import AdminCleanerOverview from "@/components/admin/AdminCleanerOverview";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { LayoutDashboard, Users, DollarSign, Wrench, FileText, Settings, Eye, UserCheck, GraduationCap, BarChart3 } from "lucide-react";
+import { LayoutDashboard, Users, DollarSign, Wrench, FileText, Settings, Eye, UserCheck, GraduationCap, BarChart3, Shield, Monitor, ClipboardList, Lock } from "lucide-react";
 
 export default function AdminDashboard() {
   useSessionTimeout(true);
@@ -311,6 +311,36 @@ export default function AdminDashboard() {
                 </CardContent>
               </Card>
             )}
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Shield className="h-5 w-5 text-indigo-500" />Admin Tools</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                  <a href="/admin/onboarding" className="flex flex-col items-center justify-center p-4 rounded-lg bg-slate-50 hover:bg-indigo-50 hover:text-indigo-600 transition-colors border border-slate-200">
+                    <ClipboardList className="h-6 w-6 mb-2" />
+                    <span className="text-sm font-medium">Onboarding</span>
+                  </a>
+                  <a href="/admin/security" className="flex flex-col items-center justify-center p-4 rounded-lg bg-slate-50 hover:bg-indigo-50 hover:text-indigo-600 transition-colors border border-slate-200">
+                    <Lock className="h-6 w-6 mb-2" />
+                    <span className="text-sm font-medium">Security</span>
+                  </a>
+                  <a href="/admin/roles" className="flex flex-col items-center justify-center p-4 rounded-lg bg-slate-50 hover:bg-indigo-50 hover:text-indigo-600 transition-colors border border-slate-200">
+                    <Users className="h-6 w-6 mb-2" />
+                    <span className="text-sm font-medium">Roles</span>
+                  </a>
+                  <a href="/admin/monitoring" className="flex flex-col items-center justify-center p-4 rounded-lg bg-slate-50 hover:bg-indigo-50 hover:text-indigo-600 transition-colors border border-slate-200">
+                    <Monitor className="h-6 w-6 mb-2" />
+                    <span className="text-sm font-medium">Monitoring</span>
+                  </a>
+                  <a href="/admin/audit-logs" className="flex flex-col items-center justify-center p-4 rounded-lg bg-slate-50 hover:bg-indigo-50 hover:text-indigo-600 transition-colors border border-slate-200">
+                    <FileText className="h-6 w-6 mb-2" />
+                    <span className="text-sm font-medium">Audit Logs</span>
+                  </a>
+                </div>
+              </CardContent>
+            </Card>
 
             <Card>
               <CardHeader>

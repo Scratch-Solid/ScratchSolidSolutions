@@ -48,6 +48,11 @@ export default function DashboardLayout({ children, title, role = 'admin' }: Das
           { href: '/admin-dashboard?tab=employees', label: 'Employees' },
           { href: '/admin-dashboard?tab=services-banking', label: 'Services & Banking' },
           { href: '/admin-dashboard?tab=content', label: 'Content' },
+          { href: '/admin/onboarding', label: 'Onboarding' },
+          { href: '/admin/security', label: 'Security' },
+          { href: '/admin/roles', label: 'Roles' },
+          { href: '/admin/monitoring', label: 'Monitoring' },
+          { href: '/admin/audit-logs', label: 'Audit Logs' },
         ];
       case 'staff':
         return [

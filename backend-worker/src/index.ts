@@ -1151,7 +1151,7 @@ router.post('/api/auth/forgot-password', async (request: any, env: any) => {
 });
 
 // Admin endpoints for weekend requests
-router.put('/weekend-requests/:id/assign', async (request: any, env: any) => {
+router.put('/api/weekend-requests/:id/assign', async (request: any, env: any) => {
   const payload: any = await verifyToken(request, env);
   if (!payload || payload.role !== 'admin') {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -1187,7 +1187,7 @@ router.put('/weekend-requests/:id/assign', async (request: any, env: any) => {
 });
 
 // Reset password endpoint
-router.post('/auth/reset-password', async (request: any, env: any) => {
+router.post('/api/auth/reset-password', async (request: any, env: any) => {
   try {
     const { token } = await request.json() as any;
     
@@ -1309,7 +1309,7 @@ function generateRandomPassword() {
 }
 
 // Business events endpoints
-router.post('/business-events', async (request: any, env: any) => {
+router.post('/api/business-events', async (request: any, env: any) => {
   const payload: any = await verifyToken(request, env);
   if (!payload || payload.role !== 'business') {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -1341,7 +1341,7 @@ router.post('/business-events', async (request: any, env: any) => {
   }
 });
 
-router.get('/business-events', async (request: any, env: any) => {
+router.get('/api/business-events', async (request: any, env: any) => {
   const payload: any = await verifyToken(request, env);
   if (!payload || payload.role !== 'business') {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -1370,7 +1370,7 @@ router.get('/business-events', async (request: any, env: any) => {
 });
 
 // Pricing endpoints
-router.get('/pricing', async (request, env) => {
+router.get('/api/pricing', async (request, env) => {
   try {
     const db = getReadSession(env);
     const pricing = await db.prepare('SELECT * FROM pricing ORDER BY created_at DESC').all();
@@ -1386,7 +1386,7 @@ router.get('/pricing', async (request, env) => {
   }
 });
 
-router.post('/pricing', async (request: any, env: any) => {
+router.post('/api/pricing', async (request: any, env: any) => {
   const payload: any = await verifyToken(request, env);
   if (!payload || payload.role !== 'admin') {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
