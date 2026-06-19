@@ -28,7 +28,7 @@ export default function ContentUpload() {
   const loadExistingContent = async () => {
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
-      const response = await fetch(`/api/content?type=${type}`, {
+      const response = await fetch(`/api/marketing/content?type=${type}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
@@ -52,7 +52,7 @@ export default function ContentUpload() {
 
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
-      const response = await fetch(`/api/content?type=${type}`, {
+      const response = await fetch(`/api/marketing/content?type=${type}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
