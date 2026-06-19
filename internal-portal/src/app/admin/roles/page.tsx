@@ -41,7 +41,7 @@ function RolesManagementContent() {
 
   const fetchRolesAndPermissions = async () => {
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       if (!token) {
         router.push('/auth/login');
         return;
@@ -56,7 +56,7 @@ function RolesManagementContent() {
 
       if (!res.ok) {
         if (res.status === 401 || res.status === 403) {
-          localStorage.removeItem('token');
+          localStorage.removeItem('authToken');
           router.push('/auth/login');
           return;
         }
@@ -79,7 +79,7 @@ function RolesManagementContent() {
     setError("");
 
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       const res = await fetch('/api/admin/roles/create', {
         method: 'POST',
         headers: {

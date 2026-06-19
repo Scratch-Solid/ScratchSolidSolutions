@@ -26,7 +26,7 @@ function AdminApprovalsContent() {
 
   const fetchPendingApprovals = async () => {
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       if (!token) {
         router.push('/auth/login');
         return;
@@ -41,7 +41,7 @@ function AdminApprovalsContent() {
 
       if (!res.ok) {
         if (res.status === 401 || res.status === 403) {
-          localStorage.removeItem('token');
+          localStorage.removeItem('authToken');
           router.push('/auth/login');
           return;
         }
@@ -62,7 +62,7 @@ function AdminApprovalsContent() {
     setProcessing(userId);
 
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       const res = await fetch('/api/admin/approve-admin', {
         method: 'POST',
         headers: {
@@ -93,7 +93,7 @@ function AdminApprovalsContent() {
     setProcessing(userId);
 
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       const res = await fetch('/api/admin/reject-admin', {
         method: 'POST',
         headers: {
