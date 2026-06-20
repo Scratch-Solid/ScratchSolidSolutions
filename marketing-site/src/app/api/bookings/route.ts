@@ -1,11 +1,12 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, createBooking, getBookingsByDateRange, getBookingsByCleaner, getBookingsByClient, getUserById } from "@/lib/db";
+import { getDb, createBooking, updateBooking, getBookingsByDateRange, getBookingsByCleaner, getBookingsByClient, getUserById } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import { validateString, validateDate, validateNumber, validateRequired } from "@/lib/validation";
 import { withRateLimit, rateLimits, withCsrf, withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { addHours, timeOverlap, generateAlternativeTimes } from '@/lib/bookingUtils';
 import { sendBookingConfirmationEmail, sendAdminAlertEmail } from '@/lib/email';
+import { createCalcomBooking } from '@/lib/calcom';
 
 export async function POST(request: NextRequest) {
   const traceId = withTracing(request);
@@ -144,6 +145,42 @@ export async function POST(request: NextRequest) {
       cleaner_id: undefined, // No cleaner assigned yet - will be assigned after payment confirmation
       status: 'pending_payment' // New status to indicate waiting for payment
     });
+
+    // Hand the booking off to Cal.com so the Cal.com -> n8n -> internal-portal
+    // pipeline can ingest it as a job (create checklist + auto-assign cleaner).
+    // Config-gated: if Cal.com isn't configured this is a no-op and the booking
+    // stays local with calcom_status = 'not_sent'.
+    const bookingId = (booking as any)?.id as number | undefined;
+    try {
+      const bookingUser = await getUserById(db, client_id);
+      const calResult = await createCalcomBooking({
+        name: client_name || (bookingUser as any)?.name || 'Customer',
+        email: (bookingUser as any)?.email || '',
+        phone: (bookingUser as any)?.phone || undefined,
+        serviceType: service_type || 'standard',
+        bookingDate: booking_date,
+        bookingTime: booking_time,
+        location: location || undefined,
+        specialInstructions: special_instructions || undefined,
+        marketingBookingId: bookingId,
+      });
+
+      if (bookingId) {
+        if (calResult.success && calResult.uid) {
+          await updateBooking(db, bookingId, { calcom_uid: calResult.uid, calcom_status: 'created' });
+        } else if (calResult.skipped) {
+          await updateBooking(db, bookingId, { calcom_status: 'not_sent' });
+        } else {
+          await updateBooking(db, bookingId, { calcom_status: 'failed' });
+          logger.error('Cal.com hand-off failed for booking', new Error(calResult.error || 'unknown'));
+        }
+      }
+    } catch (calError) {
+      logger.error('Cal.com hand-off threw for booking', calError as Error);
+      if (bookingId) {
+        try { await updateBooking(db, bookingId, { calcom_status: 'failed' }); } catch { /* best-effort */ }
+      }
+    }
 
     // Send booking confirmation email to client
     try {
