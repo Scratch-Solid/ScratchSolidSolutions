@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { getDb, createUser } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import { userSignupSchema } from '@/lib/request-validator';
 import { 
@@ -57,16 +57,27 @@ export async function POST(request: NextRequest) {
     // Hash password
     const passwordHash = await bcrypt.hash(password, 12);
 
-    // Create user
+    // Create user via db helper (avoids referencing columns that may not exist in schema)
     try {
-      await db.prepare(
-        'INSERT INTO users (name, email, password_hash, role, phone, address, business_name, business_info, email_verified, password_needs_reset, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 0, datetime("now"))'
-      ).bind(name, email, passwordHash, userRole, phone || '', address || '', business_name || '', business_info || '').run();
+      const newUser = await createUser(db, {
+        email,
+        password_hash: passwordHash,
+        role: userRole,
+        name,
+        phone: phone || '',
+        address: address || '',
+        business_name: business_name || '',
+        business_registration: (business_info as string) || ''
+      });
+      if (!newUser) {
+        return createSecurityError('Registration failed', 500);
+      }
     } catch (dbError: any) {
       if (dbError.message?.includes('UNIQUE')) {
         return createSecurityError('Email already registered', 400);
       }
-      throw dbError;
+      console.error('Signup DB error:', dbError);
+      return createSecurityError('Registration failed', 500);
     }
     
     const response = NextResponse.json({
@@ -75,7 +86,7 @@ export async function POST(request: NextRequest) {
       user: {
         name,
         email,
-        role: role || 'client'
+        role: userRole
       }
     });
 
