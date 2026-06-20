@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { logger } from "@/lib/logger";
-import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
+import { withAdminOrServiceAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { withRateLimit, rateLimits } from "@/lib/middleware";
 import { validateString } from '@/lib/validation';
 import { getDb } from '@/lib/db';
@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   const traceId = withTracing(request);
-  const authResult = await withAuth(request, ['admin']);
+  const authResult = await withAdminOrServiceAuth(request);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
 
   const rateLimitResult = await withRateLimit(request, rateLimits.standard);

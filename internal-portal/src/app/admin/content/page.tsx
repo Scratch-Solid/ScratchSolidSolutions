@@ -32,8 +32,10 @@ export default function ContentManagement() {
       return;
     }
 
-    setUserRole(role);
-    loadContent();
+    // This legacy page targeted non-existent /api/content/* routes. The working
+    // marketing-content editor lives at /admin/content-upload (it proxies to the
+    // marketing site via /api/marketing/content). Redirect there.
+    router.replace('/admin/content-upload');
   }, [router]);
 
   const loadContent = async () => {

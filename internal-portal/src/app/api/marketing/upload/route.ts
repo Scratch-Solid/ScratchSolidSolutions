@@ -10,6 +10,8 @@ function upstreamHeaders(request: NextRequest) {
   const headers: Record<string, string> = {};
   const auth = request.headers.get('authorization');
   if (auth) headers['authorization'] = auth;
+  const serviceToken = process.env.MARKETING_SERVICE_TOKEN;
+  if (serviceToken) headers['x-service-token'] = serviceToken;
   const contentType = request.headers.get('content-type');
   if (contentType) headers['content-type'] = contentType;
   return headers;

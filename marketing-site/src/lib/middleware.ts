@@ -201,6 +201,56 @@ export async function withAuth(
   return { user: session, db };
 }
 
+// ─── Cross-app service-token auth ────────────────────────────────────────────
+
+/** Constant-time string comparison (avoids leaking token length-independent timing). */
+function timingSafeEqualStr(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
+
+/**
+ * Validates an X-Service-Token header against MARKETING_SERVICE_TOKEN.
+ * Returns false when the secret is unset (no bypass unless explicitly configured)
+ * or when the header is missing/incorrect.
+ */
+export async function isValidServiceToken(request: NextRequest): Promise<boolean> {
+  let expected: string | undefined;
+  try {
+    const { env } = await getCloudflareContext({ async: true });
+    expected = (env as any)?.MARKETING_SERVICE_TOKEN;
+  } catch {
+    expected = process.env.MARKETING_SERVICE_TOKEN;
+  }
+  if (!expected) return false;
+  const provided = request.headers.get('x-service-token');
+  if (!provided) return false;
+  return timingSafeEqualStr(provided, expected);
+}
+
+/**
+ * Authorizes a request as admin via EITHER a valid cross-app service token
+ * (trusted server-to-server caller, e.g. the internal-portal proxies) OR a
+ * normal admin Bearer session. Use on marketing admin endpoints that the
+ * portal needs to call on behalf of an already-authenticated portal admin.
+ */
+export async function withAdminOrServiceAuth(
+  request: NextRequest
+): Promise<{ user: any; db: D1Database } | NextResponse> {
+  if (await isValidServiceToken(request)) {
+    const db = await getDb();
+    if (!db) {
+      return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
+    }
+    return { user: { role: 'admin', service: true }, db };
+  }
+  return withAuth(request, ['admin']);
+}
+
 // ─── KV Rate Limiting (production-safe) ──────────────────────────────────────
 
 /**

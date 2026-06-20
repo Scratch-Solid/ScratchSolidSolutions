@@ -4,11 +4,11 @@ import { getDb } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import { validateString } from "@/lib/validation";
 import { withRateLimit, rateLimits } from "@/lib/middleware";
-import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
+import { withAdminOrServiceAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 
 export async function GET(request: NextRequest) {
   const traceId = withTracing(request);
-  const authResult = await withAuth(request, ['admin']);
+  const authResult = await withAdminOrServiceAuth(request);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
 
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const traceId = withTracing(request);
-  const authResult = await withAuth(request, ['admin']);
+  const authResult = await withAdminOrServiceAuth(request);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
 

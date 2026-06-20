@@ -3,11 +3,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import { withRateLimit, rateLimits } from "@/lib/middleware";
-import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
+import { withAdminOrServiceAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const traceId = withTracing(request);
-  const authResult = await withAuth(request, ['admin']);
+  const authResult = await withAdminOrServiceAuth(request);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
 
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const traceId = withTracing(request);
-  const authResult = await withAuth(request, ['admin']);
+  const authResult = await withAdminOrServiceAuth(request);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
 
@@ -69,7 +69,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const traceId = withTracing(request);
-  const authResult = await withAuth(request, ['admin']);
+  const authResult = await withAdminOrServiceAuth(request);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
 

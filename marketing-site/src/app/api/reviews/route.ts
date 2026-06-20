@@ -3,7 +3,7 @@ import { getDb } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import { validateString, validateNumber } from "@/lib/validation";
 import { withRateLimit, rateLimits } from "@/lib/middleware";
-import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
+import { withAuth, withAdminOrServiceAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 
 export const dynamic = "force-dynamic";
 
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   const traceId = withTracing(request);
-  const authResult = await withAuth(request, ['admin']);
+  const authResult = await withAdminOrServiceAuth(request);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
 
@@ -137,7 +137,7 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   const traceId = withTracing(request);
-  const authResult = await withAuth(request, ['admin']);
+  const authResult = await withAdminOrServiceAuth(request);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
 
@@ -160,7 +160,7 @@ export async function GET(request: NextRequest) {
   // Allow public read for approved reviews, require admin auth for other statuses
   let authDb = null;
   let isAdmin = false;
-  const authAttempt = await withAuth(request, ['admin']);
+  const authAttempt = await withAdminOrServiceAuth(request);
   if (!(authAttempt instanceof NextResponse)) {
     isAdmin = true;
     authDb = authAttempt.db;
