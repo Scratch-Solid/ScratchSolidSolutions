@@ -65,13 +65,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid credentials. Please check your details and try again.' }, { status: 401 });
     }
 
-    // Enforce email verification
-    if ((user as any).email_verified === 0 || (user as any).email_verified === null) {
-      return NextResponse.json({
-        error: 'Please verify your email address before logging in. Check your inbox for a verification link.',
-        code: 'EMAIL_NOT_VERIFIED'
-      }, { status: 403 });
-    }
+    // Email verification gate removed: the verification flow is not yet fully
+    // reliable (email deliverability, link handling). Users can log in immediately
+    // after signup. Re-enable once the end-to-end verification flow is tested
+    // and the Resend email delivery is verified for all user domains.
 
     // Generate JWT token
     const token = jwt.sign({ id: (user as any).id, email: (user as any).email, role: (user as any).role }, getJWTSecret(), { expiresIn: '7d' });

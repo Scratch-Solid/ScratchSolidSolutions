@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS users (
   business_registration TEXT,
   failed_attempts INTEGER DEFAULT 0,
   locked_until TEXT,
-  email_verified INTEGER DEFAULT 0,
+  email_verified INTEGER DEFAULT 1,
   email_verification_token TEXT,
   email_verification_expires TEXT,
   created_at TEXT DEFAULT CURRENT_TIMESTAMP,

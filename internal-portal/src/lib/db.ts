@@ -88,8 +88,8 @@ export async function createUser(db: D1Database, data: {
   business_registration?: string;
 }) {
   const result = await db.prepare(
-    `INSERT INTO users (email, password_hash, role, name, phone, address, business_name, business_registration)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`
+    `INSERT INTO users (email, password_hash, role, name, phone, address, business_name, business_registration, email_verified)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1) RETURNING *`
   ).bind(
     data.email, data.password_hash, data.role, data.name,
     data.phone || '', data.address || '', data.business_name || '', data.business_registration || ''
