@@ -2,7 +2,9 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth, withSecurityHeaders, withTracing } from '@/lib/middleware';
 
-const apiBase = process.env.NEXT_PUBLIC_API_URL || 'https://scratchsolidsolutions.org';
+// Marketing site origin. Must NOT be NEXT_PUBLIC_API_URL (that points at the
+// backend worker host + /api, producing a broken https://api.../api/api/...).
+const apiBase = process.env.MARKETING_SITE_URL || 'https://scratchsolidsolutions.org';
 
 function upstreamHeaders(request: NextRequest) {
   const headers: Record<string, string> = {};

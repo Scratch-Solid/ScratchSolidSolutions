@@ -39,10 +39,11 @@ export default function RoleManager({ onClose }: RoleManagerProps) {
 
       const data = await response.json();
 
-      if (data.success) {
-        setUsers(data.data.users);
+      // GET /api/admin/users returns a plain array of users.
+      if (response.ok && Array.isArray(data)) {
+        setUsers(data);
       } else {
-        setError(data.error || 'Failed to load users');
+        setError((data && data.error) || 'Failed to load users');
       }
     } catch (error) {
       setError('Failed to load users');
@@ -57,18 +58,18 @@ export default function RoleManager({ onClose }: RoleManagerProps) {
 
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
-      const response = await fetch(`/api/admin/users/${userId}/role`, {
-        method: 'PATCH',
+      const response = await fetch('/api/admin/users', {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ role: newRole })
+        body: JSON.stringify({ user_id: userId, role: newRole })
       });
 
       const data = await response.json();
 
-      if (data.success) {
+      if (response.ok && data.success) {
         setUsers(users.map(user => 
           user.id === userId ? { ...user, role: newRole as User['role'] } : user
         ));
