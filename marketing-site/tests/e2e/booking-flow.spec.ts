@@ -52,7 +52,8 @@ test.describe('Booking Flow', () => {
     if (services.length > 0) {
       const first = services[0];
       expect(first).toHaveProperty('name');
-      expect(first).toHaveProperty('price');
+      // Schema has base_price, not price
+      expect(first).toHaveProperty('base_price');
     }
   });
 

@@ -127,8 +127,12 @@ export default function AuthContent() {
           router.push("/client-dashboard");
         }
       } else {
-        const errorData = await response.json() as { error?: string; code?: string };
-        setError(errorData.error || "Authentication failed");
+        const errorData = await response.json() as { error?: string; code?: string; details?: string[] };
+        let errorMessage = errorData.error || "Authentication failed";
+        if (errorData.details && errorData.details.length > 0) {
+          errorMessage += ": " + errorData.details.join("; ");
+        }
+        setError(errorMessage);
         if (errorData.code === 'EMAIL_NOT_VERIFIED') {
           setResendEmail(formData.email);
         }

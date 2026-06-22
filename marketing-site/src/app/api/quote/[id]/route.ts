@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { withRateLimit, rateLimits } from '@/lib/middleware';
-import { markEstimateAccepted, createInvoice } from '@/lib/zoho';
+import { markEstimateAccepted, createInvoiceFromEstimate } from '@/lib/zoho';
 
 /**
  * PATCH /api/quote/[id]
@@ -75,7 +75,7 @@ export async function PATCH(
     if (status === 'accepted' && quote.zoho_estimate_id) {
       try {
         await markEstimateAccepted(quote.zoho_estimate_id);
-        const invoiceResult = (await createInvoice(
+        const invoiceResult = (await createInvoiceFromEstimate(
           quote.zoho_estimate_id,
           [{ name: quote.service_name, rate: quote.final_price, quantity: 1 }]
         )) as { invoice?: { invoice_id: string; invoice_number: string } };

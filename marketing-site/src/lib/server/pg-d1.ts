@@ -50,6 +50,12 @@ export function getPool(): any {
   return pool;
 }
 
+/** PostgreSQL equivalent of SQLite datetime('now') — formatted as TEXT for
+ *  string-comparison compatibility with the existing `expires_at > datetime('now')`
+ *  queries in the application code.
+ */
+const PG_NOW = "to_char((now() at time zone 'utc'), 'YYYY-MM-DD HH24:MI:SS')";
+
 /**
  * Translate a SQLite/D1 SQL string + ordered bind args into a Postgres
  * parameterised query. Returns the rewritten SQL using `$n` placeholders.
@@ -225,7 +231,7 @@ export class PgD1Database {
   async batch<T = Record<string, unknown>>(
     statements: PgBoundStatement[]
   ): Promise<D1Result<T>[]> {
-    const client = await getPgPool().connect();
+    const client = await (await getPgPool()).connect();
     try {
       await client.query('BEGIN');
       const results: D1Result<T>[] = [];

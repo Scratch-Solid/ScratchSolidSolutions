@@ -57,3 +57,42 @@ if (fs.existsSync(file3)) {
 } else {
   console.error('[patch] File not found:', file3);
 }
+
+// Patch copyTracedFiles.js to handle EPERM on Windows symlinks by falling back to copy
+const copyTracedFilesPaths = [
+  path.join(__dirname, 'node_modules', '@opennextjs', 'aws', 'dist', 'build', 'copyTracedFiles.js'),
+  path.join(__dirname, 'node_modules', '@opennextjs', 'cloudflare', 'node_modules', '@opennextjs', 'aws', 'dist', 'build', 'copyTracedFiles.js'),
+];
+const originalSymlinkCatch = `            catch (e) {
+                if (e.code !== "EEXIST") {
+                    throw e;
+                }
+            }`;
+const patchedSymlinkCatch = `            catch (e) {
+                if (e.code === "EEXIST") {
+                    // ignore
+                } else if (e.code === "EPERM" && process.platform === "win32") {
+                    // Fallback to copy on Windows when symlink permission denied
+                    if (statSync(from).isDirectory()) {
+                        cpSync(from, to, { recursive: true, dereference: true });
+                    } else {
+                        copyFileAndMakeOwnerWritable(from, to);
+                    }
+                } else {
+                    throw e;
+                }
+            }`;
+for (const ctfPath of copyTracedFilesPaths) {
+  if (fs.existsSync(ctfPath)) {
+    let content = fs.readFileSync(ctfPath, 'utf8');
+    if (content.includes(originalSymlinkCatch) && !content.includes('EPERM')) {
+      content = content.replace(originalSymlinkCatch, patchedSymlinkCatch);
+      fs.writeFileSync(ctfPath, content);
+      console.log('[patch] copyTracedFiles: Added EPERM fallback for Windows symlinks');
+    } else {
+      console.log('[patch] copyTracedFiles: Already patched or format changed');
+    }
+  } else {
+    console.error('[patch] File not found:', ctfPath);
+  }
+}

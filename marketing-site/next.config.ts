@@ -25,6 +25,11 @@ const nextConfig: NextConfig = {
       '*.workers.dev',
     ],
   },
+  async redirects() {
+    return [
+      { source: '/booking', destination: '/book', permanent: true },
+    ];
+  },
   async headers() {
     return [
       {

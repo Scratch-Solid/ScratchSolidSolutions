@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { withAuth, withRateLimit, rateLimits } from '@/lib/middleware';
-import { markEstimateAccepted, createInvoice, createEstimate } from '@/lib/zoho';
+import { markEstimateAccepted, createInvoiceFromEstimate } from '@/lib/zoho';
 
 export async function POST(
   request: NextRequest,
@@ -62,8 +62,9 @@ export async function POST(
     let zohoInvoiceNumber = '';
     if (quote.zoho_estimate_id) {
       try {
-        // Get estimate details from Zoho to create invoice
-        const invoiceResult = await createInvoice(
+        // Convert the estimate to an invoice using the estimate's real customer_id
+        // (fallback line item only used if the estimate has none).
+        const invoiceResult = await createInvoiceFromEstimate(
           quote.zoho_estimate_id,
           [{
             name: quote.service_name,

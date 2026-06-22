@@ -2,10 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useSessionTimeout } from "@/hooks/useSessionTimeout";
-
 export default function BusinessBookingPage() {
-  useSessionTimeout(true); // Enable 5-minute inactivity timeout
   const [bookingType, setBookingType] = useState<"once-off" | "contract" | null>(null);
   const [showContractForm, setShowContractForm] = useState(false);
   const [weekendRequired, setWeekendRequired] = useState(false);
@@ -51,14 +48,13 @@ export default function BusinessBookingPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const token = localStorage.getItem('authToken');
       const userId = localStorage.getItem('userId');
       const res = await fetch('/api/contracts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
         },
+        credentials: 'include',
         body: JSON.stringify({
           business_id: userId,
           business_name: localStorage.getItem('userName') || '',
@@ -82,8 +78,8 @@ export default function BusinessBookingPage() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`
           },
+          credentials: 'include',
           body: JSON.stringify({
             business_id: userId,
             requested_date: formData.start_date || new Date().toISOString().split('T')[0],
@@ -105,14 +101,13 @@ export default function BusinessBookingPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const token = localStorage.getItem('authToken');
       const userId = localStorage.getItem('userId');
       const res = await fetch('/api/bookings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
         },
+        credentials: 'include',
         body: JSON.stringify({
           client_id: userId,
           client_name: localStorage.getItem('userName') || '',

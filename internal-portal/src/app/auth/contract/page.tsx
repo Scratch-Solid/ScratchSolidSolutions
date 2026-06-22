@@ -21,6 +21,7 @@ export default function ContractPage() {
   const [confirmed, setConfirmed] = useState(false);
   const [contractContent, setContractContent] = useState<any>(null);
   const [loadingContent, setLoadingContent] = useState(true);
+  const [contractError, setContractError] = useState("");
   const router = useRouter();
 
   useEffect(() => {
@@ -144,7 +145,8 @@ export default function ContractPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    setContractError("");
+
     // Store contract data with consent data
     const contractData = {
       ...consentData,
@@ -153,7 +155,7 @@ export default function ContractPage() {
       submittedAt: new Date().toISOString(),
       status: "signed",
     };
-    
+
     try {
       // Submit to pending contracts API
       const response = await fetch("/api/pending-contracts", {
@@ -166,18 +168,19 @@ export default function ContractPage() {
         // Clear localStorage
         localStorage.removeItem("pendingConsent");
         localStorage.removeItem("pendingContract");
-        
+
         // Redirect to appropriate dashboard based on department
-        const dashboardRoute = consentData.department === "Scratch" ? "/cleaner-dashboard" 
-          : consentData.department === "Solid" ? "/digital-dashboard" 
+        const dashboardRoute = consentData.department === "Scratch" ? "/cleaner-dashboard"
+          : consentData.department === "Solid" ? "/digital-dashboard"
           : "/transport-dashboard";
         router.push(dashboardRoute);
       } else {
-        alert("Failed to submit contract. Please try again.");
+        const data = await response.json().catch(() => ({}));
+        setContractError(data.error || "Failed to submit contract. Please try again.");
       }
     } catch (err) {
       console.error("Failed to submit contract:", err);
-      alert("An error occurred. Please try again.");
+      setContractError("An error occurred. Please try again.");
     }
   };
 
@@ -192,6 +195,12 @@ export default function ContractPage() {
             {loadingContent ? 'Loading...' : (contractContent?.title || 'Employment Agreement')}
           </p>
         </div>
+
+        {contractError && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6 text-center font-medium">
+            {contractError}
+          </div>
+        )}
 
         <div className="glass-card" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
           <h2 className="text-2xl font-bold mb-6 text-center">EMPLOYMENT AGREEMENT – CLEANING STAFF</h2>

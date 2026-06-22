@@ -11,6 +11,7 @@ interface EnvConfig {
   ZOHO_CLIENT_ID?: string;
   ZOHO_CLIENT_SECRET?: string;
   ZOHO_REFRESH_TOKEN?: string;
+  ZOHO_DC?: string;
 }
 
 export function validateEnv(): EnvConfig {
@@ -53,7 +54,8 @@ export function validateEnv(): EnvConfig {
     ZOHO_ORG_ID: process.env.ZOHO_ORG_ID,
     ZOHO_CLIENT_ID: process.env.ZOHO_CLIENT_ID,
     ZOHO_CLIENT_SECRET: process.env.ZOHO_CLIENT_SECRET,
-    ZOHO_REFRESH_TOKEN: process.env.ZOHO_REFRESH_TOKEN
+    ZOHO_REFRESH_TOKEN: process.env.ZOHO_REFRESH_TOKEN,
+    ZOHO_DC: process.env.ZOHO_DC
   };
 }
 
@@ -82,7 +84,7 @@ export function getResendApiKey(): string {
   return apiKey;
 }
 
-export function getZohoCredentials(): { orgId: string; clientId: string; clientSecret: string; refreshToken: string } {
+export function getZohoCredentials(): { orgId: string; clientId: string; clientSecret: string; refreshToken: string; dc?: string } {
   const orgId = process.env.ZOHO_ORG_ID;
   const clientId = process.env.ZOHO_CLIENT_ID;
   const clientSecret = process.env.ZOHO_CLIENT_SECRET;
@@ -92,5 +94,5 @@ export function getZohoCredentials(): { orgId: string; clientId: string; clientS
     throw new Error('Zoho Books credentials are required for payment integration');
   }
   
-  return { orgId, clientId, clientSecret, refreshToken };
+  return { orgId, clientId, clientSecret, refreshToken, dc: process.env.ZOHO_DC };
 }

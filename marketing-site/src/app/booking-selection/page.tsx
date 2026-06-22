@@ -3,12 +3,9 @@
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useSessionTimeout } from "@/hooks/useSessionTimeout";
-
 export default function BookingSelectionPage() {
   const router = useRouter();
   const [userRole, setUserRole] = useState<string | null>(null);
-  useSessionTimeout(true); // Enable 5-minute inactivity timeout
 
   useEffect(() => {
     const role = localStorage.getItem("userRole");

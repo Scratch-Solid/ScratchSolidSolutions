@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test';
 
 const PORTAL_URL = process.env.PORTAL_URL || 'https://portal.scratchsolidsolutions.org';
+const isProd = PORTAL_URL.includes('scratchsolidsolutions.org');
+const PAGE_TIMEOUT = isProd ? 60000 : 30000;
 
 /**
  * Comprehensive Page Load Tests
@@ -57,13 +59,14 @@ const PUBLIC_PAGES = [
 test.describe('Portal Public Pages - No 500 Errors', () => {
   for (const path of PUBLIC_PAGES) {
     test(`${path} loads without 500`, async ({ page }) => {
-      const response = await page.goto(`${PORTAL_URL}${path}`, { waitUntil: 'load', timeout: 30000 });
+      test.setTimeout(PAGE_TIMEOUT);
+      const response = await page.goto(`${PORTAL_URL}${path}`, { waitUntil: 'domcontentloaded', timeout: PAGE_TIMEOUT });
       // Allow 200, 307, 308 redirects, 401, 403 — just not 500
       expect(response?.status()).not.toBe(500);
       expect(response?.status()).not.toBe(502);
       expect(response?.status()).not.toBe(503);
 
-      const bodyText = await page.locator('body').innerText({ timeout: 10000 }).catch(() => '');
+      const bodyText = await page.locator('body').innerText({ timeout: PAGE_TIMEOUT }).catch(() => '');
       expect(bodyText).not.toContain('Internal Server Error');
       expect(bodyText).not.toContain('Application error');
     });

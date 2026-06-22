@@ -62,11 +62,10 @@ export async function GET(
 
     const q = quote as Record<string, unknown>;
 
-    // Authorization check - only quote owner or admin can access PDF
+    // Capability-based authorization: the ref_number is an unguessable random token.
+    // Anyone holding the token (e.g. a new/anonymous quote requester) may download the PDF.
+    // Authenticated owners/admins are also tracked for audit but not required.
     const quoteEmail = (q.email as string) || '';
-    if (!isAdmin && (!userEmail || userEmail !== quoteEmail)) {
-      return NextResponse.json({ error: 'Unauthorized - you can only access your own quotes' }, { status: 403 });
-    }
 
     // Use Zoho PDF if estimate exists, otherwise fall back to custom HTML
     const zohoEstimateId = (q.zoho_estimate_id as string) || '';

@@ -4,11 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import AIAssistant from "@/components/AIAssistant";
-import { useSessionTimeout } from "@/hooks/useSessionTimeout";
-
 export default function Home() {
   const [overlayOpen, setOverlayOpen] = useState(false);
-  useSessionTimeout(true);
 
   const handleBookCleaner = () => {
     const token = localStorage.getItem('authToken');

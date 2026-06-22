@@ -1,0 +1,69 @@
+import { test, expect } from '@playwright/test';
+
+const BASE_URL = process.env.PORTAL_URL || 'http://localhost:3000';
+const isProd = BASE_URL.includes('scratchsolidsolutions.org');
+const PAGE_TIMEOUT = isProd ? 60000 : 30000;
+
+/**
+ * Internal Portal Routing Tests
+ * Verifies navigation, redirects, and access control for admin routes
+ */
+
+test.describe('Portal Routing & Navigation', () => {
+  test('/admin redirects unauthenticated to login', async ({ page }) => {
+    test.setTimeout(PAGE_TIMEOUT);
+    await page.goto(`${BASE_URL}/admin`, { waitUntil: 'domcontentloaded', timeout: PAGE_TIMEOUT });
+    const url = page.url();
+    expect(url.includes('/login')).toBe(true);
+  });
+
+  test('/admin/content redirects to /admin/content-upload', async ({ page }) => {
+    test.setTimeout(PAGE_TIMEOUT);
+    await page.goto(`${BASE_URL}/admin/content`, { waitUntil: 'domcontentloaded', timeout: PAGE_TIMEOUT });
+    // The content page redirects to content-upload
+    await expect(page).toHaveURL(/\/admin\/content-upload/, { timeout: PAGE_TIMEOUT });
+  });
+
+  test('/admin-dashboard redirects unauthenticated to login', async ({ page }) => {
+    test.setTimeout(PAGE_TIMEOUT);
+    await page.goto(`${BASE_URL}/admin-dashboard`, { waitUntil: 'domcontentloaded', timeout: PAGE_TIMEOUT });
+    const url = page.url();
+    expect(url.includes('/login')).toBe(true);
+  });
+
+  test('Cleaner dashboard redirects unauthenticated to login', async ({ page }) => {
+    test.setTimeout(PAGE_TIMEOUT);
+    await page.goto(`${BASE_URL}/cleaner-dashboard`, { waitUntil: 'domcontentloaded', timeout: PAGE_TIMEOUT });
+    const url = page.url();
+    expect(url.includes('/login')).toBe(true);
+  });
+
+  test('Login page loads with correct routing', async ({ page }) => {
+    test.setTimeout(PAGE_TIMEOUT);
+    await page.goto(`${BASE_URL}/auth/login`, { waitUntil: 'domcontentloaded', timeout: PAGE_TIMEOUT });
+    expect(await page.locator('body').innerText()).toContain('Login');
+    expect(await page.locator('body').innerText()).toContain('Username');
+  });
+
+  test('Cleaner signup page is publicly accessible', async ({ page }) => {
+    test.setTimeout(PAGE_TIMEOUT);
+    const response = await page.goto(`${BASE_URL}/signup/cleaner`, { waitUntil: 'domcontentloaded', timeout: PAGE_TIMEOUT });
+    expect(response?.status()).not.toBe(500);
+    const bodyText = await page.locator('body').innerText();
+    expect(bodyText).not.toContain('Internal Server Error');
+  });
+
+  test('Auth pages do not have broken navigation links', async ({ page }) => {
+    test.setTimeout(PAGE_TIMEOUT);
+    await page.goto(`${BASE_URL}/auth/login`, { waitUntil: 'domcontentloaded', timeout: PAGE_TIMEOUT });
+
+    // Check for any links that return 500
+    const links = await page.locator('a[href^="/"]').all();
+    for (const link of links.slice(0, 10)) {
+      const href = await link.getAttribute('href');
+      if (!href || href.startsWith('//')) continue;
+      const response = await page.request.get(`${BASE_URL}${href}`);
+      expect(response.status()).toBeLessThan(500);
+    }
+  });
+});

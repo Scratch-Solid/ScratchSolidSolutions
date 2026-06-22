@@ -58,10 +58,11 @@ export async function GET(request: NextRequest) {
     }
 
     const slug = getSlugFromType(type);
-    const result = await db.prepare('SELECT text as content, title FROM content WHERE slug = ?').bind(slug).first();
+    // Use content_pages table which has slug, title, content columns
+    const result = await db.prepare('SELECT content as text_content, title FROM content_pages WHERE slug = ?').bind(slug).first();
 
     if (result) {
-      return NextResponse.json({ content: (result as any).content, type });
+      return NextResponse.json({ content: (result as any).text_content || '', type });
     }
 
     return NextResponse.json({ 
@@ -119,14 +120,14 @@ export async function PUT(request: NextRequest) {
     }
 
     const slug = getSlugFromType(type);
-    const existing = await db.prepare('SELECT id FROM content WHERE slug = ?').bind(slug).first();
+    const existing = await db.prepare('SELECT id FROM content_pages WHERE slug = ?').bind(slug).first();
 
     if (existing) {
-      await db.prepare('UPDATE content SET text = ?, title = ?, updated_at = datetime(\'now\') WHERE slug = ?')
+      await db.prepare('UPDATE content_pages SET content = ?, title = ?, updated_at = datetime(\'now\') WHERE slug = ?')
         .bind(content, title || type.charAt(0).toUpperCase() + type.slice(1), slug).run();
     } else {
-      await db.prepare('INSERT INTO content (collection, slug, title, text) VALUES (?, ?, ?, ?)')
-        .bind(type, slug, title || type.charAt(0).toUpperCase() + type.slice(1), content).run();
+      await db.prepare('INSERT INTO content_pages (slug, title, content, published) VALUES (?, ?, ?, 1)')
+        .bind(slug, title || type.charAt(0).toUpperCase() + type.slice(1), content).run();
     }
 
     return NextResponse.json({ message: "Content updated successfully" });

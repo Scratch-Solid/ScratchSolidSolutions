@@ -6,6 +6,7 @@ import { sanitizeText, sanitizeEmail, sanitizePhone } from '@/lib/sanitization';
 import { validateEmail } from '@/lib/validation';
 import { logAuditEvent } from '@/lib/audit';
 import { findOrCreateContact, createEstimate } from '@/lib/zoho';
+import { calculateQuote, getAvailableAreas } from '@/lib/pricing-engine';
 
 export async function POST(request: NextRequest) {
   // CSRF protection disabled for public quote endpoint
@@ -83,22 +84,31 @@ export async function POST(request: NextRequest) {
     const sanitizedPromoCode = promo_code ? sanitizeText(promo_code).toUpperCase() : '';
     const sanitizedQuantity = quantity || 1;
 
-    // Validate service_id exists and fetch pricing
-    const service = await db.prepare('SELECT id, name, base_price, room_multiplier FROM services WHERE id = ? AND is_active = 1').bind(service_id).first();
+    // Validate service_id exists and fetch service name
+    const service = await db.prepare('SELECT id, name FROM services WHERE id = ? AND is_active = 1').bind(service_id).first();
     if (!service) {
       return NextResponse.json({ error: 'Invalid service' }, { status: 400 });
     }
-
-    // Calculate baseline price on server-side
-    const basePrice = (service as any).base_price || 0;
-    const roomMultiplier = (service as any).room_multiplier || 1.0;
-    const baseline_price = basePrice * sanitizedQuantity * roomMultiplier;
     const serviceName = (service as any).name || '';
 
-    // Initialize discount variables
+    // Fetch the active pricing row for this service + client type. This mirrors the
+    // front-end QuoteModal.getActivePricingRow so the saved quote uses the SAME inputs
+    // (base price + per-unit price) that the customer saw in the live preview.
+    const resolvedClientType = client_type === 'business' ? 'business' : 'individual';
+    const pricingRows = await db.prepare(
+      `SELECT price, unit_price, special_price, special_label, special_valid_from, special_valid_until, client_type
+       FROM service_pricing
+       WHERE service_id = ? AND (client_type = ? OR client_type = 'all')`
+    ).bind(service_id, resolvedClientType).all();
+    const rows = (pricingRows.results || []) as any[];
+    const pricingRow = rows.find(r => r.client_type === resolvedClientType) || rows[0] || null;
+    if (!pricingRow) {
+      return NextResponse.json({ error: 'Pricing not configured for this service' }, { status: 400 });
+    }
+
+    // Initialize discount variables (validated server-side)
     let discount_type = '';
     let discount_value = 0;
-    let discount_amount = 0;
 
     // Validate promo code if provided
     if (sanitizedPromoCode) {
@@ -124,18 +134,51 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Promo code usage limit reached' }, { status: 400 });
       }
 
-      // Calculate discount on server-side
       discount_type = (promo as any).discount_type;
       discount_value = (promo as any).discount_value;
-      if (discount_type === 'percentage') {
-        discount_amount = baseline_price * (discount_value / 100);
-      } else {
-        discount_amount = discount_value;
-      }
     }
 
-    // Calculate final price on server-side
-    const final_price = Math.max(0, baseline_price - discount_amount);
+    // Compute the quote with the SAME pricing engine the front-end uses, so the saved
+    // baseline and final price always equal what the customer was shown. Previously the
+    // server re-derived baseline as (base_price * quantity * room_multiplier), which did
+    // not match the additive (base + extra-unit) preview and caused the price to jump.
+    const validAreas = getAvailableAreas();
+    const safeArea = area && validAreas.includes(area) ? area : validAreas[0];
+    const allowedPropertyTypes = ['residential', 'office', 'commercial', 'post-construction', 'short-term-stay'];
+    const safePropertyType = (property_type && allowedPropertyTypes.includes(property_type)
+      ? property_type
+      : 'residential') as 'residential' | 'office' | 'commercial' | 'post-construction' | 'short-term-stay';
+
+    const specialPricing = pricingRow.special_price != null ? {
+      specialPrice: pricingRow.special_price as number,
+      specialLabel: (pricingRow.special_label as string) || 'Special Offer',
+      specialValidFrom: (pricingRow.special_valid_from as string) || undefined,
+      specialValidUntil: (pricingRow.special_valid_until as string) || undefined,
+    } : undefined;
+
+    const promoData = (discount_type && discount_value)
+      ? { discountType: discount_type as 'percentage' | 'fixed', discountValue: discount_value }
+      : undefined;
+
+    const quoteCalc = calculateQuote(
+      {
+        serviceId: service_id,
+        propertyType: safePropertyType,
+        area: safeArea,
+        quantity: sanitizedQuantity,
+        promoCode: sanitizedPromoCode || undefined,
+      },
+      specialPricing,
+      promoData,
+      0,
+      (pricingRow.price as number) || 0,
+      (pricingRow.unit_price as number) || 0
+    );
+
+    const baseline_price = Math.round(quoteCalc.basePrice * 100) / 100;
+    const computed_transport_fee = Math.round(quoteCalc.transportFee * 100) / 100;
+    const discount_amount = Math.round((quoteCalc.specialDiscount + quoteCalc.promoDiscount + quoteCalc.loyaltyDiscount) * 100) / 100;
+    const final_price = quoteCalc.finalPrice;
 
     // Calculate quote expiration (30 days from creation)
     const validUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
@@ -203,6 +246,7 @@ export async function POST(request: NextRequest) {
           contactId,
           serviceName,
           baselinePrice: baseline_price || 0,
+          transportFee: computed_transport_fee || 0,
           discountAmount: discount_amount || 0,
           finalPrice: final_price || 0,
           promoCode: sanitizedPromoCode,
@@ -259,6 +303,7 @@ export async function POST(request: NextRequest) {
       phone: sanitizedPhone,
       service_name: serviceName,
       baseline_price,
+      transport_fee: computed_transport_fee,
       promo_code: sanitizedPromoCode,
       discount_type: discount_type || '',
       discount_value: discount_value || 0,

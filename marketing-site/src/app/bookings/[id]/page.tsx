@@ -3,12 +3,9 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { useSessionTimeout } from "@/hooks/useSessionTimeout";
-
 export default function BookingConfirmationPage() {
   const params = useParams();
   const router = useRouter();
-  useSessionTimeout(true); // Enable 5-minute inactivity timeout
   const [booking, setBooking] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -18,16 +15,8 @@ export default function BookingConfirmationPage() {
   useEffect(() => {
     const fetchBooking = async () => {
       try {
-        const token = localStorage.getItem("authToken");
-        if (!token) {
-          router.push("/login");
-          return;
-        }
-
         const response = await fetch(`/api/bookings?id=${bookingId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          credentials: "include",
         });
 
         if (!response.ok) {

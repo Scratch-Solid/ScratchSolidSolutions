@@ -3,11 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { sanitizeHtml } from '@/lib/htmlSanitizer';
-import { useSessionTimeout } from "@/hooks/useSessionTimeout";
-
 export default function BookingPage() {
   const router = useRouter();
-  useSessionTimeout(true); // Enable 5-minute inactivity timeout
   const [step, setStep] = useState(1);
   const [bookingType, setBookingType] = useState<"individual" | "business">("individual");
   const [formData, setFormData] = useState({
@@ -49,10 +46,9 @@ export default function BookingPage() {
     setError("");
     setLoading(true);
 
-    const token = localStorage.getItem("authToken");
     const userId = localStorage.getItem("userId");
 
-    if (!token || !userId) {
+    if (!userId) {
       setError("Please login to book a service");
       setLoading(false);
       return;
@@ -63,8 +59,8 @@ export default function BookingPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
+        credentials: "include",
         body: JSON.stringify({
           client_id: parseInt(userId),
           client_name: localStorage.getItem("userRole") === "business" ? "Business User" : "Individual User",

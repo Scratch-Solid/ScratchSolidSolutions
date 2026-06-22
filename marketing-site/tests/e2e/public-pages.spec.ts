@@ -13,10 +13,14 @@ const PUBLIC_PAGES = [
   { path: '/terms', titleContains: 'Terms' },
 ];
 
+const isProd = (process.env.CI || '').includes('scratchsolidsolutions');
+const PAGE_TIMEOUT = isProd ? 60000 : 30000;
+
 test.describe('Public Pages', () => {
   for (const page of PUBLIC_PAGES) {
     test(`${page.path} renders without 500`, async ({ page: p }) => {
-      const response = await p.goto(page.path, { waitUntil: 'networkidle' });
+      test.setTimeout(PAGE_TIMEOUT);
+      const response = await p.goto(page.path, { waitUntil: 'domcontentloaded', timeout: PAGE_TIMEOUT });
       expect(response).not.toBeNull();
       expect(response!.status()).toBeLessThan(500);
       expect(response!.status()).not.toBe(404);

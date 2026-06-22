@@ -64,9 +64,22 @@ export default function CleanerSignup() {
       });
 
       if (!response.ok) {
-        const data = await response.json() as { error?: string; details?: string[] };
-        const errorMsg = data.details ? `${data.error}: ${data.details.join(', ')}` : data.error;
-        throw new Error(errorMsg || 'Failed to submit application');
+        const data = await response.json() as {
+          error?: string | { code?: string; message?: string; suggestion?: string; details?: any };
+          details?: string[];
+        };
+
+        let errorMsg = 'Failed to submit application';
+        if (typeof data.error === 'string') {
+          errorMsg = data.details ? `${data.error}: ${data.details.join(', ')}` : data.error;
+        } else if (data.error && typeof data.error === 'object') {
+          const errObj = data.error as { message?: string; suggestion?: string };
+          errorMsg = errObj.message || 'Failed to submit application';
+          if (errObj.suggestion) {
+            errorMsg += `. ${errObj.suggestion}`;
+          }
+        }
+        throw new Error(errorMsg);
       }
 
       setSuccess(true);

@@ -54,6 +54,7 @@ interface QuoteResult {
   zoho_estimate_number: string;
   service_name: string;
   baseline_price: number;
+  transport_fee?: number;
   special_price: number | null;
   special_label: string;
   special_discount: number;
@@ -89,6 +90,8 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
   const [quoteResult, setQuoteResult] = useState<QuoteResult | null>(null);
   const [submitError, setSubmitError] = useState('');
   const [actionLoading, setActionLoading] = useState<'accept' | 'decline' | null>(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfError, setPdfError] = useState('');
   const [quoteDeclined, setQuoteDeclined] = useState(false);
   const [pricingCalculation, setPricingCalculation] = useState<PricingQuoteResult | null>(null);
   const [loyaltyPoints, setLoyaltyPoints] = useState(0);
@@ -345,12 +348,17 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
 
   const handlePrintPdf = async () => {
     if (!quoteResult) return;
+    setPdfLoading(true);
+    setPdfError('');
     try {
       const token = localStorage.getItem('authToken');
       const response = await fetch(`/api/quotes/${quoteResult.ref_number}/pdf`, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {},
       });
-      if (!response.ok) throw new Error('Failed to download PDF');
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({})) as { error?: string };
+        throw new Error(data.error || `PDF download failed (${response.status})`);
+      }
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -360,18 +368,25 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-    } catch (err) {
-      setSubmitError('Failed to download PDF. Please try again.');
+    } catch (err: any) {
+      setPdfError(err.message || 'Failed to download PDF. Please try again.');
+    } finally {
+      setPdfLoading(false);
     }
   };
 
   const handleDownloadQuotePdf = async (refNumber: string) => {
+    setPdfLoading(true);
+    setPdfError('');
     try {
       const token = localStorage.getItem('authToken');
       const response = await fetch(`/api/quotes/${refNumber}/pdf`, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {},
       });
-      if (!response.ok) throw new Error('Failed to download PDF');
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({})) as { error?: string };
+        throw new Error(data.error || `PDF download failed (${response.status})`);
+      }
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -381,8 +396,10 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-    } catch (err) {
-      setSubmitError('Failed to download PDF. Please try again.');
+    } catch (err: any) {
+      setPdfError(err.message || 'Failed to download PDF. Please try again.');
+    } finally {
+      setPdfLoading(false);
     }
   };
 
@@ -932,6 +949,12 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
                           <span>Base Price</span>
                           <span>R{quoteResult.baseline_price.toFixed(2)}</span>
                         </div>
+                        {quoteResult.transport_fee !== undefined && quoteResult.transport_fee > 0 && (
+                          <div className="flex justify-between text-gray-600">
+                            <span>Transport / Call-out</span>
+                            <span>R{quoteResult.transport_fee.toFixed(2)}</span>
+                          </div>
+                        )}
                         {quoteResult.discount_amount > 0 && (
                           <div className="flex justify-between text-green-700">
                             <span>Promo ({quoteResult.promo_code})</span>
@@ -950,11 +973,22 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
                     {/* Download PDF */}
                     <button
                       onClick={handlePrintPdf}
-                      className="w-full py-2.5 bg-white border-2 border-gray-200 text-gray-600 font-semibold rounded-xl hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-sm"
+                      disabled={pdfLoading}
+                      className="w-full py-2.5 bg-white border-2 border-gray-200 text-gray-600 font-semibold rounded-xl hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-sm disabled:opacity-50"
                     >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                      Download PDF
+                      {pdfLoading ? (
+                        <>
+                          <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z" /></svg>
+                          Downloading…
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                          Download PDF
+                        </>
+                      )}
                     </button>
+                    {pdfError && <p className="text-xs text-red-500 text-center">{pdfError}</p>}
 
                     {/* Accept / Decline */}
                     <div className="bg-gray-50 rounded-2xl p-4 border border-gray-200">
