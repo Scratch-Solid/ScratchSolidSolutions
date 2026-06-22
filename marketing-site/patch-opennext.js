@@ -58,6 +58,31 @@ if (fs.existsSync(file3)) {
   console.error('[patch] File not found:', file3);
 }
 
+// Patch Next.js bundler.js to default to webpack instead of Turbopack.
+// Turbopack build chunks are incompatible with OpenNext on Cloudflare Workers and cause runtime ChunkLoadError.
+const bundlerFile = path.join(__dirname, 'node_modules', 'next', 'dist', 'lib', 'bundler.js');
+if (fs.existsSync(bundlerFile)) {
+  let content = fs.readFileSync(bundlerFile, 'utf8');
+  const originalDefault = `    // The default is turbopack when nothing is configured.
+    if (bundlerFlags.size === 0) {
+        process.env.TURBOPACK = 'auto';
+        return 0;
+    }`;
+  const patchedDefault = `    // The default is webpack when nothing is configured (Turbopack chunks don't work with OpenNext on Workers).
+    if (bundlerFlags.size === 0) {
+        return 1;
+    }`;
+  if (content.includes(originalDefault)) {
+    content = content.replace(originalDefault, patchedDefault);
+    fs.writeFileSync(bundlerFile, content);
+    console.log('[patch] bundler.js: Changed default bundler from Turbopack to webpack');
+  } else {
+    console.log('[patch] bundler.js: Already patched or format changed');
+  }
+} else {
+  console.error('[patch] File not found:', bundlerFile);
+}
+
 // Patch copyTracedFiles.js to handle EPERM on Windows symlinks by falling back to copy
 const copyTracedFilesPaths = [
   path.join(__dirname, 'node_modules', '@opennextjs', 'aws', 'dist', 'build', 'copyTracedFiles.js'),
