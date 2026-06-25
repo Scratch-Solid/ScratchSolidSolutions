@@ -1,0 +1,4 @@
+tests/selenium/
+playwright-report/
+.open-next/
+.next/

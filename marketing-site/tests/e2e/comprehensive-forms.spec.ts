@@ -120,6 +120,8 @@ test.describe('🔐 Auth Forms — Individual', () => {
 
   test('Forgot password form submission', async ({ page }) => {
     await goTo(page, '/forgot-password');
+    await page.click('text=Business');
+    await delay();
     await page.fill('input[type="email"]', 'nonexistent@example.com');
     const submitBtn = page.locator('button[type="submit"]').first();
     if (await submitBtn.isVisible().catch(() => false)) {
