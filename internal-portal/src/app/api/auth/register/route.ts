@@ -54,10 +54,19 @@ export async function POST(request: NextRequest) {
     // Hash password
     const passwordHash = await bcrypt.hash(password, 12);
 
-    const result = await db.prepare(
-      `INSERT INTO users (name, email, password_hash, role, phone, paysheet_code, department, email_verified, password_needs_reset, created_at) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, 1, 0, datetime('now'))`
-    ).bind(resolvedName, email, passwordHash, role || 'cleaner', phone || '', paysheetCode || '', department || '').run();
+    let result;
+    try {
+      result = await db.prepare(
+        `INSERT INTO users (name, email, password_hash, role, phone, paysheet_code, department, email_verified, password_needs_reset, created_at) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, 1, 0, datetime('now'))`
+      ).bind(resolvedName, email, passwordHash, role || 'cleaner', phone || '', paysheetCode || '', department || '').run();
+    } catch {
+      // Fallback: some columns may not exist in older schemas
+      result = await db.prepare(
+        `INSERT INTO users (name, email, password_hash, role, phone, paysheet_code, department, created_at) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))`
+      ).bind(resolvedName, email, passwordHash, role || 'cleaner', phone || '', paysheetCode || '', department || '').run();
+    }
 
     const userId = result.meta.last_row_id;
 
