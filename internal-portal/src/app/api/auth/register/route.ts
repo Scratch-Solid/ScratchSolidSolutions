@@ -62,10 +62,18 @@ export async function POST(request: NextRequest) {
       ).bind(resolvedName, email, passwordHash, role || 'cleaner', phone || '', paysheetCode || '', department || '').run();
     } catch {
       // Fallback: some columns may not exist in older schemas
-      result = await db.prepare(
-        `INSERT INTO users (name, email, password_hash, role, phone, paysheet_code, department, created_at) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))`
-      ).bind(resolvedName, email, passwordHash, role || 'cleaner', phone || '', paysheetCode || '', department || '').run();
+      try {
+        result = await db.prepare(
+          `INSERT INTO users (name, email, password_hash, role, phone, paysheet_code, department, created_at) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))`
+        ).bind(resolvedName, email, passwordHash, role || 'cleaner', phone || '', paysheetCode || '', department || '').run();
+      } catch {
+        // Core fallback: only guaranteed columns from initial schema
+        result = await db.prepare(
+          `INSERT INTO users (name, email, password_hash, role, phone, created_at) 
+           VALUES (?, ?, ?, ?, ?, datetime('now'))`
+        ).bind(resolvedName, email, passwordHash, role || 'cleaner', phone || '').run();
+      }
     }
 
     const userId = result.meta.last_row_id;
