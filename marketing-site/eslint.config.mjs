@@ -12,13 +12,15 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
-    // Selenium tests use CommonJS require() legitimately
-    "tests/selenium/**",
+    // Test files use patterns not allowed by Next.js eslint config
+    "tests/**",
     // Build artifacts and dependencies
     "node_modules/**",
     ".open-next/**",
     "playwright-report/**",
     "test-results/**",
+    // Type definition files
+    "src/types/**",
   ]),
 ]);
 
