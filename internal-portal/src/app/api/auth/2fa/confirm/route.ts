@@ -24,26 +24,36 @@ export async function POST(request: NextRequest) {
     }
 
     const token = authHeader.substring(7);
-    const decoded = verifyAccessToken(token);
+    let decoded;
+    try {
+      decoded = verifyAccessToken(token);
+    } catch (verifyErr) {
+      return NextResponse.json({ error: 'Token verify error: ' + (verifyErr instanceof Error ? verifyErr.message : String(verifyErr)) }, { status: 500 });
+    }
 
     if (!decoded) {
       return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 });
     }
 
-    const db = await getDb();
+    let db;
+    try {
+      db = await getDb();
+    } catch (dbErr) {
+      return NextResponse.json({ error: 'DB connect error: ' + (dbErr instanceof Error ? dbErr.message : String(dbErr)) }, { status: 500 });
+    }
+
     if (!db) {
       return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
     }
 
-    const ip = request.headers.get('cf-connecting-ip') || 
-               request.headers.get('x-forwarded-for') || 
-               'unknown';
-    const ua = request.headers.get('user-agent') || 'unknown';
-
-    // Get user's 2FA settings
-    const totpRecord = await db.prepare(
-      'SELECT * FROM user_2fa WHERE user_id = ?'
-    ).bind(decoded.userId).first();
+    let totpRecord;
+    try {
+      totpRecord = await db.prepare(
+        'SELECT * FROM user_2fa WHERE user_id = ?'
+      ).bind(decoded.userId).first();
+    } catch (queryErr) {
+      return NextResponse.json({ error: 'DB query error: ' + (queryErr instanceof Error ? queryErr.message : String(queryErr)) }, { status: 500 });
+    }
 
     if (!totpRecord) {
       return NextResponse.json({ error: '2FA not configured. Please call /enable first.' }, { status: 400 });
@@ -62,12 +72,10 @@ export async function POST(request: NextRequest) {
     try {
       isValid = verifyTOTP(code, secret);
     } catch (totpError) {
-      console.error('TOTP verification error:', totpError);
       return NextResponse.json({ error: 'TOTP verification error: ' + (totpError instanceof Error ? totpError.message : String(totpError)) }, { status: 500 });
     }
     
     if (!isValid) {
-      await logAuthEvent(db, decoded.userId, '2fa_enable_failed', ip, ua);
       return NextResponse.json({ error: 'Invalid 2FA code' }, { status: 401 });
     }
 
@@ -76,14 +84,12 @@ export async function POST(request: NextRequest) {
       'UPDATE user_2fa SET enabled = 1, last_used_at = ? WHERE user_id = ?'
     ).bind(Math.floor(Date.now() / 1000), decoded.userId).run();
 
-    await logAuthEvent(db, decoded.userId, '2fa_enabled', ip, ua);
-
     return NextResponse.json({
       success: true,
       message: '2FA enabled successfully'
     });
   } catch (error) {
     console.error('Confirm 2FA error:', error);
-    return NextResponse.json({ error: '2FA confirmation failed' }, { status: 500 });
+    return NextResponse.json({ error: '2FA confirmation failed: ' + (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }
