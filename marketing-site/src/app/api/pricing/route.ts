@@ -21,9 +21,9 @@ export async function GET(request: NextRequest) {
 
     let result;
     if (serviceType) {
-      result = await db.prepare('SELECT * FROM pricing WHERE service_type = ?').bind(serviceType).all();
+      result = await db.prepare('SELECT * FROM service_pricing WHERE service_id = (SELECT id FROM services WHERE name = ? LIMIT 1)').bind(serviceType).all();
     } else {
-      result = await db.prepare('SELECT * FROM pricing ORDER BY created_at DESC').all();
+      result = await db.prepare('SELECT * FROM service_pricing ORDER BY created_at DESC').all();
     }
 
     const response = NextResponse.json(result.results || []);

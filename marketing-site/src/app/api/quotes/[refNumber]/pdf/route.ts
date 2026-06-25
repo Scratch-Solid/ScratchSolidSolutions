@@ -1,9 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import { withAuth, withRateLimit, rateLimits } from '@/lib/middleware';
-import jwt from 'jsonwebtoken';
-import { getJWTSecret } from '@/lib/env';
+import { withRateLimit, rateLimits } from '@/lib/middleware';
 import { getEstimatePdf } from '@/lib/zoho';
 import jsPDF from 'jspdf';
 
@@ -25,22 +23,6 @@ export async function GET(
         }
       }
     );
-  }
-
-  // Authentication - check if user is admin or quote owner
-  const authHeader = request.headers.get('authorization');
-  let userEmail: string | null = null;
-  let isAdmin = false;
-
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    const token = authHeader.substring(7);
-    try {
-      const decoded = jwt.verify(token, getJWTSecret()) as { email: string; role: string };
-      userEmail = decoded.email;
-      isAdmin = decoded.role === 'admin';
-    } catch {
-      // Invalid token, continue without auth (will be checked against quote)
-    }
   }
 
   try {

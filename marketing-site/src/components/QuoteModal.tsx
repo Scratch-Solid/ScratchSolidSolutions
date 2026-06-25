@@ -92,6 +92,8 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
   const [actionLoading, setActionLoading] = useState<'accept' | 'decline' | null>(null);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfError, setPdfError] = useState('');
+  const [historyPdfLoading, setHistoryPdfLoading] = useState<string | null>(null);
+  const [historyPdfError, setHistoryPdfError] = useState<{ ref: string; message: string } | null>(null);
   const [quoteDeclined, setQuoteDeclined] = useState(false);
   const [pricingCalculation, setPricingCalculation] = useState<PricingQuoteResult | null>(null);
   const [loyaltyPoints, setLoyaltyPoints] = useState(0);
@@ -376,8 +378,8 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
   };
 
   const handleDownloadQuotePdf = async (refNumber: string) => {
-    setPdfLoading(true);
-    setPdfError('');
+    setHistoryPdfLoading(refNumber);
+    setHistoryPdfError(null);
     try {
       const token = localStorage.getItem('authToken');
       const response = await fetch(`/api/quotes/${refNumber}/pdf`, {
@@ -397,9 +399,9 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (err: any) {
-      setPdfError(err.message || 'Failed to download PDF. Please try again.');
+      setHistoryPdfError({ ref: refNumber, message: err.message || 'Failed to download PDF. Please try again.' });
     } finally {
-      setPdfLoading(false);
+      setHistoryPdfLoading(null);
     }
   };
 
@@ -542,13 +544,22 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
                           <p className="font-bold text-gray-900 text-sm">
                             R{quote.final_price.toFixed(2)}
                           </p>
-                          <div className="flex gap-1">
+                          <div className="flex gap-1 items-center">
                             <button
                               onClick={() => handleDownloadQuotePdf(quote.ref_number)}
-                              className="text-blue-600 hover:text-blue-700 px-2 py-1 border border-blue-500/30 rounded transition-all text-xs"
+                              disabled={historyPdfLoading === quote.ref_number}
+                              className="text-blue-600 hover:text-blue-700 px-2 py-1 border border-blue-500/30 rounded transition-all text-xs disabled:opacity-50 flex items-center gap-1"
                             >
-                              PDF
+                              {historyPdfLoading === quote.ref_number ? (
+                                <>
+                                  <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z" /></svg>
+                                  ...
+                                </>
+                              ) : 'PDF'}
                             </button>
+                            {historyPdfError?.ref === quote.ref_number && (
+                              <span className="text-xs text-red-500">{historyPdfError?.message}</span>
+                            )}
                             {quote.status === 'pending' && (
                               <button
                                 onClick={() => window.location.href = `/services?quote=${quote.ref_number}`}
