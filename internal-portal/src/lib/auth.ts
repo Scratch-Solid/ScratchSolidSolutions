@@ -320,13 +320,10 @@ export function isAdminEmailDomain(email: string): boolean {
 }
 
 /**
- * MFA enforcement: admin and supervisor roles MUST have 2FA enabled.
- * Returns true if the user either (a) is not a privileged role, or (b) has 2FA enabled.
+ * MFA enforcement: ALL users MUST have 2FA enabled.
+ * Returns true if the user has 2FA enabled in the user_2fa table.
  */
-export async function isAdminMFACompliant(db: any, userId: number, role: string): Promise<boolean> {
-  const privilegedRoles = ['admin', 'supervisor'];
-  if (!privilegedRoles.includes(role)) return true;
-
+export async function isMFACompliant(db: any, userId: number): Promise<boolean> {
   const user2fa = await db.prepare(
     'SELECT enabled FROM user_2fa WHERE user_id = ?'
   ).bind(userId).first() as { enabled: number } | null;

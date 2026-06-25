@@ -14,7 +14,7 @@ import {
   createSecurityError,
   createRateLimitError
 } from '@/lib/security-middleware';
-import { recordFailedAttempt, isUserLockedOut, clearFailedAttempts, isAdminEmailDomain, isAdminMFACompliant } from '@/lib/auth';
+import { recordFailedAttempt, isUserLockedOut, clearFailedAttempts, isAdminEmailDomain, isMFACompliant, verifyTOTP } from '@/lib/auth';
 import { generateAccessToken, generateRefreshToken, setAuthCookies } from '@/lib/session';
 import crypto from 'crypto';
 
@@ -111,8 +111,8 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = await request.json() as { identifier?: string; password?: string };
-    const { identifier, password } = body;
+    const body = await request.json() as { identifier?: string; password?: string; totp_code?: string };
+    const { identifier, password, totp_code: totpCode } = body;
 
     if (!identifier || !password) {
       return createSecurityError('Identifier and password are required', 400);
@@ -163,45 +163,8 @@ export async function POST(request: NextRequest) {
     // Email verification check removed - email verification flow not implemented
     // TODO: Implement email verification flow if needed
 
-    // Generate JWT tokens
-    const accessToken = generateAccessToken(Number(user.id), user.email, user.role);
-    const refreshTokenId = crypto.randomUUID();
-    const refreshToken = generateRefreshToken(Number(user.id), refreshTokenId);
-
-    // Clear failed attempts on successful login
-    await clearFailedAttempts(db, identifier);
-
-    // MFA enforcement for admin/supervisor accounts
+    // Determine role and redirect based on user type
     const resolvedRole = user.role === 'admin' || isAdminEmailDomain(user.email) ? 'admin' : user.role;
-    const mfaCompliant = await isAdminMFACompliant(db, user.id, resolvedRole);
-    if (!mfaCompliant) {
-      await logAuditEvent(db, {
-        user_id: user.id,
-        action: 'login_failed',
-        resource: 'auth',
-        ip_address: request.headers.get('x-forwarded-for') || 'unknown',
-        user_agent: request.headers.get('user-agent')?.slice(0, 200) || 'unknown',
-        details: `MFA enforcement: admin/supervisor login rejected due to missing 2FA`,
-        success: false
-      });
-      return createSecurityError('Multi-factor authentication is required for admin accounts. Please enable 2FA before logging in.', 403);
-    }
-
-    // Log successful login for audit
-    try {
-      await logAuditEvent(db, {
-        user_id: user.id,
-        action: 'login_success',
-        resource: 'auth',
-        ip_address: request.headers.get('x-forwarded-for') || 'unknown',
-        user_agent: request.headers.get('user-agent')?.slice(0, 200) || 'unknown',
-        details: `Login via identifier: ${identifier}`,
-        success: true
-      });
-    } catch {
-    }
-
-    // Check if password change is required
     const passwordChangeRequired = user.password_needs_reset === 1;
 
     let redirectTo: string | undefined;
@@ -257,6 +220,100 @@ export async function POST(request: NextRequest) {
         ).run();
       } catch {
       }
+    }
+
+    // Generate JWT tokens
+    const accessToken = generateAccessToken(Number(user.id), user.email, user.role);
+    const refreshToken = generateRefreshToken(Number(user.id), crypto.randomUUID());
+
+    // Clear failed attempts on successful login
+    await clearFailedAttempts(db, identifier);
+
+    // Universal 2FA enforcement: ALL users must have 2FA enabled
+    const mfaCompliant = await isMFACompliant(db, user.id);
+
+    if (!mfaCompliant) {
+      // User has not set up 2FA yet — allow login but flag that setup is required
+      await logAuditEvent(db, {
+        user_id: user.id,
+        action: 'login_success',
+        resource: 'auth',
+        ip_address: request.headers.get('x-forwarded-for') || 'unknown',
+        user_agent: request.headers.get('user-agent')?.slice(0, 200) || 'unknown',
+        details: `Login successful (2FA setup required) via identifier: ${identifier}`,
+        success: true
+      });
+
+      const response = NextResponse.json({
+        success: true,
+        token: accessToken,
+        role: resolvedRole,
+        username: user.email,
+        user_id: user.id,
+        paysheet_code: user.paysheet_code || user.phone || identifier,
+        redirect_to: redirectTo,
+        mustChangePassword: passwordChangeRequired,
+        require_2fa_setup: true,
+        message: 'Login successful. Please set up two-factor authentication to secure your account.'
+      });
+
+      setAuthCookies(response, accessToken, refreshToken);
+      applySecurityMiddleware(response);
+      const responseHeaders = getRateLimitHeaders(clientId, 'auth');
+      Object.entries(responseHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return response;
+    }
+
+    // 2FA is enabled — verify TOTP code if provided
+    if (totpCode) {
+      const totpRecord = await db.prepare(
+        'SELECT secret FROM user_2fa WHERE user_id = ? AND enabled = 1'
+      ).bind(user.id).first() as { secret: string } | null;
+
+      if (!totpRecord || !verifyTOTP(totpCode, totpRecord.secret)) {
+        await logAuditEvent(db, {
+          user_id: user.id,
+          action: 'login_failed',
+          resource: 'auth',
+          ip_address: request.headers.get('x-forwarded-for') || 'unknown',
+          user_agent: request.headers.get('user-agent')?.slice(0, 200) || 'unknown',
+          details: `2FA verification failed for identifier: ${identifier}`,
+          success: false
+        });
+        return createSecurityError('Invalid 2FA code. Please try again.', 401);
+      }
+    } else {
+      // 2FA enabled but no code provided — require it
+      await logAuditEvent(db, {
+        user_id: user.id,
+        action: 'login_failed',
+        resource: 'auth',
+        ip_address: request.headers.get('x-forwarded-for') || 'unknown',
+        user_agent: request.headers.get('user-agent')?.slice(0, 200) || 'unknown',
+        details: `2FA code required for identifier: ${identifier}`,
+        success: false
+      });
+      return NextResponse.json({
+        success: false,
+        require_2fa: true,
+        message: 'Two-factor authentication code required. Please enter your 2FA code.'
+      }, { status: 401 });
+    }
+
+    // Log successful login for audit
+    try {
+      await logAuditEvent(db, {
+        user_id: user.id,
+        action: 'login_success',
+        resource: 'auth',
+        ip_address: request.headers.get('x-forwarded-for') || 'unknown',
+        user_agent: request.headers.get('user-agent')?.slice(0, 200) || 'unknown',
+        details: `Login via identifier: ${identifier}`,
+        success: true
+      });
+    } catch {
     }
 
     const response = NextResponse.json({
