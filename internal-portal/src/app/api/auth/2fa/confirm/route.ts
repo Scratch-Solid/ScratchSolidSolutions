@@ -54,7 +54,17 @@ export async function POST(request: NextRequest) {
     }
 
     const secret = (totpRecord as any).secret;
-    const isValid = verifyTOTP(code, secret);
+    if (!secret) {
+      return NextResponse.json({ error: '2FA secret missing in database' }, { status: 500 });
+    }
+
+    let isValid;
+    try {
+      isValid = verifyTOTP(code, secret);
+    } catch (totpError) {
+      console.error('TOTP verification error:', totpError);
+      return NextResponse.json({ error: 'TOTP verification error: ' + (totpError instanceof Error ? totpError.message : String(totpError)) }, { status: 500 });
+    }
     
     if (!isValid) {
       await logAuthEvent(db, decoded.userId, '2fa_enable_failed', ip, ua);
