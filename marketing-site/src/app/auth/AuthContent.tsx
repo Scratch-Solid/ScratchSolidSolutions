@@ -121,7 +121,10 @@ export default function AuthContent() {
         localStorage.setItem("userPhone", result.phone || "");
         localStorage.setItem("userAddress", result.address || "");
 
-        if (tab === "business") {
+        const redirect = searchParams.get('redirect') || '';
+        if (redirect && redirect.startsWith('/')) {
+          router.push(redirect);
+        } else if (tab === "business") {
           router.push("/business-dashboard");
         } else {
           router.push("/client-dashboard");

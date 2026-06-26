@@ -10,9 +10,9 @@ export default function Home() {
   const handleBookCleaner = () => {
     const token = localStorage.getItem('authToken');
     if (token) {
-      window.location.href = "/booking-selection";
+      window.location.href = "/client-dashboard";
     } else {
-      window.location.href = "/auth";
+      window.location.href = "/auth?redirect=/client-dashboard";
     }
   };
 

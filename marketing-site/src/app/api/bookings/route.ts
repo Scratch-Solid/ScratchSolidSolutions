@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
 
     // Cleaner assignment is now done AFTER payment confirmation
     // Do not assign cleaner during booking creation
-    let assignedCleanerId = null;
+    const assignedCleanerId = null;
 
     // Check for booking conflicts (only check against existing bookings with assigned cleaners)
     const conflictingBookings = await getBookingsByDateRange(db, booking_date, booking_date);

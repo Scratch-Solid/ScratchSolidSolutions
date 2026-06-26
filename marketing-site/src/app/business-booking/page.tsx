@@ -33,8 +33,14 @@ export default function BusinessBookingPage() {
   ];
 
   useEffect(() => {
-    // Initialize empty cleaners list - will be populated by actual data
-    setCleaners([]);
+    const token = localStorage.getItem('authToken');
+    const userId = localStorage.getItem('userId');
+    if (!token || !userId) {
+      window.location.href = '/auth?redirect=/business-dashboard';
+      return;
+    }
+    // If already logged in, redirect to dashboard booking flow
+    window.location.href = '/business-dashboard';
   }, []);
 
   const handleBookingTypeSelection = (type: "once-off" | "contract") => {

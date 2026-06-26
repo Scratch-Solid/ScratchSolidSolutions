@@ -64,8 +64,8 @@ async function testPublicPages() {
     { path: '/auth', title: 'Sign In' },
     { path: '/login', title: 'Sign In' },
     { path: '/forgot-password', title: 'Forgot' },
-    { path: '/booking', title: 'Book' },
-    { path: '/business-booking', title: 'Business' },
+    { path: '/booking', title: 'Sign In' },
+    { path: '/business-booking', title: 'Sign In' },
     { path: '/business-events', title: 'Events' },
     { path: '/business-signup', title: 'Business' },
     { path: '/client-signup', title: 'Sign Up' },
@@ -225,100 +225,46 @@ async function testAuthForms() {
 }
 
 // ─────────────────────────────────────────────
-// BOOKING FORM
+// BOOKING FORM — Auth-guarded redirects
 // ─────────────────────────────────────────────
 async function testBookingForm() {
   console.log('\n📅 Booking Form');
   let passed = 0, failed = 0;
 
-  const result = await runTest('Booking page loads with all steps', async (driver) => {
+  const result = await runTest('/book redirects unauthenticated to auth', async (driver) => {
     await driver.get(`${BASE_URL}/book`);
     await delay();
-    const body = await driver.findElement(By.css('body')).getText();
-    expect(body).toContain('Book a Cleaning');
-    expect(body).toContain('Individual Booking');
-    expect(body).toContain('Business Booking');
+    const url = await driver.getCurrentUrl();
+    expect(url).toContain('/auth');
   });
   if (result.passed) passed++; else failed++;
 
-  const result2 = await runTest('Step 1 → Step 2: Select booking type', async (driver) => {
-    await driver.get(`${BASE_URL}/book`);
+  const result2 = await runTest('/business-booking redirects unauthenticated to auth', async (driver) => {
+    await driver.get(`${BASE_URL}/business-booking`);
     await delay();
-    await driver.findElement(By.xpath('//text()[contains(.,"Individual Booking")]')).click();
-    await delay();
-    const body = await driver.findElement(By.css('body')).getText();
-    expect(body).toContain('Select Service');
+    const url = await driver.getCurrentUrl();
+    expect(url).toContain('/auth');
   });
   if (result2.passed) passed++; else failed++;
 
-  const result3 = await runTest('Step 2 service type dropdown has options', async (driver) => {
-    await driver.get(`${BASE_URL}/book`);
+  const result3 = await runTest('/client-dashboard redirects unauthenticated to auth', async (driver) => {
+    await driver.get(`${BASE_URL}/client-dashboard`);
     await delay();
-    await driver.findElement(By.xpath('//text()[contains(.,"Individual Booking")]')).click();
-    await delay();
-    const options = await driver.findElements(By.css('select[name="service_type"] option'));
-    const texts = await Promise.all(options.map(o => o.getText()));
-    expect(texts).toContain('Standard Cleaning');
-    expect(texts).toContain('Deep Cleaning');
+    const url = await driver.getCurrentUrl();
+    expect(url).toContain('/auth');
   });
   if (result3.passed) passed++; else failed++;
 
-  const result4 = await runTest('Step 2 → Step 3 → Step 4 → Step 5', async (driver) => {
-    await driver.get(`${BASE_URL}/book`);
+  const result4 = await runTest('Homepage "Get a Quick Quote" routes to auth when not logged in', async (driver) => {
+    await driver.get(`${BASE_URL}/`);
     await delay();
-    await driver.findElement(By.xpath('//text()[contains(.,"Individual Booking")]')).click();
+    const btn = await driver.findElement(By.xpath('//button[contains(text(),"Get a Quick Quote")]'));
+    await btn.click();
     await delay();
-    await driver.findElement(By.css('select[name="service_type"]')).sendKeys('standard');
-    const nextButtons = await driver.findElements(By.xpath('//button[contains(text(),"Next")]'));
-    if (nextButtons.length) await nextButtons[0].click();
-    await delay();
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const dateInput = await driver.findElement(By.css('input[name="booking_date"]'));
-    await dateInput.clear();
-    await dateInput.sendKeys(tomorrow.toISOString().split('T')[0]);
-    await driver.findElement(By.xpath('//text()[contains(.,"08:00-12:00")]')).click();
-    const next2 = await driver.findElements(By.xpath('//button[contains(text(),"Next")]'));
-    if (next2.length) await next2[0].click();
-    await delay();
-    await driver.findElement(By.css('input[name="location"]')).sendKeys('123 Test Street');
-    const next3 = await driver.findElements(By.xpath('//button[contains(text(),"Next")]'));
-    if (next3.length) await next3[0].click();
-    await delay();
-    const body = await driver.findElement(By.css('body')).getText();
-    expect(body).toContain('Payment & Terms');
-    expect(body).toContain('Indemnity Form');
+    const url = await driver.getCurrentUrl();
+    expect(url).toContain('/auth');
   });
   if (result4.passed) passed++; else failed++;
-
-  const result5 = await runTest('Indemnity form modal — View, Agree, Decline', async (driver) => {
-    await driver.get(`${BASE_URL}/book`);
-    await delay();
-    await driver.findElement(By.xpath('//text()[contains(.,"Individual Booking")]')).click();
-    await delay();
-    await driver.findElement(By.css('select[name="service_type"]')).sendKeys('standard');
-    const nextBtns = await driver.findElements(By.xpath('//button[contains(text(),"Next")]'));
-    if (nextBtns.length) await nextBtns[0].click();
-    await delay();
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const dateInput = await driver.findElement(By.css('input[name="booking_date"]'));
-    await dateInput.clear();
-    await dateInput.sendKeys(tomorrow.toISOString().split('T')[0]);
-    await driver.findElement(By.xpath('//text()[contains(.,"08:00-12:00")]')).click();
-    const next2 = await driver.findElements(By.xpath('//button[contains(text(),"Next")]'));
-    if (next2.length) await next2[0].click();
-    await delay();
-    await driver.findElement(By.css('input[name="location"]')).sendKeys('123 Test Street');
-    const next3 = await driver.findElements(By.xpath('//button[contains(text(),"Next")]'));
-    if (next3.length) await next3[0].click();
-    await delay();
-    await driver.findElement(By.xpath('//text()[contains(.,"View Indemnity Form")]')).click();
-    await delay(500);
-    const body = await driver.findElement(By.css('body')).getText();
-    expect(body).toContain('Indemnity Form');
-  });
-  if (result5.passed) passed++; else failed++;
 
   console.log(`  Result: ${passed} passed, ${failed} failed`);
   return failed === 0;
@@ -425,39 +371,37 @@ async function testSeo() {
 // ─────────────────────────────────────────────
 // MAIN
 // ─────────────────────────────────────────────
-async function main() {
-  console.log('═══════════════════════════════════════════');
-  console.log('  MARKETING SITE — COMPREHENSIVE SELENIUM');
-  console.log('═══════════════════════════════════════════');
-  console.log(`  Base URL: ${BASE_URL}`);
-  console.log('');
+// Jest wrapper for the comprehensive Selenium tests
+describe('Comprehensive Marketing Site — Selenium', () => {
+  test('All page suites pass', async () => {
+    console.log('═══════════════════════════════════════════');
+    console.log('  MARKETING SITE — COMPREHENSIVE SELENIUM');
+    console.log('═══════════════════════════════════════════');
+    console.log(`  Base URL: ${BASE_URL}`);
+    console.log('');
 
-  let totalPassed = 0;
-  let totalFailed = 0;
+    let totalPassed = 0;
+    let totalFailed = 0;
 
-  const suites = [
-    testPublicPages,
-    testNavigation,
-    testAuthForms,
-    testBookingForm,
-    testServiceCards,
-    testApiEndpoints,
-    testSeo,
-  ];
+    const suites = [
+      testPublicPages,
+      testNavigation,
+      testAuthForms,
+      testBookingForm,
+      testServiceCards,
+      testApiEndpoints,
+      testSeo,
+    ];
 
-  for (const suite of suites) {
-    const ok = await suite();
-    if (ok) totalPassed++; else totalFailed++;
-  }
+    for (const suite of suites) {
+      const ok = await suite();
+      if (ok) totalPassed++; else totalFailed++;
+    }
 
-  console.log('\n═══════════════════════════════════════════');
-  console.log(`  FINAL: ${totalPassed} suites passed, ${totalFailed} suites failed`);
-  console.log('═══════════════════════════════════════════');
+    console.log('\n═══════════════════════════════════════════');
+    console.log(`  FINAL: ${totalPassed} suites passed, ${totalFailed} suites failed`);
+    console.log('═══════════════════════════════════════════');
 
-  process.exit(totalFailed > 0 ? 1 : 0);
-}
-
-main().catch(e => {
-  console.error(e);
-  process.exit(1);
+    expect(totalFailed).toBe(0);
+  }, 600000);
 });

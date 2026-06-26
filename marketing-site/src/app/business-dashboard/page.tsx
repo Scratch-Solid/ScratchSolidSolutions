@@ -461,7 +461,7 @@ export default function BusinessDashboard() {
                   ))
                 )}
               </div>
-              <Link href="/book" className="block mt-3 text-center bg-green-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-green-700 transition-colors">
+              <Link href="/client-dashboard?action=book" className="block mt-3 text-center bg-green-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-green-700 transition-colors">
                 Schedule Recurring Booking
               </Link>
             </div>
@@ -821,10 +821,10 @@ export default function BusinessDashboard() {
         
         <div className="mt-8 text-center">
           <Link 
-            href="/book" 
+            href="/business-dashboard" 
             className="text-blue-600 hover:underline font-semibold"
           >
-            Back to Booking
+            Back to Dashboard
           </Link>
         </div>
       </div>

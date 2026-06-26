@@ -19,9 +19,13 @@ export default function ClientDashboard() {
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>('');
   const [selectedCleaner, setSelectedCleaner] = useState<string>('');
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'eft'>('cash');
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'eft' | 'card'>('card');
   const [bookingType, setBookingType] = useState<'once_off' | 'recurring'>('once_off');
   const [availableCleaners, setAvailableCleaners] = useState<any[]>([]);
+  const [services, setServices] = useState<any[]>([]);
+  const [pricing, setPricing] = useState<any[]>([]);
+  const [selectedServiceType, setSelectedServiceType] = useState<string>('');
+  const [selectedCleaningType, setSelectedCleaningType] = useState<string>('standard');
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState<string>('');
   const [showIndemnityOverlay, setShowIndemnityOverlay] = useState(false);
@@ -84,6 +88,19 @@ export default function ClientDashboard() {
       const userId = localStorage.getItem("userId");
       const token = localStorage.getItem("authToken");
       if (!userId || !token) return;
+
+      try {
+        const [sRes, pRes] = await Promise.all([
+          fetch('/api/services'),
+          fetch('/api/service-pricing'),
+        ]);
+        const servicesData = sRes.ok ? await sRes.json() as any[] : [];
+        const pricingData = pRes.ok ? await pRes.json() as any[] : [];
+        setServices(servicesData);
+        setPricing(pricingData);
+      } catch (e) {
+        // Silently fail — services/pricing defaults will be used
+      }
 
       // Fetch available cleaners from real API
       try {
@@ -168,6 +185,22 @@ export default function ClientDashboard() {
     setBookingStep('form');
   };
 
+  const calculateAmount = (serviceType: string, cleaningType: string): number => {
+    const basePrices: Record<string, number> = {
+      standard: 350,
+      deep_clean: 500,
+      move_in: 450,
+      move_out: 450,
+    };
+    const multiplier: Record<string, number> = {
+      standard: 1,
+      deep_clean: 1.5,
+      move_in: 1.2,
+      move_out: 1.2,
+    };
+    return (basePrices[serviceType] || 350) * (multiplier[cleaningType] || 1);
+  };
+
   const createBooking = async () => {
     setLoading(true);
     setError('');
@@ -176,20 +209,15 @@ export default function ClientDashboard() {
 
     try {
       const userId = localStorage.getItem("userId");
+      const token = localStorage.getItem("authToken");
       
-      // Auto-assign first available cleaner
-      const availableCleaner = availableCleaners.find(c => c.available);
-      if (!availableCleaner) {
-        setError('No cleaners available at this time. Please try a different time slot.');
+      if (!selectedServiceType) {
+        setError('Please select a service type');
         setLoading(false);
         return;
       }
 
-      const assignedCleaner = availableCleaner;
-      setAssignedCleaner(availableCleaner);
-
-      // Create booking via real API
-      const token = localStorage.getItem("authToken");
+      // Step 1: Create booking with pending_payment status
       const bookingRes = await fetch('/api/bookings', {
         method: 'POST',
         headers: {
@@ -199,29 +227,67 @@ export default function ClientDashboard() {
         body: JSON.stringify({
           client_id: parseInt(userId || '0'),
           client_name: localStorage.getItem("userName") || '',
-          cleaner_id: parseInt(assignedCleaner.id),
           location: localStorage.getItem("userAddress") || '',
           booking_date: selectedDate,
           booking_time: selectedTimeSlot,
           payment_method: paymentMethod,
+          service_type: selectedServiceType,
+          cleaning_type: selectedCleaningType,
           type: bookingType,
-          price: 350,
+          price: calculateAmount(selectedServiceType, selectedCleaningType),
           phone: localStorage.getItem("userPhone") || ''
         })
       });
 
       if (!bookingRes.ok) {
-        setPaymentError(true);
-        setError('Booking creation failed. Please retry or contact admin.');
+        const errData = await bookingRes.json().catch(() => ({}));
+        setError(errData.error || 'Booking creation failed. Please retry or contact admin.');
         setLoading(false);
         return;
       }
 
-      const newBooking = await bookingRes.json();
-      setBookings(prev => [...prev, newBooking]);
+      const bookingResult = await bookingRes.json();
 
-      const cleanerForMessage = availableCleaners.find((c: any) => c.available);
-      setSuccess(`Booking confirmed successfully! ${cleanerForMessage?.name || 'Cleaner'} has been assigned to your cleaning service.`);
+      // Step 2: Handle payment based on method
+      if (paymentMethod === 'card') {
+        const userEmail = localStorage.getItem("userEmail") || "";
+        const amount = bookingResult.total_amount || calculateAmount(selectedServiceType, selectedCleaningType);
+        const callbackUrl = `${window.location.origin}/payment/verify`;
+
+        const paystackResponse = await fetch("/api/payments/paystack/initialize", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            booking_id: bookingResult.id,
+            email: userEmail,
+            amount,
+            callback_url: callbackUrl,
+          }),
+        });
+
+        const paystackData = await paystackResponse.json() as {
+          authorization_url?: string;
+          reference?: string;
+          error?: string;
+        };
+
+        if (!paystackResponse.ok || !paystackData.authorization_url) {
+          setError(paystackData.error || "Payment initialization failed. Your booking is saved — please contact support.");
+          setLoading(false);
+          return;
+        }
+
+        // Redirect to Paystack checkout
+        window.location.href = paystackData.authorization_url;
+        return; // Don't set loading false — we're navigating away
+      }
+
+      // For cash/EFT: show success message with instructions
+      setBookings(prev => [...prev, bookingResult]);
+      setSuccess(`Booking saved! Please make ${paymentMethod.toUpperCase()} payment. Your cleaner will be dispatched once payment is confirmed.`);
       
       // Reset booking form and return to dashboard
       setTimeout(() => {
@@ -229,14 +295,14 @@ export default function ClientDashboard() {
         setSelectedDate('');
         setSelectedTimeSlot('');
         setSelectedCleaner('');
-        setPaymentMethod('cash');
+        setSelectedServiceType('');
+        setSelectedCleaningType('standard');
+        setPaymentMethod('card');
         setBookingType('once_off');
         setIndemnityAccepted(false);
         setSuccess('');
         setCleanerUnavailable(false);
         setPaymentError(false);
-        
-        // Set cleaner status to idle initially (will be updated by cleaner)
         setCleanerStatus('idle');
       }, 3000);
 
@@ -253,7 +319,9 @@ export default function ClientDashboard() {
     setSelectedDate('');
     setSelectedTimeSlot('');
     setSelectedCleaner('');
-    setPaymentMethod('cash');
+    setSelectedServiceType('');
+    setSelectedCleaningType('standard');
+    setPaymentMethod('card');
     setBookingType('once_off');
     setError('');
     setSuccess('');
@@ -375,7 +443,7 @@ export default function ClientDashboard() {
         throw new Error('Review submission failed');
       }
 
-      setSuccess('Review submitted successfully! Gallery will be updated.');
+      setSuccess('Review submitted successfully! It will be published on the Gallery once approved by our team.');
 
       // Reset review form
       setReviewImages([]);
@@ -904,7 +972,97 @@ export default function ClientDashboard() {
                 </p>
               </div>
 
-              
+              {/* Service Type */}
+              <div>
+                <h3 className="font-semibold text-lg text-gray-800 mb-4">Select Service</h3>
+                <div className="grid grid-cols-1 gap-3">
+                  {services.length > 0 ? services.filter((s: any) => s.is_active !== 0).map((service: any) => {
+                    const priceRow = pricing.find((p: any) => p.service_id === service.id);
+                    const displayPrice = priceRow?.special_price && priceRow?.special_valid_from && priceRow?.special_valid_until &&
+                      new Date() >= new Date(priceRow.special_valid_from) && new Date() <= new Date(priceRow.special_valid_until)
+                      ? priceRow.special_price : (priceRow?.price || 0);
+                    return (
+                      <button
+                        key={service.id}
+                        onClick={() => { setSelectedServiceType(service.id.toString()); setSelectedCleaningType('standard'); }}
+                        className={`p-4 rounded-xl border-2 transition-all text-left ${
+                          selectedServiceType === service.id.toString()
+                            ? 'border-blue-600 bg-blue-50 ring-1 ring-blue-600'
+                            : 'border-gray-200 hover:border-blue-300'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-semibold text-gray-800">{service.name}</p>
+                            <p className="text-sm text-gray-600 mt-1">{service.description}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold text-blue-700">{displayPrice > 0 ? `R${displayPrice.toFixed(2)}` : 'Custom quote'}</p>
+                            {priceRow?.special_price && (
+                              <p className="text-xs text-green-600 font-medium">Special</p>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  }) : (
+                    <>
+                      {[
+                        { value: 'standard', label: 'Standard Cleaning', desc: 'Regular maintenance cleaning', price: 'R350' },
+                        { value: 'deep_clean', label: 'Deep Cleaning', desc: 'Intensive deep clean service', price: 'R500' },
+                        { value: 'move_in', label: 'Move-in Cleaning', desc: 'Pre-move-in thorough clean', price: 'R450' },
+                        { value: 'move_out', label: 'Move-out Cleaning', desc: 'End-of-lease deep clean', price: 'R450' },
+                      ].map((svc) => (
+                        <button
+                          key={svc.value}
+                          onClick={() => { setSelectedServiceType(svc.value); setSelectedCleaningType('standard'); }}
+                          className={`p-4 rounded-xl border-2 transition-all text-left ${
+                            selectedServiceType === svc.value
+                              ? 'border-blue-600 bg-blue-50 ring-1 ring-blue-600'
+                              : 'border-gray-200 hover:border-blue-300'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-semibold text-gray-800">{svc.label}</p>
+                              <p className="text-sm text-gray-600 mt-1">{svc.desc}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-bold text-blue-700">{svc.price}</p>
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Cleaning Type */}
+              <div>
+                <h3 className="font-semibold text-lg text-gray-800 mb-4">Cleaning Intensity</h3>
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { value: 'standard', label: 'Standard', multiplier: '1.0x' },
+                    { value: 'deep_clean', label: 'Deep', multiplier: '1.5x' },
+                    { value: 'heavy_duty', label: 'Heavy Duty', multiplier: '2.0x' },
+                  ].map((ct) => (
+                    <button
+                      key={ct.value}
+                      onClick={() => setSelectedCleaningType(ct.value)}
+                      className={`p-3 rounded-lg border-2 transition-colors text-center ${
+                        selectedCleaningType === ct.value
+                          ? 'border-blue-600 bg-blue-50 text-blue-700'
+                          : 'border-gray-300 hover:border-gray-400'
+                      }`}
+                    >
+                      <p className="font-medium">{ct.label}</p>
+                      <p className="text-xs text-gray-500">{ct.multiplier}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Booking Type */}
               <div>
                 <h3 className="font-semibold text-lg text-gray-800 mb-4">Booking Type</h3>
@@ -928,22 +1086,48 @@ export default function ClientDashboard() {
               {/* Payment Method */}
               <div>
                 <h3 className="font-semibold text-lg text-gray-800 mb-4">Payment Method</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  {['cash', 'eft'].map((method) => (
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { value: 'card', label: 'Card (Paystack)', badge: 'Instant' },
+                    { value: 'cash', label: 'Cash', badge: 'On-site' },
+                    { value: 'eft', label: 'EFT', badge: 'Manual' },
+                  ].map((method) => (
                     <button
-                      key={method}
-                      onClick={() => setPaymentMethod(method as any)}
-                      className={`p-4 rounded-lg border-2 transition-colors ${
-                        paymentMethod === method
+                      key={method.value}
+                      onClick={() => setPaymentMethod(method.value as any)}
+                      className={`p-4 rounded-lg border-2 transition-colors relative ${
+                        paymentMethod === method.value
                           ? 'border-blue-600 bg-blue-50 text-blue-700'
                           : 'border-gray-300 hover:border-gray-400'
                       }`}
                     >
-                      <p className="font-medium capitalize">{method.toUpperCase()}</p>
+                      <p className="font-medium">{method.label}</p>
+                      <span className={`text-xs px-2 py-0.5 rounded-full mt-1 inline-block ${
+                        method.value === 'card' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                      }`}>
+                        {method.badge}
+                      </span>
                     </button>
                   ))}
                 </div>
               </div>
+
+              {/* Price Summary */}
+              {selectedServiceType && (
+                <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">Estimated Total</p>
+                      <p className="text-2xl font-bold text-green-700">
+                        R{calculateAmount(selectedServiceType, selectedCleaningType).toFixed(2)}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-gray-500">{selectedCleaningType === 'standard' ? 'Standard intensity' : selectedCleaningType === 'deep_clean' ? 'Deep clean' : 'Heavy duty'}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Submit Buttons */}
               <div className="flex space-x-4">
@@ -955,10 +1139,10 @@ export default function ClientDashboard() {
                 </button>
                 <button
                   onClick={createBooking}
-                  disabled={loading}
+                  disabled={loading || !selectedServiceType}
                   className="flex-1 rounded-full bg-blue-600 px-6 py-3 text-white font-bold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {loading ? 'Processing...' : 'Confirm Booking'}
+                  {loading ? 'Processing...' : paymentMethod === 'card' ? 'Proceed to Payment' : 'Confirm Booking'}
                 </button>
               </div>
             </div>

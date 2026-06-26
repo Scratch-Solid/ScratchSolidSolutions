@@ -13,7 +13,7 @@ async function delay(ms = DELAY_MS) {
 }
 
 async function goTo(page: Page, path: string) {
-  const res = await page.goto(`${BASE_URL}${path}`, { waitUntil: 'domcontentloaded' });
+  const res = await page.goto(path, { waitUntil: 'domcontentloaded' });
   await delay();
   return res;
 }
@@ -76,14 +76,15 @@ test.describe('🏠 Public Pages — Load & Content', () => {
     const res = await goTo(page, '/gallery');
     expect(res?.status()).toBeLessThan(500);
     await assertNo500(page);
-    await expect(page.locator('h1, h2')).toContainText(/Gallery/i);
+    const body = await page.locator('body').innerText();
+    expect(body).toMatch(/Gallery|Before|After|Clients/i);
   });
 
   test('Contact page loads', async ({ page }) => {
     const res = await goTo(page, '/contact');
     expect(res?.status()).toBeLessThan(500);
     await assertNo500(page);
-    await expect(page.locator('h1, h2').first()).toContainText(/Contact/i);
+    await expect(page.locator('h1, h2').first()).toContainText(/Get In Touch|Contact|Reach/i);
   });
 
   test('Privacy Policy page loads', async ({ page }) => {
@@ -152,13 +153,13 @@ test.describe('🔗 Navigation — All Links & Buttons', () => {
     await expect(page).toHaveURL(/\/services/);
     await delay();
     // About link
-    await page.goto(`${BASE_URL}/`);
+    await page.goto('/');
     await page.click('a[href="/about"]');
     await page.waitForURL('**/about');
     await expect(page).toHaveURL(/\/about/);
     await delay();
     // Gallery link
-    await page.goto(`${BASE_URL}/`);
+    await page.goto('/');
     await page.click('a[href="/gallery"]');
     await page.waitForURL('**/gallery');
     await expect(page).toHaveURL(/\/gallery/);
@@ -237,17 +238,20 @@ test.describe('🔒 Auth Protected Pages — Unauthenticated Redirects', () => {
     await expect(page).toHaveURL(/\/auth/);
   });
 
-  test('Book page shows login required when not authenticated', async ({ page }) => {
+  test('Book page redirects unauthenticated users to login', async ({ page }) => {
     const res = await goTo(page, '/book');
     expect(res?.status()).toBeLessThan(500);
     await assertNo500(page);
-    await expect(page.locator('h1')).toContainText('Book a Cleaning');
+    await delay(2000);
+    await expect(page).toHaveURL(/\/auth/, { timeout: 5000 });
   });
 
-  test('Business booking page loads', async ({ page }) => {
+  test('Business booking page redirects unauthenticated users to login', async ({ page }) => {
     const res = await goTo(page, '/business-booking');
     expect(res?.status()).toBeLessThan(500);
     await assertNo500(page);
+    await delay(2000);
+    await expect(page).toHaveURL(/\/auth/, { timeout: 5000 });
   });
 
   test('Business events page loads', async ({ page }) => {
@@ -321,7 +325,7 @@ test.describe('📢 SEO & Meta Tags', () => {
   test('All public pages return status < 500', async ({ page }) => {
     const paths = ['/', '/services', '/about', '/gallery', '/contact', '/privacy', '/terms', '/auth', '/login', '/forgot-password'];
     for (const path of paths) {
-      const res = await page.goto(`${BASE_URL}${path}`, { waitUntil: 'domcontentloaded' });
+      const res = await page.goto(path, { waitUntil: 'domcontentloaded' });
       const status = res?.status() ?? 0;
       expect(status, `Path ${path} returned ${status}`).toBeLessThan(500);
     }

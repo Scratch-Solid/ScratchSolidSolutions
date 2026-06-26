@@ -14,7 +14,7 @@ export default function BookingPage() {
     location: "",
     special_instructions: "",
     cleaning_type: "standard",
-    payment_method: "cash",
+    payment_method: "card",
     booking_type: "once_off",
     recurring_rule: "",
   });
@@ -25,8 +25,16 @@ export default function BookingPage() {
   const [indemnityContent, setIndemnityContent] = useState("");
 
   useEffect(() => {
-    fetchIndemnityContent();
-  }, []);
+    // Auth guard: booking is only allowed from authenticated dashboard
+    const token = localStorage.getItem("token") || localStorage.getItem("authToken");
+    const userId = localStorage.getItem("userId");
+    if (!token || !userId) {
+      router.push("/auth?redirect=/client-dashboard");
+      return;
+    }
+    // If already logged in, redirect to dashboard booking flow
+    router.push("/client-dashboard");
+  }, [router]);
 
   const fetchIndemnityContent = async () => {
     try {
@@ -47,6 +55,7 @@ export default function BookingPage() {
     setLoading(true);
 
     const userId = localStorage.getItem("userId");
+    const token = localStorage.getItem("token");
 
     if (!userId) {
       setError("Please login to book a service");
@@ -55,7 +64,8 @@ export default function BookingPage() {
     }
 
     try {
-      const response = await fetch("/api/bookings", {
+      // Step 1: Create booking with pending_payment status
+      const bookingResponse = await fetch("/api/bookings", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -68,22 +78,81 @@ export default function BookingPage() {
         }),
       });
 
-      if (response.ok) {
-        const result = await response.json() as { id: number };
-        router.push(`/bookings/${result.id}`);
-      } else {
-        const errorData = await response.json() as { error?: string; alternatives?: string[] };
+      if (!bookingResponse.ok) {
+        const errorData = await bookingResponse.json() as { error?: string; alternatives?: string[] };
         if (errorData.error === "Booking conflict" && errorData.alternatives) {
           setError(`Time slot conflict. Available alternatives: ${errorData.alternatives.join(", ")}`);
         } else {
           setError(errorData.error || "Booking failed");
         }
+        setLoading(false);
+        return;
       }
+
+      const bookingResult = await bookingResponse.json() as { id: number; total_amount?: number };
+
+      // Step 2: Handle payment based on method
+      if (formData.payment_method === "card") {
+        // Initialize Paystack payment
+        const userEmail = localStorage.getItem("userEmail") || "";
+        const amount = bookingResult.total_amount || calculateAmount(formData.service_type, formData.cleaning_type);
+        const callbackUrl = `${window.location.origin}/payment/verify`;
+
+        const paystackResponse = await fetch("/api/payments/paystack/initialize", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": token ? `Bearer ${token}` : "",
+          },
+          body: JSON.stringify({
+            booking_id: bookingResult.id,
+            email: userEmail,
+            amount,
+            callback_url: callbackUrl,
+          }),
+        });
+
+        const paystackData = await paystackResponse.json() as {
+          authorization_url?: string;
+          reference?: string;
+          error?: string;
+        };
+
+        if (!paystackResponse.ok || !paystackData.authorization_url) {
+          setError(paystackData.error || "Payment initialization failed. Your booking is saved — please contact support.");
+          setLoading(false);
+          return;
+        }
+
+        // Redirect to Paystack checkout
+        window.location.href = paystackData.authorization_url;
+        return; // Don't set loading false — we're navigating away
+      }
+
+      // For cash/EFT: redirect to booking page with instructions
+      router.push(`/bookings/${bookingResult.id}?payment=${formData.payment_method}`);
     } catch (error) {
       setError("Network error. Please try again.");
     } finally {
       setLoading(false);
     }
+  };
+
+  const calculateAmount = (serviceType: string, cleaningType: string): number => {
+    // Base pricing logic — can be refined
+    const basePrices: Record<string, number> = {
+      standard: 350,
+      deep_clean: 500,
+      move_in: 450,
+      move_out: 450,
+    };
+    const multiplier: Record<string, number> = {
+      standard: 1,
+      deep_clean: 1.5,
+      move_in: 1.2,
+      move_out: 1.2,
+    };
+    return (basePrices[serviceType] || 350) * (multiplier[cleaningType] || 1);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -315,12 +384,23 @@ export default function BookingPage() {
                       <input
                         type="radio"
                         name="payment_method"
+                        value="card"
+                        checked={formData.payment_method === "card"}
+                        onChange={handleInputChange}
+                        className="mr-2"
+                      />
+                      <span>Card (Paystack) — Instant confirmation</span>
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="payment_method"
                         value="cash"
                         checked={formData.payment_method === "cash"}
                         onChange={handleInputChange}
                         className="mr-2"
                       />
-                      <span>Cash</span>
+                      <span>Cash — Pay on arrival</span>
                     </label>
                     <label className="flex items-center">
                       <input
@@ -331,9 +411,14 @@ export default function BookingPage() {
                         onChange={handleInputChange}
                         className="mr-2"
                       />
-                      <span>EFT</span>
+                      <span>EFT — Upload proof of payment</span>
                     </label>
                   </div>
+                  {formData.payment_method === "card" && (
+                    <p className="text-xs text-blue-600 mt-2">
+                      You will be redirected to Paystack to complete payment securely.
+                    </p>
+                  )}
                 </div>
                 <button
                   onClick={() => setShowIndemnity(true)}
@@ -356,7 +441,12 @@ export default function BookingPage() {
                 <div className="flex gap-4">
                   <button onClick={() => setStep(4)} className="flex-1 px-4 py-2 rounded-lg border-2 border-gray-300 hover:border-gray-400">Back</button>
                   <button onClick={handleSubmit} disabled={loading || !indemnityAccepted} className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50">
-                    {loading ? "Booking..." : "Confirm Booking"}
+                    {loading
+                      ? "Processing..."
+                      : formData.payment_method === "card"
+                        ? "Proceed to Payment"
+                        : "Confirm Booking"
+                    }
                   </button>
                 </div>
               </div>

@@ -18,7 +18,7 @@ import AdminCleanerOverview from "@/components/admin/AdminCleanerOverview";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { LayoutDashboard, Users, DollarSign, Wrench, FileText, Settings, Eye, UserCheck, GraduationCap, BarChart3, Shield, Monitor, ClipboardList, Lock } from "lucide-react";
+import { LayoutDashboard, Users, DollarSign, Wrench, FileText, Settings, Eye, UserCheck, GraduationCap, BarChart3, Shield, Monitor, ClipboardList, Lock, Star } from "lucide-react";
 
 export default function AdminDashboard() {
   useSessionTimeout(true);
@@ -333,6 +333,10 @@ export default function AdminDashboard() {
                   <a href="/admin/monitoring" className="flex flex-col items-center justify-center p-4 rounded-lg bg-slate-50 hover:bg-indigo-50 hover:text-indigo-600 transition-colors border border-slate-200">
                     <Monitor className="h-6 w-6 mb-2" />
                     <span className="text-sm font-medium">Monitoring</span>
+                  </a>
+                  <a href="/admin/reviews" className="flex flex-col items-center justify-center p-4 rounded-lg bg-slate-50 hover:bg-indigo-50 hover:text-indigo-600 transition-colors border border-slate-200">
+                    <Star className="h-6 w-6 mb-2" />
+                    <span className="text-sm font-medium">Gallery Reviews</span>
                   </a>
                   <a href="/admin/audit-logs" className="flex flex-col items-center justify-center p-4 rounded-lg bg-slate-50 hover:bg-indigo-50 hover:text-indigo-600 transition-colors border border-slate-200">
                     <FileText className="h-6 w-6 mb-2" />

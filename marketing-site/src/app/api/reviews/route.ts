@@ -97,10 +97,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Review already exists for this booking' }, { status: 400 });
     }
 
-    // Insert review
+    // Insert review — pending admin approval before gallery display
     const result = await db.prepare(
       `INSERT INTO reviews (user_id, booking_id, rating, text, images, status, created_at)
-       VALUES (?, ?, ?, ?, ?, 'approved', datetime('now')) RETURNING *`
+       VALUES (?, ?, ?, ?, ?, 'pending', datetime('now')) RETURNING *`
     ).bind(parseInt(user_id), booking_id, rating, text, JSON.stringify(images)).first();
 
     if (!result) {
