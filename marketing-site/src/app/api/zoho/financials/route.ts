@@ -8,13 +8,17 @@ const ZOHO_ORG_ID = process.env.ZOHO_ORG_ID!;
 const ZOHO_CLIENT_ID = process.env.ZOHO_CLIENT_ID!;
 const ZOHO_CLIENT_SECRET = process.env.ZOHO_CLIENT_SECRET!;
 const ZOHO_REFRESH_TOKEN = process.env.ZOHO_REFRESH_TOKEN!;
+const ZOHO_DC = (process.env.ZOHO_DC || 'com').replace(/^\./, '');
+
+const ACCOUNTS_BASE = `https://accounts.zoho.${ZOHO_DC}`;
+const BOOKS_BASE = `https://books.zoho.${ZOHO_DC}/api/v3`;
 
 let accessToken = '';
 let tokenExpiry = 0;
 
 async function getZohoToken(): Promise<string> {
   if (accessToken && Date.now() < tokenExpiry) return accessToken;
-  const response = await fetch('https://accounts.zoho.com/oauth/v2/token', {
+  const response = await fetch(`${ACCOUNTS_BASE}/oauth/v2/token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
@@ -44,7 +48,7 @@ async function zohoRequest(endpoint: string, method: string, body?: any) {
     }
   };
   if (body) options.body = JSON.stringify(body);
-  return fetch(`https://books.zoho.com/api/v3${endpoint}`, options);
+  return fetch(`${BOOKS_BASE}${endpoint}`, options);
 }
 
 export async function GET(request: NextRequest) {

@@ -88,7 +88,7 @@ export async function getCloudflareContext(
     // Use require inside the function so standalone bundlers don't trace it
     // at the top-level, but in the Cloudflare build it resolves correctly.
     const { getCloudflareContext: realGetCloudflareContext } =
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
+       
       require('@opennextjs/cloudflare');
     return realGetCloudflareContext(_options);
   } catch {

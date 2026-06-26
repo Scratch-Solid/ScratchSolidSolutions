@@ -96,3 +96,11 @@
 		}
 	}
 }
+// Secrets (set via: npx wrangler secret put <NAME> --name scratchsolidsolutions)
+// - JWT_SECRET
+// - CSRF_SECRET
+// - RESEND_API_KEY
+// - ZOHO_CLIENT_SECRET
+// - ZOHO_ORG_ID
+// - ZOHO_REFRESH_TOKEN
+// - PAYSTACK_SECRET_KEY (for proxying Paystack API calls)

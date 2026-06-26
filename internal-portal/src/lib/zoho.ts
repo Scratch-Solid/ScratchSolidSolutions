@@ -4,12 +4,17 @@ const ZOHO_ORG_ID = getEnvVarOptional('ZOHO_ORG_ID') || '';
 const ZOHO_CLIENT_ID = getEnvVarOptional('ZOHO_CLIENT_ID') || '';
 const ZOHO_CLIENT_SECRET = getEnvVarOptional('ZOHO_CLIENT_SECRET') || '';
 const ZOHO_REFRESH_TOKEN = getEnvVarOptional('ZOHO_REFRESH_TOKEN') || '';
+const ZOHO_DC = (getEnvVarOptional('ZOHO_DC') || 'com').replace(/^\./, '');
+
+const ACCOUNTS_BASE = `https://accounts.zoho.${ZOHO_DC}`;
+const BOOKS_BASE = `https://books.zoho.${ZOHO_DC}/api/v3`;
+
 let accessToken = '';
 let tokenExpiry = 0;
 
 async function getZohoToken() {
   if (accessToken && Date.now() < tokenExpiry) return accessToken;
-  const response = await fetch('https://accounts.zoho.com/oauth/v2/token', {
+  const response = await fetch(`${ACCOUNTS_BASE}/oauth/v2/token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({ refresh_token: ZOHO_REFRESH_TOKEN, client_id: ZOHO_CLIENT_ID, client_secret: ZOHO_CLIENT_SECRET, grant_type: 'refresh_token' }),
@@ -24,7 +29,7 @@ async function zohoRequest(endpoint: string, method: string, body?: any) {
   const token = await getZohoToken();
   const options: RequestInit = { method, headers: { 'Authorization': `Zoho-oauthtoken ${token}`, 'Content-Type': 'application/json', 'X-com-zoho-books-organizationid': ZOHO_ORG_ID } };
   if (body) options.body = JSON.stringify(body);
-  return fetch(`https://books.zoho.com/api/v3${endpoint}`, options);
+  return fetch(`${BOOKS_BASE}${endpoint}`, options);
 }
 
 export async function findCustomerByEmail(email: string) {

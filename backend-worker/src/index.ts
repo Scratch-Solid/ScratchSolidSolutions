@@ -19,6 +19,13 @@ import { handleRetentionPolicies } from './retention-policies';
 import { queueHandler } from './queue-consumer';
 import { setDbInstance } from './lib/db';
 import { setEnvInstance } from './lib/zoho';
+import {
+  initializeTransaction,
+  verifyTransaction,
+  processWebhookEvent,
+  verifyWebhookSignature,
+  generatePaystackReference,
+} from './lib/paystack';
 
 const router = Router();
 
@@ -422,7 +429,9 @@ router.get('/api/health', async (request, env) => {
 
   // Zoho check — optional (invoices fall back to local DB if unavailable)
   try {
-    const tokenRes = await fetch('https://accounts.zoho.com/oauth/v2/token', {
+    const dc = (env.ZOHO_DC || 'com').replace(/^\./, '');
+    const accountsUrl = `https://accounts.zoho.${dc}`;
+    const tokenRes = await fetch(`${accountsUrl}/oauth/v2/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
@@ -445,11 +454,15 @@ router.get('/api/health', async (request, env) => {
         checks.zoho = 'token_expired';
         // Zoho is optional — don't degrade overall status
       } else {
-        // Verify token works using Zoho Profile API (compatible with AaaServer.profile.Read scope)
-        const profileRes = await fetch('https://accounts.zoho.com/oauth/user/info', {
-          headers: { 'Authorization': `Zoho-oauthtoken ${tokenData.access_token}` }
+        // Verify token works using Zoho Books API (books scope doesn't include userinfo)
+        const booksUrl = `https://books.zoho.${dc}/api/v3`;
+        const orgRes = await fetch(`${booksUrl}/organizations`, {
+          headers: {
+            'Authorization': `Zoho-oauthtoken ${tokenData.access_token}`,
+            'X-com-zoho-books-organizationid': env.ZOHO_ORG_ID
+          }
         });
-        checks.zoho = profileRes.ok ? 'ok' : profileRes.status === 401 ? 'token_expired' : 'error';
+        checks.zoho = orgRes.ok ? 'ok' : orgRes.status === 401 ? 'token_expired' : 'error';
         // Zoho is optional — don't degrade overall status
       }
     }
@@ -952,6 +965,344 @@ router.put('/api/payments/:id/confirm', async (request: any, env: any) => {
     });
   } catch (error) {
     return new Response(JSON.stringify({ error: 'Failed to confirm payment' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
+    });
+  }
+});
+
+// Paystack payment initialization
+router.post('/api/payments/paystack/initialize', async (request: any, env: any) => {
+  const payload: any = await verifyToken(request, env);
+  if (!payload) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
+    });
+  }
+
+  try {
+    const { booking_id, email, amount, callback_url } = await request.json() as any;
+
+    if (!booking_id || !email || !amount) {
+      return new Response(JSON.stringify({ error: 'booking_id, email, and amount are required' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
+      });
+    }
+
+    // Verify booking exists and belongs to user
+    const db = getReadSession(env);
+    const booking = await db.prepare('SELECT * FROM bookings WHERE id = ? AND user_id = ?')
+      .bind(booking_id, payload.sub).first();
+
+    if (!booking) {
+      return new Response(JSON.stringify({ error: 'Booking not found' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
+      });
+    }
+
+    // Check if payment already initiated
+    const existingPayment = await db.prepare('SELECT * FROM payments WHERE booking_id = ? AND gateway = ? AND status IN (?, ?)')
+      .bind(booking_id, 'paystack', 'pending', 'processing').first();
+
+    if (existingPayment) {
+      return new Response(JSON.stringify({
+        message: 'Payment already initiated',
+        reference: existingPayment.external_payment_id,
+        authorization_url: null // Would need to reconstruct or tell frontend to check status
+      }), {
+        headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
+      });
+    }
+
+    const reference = generatePaystackReference(booking_id);
+
+    // Initialize Paystack transaction
+    const initResult = await initializeTransaction(env, {
+      email,
+      amount: Math.round(amount * 100), // Convert ZAR to kobo
+      reference,
+      callback_url,
+      metadata: {
+        booking_id: String(booking_id),
+        user_id: payload.sub,
+        service_type: (booking as any).cleaning_type || 'cleaning',
+      },
+    });
+
+    if (!initResult.status || !initResult.data) {
+      return new Response(JSON.stringify({
+        error: 'Paystack initialization failed',
+        detail: initResult.message
+      }), {
+        status: 502,
+        headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
+      });
+    }
+
+    // Record payment intent in database
+    await env.scratchsolid_db.prepare(`
+      INSERT INTO payments (booking_id, amount, currency, status, external_payment_id, gateway, metadata, created_at)
+      VALUES (?, ?, 'ZAR', 'pending', ?, 'paystack', ?, datetime('now'))
+    `).bind(
+      booking_id,
+      amount,
+      reference,
+      JSON.stringify({ authorization_url: initResult.data.authorization_url, email })
+    ).run();
+
+    // Update booking status to awaiting_payment
+    await env.scratchsolid_db.prepare(`
+      UPDATE bookings SET status = 'awaiting_payment', updated_at = datetime('now') WHERE id = ?
+    `).bind(booking_id).run();
+
+    return new Response(JSON.stringify({
+      status: 'pending',
+      reference: initResult.data.reference,
+      authorization_url: initResult.data.authorization_url,
+      access_code: initResult.data.access_code,
+      message: 'Payment initialized. Redirect client to authorization_url.',
+    }), {
+      headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
+    });
+  } catch (error: any) {
+    console.error('[paystack initialize] error:', error?.message || error);
+    return new Response(JSON.stringify({ error: 'Paystack initialization failed', detail: error?.message || String(error) }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
+    });
+  }
+});
+
+// Paystack webhook endpoint (no auth — verified by signature)
+router.post('/api/webhooks/paystack', async (request: any, env: any) => {
+  try {
+    const signature = request.headers.get('x-paystack-signature') || '';
+    const bodyText = await request.text();
+
+    // Verify webhook signature
+    if (env.PAYSTACK_SECRET_KEY && signature) {
+      const isValid = await verifyWebhookSignature(env.PAYSTACK_SECRET_KEY, signature, bodyText);
+      if (!isValid) {
+        console.error('[paystack webhook] Invalid signature');
+        return new Response(JSON.stringify({ error: 'Invalid signature' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+    } else {
+      console.warn('[paystack webhook] Skipping signature verification (no secret or signature)');
+    }
+
+    const body = JSON.parse(bodyText);
+    const event = processWebhookEvent(body);
+
+    console.log('[paystack webhook] Received event:', event.event, 'reference:', event.reference);
+
+    if (!event.isChargeSuccess || !event.reference) {
+      // Acknowledge non-success events but take no action
+      return new Response(JSON.stringify({ status: 'acknowledged', event: event.event }), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Find the payment record
+    const db = getReadSession(env);
+    const payment = await db.prepare('SELECT * FROM payments WHERE external_payment_id = ?')
+      .bind(event.reference).first();
+
+    if (!payment) {
+      console.error('[paystack webhook] Payment not found for reference:', event.reference);
+      return new Response(JSON.stringify({ error: 'Payment not found' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    const bookingId = (payment as any).booking_id;
+
+    // Update payment status to completed
+    const metadata = (payment as any).metadata || '{}';
+    let metaObj: any;
+    try { metaObj = JSON.parse(metadata); } catch (e) { metaObj = {}; }
+    metaObj.paystack_event = event.event;
+    metaObj.paid_at = event.data?.paid_at;
+    metaObj.channel = event.data?.channel;
+    metaObj.paystack_customer = event.data?.customer;
+
+    await env.scratchsolid_db.prepare(`
+      UPDATE payments
+      SET status = 'completed',
+          payment_date = datetime('now'),
+          metadata = ?,
+          updated_at = datetime('now')
+      WHERE id = ?
+    `).bind(JSON.stringify(metaObj), (payment as any).id).run();
+
+    // Confirm the booking
+    await env.scratchsolid_db.prepare(`
+      UPDATE bookings
+      SET status = 'confirmed',
+          updated_at = datetime('now')
+      WHERE id = ?
+    `).bind(bookingId).run();
+
+    // Fetch booking details for Zoho integration
+    const booking = await db.prepare(`
+      SELECT b.*, u.name as client_name, u.email as client_email, u.phone as client_phone
+      FROM bookings b
+      JOIN users u ON b.user_id = u.id
+      WHERE b.id = ?
+    `).bind(bookingId).first();
+
+    if (booking) {
+      const b = booking as any;
+      console.log('[paystack webhook] Booking confirmed:', bookingId);
+
+      // Send booking confirmation email
+      try {
+        await sendBookingConfirmation(env, {
+          to: b.client_email,
+          clientName: b.client_name,
+          bookingDate: b.start_time,
+          bookingTime: b.end_time,
+          location: b.location || 'TBD',
+          serviceType: b.cleaning_type || 'Cleaning',
+        });
+      } catch (e) {
+        console.error('[paystack webhook] Failed to send confirmation email:', e);
+      }
+
+      // Push to Zoho Books (best-effort)
+      try {
+        const { createInvoice, recordPayment, createCustomer, findCustomerByEmail } = await import('./lib/zoho');
+        setEnvInstance(env);
+
+        // Find or create customer in Zoho
+        let zohoCustomer = await findCustomerByEmail(b.client_email);
+        if (!zohoCustomer) {
+          const newCustomer = await createCustomer(
+            b.client_name,
+            b.client_email,
+            b.client_phone || '',
+            b.location || ''
+          );
+          zohoCustomer = (newCustomer as any)?.contact;
+        }
+
+        const customerId = zohoCustomer?.contact_id;
+        if (customerId) {
+          // Create invoice in Zoho
+          const invoice = await createInvoice(customerId, [{
+            name: b.cleaning_type || 'Cleaning Service',
+            description: `Booking #${b.id} - ${b.cleaning_type || 'Cleaning'}`,
+            quantity: 1,
+            rate: b.total_amount || event.amount! / 100,
+          }]);
+
+          const zohoInvoiceId = (invoice as any)?.invoice?.invoice_id;
+          if (zohoInvoiceId) {
+            // Record payment in Zoho
+            await recordPayment(
+              zohoInvoiceId,
+              b.total_amount || event.amount! / 100,
+              'card',
+              new Date().toISOString().split('T')[0]
+            );
+
+            // Update booking with Zoho invoice ID
+            await env.scratchsolid_db.prepare(`
+              UPDATE bookings SET zoho_invoice_id = ? WHERE id = ?
+            `).bind(zohoInvoiceId, bookingId).run();
+
+            console.log('[paystack webhook] Zoho invoice created:', zohoInvoiceId);
+          }
+        }
+      } catch (zohoError: any) {
+        console.error('[paystack webhook] Zoho integration failed (non-fatal):', zohoError?.message || zohoError);
+      }
+    }
+
+    return new Response(JSON.stringify({
+      status: 'success',
+      booking_id: bookingId,
+      payment_id: (payment as any).id,
+      message: 'Booking confirmed and payment processed'
+    }), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch (error: any) {
+    console.error('[paystack webhook] Error:', error?.message || error);
+    return new Response(JSON.stringify({ error: 'Webhook processing failed', detail: error?.message || String(error) }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+});
+
+// Paystack transaction verification (frontend can poll after redirect)
+router.get('/api/payments/paystack/verify/:reference', async (request: any, env: any) => {
+  try {
+    const { reference } = request.params;
+
+    // First check local database
+    const db = getReadSession(env);
+    const payment = await db.prepare('SELECT * FROM payments WHERE external_payment_id = ?')
+      .bind(reference).first();
+
+    if (payment && (payment as any).status === 'completed') {
+      return new Response(JSON.stringify({
+        status: 'success',
+        reference,
+        amount: (payment as any).amount,
+        message: 'Payment verified'
+      }), {
+        headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
+      });
+    }
+
+    // Verify with Paystack API
+    const verifyResult = await verifyTransaction(env, reference);
+
+    if (verifyResult.status && verifyResult.data && verifyResult.data.status === 'success') {
+      // If Paystack says success but local DB doesn't reflect it, update it
+      if (payment) {
+        await env.scratchsolid_db.prepare(`
+          UPDATE payments SET status = 'completed', payment_date = datetime('now'), updated_at = datetime('now')
+          WHERE id = ?
+        `).bind((payment as any).id).run();
+
+        // Also confirm the booking
+        await env.scratchsolid_db.prepare(`
+          UPDATE bookings SET status = 'confirmed', updated_at = datetime('now') WHERE id = ?
+        `).bind((payment as any).booking_id).run();
+      }
+
+      return new Response(JSON.stringify({
+        status: 'success',
+        reference,
+        amount: verifyResult.data.amount / 100,
+        paid_at: verifyResult.data.paid_at,
+        channel: verifyResult.data.channel,
+        message: 'Payment verified'
+      }), {
+        headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
+      });
+    }
+
+    return new Response(JSON.stringify({
+      status: verifyResult.data?.status || 'unknown',
+      reference,
+      message: verifyResult.message || 'Payment not completed'
+    }), {
+      status: 402,
+      headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
+    });
+  } catch (error: any) {
+    console.error('[paystack verify] error:', error?.message || error);
+    return new Response(JSON.stringify({ error: 'Verification failed', detail: error?.message || String(error) }), {
       status: 500,
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
     });

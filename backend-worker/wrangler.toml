@@ -85,3 +85,5 @@ zone_name = "scratchsolidsolutions.org"
 # - ZOHO_CLIENT_SECRET
 # - ZOHO_ORG_ID
 # - ZOHO_REFRESH_TOKEN
+# - PAYSTACK_SECRET_KEY
+# - PAYSTACK_PUBLIC_KEY (optional, exposed to frontend)

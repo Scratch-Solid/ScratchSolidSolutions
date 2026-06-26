@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     const section = searchParams.get('section');
     
     let query = `SELECT * FROM about_us_content`;
-    let params: any[] = [];
+    const params: any[] = [];
     
     if (section) {
       query += ` WHERE section = ?`;

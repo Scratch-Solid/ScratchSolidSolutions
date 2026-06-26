@@ -22,6 +22,9 @@ export async function GET(request: NextRequest) {
     const zohoClientSecret = process.env.ZOHO_CLIENT_SECRET;
     const zohoOrgId = process.env.ZOHO_ORG_ID;
     const zohoRefreshToken = process.env.ZOHO_REFRESH_TOKEN;
+    const zohoDc = (process.env.ZOHO_DC || 'com').replace(/^\./, '');
+    const accountsBase = `https://accounts.zoho.${zohoDc}`;
+    const booksBase = `https://books.zoho.${zohoDc}/api/v3`;
 
     if (!zohoClientId || !zohoClientSecret || !zohoOrgId || !zohoRefreshToken) {
       const response = NextResponse.json({
@@ -44,7 +47,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get access token using refresh token
-    const tokenResponse = await fetch('https://accounts.zoho.com/oauth/v2/token', {
+    const tokenResponse = await fetch(`${accountsBase}/oauth/v2/token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
@@ -76,7 +79,7 @@ export async function GET(request: NextRequest) {
     const accessToken = tokenData.access_token;
 
     // Fetch quotes from Zoho Books
-    let quotesUrl = `https://books.zoho.com/api/v3/quotes?organization_id=${zohoOrgId}`;
+    let quotesUrl = `${booksBase}/quotes?organization_id=${zohoOrgId}`;
     quotesUrl += `&per_page=${limit}&page=${page}`;
     if (status) {
       quotesUrl += `&status=${status}`;

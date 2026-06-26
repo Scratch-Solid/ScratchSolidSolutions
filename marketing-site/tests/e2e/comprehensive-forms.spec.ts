@@ -14,7 +14,7 @@ function delay(ms = DELAY_MS) {
 }
 
 async function goTo(page: any, path: string) {
-  const res = await page.goto(`${BASE_URL}${path}`, { waitUntil: 'networkidle' });
+  const res = await page.goto(`${BASE_URL}${path}`, { waitUntil: 'domcontentloaded' });
   await delay();
   return res;
 }
@@ -174,7 +174,7 @@ test.describe('📅 Booking Form — Multi-Step Flow', () => {
     await goTo(page, '/book');
     await page.click('text=Individual Booking');
     await delay();
-    await expect(page.locator('text=Select Service')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Select Service' })).toBeVisible();
     await expect(page.locator('select[name="service_type"]')).toBeVisible();
   });
 
