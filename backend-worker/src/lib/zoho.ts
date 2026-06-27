@@ -34,10 +34,14 @@ function resolveEnv(explicitEnv?: any): any {
   throw new Error('Zoho env not available. Pass env explicitly or call setEnvInstance(env) first.');
 }
 
+let cachedAccessToken = '';
+let tokenExpiry = 0;
+
 /**
- * Get Zoho access token with automatic refresh
+ * Get Zoho access token with automatic refresh and caching
  */
 async function getZohoToken(explicitEnv?: any): Promise<string> {
+  if (cachedAccessToken && Date.now() < tokenExpiry) return cachedAccessToken;
   const env = resolveEnv(explicitEnv);
   const dc = getDc(env);
 
@@ -57,7 +61,9 @@ async function getZohoToken(explicitEnv?: any): Promise<string> {
   }
 
   const json = await response.json() as { access_token: string; expires_in: number };
-  return json.access_token;
+  cachedAccessToken = json.access_token;
+  tokenExpiry = Date.now() + ((json.expires_in || 3600) * 1000) - 60000;
+  return cachedAccessToken;
 }
 
 /**
