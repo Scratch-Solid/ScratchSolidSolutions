@@ -1,6 +1,6 @@
 import { getCloudflareContext } from './runtime-context';
 
-async function getZohoCreds() {
+export async function getZohoCreds() {
   const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
   const dc = ((env as any)?.ZOHO_DC || process.env.ZOHO_DC || 'com').replace(/^\./, '');
   return {
@@ -12,18 +12,18 @@ async function getZohoCreds() {
   };
 }
 
-function accountsBase(dc: string): string {
+export function accountsBase(dc: string): string {
   return `https://accounts.zoho.${dc}`;
 }
 
-function booksBase(dc: string): string {
+export function booksBase(dc: string): string {
   return `https://books.zoho.${dc}/api/v3`;
 }
 
 let accessToken = '';
 let tokenExpiry = 0;
 
-async function getZohoToken() {
+export async function getZohoToken() {
   if (accessToken && Date.now() < tokenExpiry) return accessToken;
   const creds = await getZohoCreds();
   if (!creds.refreshToken || !creds.clientId || !creds.clientSecret) {
@@ -40,7 +40,7 @@ async function getZohoToken() {
   return accessToken;
 }
 
-async function zohoRequest(endpoint: string, method: string, body?: any) {
+export async function zohoRequest(endpoint: string, method: string, body?: any) {
   const token = await getZohoToken();
   const creds = await getZohoCreds();
   const options: RequestInit = { method, headers: { 'Authorization': `Zoho-oauthtoken ${token}`, 'Content-Type': 'application/json', 'X-com-zoho-books-organizationid': creds.orgId } };

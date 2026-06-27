@@ -101,7 +101,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Process payment
+    // Online payments must use the Paystack checkout flow
+    if (payment_method === 'card' || payment_method === 'paystack') {
+      return NextResponse.json({
+        error: 'Online card payments must use the Paystack checkout flow',
+        redirect: '/api/payments/paystack/initialize',
+        hint: 'Call POST /api/payments/paystack/initialize with booking_id, email, amount, callback_url'
+      }, { status: 400 });
+    }
+
+    // Process offline payment (cash / eft)
     const result = await db.prepare(
       `INSERT INTO payments (user_id, booking_id, amount, method, status, created_at)
        VALUES (?, ?, ?, ?, 'confirmed', datetime('now')) RETURNING *`

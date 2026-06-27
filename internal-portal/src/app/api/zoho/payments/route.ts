@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { parsePaginationParams, calculatePagination } from '@/lib/pagination';
+import { getZohoCreds, getZohoToken, booksBase } from '@/lib/zoho';
 
 export async function GET(request: NextRequest) {
   const traceId = withTracing(request);
@@ -18,15 +19,9 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
 
     // Check if Zoho credentials are configured
-    const zohoClientId = process.env.ZOHO_CLIENT_ID;
-    const zohoClientSecret = process.env.ZOHO_CLIENT_SECRET;
-    const zohoOrgId = process.env.ZOHO_ORG_ID;
-    const zohoRefreshToken = process.env.ZOHO_REFRESH_TOKEN;
-    const zohoDc = (process.env.ZOHO_DC || 'com').replace(/^\./, '');
-    const accountsBase = `https://accounts.zoho.${zohoDc}`;
-    const booksBase = `https://books.zoho.${zohoDc}/api/v3`;
+    const creds = await getZohoCreds();
 
-    if (!zohoClientId || !zohoClientSecret || !zohoOrgId || !zohoRefreshToken) {
+    if (!creds.clientId || !creds.clientSecret || !creds.orgId || !creds.refreshToken) {
       const response = NextResponse.json({
         success: false,
         error: {
@@ -34,52 +29,23 @@ export async function GET(request: NextRequest) {
           message: 'Zoho Books API credentials not configured',
           details: {
             missing_credentials: [
-              !zohoClientId ? 'ZOHO_CLIENT_ID' : null,
-              !zohoClientSecret ? 'ZOHO_CLIENT_SECRET' : null,
-              !zohoOrgId ? 'ZOHO_ORG_ID' : null,
-              !zohoRefreshToken ? 'ZOHO_REFRESH_TOKEN' : null
+              !creds.clientId ? 'ZOHO_CLIENT_ID' : null,
+              !creds.clientSecret ? 'ZOHO_CLIENT_SECRET' : null,
+              !creds.orgId ? 'ZOHO_ORG_ID' : null,
+              !creds.refreshToken ? 'ZOHO_REFRESH_TOKEN' : null
             ].filter(Boolean)
           },
-          suggestion: 'Please configure Zoho Books API credentials in environment variables'
+          suggestion: 'Please configure Zoho Books API credentials in wrangler secrets'
         }
       }, { status: 503 });
       return withSecurityHeaders(response, traceId);
     }
 
-    // Get access token using refresh token
-    const tokenResponse = await fetch(`${accountsBase}/oauth/v2/token`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      body: new URLSearchParams({
-        refresh_token: zohoRefreshToken,
-        client_id: zohoClientId,
-        client_secret: zohoClientSecret,
-        grant_type: 'refresh_token'
-      })
-    });
-
-    if (!tokenResponse.ok) {
-      const response = NextResponse.json({
-        success: false,
-        error: {
-          code: 'EXTERNAL_API_ERROR',
-          message: 'Failed to obtain Zoho access token',
-          details: {
-            status: tokenResponse.status
-          },
-          suggestion: 'Please check Zoho Books API credentials and try again'
-        }
-      }, { status: 502 });
-      return withSecurityHeaders(response, traceId);
-    }
-
-    const tokenData = await tokenResponse.json() as any;
-    const accessToken = tokenData.access_token;
+    // Get access token using refresh token (with caching)
+    const accessToken = await getZohoToken();
 
     // Fetch payments from Zoho Books
-    let paymentsUrl = `${booksBase}/customerpayments?organization_id=${zohoOrgId}`;
+    let paymentsUrl = `${booksBase(creds.dc)}/customerpayments?organization_id=${creds.orgId}`;
     paymentsUrl += `&per_page=${limit}&page=${page}`;
     if (status) {
       paymentsUrl += `&status=${status}`;
