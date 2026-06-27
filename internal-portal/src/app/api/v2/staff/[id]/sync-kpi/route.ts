@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { withAuth, withTracing, withSecurityHeaders, withCsrf } from '@/lib/middleware';
+import { getCloudflareContext } from '@/lib/runtime-context';
 
 export async function POST(
   request: NextRequest,
@@ -45,25 +46,33 @@ export async function POST(
 
     // Update ERPNext with KPI data
     try {
-      const erpnextUrl = `${process.env.ERPNEXT_API_URL}/api/resource/Employee/${staffId}`;
-      const response = await fetch(erpnextUrl, {
-        method: "PUT",
-        headers: {
-          "Authorization": `token ${process.env.ERPNEXT_API_KEY}:${process.env.ERPNEXT_API_SECRET}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          custom_kpi_score: weightedKPI.overall,
-          custom_client_satisfaction: weightedKPI.clientSatisfaction,
-          custom_punctuality: weightedKPI.punctuality,
-          custom_quality: weightedKPI.quality,
-          custom_communication: weightedKPI.communication
-        })
-      });
-      
-      if (!response.ok) {
-        console.error('ERPNext KPI sync failed:', await response.text());
-        // Continue - local DB update is the primary requirement
+      const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
+      const erpnextApiUrl = (env as any)?.ERPNEXT_API_URL || process.env.ERPNEXT_API_URL;
+      const erpnextApiKey = (env as any)?.ERPNEXT_API_KEY || process.env.ERPNEXT_API_KEY;
+      const erpnextApiSecret = (env as any)?.ERPNEXT_API_SECRET || process.env.ERPNEXT_API_SECRET;
+
+      if (!erpnextApiUrl || !erpnextApiKey || !erpnextApiSecret) {
+        console.warn('ERPNext KPI sync skipped: credentials not configured');
+      } else {
+        const erpnextUrl = `${erpnextApiUrl}/api/resource/Employee/${staffId}`;
+        const response = await fetch(erpnextUrl, {
+          method: "PUT",
+          headers: {
+            "Authorization": `token ${erpnextApiKey}:${erpnextApiSecret}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            custom_kpi_score: weightedKPI.overall,
+            custom_client_satisfaction: weightedKPI.clientSatisfaction,
+            custom_punctuality: weightedKPI.punctuality,
+            custom_quality: weightedKPI.quality,
+            custom_communication: weightedKPI.communication
+          })
+        });
+
+        if (!response.ok) {
+          console.error('ERPNext KPI sync failed:', await response.text());
+        }
       }
     } catch (erpnextError) {
       console.error('ERPNext KPI sync error:', erpnextError);

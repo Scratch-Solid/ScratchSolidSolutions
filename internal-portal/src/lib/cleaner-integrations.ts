@@ -1,12 +1,20 @@
 import { log } from '@/lib/logger';
 import { notifyAdminApproved, notifyAdminRejected, notifyConsentSubmitted, notifyContractSigned, sendCleanerWelcome } from '@/lib/notifications';
-import { getEnvVarOptional } from '@/lib/env';
 import { createEnvelope, getSigningUrl, isDocusignFullyConfigured } from '@/lib/docusign';
+import { getCloudflareContext } from '@/lib/runtime-context';
+
+async function getErpNextCreds() {
+  const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
+  return {
+    baseUrl: (env as any)?.ERPNEXT_BASE_URL || (env as any)?.ERPNEXT_API_URL || process.env.ERPNEXT_BASE_URL || process.env.ERPNEXT_API_URL || undefined,
+    apiKey: (env as any)?.ERPNEXT_API_KEY || process.env.ERPNEXT_API_KEY || undefined,
+    apiSecret: (env as any)?.ERPNEXT_API_SECRET || process.env.ERPNEXT_API_SECRET || undefined,
+  };
+}
 
 async function erpNextRequest(path: string, options: RequestInit = {}): Promise<any> {
-  const baseUrl = getEnvVarOptional('ERPNEXT_BASE_URL') || getEnvVarOptional('ERPNEXT_API_URL');
-  const apiKey = getEnvVarOptional('ERPNEXT_API_KEY');
-  const apiSecret = getEnvVarOptional('ERPNEXT_API_SECRET');
+  const creds = await getErpNextCreds();
+  const { baseUrl, apiKey, apiSecret } = creds;
 
   if (!baseUrl || !apiKey || !apiSecret) {
     throw new Error('ERPNext credentials not configured');
@@ -42,8 +50,9 @@ function buildReference(prefix: string) {
   return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
 }
 
-function hasErpNextConfig() {
-  return Boolean(getEnvVarOptional('ERPNEXT_API_URL') && getEnvVarOptional('ERPNEXT_API_KEY') && getEnvVarOptional('ERPNEXT_API_SECRET'));
+async function hasErpNextConfig() {
+  const creds = await getErpNextCreds();
+  return Boolean(creds.baseUrl && creds.apiKey && creds.apiSecret);
 }
 
 function hasDocusignConfig() {
@@ -226,7 +235,7 @@ export async function registerCleanerInErpNext(params: {
   department: string;
   position: string;
 }) {
-  if (!hasErpNextConfig()) {
+  if (!(await hasErpNextConfig())) {
     return {
       provider: 'erpnext',
       status: 'pending',
@@ -287,7 +296,7 @@ export async function createShiftAssignmentInErpNext(params: {
   endDate?: string;
   jobReference?: string;
 }) {
-  if (!hasErpNextConfig()) {
+  if (!(await hasErpNextConfig())) {
     return {
       provider: 'erpnext',
       status: 'pending',
@@ -344,7 +353,7 @@ export async function setupCleanerPayrollInErpNext(params: {
   paysheetCode: string;
   bankDetailsPresent: boolean;
 }) {
-  if (!hasErpNextConfig()) {
+  if (!(await hasErpNextConfig())) {
     return {
       provider: 'erpnext',
       status: 'pending',

@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { getEnvVarOptional } from '@/lib/env';
+import { getCloudflareContext } from '@/lib/runtime-context';
 
 export async function GET() {
   const healthStatus = {
@@ -44,7 +45,8 @@ export async function GET() {
 
   // Check Resend email API credentials
   try {
-    const resendKey = getEnvVarOptional('RESEND_API_KEY');
+    const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
+    const resendKey = (env as any)?.RESEND_API_KEY || getEnvVarOptional('RESEND_API_KEY');
     if (resendKey) {
       healthStatus.checks.resend = { status: 'healthy', message: 'Resend API key configured' };
     } else {
@@ -58,8 +60,9 @@ export async function GET() {
 
   // Check Meta Cloud API credentials (optional — WhatsApp fallback to email)
   try {
-    const metaToken = getEnvVarOptional('META_ACCESS_TOKEN');
-    const metaPhoneId = getEnvVarOptional('META_PHONE_NUMBER_ID');
+    const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
+    const metaToken = (env as any)?.META_ACCESS_TOKEN || getEnvVarOptional('META_ACCESS_TOKEN');
+    const metaPhoneId = (env as any)?.META_PHONE_NUMBER_ID || getEnvVarOptional('META_PHONE_NUMBER_ID');
     if (metaToken && metaPhoneId) {
       healthStatus.checks.meta_cloud_api = { status: 'healthy', message: 'Meta Cloud API credentials configured' };
     } else {
@@ -71,8 +74,9 @@ export async function GET() {
 
   // Check ERPNext connectivity (optional — payroll via local DB if unavailable)
   try {
-    const erpUrl = getEnvVarOptional('ERPNEXT_API_URL');
-    const erpKey = getEnvVarOptional('ERPNEXT_API_KEY');
+    const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
+    const erpUrl = (env as any)?.ERPNEXT_API_URL || getEnvVarOptional('ERPNEXT_API_URL');
+    const erpKey = (env as any)?.ERPNEXT_API_KEY || getEnvVarOptional('ERPNEXT_API_KEY');
     if (erpUrl && erpKey) {
       healthStatus.checks.erpnext = { status: 'healthy', message: 'ERPNext credentials configured' };
     } else {
@@ -84,9 +88,10 @@ export async function GET() {
 
   // Check Zoho OAuth credentials (optional — invoices via local DB if unavailable)
   try {
-    const zohoClientId = getEnvVarOptional('ZOHO_CLIENT_ID');
-    const zohoClientSecret = getEnvVarOptional('ZOHO_CLIENT_SECRET');
-    const zohoRefreshToken = getEnvVarOptional('ZOHO_REFRESH_TOKEN');
+    const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
+    const zohoClientId = (env as any)?.ZOHO_CLIENT_ID || getEnvVarOptional('ZOHO_CLIENT_ID');
+    const zohoClientSecret = (env as any)?.ZOHO_CLIENT_SECRET || getEnvVarOptional('ZOHO_CLIENT_SECRET');
+    const zohoRefreshToken = (env as any)?.ZOHO_REFRESH_TOKEN || getEnvVarOptional('ZOHO_REFRESH_TOKEN');
     if (zohoClientId && zohoClientSecret && zohoRefreshToken) {
       healthStatus.checks.zoho_oauth = { status: 'healthy', message: 'Zoho OAuth credentials configured' };
     } else {

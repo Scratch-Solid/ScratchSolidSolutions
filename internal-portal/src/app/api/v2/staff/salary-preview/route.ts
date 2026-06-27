@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkAuthAndRole } from '@/lib/auth-middleware';
 import { getDb } from '@/lib/db';
+import { getCloudflareContext } from '@/lib/runtime-context';
 
 export async function GET(request: NextRequest) {
   const auth = await checkAuthAndRole(request);
@@ -8,12 +9,24 @@ export async function GET(request: NextRequest) {
 
   try {
     const staffId = auth.user.id;
-    const erpnextUrl = `${process.env.ERPNEXT_API_URL}/api/resource/Salary Slip?fields=["gross_pay","total_deductions","net_pay","start_date","end_date"]&filters=[["employee","=",${staffId}],["docstatus","=","Submitted"]]&order_by=creation desc&limit=1`;
+
+    const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
+    const erpnextApiUrl = (env as any)?.ERPNEXT_API_URL || process.env.ERPNEXT_API_URL;
+    const erpnextApiKey = (env as any)?.ERPNEXT_API_KEY || process.env.ERPNEXT_API_KEY;
+    const erpnextApiSecret = (env as any)?.ERPNEXT_API_SECRET || process.env.ERPNEXT_API_SECRET;
+
+    if (!erpnextApiUrl || !erpnextApiKey || !erpnextApiSecret) {
+      return NextResponse.json({
+        message: 'ERPNext integration pending - salary preview not available until ERPNext is configured'
+      }, { status: 503 });
+    }
+
+    const erpnextUrl = `${erpnextApiUrl}/api/resource/Salary Slip?fields=["gross_pay","total_deductions","net_pay","start_date","end_date"]&filters=[["employee","=",${staffId}],["docstatus","=","Submitted"]]&order_by=creation desc&limit=1`;
 
     const response = await fetch(erpnextUrl, {
       method: "GET",
       headers: {
-        "Authorization": `token ${process.env.ERPNEXT_API_KEY}:${process.env.ERPNEXT_API_SECRET}`
+        "Authorization": `token ${erpnextApiKey}:${erpnextApiSecret}`
       }
     });
 

@@ -63,6 +63,11 @@
 		"R2_PUBLIC_BASE": "https://uploads.scratchsolidsolutions.org",
 		"NODE_ENV": "production"
 	},
+	// Required secrets (set via `wrangler secret put`):
+	// JWT_SECRET, CSRF_SECRET, RESEND_API_KEY, ZOHO_CLIENT_ID, ZOHO_CLIENT_SECRET,
+	// ZOHO_ORG_ID, ZOHO_REFRESH_TOKEN, INTERNAL_PORTAL_N8N_WEBHOOK_SECRET,
+	// META_ACCESS_TOKEN, META_PHONE_NUMBER_ID, META_VERIFY_TOKEN,
+	// ERPNEXT_API_URL, ERPNEXT_API_KEY, ERPNEXT_API_SECRET, DOCUSIGN_*
 	"observability": {
 		"enabled": true
 	},

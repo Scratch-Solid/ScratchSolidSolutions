@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { log } from '@/lib/logger';
+import { getCloudflareContext } from '@/lib/runtime-context';
 
 export async function GET(request: NextRequest) {
   const traceId = withTracing(request);
@@ -30,14 +31,70 @@ export async function GET(request: NextRequest) {
     }
 
     const cleaner = cleanerProfile as any;
+    const paysheetCode = cleaner.paysheet_code;
 
-    // TODO: Integrate with ERPNext API to fetch payslips
-    // For now, return placeholder data
+    // Read ERPNext credentials from Cloudflare context
+    const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
+    const erpnextApiUrl = (env as any)?.ERPNEXT_API_URL || process.env.ERPNEXT_API_URL;
+    const erpnextApiKey = (env as any)?.ERPNEXT_API_KEY || process.env.ERPNEXT_API_KEY;
+    const erpnextApiSecret = (env as any)?.ERPNEXT_API_SECRET || process.env.ERPNEXT_API_SECRET;
+
+    if (!erpnextApiUrl || !erpnextApiKey || !erpnextApiSecret) {
+      const response = NextResponse.json({
+        success: true,
+        data: {
+          payslips: [],
+          message: 'ERPNext integration pending - payslips will be available after setup'
+        }
+      });
+      response.headers.set('Cache-Control', 'private, max-age=300');
+      return withSecurityHeaders(response, traceId);
+    }
+
+    // Fetch payslips from ERPNext
+    const fields = '["name","start_date","end_date","gross_pay","total_deductions","net_pay","status","posting_date"]';
+    const erpnextUrl = `${erpnextApiUrl}/api/resource/Salary Slip?fields=${encodeURIComponent(fields)}&filters=${encodeURIComponent(`[["employee","=","${paysheetCode}"]]`)}&order_by=posting_date desc&limit=50`;
+
+    const erpResponse = await fetch(erpnextUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `token ${erpnextApiKey}:${erpnextApiSecret}`,
+        'Accept': 'application/json'
+      }
+    });
+
+    if (!erpResponse.ok) {
+      const text = await erpResponse.text().catch(() => 'Unknown error');
+      log.error('ERPNext payslips fetch failed', new Error(`HTTP ${erpResponse.status}: ${text}`), { traceId, userId, paysheetCode });
+      const response = NextResponse.json({
+        success: false,
+        error: {
+          code: 'ERPNext_ERROR',
+          message: 'Failed to retrieve payslips from ERPNext',
+          suggestion: 'Please try again later or contact support'
+        }
+      }, { status: 502 });
+      return withSecurityHeaders(response, traceId);
+    }
+
+    const erpData = await erpResponse.json() as { data?: any[] };
+    const payslips = (erpData.data || []).map((slip: any) => ({
+      id: slip.name,
+      periodStart: slip.start_date,
+      periodEnd: slip.end_date,
+      postedDate: slip.posting_date,
+      grossPay: slip.gross_pay,
+      totalDeductions: slip.total_deductions,
+      netPay: slip.net_pay,
+      status: slip.status,
+    }));
+
     const response = NextResponse.json({
       success: true,
       data: {
-        payslips: [],
-        message: 'ERPNext integration pending - payslips will be available after setup'
+        payslips,
+        count: payslips.length,
+        message: payslips.length === 0 ? 'No payslips found for your account' : undefined
       }
     });
     response.headers.set('Cache-Control', 'private, max-age=300');
