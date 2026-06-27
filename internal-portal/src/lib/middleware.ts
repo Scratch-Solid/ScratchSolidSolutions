@@ -365,14 +365,14 @@ export async function withCsrf(request: NextRequest): Promise<NextResponse | nul
     return NextResponse.json({ error: 'CSRF token required' }, { status: 403 });
   }
 
-  if (!validateCsrfToken(csrfToken)) {
+  if (!(await validateCsrfToken(csrfToken))) {
     return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 });
   }
 
   return null;
 }
 
-export function generateCsrfTokenForClient(): string {
+export async function generateCsrfTokenForClient(): Promise<string> {
   return generateCsrfToken();
 }
 
@@ -687,7 +687,7 @@ export async function withCSRF(request: NextRequest): Promise<NextResponse | nul
     return NextResponse.json({ error: 'CSRF token missing' }, { status: 403 });
   }
 
-  if (!validateCsrfToken(csrfToken)) {
+  if (!(await validateCsrfToken(csrfToken))) {
     return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 });
   }
 

@@ -16,23 +16,32 @@ import { getDb } from './db';
 import bcrypt from 'bcryptjs';
 import { SignJWT, jwtVerify } from 'jose';
 import { authenticator } from 'otplib';
-import crypto from 'crypto';
+import { getCloudflareContext } from './runtime-context';
 
 // Configuration
 // Secrets MUST be set via wrangler secrets at runtime.
 // Do NOT use fallback values in production.
-function getJwtSecret(): string {
-  const secret = process.env.JWT_SECRET;
+async function getCloudflareSecret(name: string): Promise<string | undefined> {
+  try {
+    const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
+    return (env as any)?.[name] || process.env[name];
+  } catch {
+    return process.env[name];
+  }
+}
+
+async function getJwtSecret(): Promise<string> {
+  const secret = await getCloudflareSecret('JWT_SECRET');
   if (!secret) {
     throw new Error('JWT_SECRET environment variable is required');
   }
   return secret;
 }
 
-function getJwtRefreshSecret(): string {
-  const secret = process.env.JWT_REFRESH_SECRET;
+async function getJwtRefreshSecret(): Promise<string> {
+  const secret = await getCloudflareSecret('JWT_REFRESH_SECRET') || await getCloudflareSecret('JWT_SECRET');
   if (!secret) {
-    throw new Error('JWT_REFRESH_SECRET environment variable is required');
+    throw new Error('JWT_REFRESH_SECRET or JWT_SECRET environment variable is required');
   }
   return secret;
 }
@@ -115,10 +124,13 @@ export async function clearFailedAttempts(db: D1Database, identifier: string): P
 }
 
 /**
- * Generate secure random token
+ * Generate secure random token (Web Crypto API, Cloudflare Workers compatible)
  */
 export function generateSecureToken(length: number = 32): string {
-  return crypto.randomBytes(length).toString('hex');
+  const bytes = crypto.getRandomValues(new Uint8Array(length));
+  return Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
 }
 
 /**
@@ -129,7 +141,7 @@ export async function generateAccessToken(userId: number, email: string, role: s
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime(ACCESS_TOKEN_EXPIRY)
-    .sign(new TextEncoder().encode(getJwtSecret()));
+    .sign(new TextEncoder().encode(await getJwtSecret()));
 }
 
 /**
@@ -141,7 +153,7 @@ export async function generateRefreshToken(userId: number): Promise<string> {
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime(REFRESH_TOKEN_EXPIRY)
-    .sign(new TextEncoder().encode(getJwtRefreshSecret()));
+    .sign(new TextEncoder().encode(await getJwtRefreshSecret()));
 }
 
 /**
@@ -149,7 +161,7 @@ export async function generateRefreshToken(userId: number): Promise<string> {
  */
 export async function verifyAccessToken(token: string): Promise<any> {
   try {
-    const { payload } = await jwtVerify(token, new TextEncoder().encode(getJwtSecret()));
+    const { payload } = await jwtVerify(token, new TextEncoder().encode(await getJwtSecret()));
     return payload;
   } catch (error) {
     return null;
@@ -161,7 +173,7 @@ export async function verifyAccessToken(token: string): Promise<any> {
  */
 export async function verifyRefreshToken(token: string): Promise<any> {
   try {
-    const { payload } = await jwtVerify(token, new TextEncoder().encode(getJwtRefreshSecret()));
+    const { payload } = await jwtVerify(token, new TextEncoder().encode(await getJwtRefreshSecret()));
     return payload;
   } catch (error) {
     return null;

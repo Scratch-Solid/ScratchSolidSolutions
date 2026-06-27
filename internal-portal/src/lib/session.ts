@@ -7,10 +7,19 @@ import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { SignJWT, jwtVerify } from 'jose';
 
-import { getEnvVar } from './env';
+import { getCloudflareContext } from './runtime-context';
 
-function getJwtSecret(): string {
-  const secret = process.env.JWT_SECRET;
+async function getCloudflareSecret(name: string): Promise<string | undefined> {
+  try {
+    const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
+    return (env as any)?.[name] || process.env[name];
+  } catch {
+    return process.env[name];
+  }
+}
+
+async function getJwtSecret(): Promise<string> {
+  const secret = await getCloudflareSecret('JWT_SECRET');
   if (!secret) {
     throw new Error('JWT_SECRET environment variable is required');
   }
@@ -42,7 +51,7 @@ export async function generateAccessToken(userId: number, email: string, role: s
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('15m')
-    .sign(new TextEncoder().encode(getJwtSecret()));
+    .sign(new TextEncoder().encode(await getJwtSecret()));
 }
 
 /**
@@ -53,7 +62,7 @@ export async function generateRefreshToken(userId: number, tokenId: string): Pro
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('7d')
-    .sign(new TextEncoder().encode(getJwtSecret()));
+    .sign(new TextEncoder().encode(await getJwtSecret()));
 }
 
 /**
@@ -108,7 +117,7 @@ export async function getSession(): Promise<SessionPayload | null> {
       return null;
     }
 
-    const { payload } = await jwtVerify(token, new TextEncoder().encode(getJwtSecret()));
+    const { payload } = await jwtVerify(token, new TextEncoder().encode(await getJwtSecret()));
     return payload as unknown as SessionPayload;
   } catch (error) {
     return null;
@@ -120,7 +129,7 @@ export async function getSession(): Promise<SessionPayload | null> {
  */
 export async function verifyAccessToken(token: string): Promise<SessionPayload | null> {
   try {
-    const { payload } = await jwtVerify(token, new TextEncoder().encode(getJwtSecret()));
+    const { payload } = await jwtVerify(token, new TextEncoder().encode(await getJwtSecret()));
     return payload as unknown as SessionPayload;
   } catch (error) {
     return null;
@@ -132,7 +141,7 @@ export async function verifyAccessToken(token: string): Promise<SessionPayload |
  */
 export async function verifyRefreshToken(token: string): Promise<RefreshTokenPayload | null> {
   try {
-    const { payload } = await jwtVerify(token, new TextEncoder().encode(getJwtSecret()));
+    const { payload } = await jwtVerify(token, new TextEncoder().encode(await getJwtSecret()));
     return payload as unknown as RefreshTokenPayload;
   } catch (error) {
     return null;

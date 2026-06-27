@@ -31,21 +31,14 @@ export interface AppConfig {
   isDevelopment: boolean;
 }
 
-function validateRequired(value: string | undefined, name: string): string {
-  if (!value) {
-    throw new Error(`Required configuration missing: ${name}`);
-  }
-  return value;
-}
-
 function getEnvVar(name: string, defaultValue?: string): string {
   return process.env[name] || defaultValue || '';
 }
 
 export const config: AppConfig = {
-  // Security
-  jwtSecret: validateRequired(process.env.JWT_SECRET, 'JWT_SECRET'),
-  csrfSecret: validateRequired(process.env.CSRF_SECRET, 'CSRF_SECRET'),
+  // Security — secrets are injected at runtime by Wrangler, not available in process.env at build time
+  jwtSecret: getEnvVar('JWT_SECRET'),
+  csrfSecret: getEnvVar('CSRF_SECRET'),
   seedKey: process.env.SEED_KEY,
   
   // Session
@@ -126,15 +119,11 @@ export function getClientConfig(): Record<string, string | boolean | number> {
   };
 }
 
-// Validate configuration on import
+// Validate configuration on import (non-secret fields only — secrets are runtime-injected)
 if (typeof window === 'undefined') {
   const validation = validateConfig();
   if (!validation.valid) {
     console.error('Configuration validation failed:', validation.errors);
-    if (config.isProduction) {
-      throw new Error('Invalid configuration: ' + validation.errors.join(', '));
-    } else {
-      console.warn('Running with invalid configuration in development mode');
-    }
+    console.warn('Running with potentially invalid configuration');
   }
 }

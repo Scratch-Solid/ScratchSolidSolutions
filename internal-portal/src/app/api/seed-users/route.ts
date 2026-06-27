@@ -3,8 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import { SignJWT } from 'jose';
-
-const JWT_SECRET = process.env.JWT_SECRET || '';
+import { getCloudflareContext } from '@/lib/runtime-context';
 
 // This endpoint should only be used in development or with a special seed key
 // In production, users should be created through proper admin interfaces
@@ -80,11 +79,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate JWT token
+    const secret = await getJWTSecret();
     const token = await new SignJWT({ userId: (user as any).id, role, email })
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt()
       .setExpirationTime('24h')
-      .sign(new TextEncoder().encode(getJWTSecret()));
+      .sign(new TextEncoder().encode(secret));
 
     return NextResponse.json({
       success: true,
@@ -116,7 +116,15 @@ function getSeedKey(): string {
   return SEED_KEY;
 }
 
-function getJWTSecret(): string {
-  if (!JWT_SECRET) throw new Error('JWT_SECRET environment variable is required');
-  return JWT_SECRET;
+async function getJWTSecret(): Promise<string> {
+  try {
+    const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
+    const secret = (env as any)?.JWT_SECRET || process.env.JWT_SECRET;
+    if (!secret) throw new Error('JWT_SECRET environment variable is required');
+    return secret;
+  } catch {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) throw new Error('JWT_SECRET environment variable is required');
+    return secret;
+  }
 }
