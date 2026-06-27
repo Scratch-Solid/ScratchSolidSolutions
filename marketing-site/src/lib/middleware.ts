@@ -346,7 +346,7 @@ export async function withCsrf(request: NextRequest): Promise<NextResponse | nul
     return NextResponse.json({ error: 'CSRF token required' }, { status: 403 });
   }
 
-  if (!validateCsrfToken(csrfToken)) {
+  if (!(await validateCsrfToken(csrfToken))) {
     return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 });
   }
 
@@ -357,21 +357,6 @@ export async function withCsrf(request: NextRequest): Promise<NextResponse | nul
  * Generates a CSRF token for use on the client side.
  * Should be called when rendering forms or making state-changing requests from the frontend.
  */
-export function generateCsrfTokenForClient(): string {
-  const { randomBytes, createHmac } = require('crypto');
-  const CSRF_SECRET = process.env.CSRF_SECRET;
-
-  function getCsrfSecret(): string {
-    if (!CSRF_SECRET) {
-      if (process.env.NODE_ENV === 'production') {
-        throw new Error('CSRF_SECRET environment variable is required in production');
-      }
-      return 'dev-secret-fallback-do-not-use-in-production';
-    }
-    return CSRF_SECRET;
-  }
-
-  const token = randomBytes(32).toString('hex');
-  const hash = createHmac('sha256', getCsrfSecret()).update(token).digest('hex');
-  return `${token}.${hash}`;
+export async function generateCsrfTokenForClient(): Promise<string> {
+  return generateCsrfToken();
 }

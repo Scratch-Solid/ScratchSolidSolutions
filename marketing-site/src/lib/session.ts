@@ -44,7 +44,7 @@ export async function generateAccessToken(id: number, email: string, role: strin
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('7d')
-    .sign(new TextEncoder().encode(getJWTSecret()));
+    .sign(new TextEncoder().encode(await getJWTSecret()));
 }
 
 /** Generate a long-lived refresh token. */
@@ -53,13 +53,13 @@ export async function generateRefreshToken(id: number, tokenId: string): Promise
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('30d')
-    .sign(new TextEncoder().encode(getJWTSecret()));
+    .sign(new TextEncoder().encode(await getJWTSecret()));
 }
 
 /** Verify a refresh token; returns null if invalid/expired/not a refresh token. */
 export async function verifyRefreshToken(token: string): Promise<RefreshTokenPayload | null> {
   try {
-    const { payload } = await jwtVerify(token, new TextEncoder().encode(getJWTSecret()));
+    const { payload } = await jwtVerify(token, new TextEncoder().encode(await getJWTSecret()));
     if (payload?.type !== 'refresh') return null;
     return payload as unknown as RefreshTokenPayload;
   } catch {
