@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No token provided' }, { status: 401 });
     }
 
-    const decoded = verifyAccessToken(token);
+    const decoded = await verifyAccessToken(token);
     if (!decoded) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }

@@ -14,7 +14,7 @@
 
 import { getDb } from './db';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import { SignJWT, jwtVerify } from 'jose';
 import { authenticator } from 'otplib';
 import crypto from 'crypto';
 
@@ -124,43 +124,33 @@ export function generateSecureToken(length: number = 32): string {
 /**
  * Generate access token
  */
-export function generateAccessToken(userId: number, email: string, role: string): string {
-  return jwt.sign(
-    {
-      userId,
-      email,
-      role,
-      type: 'access',
-      iat: Math.floor(Date.now() / 1000),
-    },
-    getJwtSecret(),
-    { expiresIn: ACCESS_TOKEN_EXPIRY, algorithm: 'HS256' }
-  );
+export async function generateAccessToken(userId: number, email: string, role: string): Promise<string> {
+  return await new SignJWT({ userId, email, role, type: 'access' })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime(ACCESS_TOKEN_EXPIRY)
+    .sign(new TextEncoder().encode(getJwtSecret()));
 }
 
 /**
  * Generate refresh token
  */
-export function generateRefreshToken(userId: number): string {
+export async function generateRefreshToken(userId: number): Promise<string> {
   const tokenId = generateSecureToken(16);
-  return jwt.sign(
-    {
-      userId,
-      tokenId,
-      type: 'refresh',
-      iat: Math.floor(Date.now() / 1000),
-    },
-    getJwtRefreshSecret(),
-    { expiresIn: REFRESH_TOKEN_EXPIRY, algorithm: 'HS256' }
-  );
+  return await new SignJWT({ userId, tokenId, type: 'refresh' })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime(REFRESH_TOKEN_EXPIRY)
+    .sign(new TextEncoder().encode(getJwtRefreshSecret()));
 }
 
 /**
  * Verify access token
  */
-export function verifyAccessToken(token: string): any {
+export async function verifyAccessToken(token: string): Promise<any> {
   try {
-    return jwt.verify(token, getJwtSecret(), { algorithms: ['HS256'] });
+    const { payload } = await jwtVerify(token, new TextEncoder().encode(getJwtSecret()));
+    return payload;
   } catch (error) {
     return null;
   }
@@ -169,9 +159,10 @@ export function verifyAccessToken(token: string): any {
 /**
  * Verify refresh token
  */
-export function verifyRefreshToken(token: string): any {
+export async function verifyRefreshToken(token: string): Promise<any> {
   try {
-    return jwt.verify(token, getJwtRefreshSecret(), { algorithms: ['HS256'] });
+    const { payload } = await jwtVerify(token, new TextEncoder().encode(getJwtRefreshSecret()));
+    return payload;
   } catch (error) {
     return null;
   }

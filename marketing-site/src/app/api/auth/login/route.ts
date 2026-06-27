@@ -3,11 +3,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb, getUserByEmail, createSession, deleteSession, validateLogin, validateLoginByPhone, isAccountLocked, isAccountLockedByPhone } from "@/lib/db";
 import { sanitizeEmail, sanitizePhone } from "@/lib/sanitization";
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { logger } from "@/lib/logger";
-import { getJWTSecret } from "@/lib/env";
-import { generateRefreshToken, setAuthCookies } from "@/lib/session";
+import { generateAccessToken, generateRefreshToken, setAuthCookies } from "@/lib/session";
 import { validateEmail } from "@/lib/validation";
 import { withRateLimit, rateLimits } from "@/lib/middleware";
 
@@ -70,14 +68,14 @@ export async function POST(request: NextRequest) {
     // after signup. Re-enable once the end-to-end verification flow is tested
     // and the Resend email delivery is verified for all user domains.
 
-    // Generate JWT token
-    const token = jwt.sign({ id: (user as any).id, email: (user as any).email, role: (user as any).role }, getJWTSecret(), { expiresIn: '7d' });
+    // Generate JWT access token (Web Crypto API compatible for Cloudflare Workers)
+    const token = await generateAccessToken((user as any).id, (user as any).email, (user as any).role);
 
     // Create DB-backed session for the access token
     await createSession(db, (user as any).id, token);
 
     // Issue a long-lived refresh token so clients can renew without re-login
-    const refreshToken = generateRefreshToken((user as any).id, crypto.randomUUID());
+    const refreshToken = await generateRefreshToken((user as any).id, crypto.randomUUID());
 
     const response = NextResponse.json({ 
       id: (user as any).id,

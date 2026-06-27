@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import { SignJWT } from 'jose';
 
 const JWT_SECRET = process.env.JWT_SECRET || '';
 
@@ -80,11 +80,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate JWT token
-    const token = jwt.sign(
-      { userId: (user as any).id, role, email },
-      getJWTSecret(),
-      { expiresIn: '24h' }
-    );
+    const token = await new SignJWT({ userId: (user as any).id, role, email })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setIssuedAt()
+      .setExpirationTime('24h')
+      .sign(new TextEncoder().encode(getJWTSecret()));
 
     return NextResponse.json({
       success: true,

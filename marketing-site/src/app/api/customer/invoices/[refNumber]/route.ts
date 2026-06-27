@@ -3,8 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { withAuth, withRateLimit, rateLimits } from '@/lib/middleware';
 import { getInvoicePdf, getInvoiceStatus } from '@/lib/zoho';
-import jwt from 'jsonwebtoken';
-import { getJWTSecret } from '@/lib/env';
+import { jwtVerify } from 'jose';
 
 export async function GET(
   request: NextRequest,

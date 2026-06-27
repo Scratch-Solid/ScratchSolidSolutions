@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No refresh token provided' }, { status: 401 });
     }
 
-    const payload = verifyRefreshToken(refreshToken);
+    const payload = await verifyRefreshToken(refreshToken);
     if (!payload) {
       const res = NextResponse.json({ error: 'Invalid or expired refresh token' }, { status: 401 });
       return clearAuthCookies(res);
@@ -60,11 +60,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Issue a new access token and persist it as a DB-backed session.
-    const accessToken = generateAccessToken(user.id, user.email, user.role);
+    const accessToken = await generateAccessToken(user.id, user.email, user.role);
     await createSession(db, user.id, accessToken);
 
     // Rotate the refresh token.
-    const newRefreshToken = generateRefreshToken(user.id, crypto.randomUUID());
+    const newRefreshToken = await generateRefreshToken(user.id, crypto.randomUUID());
 
     const response = NextResponse.json({
       id: user.id,

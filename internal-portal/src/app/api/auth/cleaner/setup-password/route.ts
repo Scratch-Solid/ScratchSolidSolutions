@@ -125,8 +125,8 @@ export async function POST(request: NextRequest) {
     ).run();
 
     // Generate JWT token
-    const token = generateAccessToken(cleaner.user_id, cleaner.email, cleaner.role);
-    const refreshToken = generateRefreshToken(cleaner.user_id, crypto.randomUUID());
+    const token = await generateAccessToken(cleaner.user_id, cleaner.email, cleaner.role);
+    const refreshToken = await generateRefreshToken(cleaner.user_id, crypto.randomUUID());
 
     // Log audit event
     log.audit('PASSWORD_SETUP', 'cleaner', {

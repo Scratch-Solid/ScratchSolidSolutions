@@ -176,7 +176,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate JWT token for auto-login after profile creation
-    const token = generateAccessToken(
+    const token = await generateAccessToken(
       (user as any).id,
       (user as any).email,
       (user as any).role

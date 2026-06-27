@@ -211,8 +211,8 @@ export async function POST(request: NextRequest) {
     }
 
     const onboardingStatus = await getCleanerOnboardingStatus(db, Number(cleaner.user_id));
-    const accessToken = generateAccessToken(Number(cleaner.user_id), String(cleaner.email), String(cleaner.role || 'cleaner'));
-    const refreshToken = generateRefreshToken(Number(cleaner.user_id), crypto.randomUUID());
+    const accessToken = await generateAccessToken(Number(cleaner.user_id), String(cleaner.email), String(cleaner.role || 'cleaner'));
+    const refreshToken = await generateRefreshToken(Number(cleaner.user_id), crypto.randomUUID());
 
     try {
       await db.prepare(

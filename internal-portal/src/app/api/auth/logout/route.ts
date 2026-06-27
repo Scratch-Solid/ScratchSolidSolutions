@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     }
 
     const token = authHeader.substring(7);
-    const decoded = verifyAccessToken(token);
+    const decoded = await verifyAccessToken(token);
 
     if (!decoded) {
       return NextResponse.json({

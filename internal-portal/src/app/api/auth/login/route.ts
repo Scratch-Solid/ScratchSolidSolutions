@@ -223,8 +223,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate JWT tokens
-    const accessToken = generateAccessToken(Number(user.id), user.email, user.role);
-    const refreshToken = generateRefreshToken(Number(user.id), crypto.randomUUID());
+    const accessToken = await generateAccessToken(Number(user.id), user.email, user.role);
+    const refreshToken = await generateRefreshToken(Number(user.id), crypto.randomUUID());
 
     // Clear failed attempts on successful login
     await clearFailedAttempts(db, identifier);

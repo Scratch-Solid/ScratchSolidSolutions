@@ -1,8 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import jwt from 'jsonwebtoken';
-import { getJWTSecret } from '@/lib/env';
+import { jwtVerify } from 'jose';
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,10 +13,11 @@ export async function GET(request: NextRequest) {
 
     const token = authHeader.substring(7);
     
-    // Verify JWT token
+    // Verify JWT token (Web Crypto API compatible for Cloudflare Workers)
     let decoded;
     try {
-      decoded = jwt.verify(token, getJWTSecret()) as { id: number; email: string; role: string };
+      const { payload } = await jwtVerify(token, new TextEncoder().encode(process.env.JWT_SECRET || ''));
+      decoded = payload as unknown as { id: number; email: string; role: string };
     } catch {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }

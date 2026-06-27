@@ -418,7 +418,7 @@ export async function withAuth(request: NextRequest, allowedRoles?: string[]): P
 
   // Fallback: Try to verify JWT token directly
   const { verifyAccessToken } = await import('@/lib/auth');
-  const jwtPayload = verifyAccessToken(token);
+  const jwtPayload = await verifyAccessToken(token);
   if (jwtPayload) {
     // Fetch user from database to get fresh data
     const user = await db.prepare(
@@ -457,7 +457,7 @@ export async function withPermission(
   let authUser = await validateSession(db, token);
   if (!authUser) {
     const { verifyAccessToken } = await import('@/lib/auth');
-    const jwtPayload = verifyAccessToken(token);
+    const jwtPayload = await verifyAccessToken(token);
     if (jwtPayload) {
       authUser = await db.prepare(
         'SELECT id, email, role, name, phone, password_hash FROM users WHERE id = ?'
@@ -504,7 +504,7 @@ export async function withResourcePermission(
   let authUser = await validateSession(db, token);
   if (!authUser) {
     const { verifyAccessToken } = await import('@/lib/auth');
-    const jwtPayload = verifyAccessToken(token);
+    const jwtPayload = await verifyAccessToken(token);
     if (jwtPayload) {
       authUser = await db.prepare(
         'SELECT id, email, role, name, phone, password_hash FROM users WHERE id = ?'
@@ -550,7 +550,7 @@ export async function withRoleLevel(
   let authUser = await validateSession(db, token);
   if (!authUser) {
     const { verifyAccessToken } = await import('@/lib/auth');
-    const jwtPayload = verifyAccessToken(token);
+    const jwtPayload = await verifyAccessToken(token);
     if (jwtPayload) {
       authUser = await db.prepare(
         'SELECT id, email, role, name, phone, password_hash FROM users WHERE id = ?'
@@ -597,7 +597,7 @@ export async function withAnyPermission(
   let authUser = await validateSession(db, token);
   if (!authUser) {
     const { verifyAccessToken } = await import('@/lib/auth');
-    const jwtPayload = verifyAccessToken(token);
+    const jwtPayload = await verifyAccessToken(token);
     if (jwtPayload) {
       authUser = await db.prepare(
         'SELECT id, email, role, name, phone, password_hash FROM users WHERE id = ?'
@@ -644,7 +644,7 @@ export async function withAllPermissions(
   let authUser = await validateSession(db, token);
   if (!authUser) {
     const { verifyAccessToken } = await import('@/lib/auth');
-    const jwtPayload = verifyAccessToken(token);
+    const jwtPayload = await verifyAccessToken(token);
     if (jwtPayload) {
       authUser = await db.prepare(
         'SELECT id, email, role, name, phone, password_hash FROM users WHERE id = ?'

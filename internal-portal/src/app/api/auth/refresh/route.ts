@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     const userAgent = request.headers.get('user-agent') || 'unknown';
 
     // Verify refresh token using session library
-    const decoded = verifySessionRefreshToken(refreshToken);
+    const decoded = await verifySessionRefreshToken(refreshToken);
     if (!decoded) {
       return NextResponse.json({
         success: false,
@@ -87,9 +87,9 @@ export async function POST(request: NextRequest) {
     const userId = userResult.id as number;
     const userEmail = userResult.email as string;
     const userRole = userResult.role as string;
-    const newAccessToken = generateAccessToken(userId, userEmail, userRole);
+    const newAccessToken = await generateAccessToken(userId, userEmail, userRole);
     const newRefreshTokenId = crypto.randomUUID();
-    const newRefreshToken = generateSessionRefreshToken(userId, newRefreshTokenId);
+    const newRefreshToken = await generateSessionRefreshToken(userId, newRefreshTokenId);
     const newRefreshTokenHash = await hashPassword(newRefreshToken);
 
     // Store new refresh token

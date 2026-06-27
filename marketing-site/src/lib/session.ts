@@ -11,7 +11,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import jwt from 'jsonwebtoken';
+import { SignJWT, jwtVerify } from 'jose';
 import { getJWTSecret } from './env';
 
 export const ACCESS_COOKIE_NAME = 'client_auth_token';
@@ -39,21 +39,29 @@ export interface RefreshTokenPayload {
 }
 
 /** Generate a DB-backed access token (same payload shape the app already uses). */
-export function generateAccessToken(id: number, email: string, role: string): string {
-  return jwt.sign({ id, email, role }, getJWTSecret(), { expiresIn: '7d' });
+export async function generateAccessToken(id: number, email: string, role: string): Promise<string> {
+  return await new SignJWT({ id, email, role })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('7d')
+    .sign(new TextEncoder().encode(getJWTSecret()));
 }
 
 /** Generate a long-lived refresh token. */
-export function generateRefreshToken(id: number, tokenId: string): string {
-  return jwt.sign({ id, tokenId, type: 'refresh' }, getJWTSecret(), { expiresIn: '30d' });
+export async function generateRefreshToken(id: number, tokenId: string): Promise<string> {
+  return await new SignJWT({ id, tokenId, type: 'refresh' })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('30d')
+    .sign(new TextEncoder().encode(getJWTSecret()));
 }
 
 /** Verify a refresh token; returns null if invalid/expired/not a refresh token. */
-export function verifyRefreshToken(token: string): RefreshTokenPayload | null {
+export async function verifyRefreshToken(token: string): Promise<RefreshTokenPayload | null> {
   try {
-    const payload = jwt.verify(token, getJWTSecret()) as RefreshTokenPayload;
+    const { payload } = await jwtVerify(token, new TextEncoder().encode(getJWTSecret()));
     if (payload?.type !== 'refresh') return null;
-    return payload;
+    return payload as unknown as RefreshTokenPayload;
   } catch {
     return null;
   }

@@ -28,7 +28,7 @@ export async function checkAuthAndRole(request: NextRequest, requiredRole?: stri
     }
 
     const token = authHeader.substring(7);
-    const decoded = verifyAccessToken(token);
+    const decoded = await verifyAccessToken(token);
 
     if (!decoded) {
       return { authenticated: false, error: 'Invalid or expired token' };
@@ -78,7 +78,7 @@ export async function checkAuthAndPermission(request: NextRequest, requiredPermi
     }
 
     const token = authHeader.substring(7);
-    const decoded = verifyAccessToken(token);
+    const decoded = await verifyAccessToken(token);
 
     if (!decoded) {
       return { authenticated: false, error: 'Invalid or expired token' };
@@ -143,7 +143,7 @@ export async function checkAuth(request: NextRequest): Promise<AuthResult> {
     }
 
     const token = authHeader.substring(7);
-    const decoded = verifyAccessToken(token);
+    const decoded = await verifyAccessToken(token);
 
     if (!decoded) {
       return { authenticated: false, error: 'Invalid or expired token' };

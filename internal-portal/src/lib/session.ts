@@ -5,7 +5,7 @@
 
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-import jwt from 'jsonwebtoken';
+import { SignJWT, jwtVerify } from 'jose';
 
 import { getEnvVar } from './env';
 
@@ -37,23 +37,23 @@ export interface RefreshTokenPayload {
 /**
  * Generate access token (short-lived)
  */
-export function generateAccessToken(userId: number, email: string, role: string): string {
-  return jwt.sign(
-    { userId, email, role },
-    getJwtSecret(),
-    { expiresIn: '15m' } // 15 minutes
-  );
+export async function generateAccessToken(userId: number, email: string, role: string): Promise<string> {
+  return await new SignJWT({ userId, email, role })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('15m')
+    .sign(new TextEncoder().encode(getJwtSecret()));
 }
 
 /**
  * Generate refresh token (long-lived)
  */
-export function generateRefreshToken(userId: number, tokenId: string): string {
-  return jwt.sign(
-    { userId, tokenId },
-    getJwtSecret(),
-    { expiresIn: '7d' } // 7 days
-  );
+export async function generateRefreshToken(userId: number, tokenId: string): Promise<string> {
+  return await new SignJWT({ userId, tokenId })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('7d')
+    .sign(new TextEncoder().encode(getJwtSecret()));
 }
 
 /**
@@ -108,8 +108,8 @@ export async function getSession(): Promise<SessionPayload | null> {
       return null;
     }
 
-    const payload = jwt.verify(token, getJwtSecret()) as SessionPayload;
-    return payload;
+    const { payload } = await jwtVerify(token, new TextEncoder().encode(getJwtSecret()));
+    return payload as unknown as SessionPayload;
   } catch (error) {
     return null;
   }
@@ -118,10 +118,10 @@ export async function getSession(): Promise<SessionPayload | null> {
 /**
  * Verify access token
  */
-export function verifyAccessToken(token: string): SessionPayload | null {
+export async function verifyAccessToken(token: string): Promise<SessionPayload | null> {
   try {
-    const payload = jwt.verify(token, getJwtSecret()) as SessionPayload;
-    return payload;
+    const { payload } = await jwtVerify(token, new TextEncoder().encode(getJwtSecret()));
+    return payload as unknown as SessionPayload;
   } catch (error) {
     return null;
   }
@@ -130,10 +130,10 @@ export function verifyAccessToken(token: string): SessionPayload | null {
 /**
  * Verify refresh token
  */
-export function verifyRefreshToken(token: string): RefreshTokenPayload | null {
+export async function verifyRefreshToken(token: string): Promise<RefreshTokenPayload | null> {
   try {
-    const payload = jwt.verify(token, getJwtSecret()) as RefreshTokenPayload;
-    return payload;
+    const { payload } = await jwtVerify(token, new TextEncoder().encode(getJwtSecret()));
+    return payload as unknown as RefreshTokenPayload;
   } catch (error) {
     return null;
   }
@@ -151,7 +151,7 @@ export async function refreshAccessToken(): Promise<{ accessToken: string } | nu
       return null;
     }
 
-    const payload = verifyRefreshToken(refreshToken);
+    const payload = await verifyRefreshToken(refreshToken);
     if (!payload) {
       return null;
     }
@@ -178,7 +178,7 @@ export async function refreshAccessToken(): Promise<{ accessToken: string } | nu
       return null;
     }
 
-    const accessToken = generateAccessToken(user.id, user.email, user.role);
+    const accessToken = await generateAccessToken(user.id, user.email, user.role);
     return { accessToken };
   } catch (error) {
     return null;
