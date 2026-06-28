@@ -108,10 +108,11 @@ echo ""
 # ─── 7. ERPNEXT ───
 echo "[7] ERPNext"
 echo "───────────────────────────────────────────────────────────────────────"
-if docker exec erpnext_backend bench --site scratchsolid.local list-apps 2>/dev/null | grep -q frappe; then
-    echo -e "${PASS} ERPNext site 'scratchsolid.local': installed"
+SITE_NAME="${ERPNEXT_SITE_NAME:-scratchsolid.local}"
+if docker exec erpnext_backend bench --site "$SITE_NAME" list-apps 2>/dev/null | grep -q frappe; then
+    echo -e "${PASS} ERPNext site '$SITE_NAME': installed"
 else
-    echo -e "${FAIL} ERPNext site 'scratchsolid.local': NOT found — run deploy-stack.sh site creation step"
+    echo -e "${FAIL} ERPNext site '$SITE_NAME': NOT found — run deploy-stack.sh site creation step"
 fi
 if docker exec erpnext_db mysqladmin ping 2>/dev/null | grep -q alive; then
     echo -e "${PASS} ERPNext MariaDB: alive"

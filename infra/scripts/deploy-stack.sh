@@ -194,16 +194,17 @@ done
 # ─── ERPNext First-Time Setup ───
 echo ""
 echo "[10/10] ERPNext first-time site creation (this takes 5-10 minutes)..."
-if docker exec erpnext_backend bench --site scratchsolid.local list-apps 2>/dev/null | grep -q frappe; then
-  echo "  ✅ ERPNext site already configured"
+SITE_NAME="${ERPNEXT_SITE_NAME:-scratchsolid.local}"
+if docker exec erpnext_backend bench --site "$SITE_NAME" list-apps 2>/dev/null | grep -q frappe; then
+  echo "  ✅ ERPNext site '$SITE_NAME' already configured"
 else
-  echo "  🔄 Creating ERPNext site (this may take 5-10 minutes)..."
-  docker exec erpnext_backend bench new-site scratchsolid.local \
+  echo "  🔄 Creating ERPNext site '$SITE_NAME' (this may take 5-10 minutes)..."
+  docker exec erpnext_backend bench new-site "$SITE_NAME" \
     --mariadb-root-password "$ERPNEXT_DB_ROOT_PASSWORD" \
     --admin-password "$ERPNEXT_DB_ROOT_PASSWORD"
-  docker exec erpnext_backend bench --site scratchsolid.local install-app erpnext
-  docker exec erpnext_backend bench --site scratchsolid.local enable-scheduler
-  echo "  ✅ ERPNext site created"
+  docker exec erpnext_backend bench --site "$SITE_NAME" install-app erpnext
+  docker exec erpnext_backend bench --site "$SITE_NAME" enable-scheduler
+  echo "  ✅ ERPNext site '$SITE_NAME' created"
 fi
 
 # ─── Create Cal.com admin account ───
