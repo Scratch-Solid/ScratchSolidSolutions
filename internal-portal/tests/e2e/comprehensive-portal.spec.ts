@@ -40,8 +40,8 @@ test.describe.configure({ mode: 'serial' });
 test.describe('🏠 Public Pages — Load & Content', () => {
   test('Root page redirects to login', async ({ page }) => {
     await goTo(page, '/');
-    await page.waitForURL('**/auth/login**');
-    await expect(page).toHaveURL(/\/auth\/login/);
+    await page.waitForURL('**/*login**');
+    await expect(page).toHaveURL(/\/(auth\/)?login/);
   });
 
   test('Auth login page loads with both login and signup sections', async ({ page }) => {
@@ -233,7 +233,7 @@ test.describe('🔐 Auth Forms — Login', () => {
     await goTo(page, '/auth/login');
     await page.click('button[type="submit"]');
     await delay();
-    await expect(page).toHaveURL(/\/auth\/login/);
+    await expect(page).toHaveURL(/\/(auth\/)?login/);
   });
 
   test('Login form — invalid credentials shows error', async ({ page }) => {

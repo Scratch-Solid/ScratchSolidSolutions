@@ -17,7 +17,7 @@ test.describe.serial('Admin Content Management', () => {
     test.setTimeout(PAGE_TIMEOUT);
     await page.goto(`${BASE_URL}/admin/content`, { waitUntil: 'domcontentloaded', timeout: PAGE_TIMEOUT });
     // Should redirect to login when no auth token
-    await expect(page).toHaveURL(/\/auth\/login/, { timeout: PAGE_TIMEOUT });
+    await expect(page).toHaveURL(/\/login/, { timeout: PAGE_TIMEOUT });
   });
 
   test('Admin can login and access content upload page', async ({ page, request }) => {

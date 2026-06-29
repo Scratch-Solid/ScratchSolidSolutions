@@ -59,7 +59,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Scratch Solid Solutions - Professional Cleaning Services",
+  title: "Spotless | Scratch Solid Solutions - Professional Cleaning Services",
   description: "Professional, reliable, and affordable cleaning services for homes and businesses. Scratch-Free, Solidly Clean.",
 };
 

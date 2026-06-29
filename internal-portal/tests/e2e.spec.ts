@@ -20,6 +20,6 @@ test.describe('End-to-End Public Page Flow', () => {
 
     // Sign contract page (requires auth, redirects to login)
     await page.goto('/auth/sign-contract', { waitUntil: 'domcontentloaded', timeout: PAGE_TIMEOUT });
-    await expect(page).toHaveURL(/\/auth\/login/, { timeout: PAGE_TIMEOUT });
+    await expect(page).toHaveURL(/\/(auth\/)?login/, { timeout: PAGE_TIMEOUT });
   });
 });

@@ -50,8 +50,41 @@ test.describe.serial('Admin Page Buttons & Flows', () => {
     await expect(submitBtn).toBeVisible();
   });
 
-  test('Admin onboarding pipeline page has expected buttons', async ({ page }) => {
-    test.setTimeout(PAGE_TIMEOUT);
+  test('Admin onboarding pipeline page has expected buttons', async ({ page, request }) => {
+    test.setTimeout(PAGE_TIMEOUT + 20000);
+
+    // Create and authenticate admin user
+    const uniqueEmail = `test-admin-${Date.now()}@example.com`;
+    const signupRes = await request.post(`${BASE_URL}/api/auth/signup`, {
+      data: {
+        name: 'Test Admin',
+        email: uniqueEmail,
+        password: 'TestPass123!',
+        role: 'admin',
+        phone: '+27123456789'
+      },
+      headers: { 'Content-Type': 'application/json' }
+    });
+    if (signupRes.status() === 429) { test.skip(true, 'Rate limited'); return; }
+    expect([200, 201, 409]).toContain(signupRes.status());
+
+    await sleep(DELAY);
+
+    const loginRes = await request.post(`${BASE_URL}/api/auth/login`, {
+      data: { identifier: uniqueEmail, password: 'TestPass123!' },
+      headers: { 'Content-Type': 'application/json' }
+    });
+    if (loginRes.status() === 429) { test.skip(true, 'Rate limited'); return; }
+    expect(loginRes.status()).toBe(200);
+    const loginBody = await loginRes.json();
+    const token = loginBody.token;
+
+    await page.goto(`${BASE_URL}/auth/login`, { waitUntil: 'domcontentloaded', timeout: PAGE_TIMEOUT });
+    await page.evaluate((t) => {
+      localStorage.setItem('authToken', t);
+      localStorage.setItem('userRole', 'admin');
+    }, token);
+
     await page.goto(`${BASE_URL}/admin/onboarding/pipeline`, { waitUntil: 'domcontentloaded', timeout: PAGE_TIMEOUT });
 
     const bodyText = await page.locator('body').innerText();

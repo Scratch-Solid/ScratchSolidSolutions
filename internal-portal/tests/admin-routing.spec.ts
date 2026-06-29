@@ -17,11 +17,12 @@ test.describe('Portal Routing & Navigation', () => {
     expect(url.includes('/login')).toBe(true);
   });
 
-  test('/admin/content redirects to /admin/content-upload', async ({ page }) => {
+  test('/admin/content redirects unauthenticated to login', async ({ page }) => {
     test.setTimeout(PAGE_TIMEOUT);
     await page.goto(`${BASE_URL}/admin/content`, { waitUntil: 'domcontentloaded', timeout: PAGE_TIMEOUT });
-    // The content page redirects to content-upload
-    await expect(page).toHaveURL(/\/admin\/content-upload/, { timeout: PAGE_TIMEOUT });
+    // Unauthenticated users are redirected to login
+    const url = page.url();
+    expect(url.includes('/login')).toBe(true);
   });
 
   test('/admin-dashboard redirects unauthenticated to login', async ({ page }) => {

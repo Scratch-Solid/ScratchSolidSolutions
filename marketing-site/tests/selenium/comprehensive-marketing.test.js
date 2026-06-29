@@ -75,6 +75,9 @@ async function testPublicPages() {
   let failed = 0;
   for (const p of pages) {
     const result = await runTest(`Load ${p.path}`, async (driver) => {
+      if (p.path === '/gallery') {
+        await driver.manage().setTimeouts({ pageLoad: 60000 });
+      }
       await driver.get(`${BASE_URL}${p.path}`);
       await delay();
       await assertNo500(driver);

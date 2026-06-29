@@ -34,10 +34,14 @@ export default function GalleryClient() {
   }, []);
 
   useEffect(() => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
     Promise.all([
-      fetch('/api/reviews?status=approved&limit=50').then(res => res.ok ? res.json() : Promise.resolve({ results: [] })),
-      fetch('/api/content?type=gallery-images').then(res => res.ok ? res.json() : Promise.resolve({ content: '' })),
+      fetch('/api/reviews?status=approved&limit=50', { signal: controller.signal }).then(res => res.ok ? res.json() : Promise.resolve({ results: [] })).catch(() => ({ results: [] })),
+      fetch('/api/content?type=gallery-images', { signal: controller.signal }).then(res => res.ok ? res.json() : Promise.resolve({ content: '' })).catch(() => ({ content: '' })),
     ]).then(([reviewsData, galleryData]) => {
+      clearTimeout(timeoutId);
       const rawReviews = (reviewsData as any)?.results || (Array.isArray(reviewsData) ? reviewsData : []);
       const reviewList: Review[] = rawReviews;
       setReviews(reviewList);
@@ -71,6 +75,11 @@ export default function GalleryClient() {
       setGalleryImages(unique);
       setLoading(false);
     });
+
+    return () => {
+      clearTimeout(timeoutId);
+      controller.abort();
+    };
   }, [parseImages]);
 
   useEffect(() => {

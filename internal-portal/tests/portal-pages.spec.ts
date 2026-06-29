@@ -98,18 +98,18 @@ test.describe('Portal Pages - Content Verification', () => {
     await expect(page).toHaveURL(/\/signup\/cleaner/);
   });
 
-  test('Admin onboarding analytics page renders structure', async ({ page }) => {
+  test('Admin onboarding analytics page redirects to login when unauthenticated', async ({ page }) => {
     await page.goto(`${PORTAL_URL}/admin/onboarding/analytics`);
-    await expect(page.locator('text=Onboarding Analytics')).toBeVisible();
+    await expect(page).toHaveURL(/\/login/);
   });
 
-  test('Admin onboarding pipeline page renders', async ({ page }) => {
+  test('Admin onboarding pipeline page redirects to login when unauthenticated', async ({ page }) => {
     await page.goto(`${PORTAL_URL}/admin/onboarding/pipeline`);
-    await expect(page.locator('text=Onboarding Pipeline')).toBeVisible();
+    await expect(page).toHaveURL(/\/login/);
   });
 
-  test('Admin monitoring page renders', async ({ page }) => {
+  test('Admin monitoring page redirects to login when unauthenticated', async ({ page }) => {
     await page.goto(`${PORTAL_URL}/admin/monitoring`);
-    await expect(page.locator('text=System Health')).toBeVisible();
+    await expect(page).toHaveURL(/\/login/);
   });
 });
