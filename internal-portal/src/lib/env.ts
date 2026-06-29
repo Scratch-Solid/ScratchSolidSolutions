@@ -81,7 +81,3 @@ export function getEnvVar(name: string, fallback?: string): string {
 export function getEnvVarOptional(name: string): string | undefined {
   return process.env[name];
 }
-
-export function getEnvVarOptional(name: string): string | undefined {
-  return process.env[name];
-}
