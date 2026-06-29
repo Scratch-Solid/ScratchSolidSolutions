@@ -1,3 +1,5 @@
+import { getCloudflareContext } from './runtime-context';
+
 // Data Encryption at Rest
 // Provides AES-256-GCM encryption using Web Crypto API (Cloudflare Workers compatible)
 
@@ -157,7 +159,16 @@ export function generateEncryptionKey(): string {
     .join('');
 }
 
-function getEncryptionKey(): string {
+async function getEncryptionKey(): Promise<string> {
+  // Try Cloudflare runtime context first (secrets injected at deploy time)
+  try {
+    const ctx = await getCloudflareContext();
+    const key = ctx.env.ENCRYPTION_KEY as string | undefined;
+    if (key) return key;
+  } catch {
+    // Not on Cloudflare Workers — fall through to process.env
+  }
+
   const key = process.env.ENCRYPTION_KEY;
   if (!key) {
     throw new Error('ENCRYPTION_KEY environment variable is required for sensitive data encryption');
@@ -173,7 +184,7 @@ function getEncryptionKey(): string {
 export async function encryptField(value: string | null | undefined): Promise<string | null> {
   if (!value) return null;
   try {
-    return await encrypt(value, getEncryptionKey());
+    return await encrypt(value, await getEncryptionKey());
   } catch (error) {
     console.error('Encryption failed:', error);
     throw new Error('Failed to encrypt sensitive data');
@@ -188,7 +199,7 @@ export async function encryptField(value: string | null | undefined): Promise<st
 export async function decryptField(encryptedValue: string | null | undefined): Promise<string | null> {
   if (!encryptedValue) return null;
   try {
-    return await decrypt(encryptedValue, getEncryptionKey());
+    return await decrypt(encryptedValue, await getEncryptionKey());
   } catch (error) {
     console.error('Decryption failed:', error);
     throw new Error('Failed to decrypt sensitive data');
