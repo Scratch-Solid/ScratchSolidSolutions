@@ -58,7 +58,7 @@ jobs:
     
     - name: Install dependencies
       working-directory: ./internal-portal
-      run: npm ci
+      run: npm install
 
     - name: Install Wrangler
       run: npm install -g wrangler@4.93.0

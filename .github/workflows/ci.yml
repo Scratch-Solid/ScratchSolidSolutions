@@ -75,7 +75,7 @@ jobs:
     
     - name: Install dependencies
       working-directory: ./internal-portal
-      run: npm ci
+      run: npm install
     
     - name: Run unit tests
       working-directory: ./internal-portal
