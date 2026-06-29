@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { parsePaginationParams, calculatePagination } from '@/lib/pagination';
-import { getCloudflareContext } from '@/lib/runtime-context';
+import { getErpNextCreds } from '@/lib/cleaner-integrations';
 
 export async function GET(request: NextRequest) {
   const traceId = withTracing(request);
@@ -19,10 +19,7 @@ export async function GET(request: NextRequest) {
     const department = searchParams.get('department');
 
     // Check if ERPNext credentials are configured
-    const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
-    const erpnextUrl = (env as any)?.ERPNEXT_API_URL || process.env.ERPNEXT_API_URL;
-    const erpnextApiKey = (env as any)?.ERPNEXT_API_KEY || process.env.ERPNEXT_API_KEY;
-    const erpnextApiSecret = (env as any)?.ERPNEXT_API_SECRET || process.env.ERPNEXT_API_SECRET;
+    const { baseUrl: erpnextUrl, apiKey: erpnextApiKey, apiSecret: erpnextApiSecret } = await getErpNextCreds();
 
     if (!erpnextUrl || !erpnextApiKey || !erpnextApiSecret) {
       const response = NextResponse.json({

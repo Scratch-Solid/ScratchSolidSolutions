@@ -1,7 +1,16 @@
 // WhatsApp Gateway for Twilio Integration
 // Phase 4: WhatsApp Gateway Architecture & Integration Design
 
-import { getEnvVarOptional } from '../env';
+import { getCloudflareContext } from '../runtime-context';
+
+async function getTwilioCreds(): Promise<{ accountSid: string; authToken: string; whatsappNumber: string }> {
+  const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
+  return {
+    accountSid: (env as any)?.TWILIO_ACCOUNT_SID || '',
+    authToken: (env as any)?.TWILIO_AUTH_TOKEN || '',
+    whatsappNumber: (env as any)?.TWILIO_WHATSAPP_NUMBER || '',
+  };
+}
 
 export interface WhatsAppMessage {
   from: string;
@@ -17,16 +26,9 @@ export interface WhatsAppCommand {
 }
 
 export class WhatsAppGateway {
-  private accountSid: string;
-  private authToken: string;
-  private whatsappNumber: string;
   private commands: Map<string, WhatsAppCommand> = new Map();
 
   constructor() {
-    this.accountSid = getEnvVarOptional('TWILIO_ACCOUNT_SID') || '';
-    this.authToken = getEnvVarOptional('TWILIO_AUTH_TOKEN') || '';
-    this.whatsappNumber = getEnvVarOptional('TWILIO_WHATSAPP_NUMBER') || '';
-    
     this.registerDefaultCommands();
   }
 
@@ -114,10 +116,15 @@ export class WhatsAppGateway {
    * Sends a WhatsApp message
    */
   async sendMessage(to: string, body: string, mediaUrls?: string[]): Promise<void> {
-    const url = `https://api.twilio.com/2010-04-01/Accounts/${this.accountSid}/Messages.json`;
+    const { accountSid, authToken, whatsappNumber } = await getTwilioCreds();
+    if (!accountSid || !authToken || !whatsappNumber) {
+      throw new Error('Twilio credentials not configured');
+    }
+
+    const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
     
     const formData = new FormData();
-    formData.append('From', `whatsapp:${this.whatsappNumber}`);
+    formData.append('From', `whatsapp:${whatsappNumber}`);
     formData.append('To', `whatsapp:${to}`);
     formData.append('Body', body);
 
@@ -128,7 +135,7 @@ export class WhatsAppGateway {
     const response = await fetch(url, {
       method: 'POST',
       headers: {
-        'Authorization': `Basic ${btoa(`${this.accountSid}:${this.authToken}`)}`
+        'Authorization': `Basic ${btoa(`${accountSid}:${authToken}`)}`
       },
       body: formData
     });

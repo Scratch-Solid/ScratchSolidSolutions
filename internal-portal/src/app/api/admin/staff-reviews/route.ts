@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { checkAuthAndRole } from '@/lib/auth-middleware';
-import { getDb } from '@/lib/db';
+import { withAuth } from '@/lib/middleware';
 
 export async function POST(request: NextRequest) {
-  const auth = await checkAuthAndRole(request, 'admin');
-  if (!auth.authenticated || !auth.authorized) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const auth = await withAuth(request, ['admin']);
+  if (auth instanceof NextResponse) return auth;
+  const { user, db } = auth;
 
   try {
     const body = await request.json() as any;
@@ -19,7 +17,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing staff_id' }, { status: 400 });
     }
 
-    const db = await getDb();
     if (!db) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 
     // Insert performance metric row
@@ -43,7 +40,7 @@ export async function POST(request: NextRequest) {
       quality_score        ?? 7,
       communication_score  ?? 7,
       notes || null,
-      `admin:${auth.user.id}`,
+      `admin:${user.id}`,
     ).run();
 
     // Upsert monthly review summary
@@ -55,7 +52,7 @@ export async function POST(request: NextRequest) {
         company_values_score = excluded.company_values_score,
         notes                = excluded.notes,
         reviewed_at          = CURRENT_TIMESTAMP
-    `).bind(staff_id, reviewMonth, attendance_score ?? 5, company_values_score ?? 5, notes || null, `admin:${auth.user.id}`).run();
+    `).bind(staff_id, reviewMonth, attendance_score ?? 5, company_values_score ?? 5, notes || null, `admin:${user.id}`).run();
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -13,10 +13,10 @@ older scattered `*_AUDIT_*.md` / `*_COMPLETION_*.md` files at the repo root.
 |---|---|---|---|
 | Marketing site | `scratchsolidsolutions.org` | **Cloudflare Workers** (OpenNext) + D1 | ✅ Healthy |
 | Backend API | `api.scratchsolidsolutions.org` | Cloudflare Worker | ⚠️ Up; **Zoho token expired** |
-| Internal Portal | `portal.scratchsolidsolutions.org` | **Cloudflare Workers** (OpenNext) + D1 | ❌ Was DB-down → **code fix applied, needs deploy** |
+| Internal Portal | `portal.scratchsolidsolutions.org` | **Cloudflare Workers** (OpenNext) + D1 | ⚠️ Code fixes applied, **needs deploy** |
 | n8n | `n8n.scratchsolidsolutions.org` | Hetzner (Docker) | ✅ Live |
 | Cal.com | `booking.scratchsolidsolutions.org` | Hetzner (Docker) | ⚠️ Live but **not onboarded** (setup wizard) |
-| ERPNext | `erp.scratchsolidsolutions.org` | Hetzner (Docker) | ❌ **Not reachable** (site not created) |
+| ERPNext | `erp.scratchsolidsolutions.org` | Hetzner (Docker) | ✅ Site created, apps migrated, API key + secrets set |
 | Uptime Kuma | `status.scratchsolidsolutions.org` | Hetzner (Docker) | ✅ Live |
 
 **Key architecture fact:** marketing + portal + backend all run on **Cloudflare**.
@@ -99,7 +99,7 @@ clobber the Hetzner origin. (Left intact for now since the apps still live on CF
 |---|---|---|---|
 | 1 | **Zoho token expired** | Backend API health `zoho: token_expired` | Re-run Zoho OAuth, update `ZOHO_REFRESH_TOKEN` secret (backend worker + portal). Invoicing/payments fail until then. |
 | 2 | **Cal.com not onboarded** | `booking.*` shows setup wizard | Create first admin at `/setup`; configure event types + booking webhook → n8n. |
-| 3 | **ERPNext site missing** | `erp.*` returns Not Found | On server: `deploy-stack.sh` auto-creates the site; or `docker exec erpnext_backend bench new-site …`. Then generate API key → set `ERPNEXT_*` secrets. |
+| 3 | ~~**ERPNext site missing**~~ | ✅ **RESOLVED** — Site `scratchsolid.local` created, frappe + erpnext installed & migrated, API key generated, Cloudflare secrets set. | ~~On server: `deploy-stack.sh` auto-creates the site; or `docker exec erpnext_backend bench new-site …`. Then generate API key → set `ERPNEXT_*` secrets.~~ |
 | 4 | **WhatsApp/Meta not configured** | Portal health `meta_cloud_api: not configured` | Set `META_*` secrets; currently falls back to email. |
 | 5 | **n8n workflows** | `infra/n8n-workflows/*.json` | Import the 6 workflow JSONs into n8n and set credentials. |
 
@@ -130,3 +130,9 @@ clobber the Hetzner origin. (Left intact for now since the apps still live on CF
 - `infra/docker-compose.yml` — `marketing-web` / `portal-web` gated behind `apps` profile.
 - `infra/scripts/migrate-d1-to-postgres.sh` — new idempotent D1→PG migration helper.
 - `infra/scripts/deploy-stack.sh` — health checks include app DBs/Redis + cutover notes.
+- `internal-portal/src/lib/docusign.ts` — refactored to use `getCloudflareContext` instead of module-level `getEnvVarOptional`.
+- `internal-portal/src/lib/whatsapp/meta-cloud.ts` — refactored to use `getCloudflareContext` instead of module-level `getEnvVarOptional`.
+- `internal-portal/src/lib/whatsapp/gateway.ts` — refactored to read Twilio credentials inside `sendMessage` via `getCloudflareContext`.
+- `internal-portal/src/lib/notifications.ts` — refactored to read Resend credentials inside `sendEmail` via `getCloudflareContext`.
+- `internal-portal/src/lib/cleaner-integrations.ts` — exported `getErpNextCreds()` for reuse; made `hasDocusignConfig()` async.
+- 4 ERPNext routes (`payslips`, `users/staff`, `salary-preview`, `sync-kpi`) — deduplicated credential retrieval to use centralized `getErpNextCreds()`.

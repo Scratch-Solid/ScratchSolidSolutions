@@ -7,7 +7,16 @@ import { getDb } from "@/lib/db";
 // Read the active background image directly from the database. A server-side
 // relative fetch (e.g. fetch('/api/content?...')) does not work under the
 // self-hosted Node runtime, so we query the content table directly.
+let cachedBackgroundUrl: string | null | undefined = undefined;
+let cacheTimestamp = 0;
+const BACKGROUND_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
 async function getBackgroundUrl(): Promise<string | null> {
+  // In-memory cache with TTL to avoid querying the DB on every request
+  if (cachedBackgroundUrl !== undefined && Date.now() - cacheTimestamp < BACKGROUND_CACHE_TTL_MS) {
+    return cachedBackgroundUrl;
+  }
+
   try {
     const db = await getDb();
     if (!db) return null;
@@ -15,7 +24,10 @@ async function getBackgroundUrl(): Promise<string | null> {
       .prepare('SELECT text as content FROM content WHERE slug = ?')
       .bind('site-background')
       .first();
-    return (row as { content?: string } | null)?.content || null;
+    const url = (row as { content?: string } | null)?.content || null;
+    cachedBackgroundUrl = url;
+    cacheTimestamp = Date.now();
+    return url;
   } catch (err) {
     // Log for diagnostics but never let a decorative background query crash the layout
     console.error('[layout] Background URL query failed:', err);

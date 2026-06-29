@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { log } from '@/lib/logger';
-import { getCloudflareContext } from '@/lib/runtime-context';
+import { getErpNextCreds } from '@/lib/cleaner-integrations';
 
 export async function GET(request: NextRequest) {
   const traceId = withTracing(request);
@@ -33,11 +33,8 @@ export async function GET(request: NextRequest) {
     const cleaner = cleanerProfile as any;
     const paysheetCode = cleaner.paysheet_code;
 
-    // Read ERPNext credentials from Cloudflare context
-    const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
-    const erpnextApiUrl = (env as any)?.ERPNEXT_API_URL || process.env.ERPNEXT_API_URL;
-    const erpnextApiKey = (env as any)?.ERPNEXT_API_KEY || process.env.ERPNEXT_API_KEY;
-    const erpnextApiSecret = (env as any)?.ERPNEXT_API_SECRET || process.env.ERPNEXT_API_SECRET;
+    // Read ERPNext credentials from centralized helper
+    const { baseUrl: erpnextApiUrl, apiKey: erpnextApiKey, apiSecret: erpnextApiSecret } = await getErpNextCreds();
 
     if (!erpnextApiUrl || !erpnextApiKey || !erpnextApiSecret) {
       const response = NextResponse.json({

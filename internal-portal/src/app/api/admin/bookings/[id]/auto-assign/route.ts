@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { checkAuthAndRole } from '@/lib/auth-middleware';
+import { withAuth } from '@/lib/middleware';
 import { autoAssignBooking, determinePoolFromServiceType, isValidTimeSlot } from '@/lib/pool-management/pool-assignment';
-import { getDb, getTrainingDb } from '@/lib/db';
+import { getTrainingDb } from '@/lib/db';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await checkAuthAndRole(request, 'admin');
-  if (!auth.authenticated || !auth.authorized) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const auth = await withAuth(request, ['admin']);
+  if (auth instanceof NextResponse) return auth;
+  const { user, db } = auth;
 
   const { id } = await params;
   const bookingId = parseInt(id);
@@ -34,8 +35,7 @@ export async function POST(
       return NextResponse.json({ error: 'Invalid time slot' }, { status: 400 });
     }
 
-    // Get database
-    const db = await getDb();
+    // Get training database
     const trainingDb = await getTrainingDb();
 
     if (!trainingDb) {

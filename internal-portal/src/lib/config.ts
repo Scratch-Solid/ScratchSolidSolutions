@@ -2,11 +2,6 @@
 // Centralized configuration with validation and defaults
 
 export interface AppConfig {
-  // Security
-  jwtSecret: string;
-  csrfSecret: string;
-  seedKey?: string;
-  
   // Session
   sessionTimeoutHours: number;
   maxConcurrentSessions: number;
@@ -36,11 +31,6 @@ function getEnvVar(name: string, defaultValue?: string): string {
 }
 
 export const config: AppConfig = {
-  // Security — secrets are injected at runtime by Wrangler, not available in process.env at build time
-  jwtSecret: getEnvVar('JWT_SECRET'),
-  csrfSecret: getEnvVar('CSRF_SECRET'),
-  seedKey: process.env.SEED_KEY,
-  
   // Session
   sessionTimeoutHours: parseInt(getEnvVar('SESSION_TIMEOUT_HOURS', '24'), 10),
   maxConcurrentSessions: parseInt(getEnvVar('MAX_CONCURRENT_SESSIONS', '3'), 10),
@@ -68,15 +58,6 @@ export const config: AppConfig = {
 // Configuration validation function
 export function validateConfig(): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
-  
-  // Validate required fields
-  if (!config.jwtSecret || config.jwtSecret.length < 32) {
-    errors.push('JWT_SECRET must be at least 32 characters');
-  }
-  
-  if (!config.csrfSecret || config.csrfSecret.length < 32) {
-    errors.push('CSRF_SECRET must be at least 32 characters');
-  }
   
   // Validate numeric ranges
   if (config.sessionTimeoutHours < 1 || config.sessionTimeoutHours > 168) {
@@ -119,11 +100,3 @@ export function getClientConfig(): Record<string, string | boolean | number> {
   };
 }
 
-// Validate configuration on import (non-secret fields only — secrets are runtime-injected)
-if (typeof window === 'undefined') {
-  const validation = validateConfig();
-  if (!validation.valid) {
-    console.error('Configuration validation failed:', validation.errors);
-    console.warn('Running with potentially invalid configuration');
-  }
-}

@@ -2,15 +2,26 @@
 // Uses WhatsApp Business API (free-tier within 24h conversation window)
 // Falls back to Resend email when window is closed.
 
-import { getEnvVarOptional } from '../env';
+import { getCloudflareContext } from '../runtime-context';
 
-const META_API_VERSION = getEnvVarOptional('META_API_VERSION') || 'v18.0';
-const META_PHONE_NUMBER_ID = getEnvVarOptional('META_PHONE_NUMBER_ID') || '';
-const META_ACCESS_TOKEN = getEnvVarOptional('META_ACCESS_TOKEN') || '';
-const META_VERIFY_TOKEN = getEnvVarOptional('META_VERIFY_TOKEN') || '';
+async function getMetaCreds(): Promise<{
+  apiVersion: string;
+  phoneNumberId: string;
+  accessToken: string;
+  verifyToken: string;
+}> {
+  const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
+  return {
+    apiVersion: (env as any)?.META_API_VERSION || 'v18.0',
+    phoneNumberId: (env as any)?.META_PHONE_NUMBER_ID || '',
+    accessToken: (env as any)?.META_ACCESS_TOKEN || '',
+    verifyToken: (env as any)?.META_VERIFY_TOKEN || '',
+  };
+}
 
-export function getVerifyToken(): string {
-  return META_VERIFY_TOKEN;
+export async function getVerifyToken(): Promise<string> {
+  const { verifyToken } = await getMetaCreds();
+  return verifyToken;
 }
 
 interface MetaMessagePayload {
@@ -26,8 +37,9 @@ interface MetaMessagePayload {
   };
 }
 
-function getApiUrl(): string {
-  return `https://graph.facebook.com/${META_API_VERSION}/${META_PHONE_NUMBER_ID}/messages`;
+async function getApiUrl(): Promise<string> {
+  const { apiVersion, phoneNumberId } = await getMetaCreds();
+  return `https://graph.facebook.com/${apiVersion}/${phoneNumberId}/messages`;
 }
 
 export async function sendWhatsAppMessage(
@@ -35,7 +47,8 @@ export async function sendWhatsAppMessage(
   body: string,
   options?: { templateName?: string; languageCode?: string }
 ): Promise<{ success: boolean; messageId?: string; error?: string; errorCode?: number }> {
-  if (!META_ACCESS_TOKEN || !META_PHONE_NUMBER_ID) {
+  const { accessToken, phoneNumberId } = await getMetaCreds();
+  if (!accessToken || !phoneNumberId) {
     return { success: false, error: 'Meta Cloud API credentials not configured' };
   }
 
@@ -62,10 +75,10 @@ export async function sendWhatsAppMessage(
       };
 
   try {
-    const response = await fetch(getApiUrl(), {
+    const response = await fetch(await getApiUrl(), {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${META_ACCESS_TOKEN}`,
+        Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
@@ -174,16 +187,17 @@ export async function recordInboundMessage(
 export async function downloadMediaFromMeta(
   mediaId: string
 ): Promise<{ buffer: ArrayBuffer; contentType: string; fileName: string } | null> {
-  if (!META_ACCESS_TOKEN) {
+  const { accessToken, apiVersion } = await getMetaCreds();
+  if (!accessToken) {
     console.warn('[Meta Cloud] META_ACCESS_TOKEN not configured');
     return null;
   }
 
   try {
     // 1. Get media URL
-    const infoUrl = `https://graph.facebook.com/${META_API_VERSION}/${mediaId}`;
+    const infoUrl = `https://graph.facebook.com/${apiVersion}/${mediaId}`;
     const infoResponse = await fetch(infoUrl, {
-      headers: { Authorization: `Bearer ${META_ACCESS_TOKEN}` },
+      headers: { Authorization: `Bearer ${accessToken}` },
     });
 
     if (!infoResponse.ok) {
@@ -199,7 +213,7 @@ export async function downloadMediaFromMeta(
 
     // 2. Download binary
     const binaryResponse = await fetch(info.url, {
-      headers: { Authorization: `Bearer ${META_ACCESS_TOKEN}` },
+      headers: { Authorization: `Bearer ${accessToken}` },
     });
 
     if (!binaryResponse.ok) {

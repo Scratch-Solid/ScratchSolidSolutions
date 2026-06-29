@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
   const token = searchParams.get('hub.verify_token');
   const challenge = searchParams.get('hub.challenge');
 
-  if (mode === 'subscribe' && token === getVerifyToken()) {
+  if (mode === 'subscribe' && token === await getVerifyToken()) {
     console.log('[WhatsApp Meta] Webhook verified successfully');
     return new NextResponse(challenge, { status: 200 });
   }
@@ -163,6 +163,9 @@ async function findActiveAssignment(
 
   // 2. Fall back to jobs table (Cal.com bookings)
   if (paysheetCode) {
+    // Defensively escape any double quotes in paysheetCode before building LIKE pattern
+    const safeCode = paysheetCode.replace(/"/g, '""');
+    const pattern = `%"${safeCode}"%`;
     const jobAssignment = await db
       .prepare(
         `SELECT j.id AS entity_id, 'job' AS entity_type,
@@ -174,7 +177,7 @@ async function findActiveAssignment(
          ORDER BY j.scheduled_at ASC
          LIMIT 1`
       )
-      .bind(`%"${paysheetCode}"%`, today)
+      .bind(pattern, today)
       .first();
 
     if (jobAssignment) return jobAssignment;

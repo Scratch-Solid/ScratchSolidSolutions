@@ -1,17 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { checkAuthAndRole } from '@/lib/auth-middleware';
-import { getDb } from '@/lib/db';
+import { withAuth } from '@/lib/middleware';
 
 export async function GET(request: NextRequest) {
-  const auth = await checkAuthAndRole(request);
-  if (!auth.authenticated) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const auth = await withAuth(request);
+  if (auth instanceof NextResponse) return auth;
+  const { user, db } = auth;
 
   try {
     // Accept explicit staffId query param (cleaner dashboard passes user_id)
     const { searchParams } = new URL(request.url);
-    const staffId = searchParams.get('staffId') ? parseInt(searchParams.get('staffId')!) : auth.user.id;
+    const staffId = searchParams.get('staffId') ? parseInt(searchParams.get('staffId')!) : user.id;
 
-    const db = await getDb();
     if (!db) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 
     const result = await db.prepare(`

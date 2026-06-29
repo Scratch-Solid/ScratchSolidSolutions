@@ -1,11 +1,16 @@
-import { getEnvVarOptional } from './env';
+import { getCloudflareContext } from './runtime-context';
 import {
   sendWhatsAppMessage,
   isConversationWindowOpen,
 } from './whatsapp/meta-cloud';
 
-const RESEND_API_KEY = getEnvVarOptional('RESEND_API_KEY') || '';
-const EMAIL_FROM = getEnvVarOptional('EMAIL_FROM') || 'Scratch Solid Solutions <customerservice@scratchsolidsolutions.org>';
+async function getResendCreds(): Promise<{ apiKey: string; emailFrom: string }> {
+  const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
+  return {
+    apiKey: (env as any)?.RESEND_API_KEY || '',
+    emailFrom: (env as any)?.EMAIL_FROM || 'Scratch Solid Solutions <customerservice@scratchsolidsolutions.org>',
+  };
+}
 
 export interface NotificationResult {
   success: boolean;
@@ -77,14 +82,15 @@ export async function sendEmail(to: string, subject: string, body: string, prefe
   if (preferences && !preferences.email) {
     return { success: false, skipped: true, skipReason: 'Email notifications disabled' };
   }
-  if (!RESEND_API_KEY) return { success: false, error: 'Email not configured' };
+  const { apiKey, emailFrom } = await getResendCreds();
+  if (!apiKey) return { success: false, error: 'Email not configured' };
   try {
     const hasHtml = /<[a-z][\s\S]*>/i.test(body);
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: EMAIL_FROM,
+        from: emailFrom,
         to: [to],
         subject,
         html: hasHtml ? body : undefined,

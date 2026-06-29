@@ -3,7 +3,7 @@ import { notifyAdminApproved, notifyAdminRejected, notifyConsentSubmitted, notif
 import { createEnvelope, getSigningUrl, isDocusignFullyConfigured } from '@/lib/docusign';
 import { getCloudflareContext } from '@/lib/runtime-context';
 
-async function getErpNextCreds() {
+export async function getErpNextCreds() {
   const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
   return {
     baseUrl: (env as any)?.ERPNEXT_BASE_URL || (env as any)?.ERPNEXT_API_URL || process.env.ERPNEXT_BASE_URL || process.env.ERPNEXT_API_URL || undefined,
@@ -55,8 +55,8 @@ async function hasErpNextConfig() {
   return Boolean(creds.baseUrl && creds.apiKey && creds.apiSecret);
 }
 
-function hasDocusignConfig() {
-  return isDocusignFullyConfigured();
+async function hasDocusignConfig() {
+  return await isDocusignFullyConfigured();
 }
 
 export async function createOnboardingSignatureReference(
@@ -68,7 +68,7 @@ export async function createOnboardingSignatureReference(
     returnUrl?: string;
   }
 ) {
-  const configured = hasDocusignConfig();
+  const configured = await hasDocusignConfig();
   const prefix = step === 'consent' ? 'CONSENT' : 'CONTRACT';
 
   if (configured && step === 'contract' && params?.cleanerEmail && params?.cleanerName) {

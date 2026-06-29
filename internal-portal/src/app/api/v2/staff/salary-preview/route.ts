@@ -1,19 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { checkAuthAndRole } from '@/lib/auth-middleware';
-import { getDb } from '@/lib/db';
-import { getCloudflareContext } from '@/lib/runtime-context';
+import { withAuth } from '@/lib/middleware';
+import { getErpNextCreds } from '@/lib/cleaner-integrations';
 
 export async function GET(request: NextRequest) {
-  const auth = await checkAuthAndRole(request);
-  if (!auth.authenticated) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const auth = await withAuth(request);
+  if (auth instanceof NextResponse) return auth;
+  const { user } = auth;
 
   try {
-    const staffId = auth.user.id;
+    const staffId = user.id;
 
-    const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
-    const erpnextApiUrl = (env as any)?.ERPNEXT_API_URL || process.env.ERPNEXT_API_URL;
-    const erpnextApiKey = (env as any)?.ERPNEXT_API_KEY || process.env.ERPNEXT_API_KEY;
-    const erpnextApiSecret = (env as any)?.ERPNEXT_API_SECRET || process.env.ERPNEXT_API_SECRET;
+    const { baseUrl: erpnextApiUrl, apiKey: erpnextApiKey, apiSecret: erpnextApiSecret } = await getErpNextCreds();
 
     if (!erpnextApiUrl || !erpnextApiKey || !erpnextApiSecret) {
       return NextResponse.json({

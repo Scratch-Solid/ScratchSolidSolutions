@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { checkAuthAndRole } from '@/lib/auth-middleware';
-import { getDb } from '@/lib/db';
+import { withAuth } from '@/lib/middleware';
 
 export async function POST(request: NextRequest) {
-  const auth = await checkAuthAndRole(request, 'admin');
-  if (!auth.authenticated || !auth.authorized) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const auth = await withAuth(request, ['admin']);
+  if (auth instanceof NextResponse) return auth;
+  const { user, db } = auth;
 
   try {
     const body = await request.json() as any;
@@ -20,7 +18,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid pool type. Must be INDIVIDUAL or BUSINESS' }, { status: 400 });
     }
 
-    const db = await getDb();
     if (!db) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 
     // Get current pool type
@@ -37,7 +34,7 @@ export async function POST(request: NextRequest) {
     await db.prepare(`
       INSERT INTO staff_pool_transitions (staff_id, from_pool, to_pool, reason, transitioned_by, transitioned_at)
       VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-    `).bind(staff_id, current.pool_type, new_pool, reason || 'Admin reassignment', auth.user.id).run();
+    `).bind(staff_id, current.pool_type, new_pool, reason || 'Admin reassignment', user.id).run();
 
     return NextResponse.json({ success: true, staff_id, from_pool: current.pool_type, to_pool: new_pool });
   } catch (error) {

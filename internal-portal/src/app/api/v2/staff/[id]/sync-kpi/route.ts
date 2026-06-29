@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { withAuth, withTracing, withSecurityHeaders, withCsrf } from '@/lib/middleware';
-import { getCloudflareContext } from '@/lib/runtime-context';
+import { getErpNextCreds } from '@/lib/cleaner-integrations';
 
 export async function POST(
   request: NextRequest,
@@ -46,10 +46,7 @@ export async function POST(
 
     // Update ERPNext with KPI data
     try {
-      const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
-      const erpnextApiUrl = (env as any)?.ERPNEXT_API_URL || process.env.ERPNEXT_API_URL;
-      const erpnextApiKey = (env as any)?.ERPNEXT_API_KEY || process.env.ERPNEXT_API_KEY;
-      const erpnextApiSecret = (env as any)?.ERPNEXT_API_SECRET || process.env.ERPNEXT_API_SECRET;
+      const { baseUrl: erpnextApiUrl, apiKey: erpnextApiKey, apiSecret: erpnextApiSecret } = await getErpNextCreds();
 
       if (!erpnextApiUrl || !erpnextApiKey || !erpnextApiSecret) {
         console.warn('ERPNext KPI sync skipped: credentials not configured');

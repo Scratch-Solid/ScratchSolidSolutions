@@ -2,21 +2,41 @@
  * DocuSign Integration
  * JWT Grant authentication + Envelope creation for cleaner contracts.
  */
-import { getEnvVarOptional } from './env';
+import { getCloudflareContext } from './runtime-context';
 import { log } from './logger';
 
 const DOCUSIGN_AUTH_SERVER = 'https://account-d.docusign.com';
 const DOCUSIGN_PROD_AUTH_SERVER = 'https://account.docusign.com';
 
-function getAuthServer() {
-  const baseUrl = getEnvVarOptional('DOCUSIGN_BASE_URL') || '';
+async function getDocuSignCreds(): Promise<{
+  baseUrl: string;
+  integrationKey: string;
+  secretKey: string;
+  accountId: string;
+  privateKey: string;
+  userId: string;
+}> {
+  const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
+  return {
+    baseUrl: (env as any)?.DOCUSIGN_BASE_URL || 'https://demo.docusign.net/restapi',
+    integrationKey: (env as any)?.DOCUSIGN_INTEGRATION_KEY || '',
+    secretKey: (env as any)?.DOCUSIGN_SECRET_KEY || '',
+    accountId: (env as any)?.DOCUSIGN_ACCOUNT_ID || '',
+    privateKey: (env as any)?.DOCUSIGN_PRIVATE_KEY || '',
+    userId: (env as any)?.DOCUSIGN_USER_ID || '',
+  };
+}
+
+async function getAuthServer() {
+  const { baseUrl } = await getDocuSignCreds();
   return baseUrl.includes('demo') || baseUrl.includes('docusign.net')
     ? DOCUSIGN_AUTH_SERVER
     : DOCUSIGN_PROD_AUTH_SERVER;
 }
 
-function getRestBaseUrl() {
-  return (getEnvVarOptional('DOCUSIGN_BASE_URL') || 'https://demo.docusign.net/restapi').replace(/\/$/, '');
+async function getRestBaseUrl() {
+  const { baseUrl } = await getDocuSignCreds();
+  return baseUrl.replace(/\/$/, '');
 }
 
 /**
@@ -66,9 +86,7 @@ function base64UrlEncode(buffer: ArrayBuffer): string {
  * Generate a JWT assertion for DocuSign JWT Grant
  */
 async function createJwtAssertion(): Promise<string> {
-  const integrationKey = getEnvVarOptional('DOCUSIGN_INTEGRATION_KEY');
-  const userId = getEnvVarOptional('DOCUSIGN_USER_ID');
-  const privateKeyPem = getEnvVarOptional('DOCUSIGN_PRIVATE_KEY');
+  const { integrationKey, userId, privateKey: privateKeyPem } = await getDocuSignCreds();
 
   if (!integrationKey || !userId || !privateKeyPem) {
     throw new Error('DocuSign JWT credentials missing: INTEGRATION_KEY, USER_ID, or PRIVATE_KEY');
@@ -79,7 +97,7 @@ async function createJwtAssertion(): Promise<string> {
   const payload = {
     iss: integrationKey,
     sub: userId,
-    aud: getAuthServer(),
+    aud: await getAuthServer(),
     iat: now,
     exp: now + 3600,
     scope: 'signature impersonation',
@@ -109,7 +127,7 @@ async function createJwtAssertion(): Promise<string> {
  */
 async function getAccessToken(): Promise<string> {
   const jwt = await createJwtAssertion();
-  const response = await fetch(`${getAuthServer()}/oauth/token`, {
+  const response = await fetch(`${await getAuthServer()}/oauth/token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
@@ -164,7 +182,7 @@ export async function createEnvelope(params: {
   documentId?: string;
   recipients: DocusignRecipient[];
 }): Promise<{ envelopeId: string; status: string }> {
-  const accountId = getEnvVarOptional('DOCUSIGN_ACCOUNT_ID');
+  const { accountId } = await getDocuSignCreds();
   if (!accountId) {
     throw new Error('DOCUSIGN_ACCOUNT_ID not configured');
   }
@@ -216,7 +234,7 @@ export async function createEnvelope(params: {
   };
 
   const response = await fetch(
-    `${getRestBaseUrl()}/restapi/v2.1/accounts/${accountId}/envelopes`,
+    `${await getRestBaseUrl()}/restapi/v2.1/accounts/${accountId}/envelopes`,
     {
       method: 'POST',
       headers: {
@@ -251,7 +269,7 @@ export async function getSigningUrl(params: {
   clientUserId?: string;
   returnUrl: string;
 }): Promise<string> {
-  const accountId = getEnvVarOptional('DOCUSIGN_ACCOUNT_ID');
+  const { accountId } = await getDocuSignCreds();
   if (!accountId) {
     throw new Error('DOCUSIGN_ACCOUNT_ID not configured');
   }
@@ -259,7 +277,7 @@ export async function getSigningUrl(params: {
   const accessToken = await getAccessToken();
 
   const response = await fetch(
-    `${getRestBaseUrl()}/restapi/v2.1/accounts/${accountId}/envelopes/${params.envelopeId}/views/recipient`,
+    `${await getRestBaseUrl()}/restapi/v2.1/accounts/${accountId}/envelopes/${params.envelopeId}/views/recipient`,
     {
       method: 'POST',
       headers: {
@@ -288,12 +306,13 @@ export async function getSigningUrl(params: {
 /**
  * Check if DocuSign is fully configured with all required secrets
  */
-export function isDocusignFullyConfigured(): boolean {
+export async function isDocusignFullyConfigured(): Promise<boolean> {
+  const { integrationKey, secretKey, accountId, privateKey, userId } = await getDocuSignCreds();
   return Boolean(
-    getEnvVarOptional('DOCUSIGN_INTEGRATION_KEY') &&
-      getEnvVarOptional('DOCUSIGN_SECRET_KEY') &&
-      getEnvVarOptional('DOCUSIGN_ACCOUNT_ID') &&
-      getEnvVarOptional('DOCUSIGN_PRIVATE_KEY') &&
-      getEnvVarOptional('DOCUSIGN_USER_ID')
+    integrationKey &&
+      secretKey &&
+      accountId &&
+      privateKey &&
+      userId
   );
 }
