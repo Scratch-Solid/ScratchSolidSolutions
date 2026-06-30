@@ -6,6 +6,7 @@
 import React, { useEffect, useState } from "react";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import DashboardLayout from "@/components/DashboardLayout";
+import { BarChartCard, DonutChartCard } from "@/components/charts/MiniCharts";
 import ServicesManagement from "./AdminDashboard/services-management";
 import CleanerVisibility from "./AdminDashboard/cleaner-visibility";
 import TrainingLedger from "./AdminDashboard/training-ledger";
@@ -41,6 +42,13 @@ export default function AdminDashboard() {
   const [bankingForm, setBankingForm] = useState({ bank_name: '', account_number: '', account_holder: '', branch_code: '', account_type: 'current' });
   const [showCreateCleaner, setShowCreateCleaner] = useState(false);
   const [newCleanerForm, setNewCleanerForm] = useState({ fullName: '', idPassportNumber: '', contactNumber: '', positionAppliedFor: '' });
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const t = new URLSearchParams(window.location.search).get('tab');
+      if (t) setActiveTab(t);
+    }
+  }, []);
 
   useEffect(() => {
     async function fetchAdminData() {
@@ -287,6 +295,28 @@ export default function AdminDashboard() {
                   <p className="text-2xl font-bold text-slate-900">{stats.pendingWeekendAssignments}</p>
                 </CardContent>
               </Card>
+            </div>
+
+            <div className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-4 lg:grid-cols-2">
+              <DonutChartCard
+                title="Bookings by Status"
+                centerLabel="bookings"
+                data={Object.entries(
+                  (bookings as any[]).reduce((acc: Record<string, number>, b: any) => {
+                    const s = (b.status || 'unknown').toLowerCase();
+                    acc[s] = (acc[s] || 0) + 1;
+                    return acc;
+                  }, {} as Record<string, number>)
+                ).map(([label, value]) => ({ label, value: value as number }))}
+              />
+              <BarChartCard
+                title="Key Metrics"
+                data={[
+                  { label: 'Bookings', value: stats.totalBookings },
+                  { label: 'Cleaners', value: stats.activeCleaners },
+                  { label: 'Weekend', value: stats.pendingWeekendAssignments },
+                ]}
+              />
             </div>
 
             {notifications.length > 0 && (

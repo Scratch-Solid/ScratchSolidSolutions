@@ -2,18 +2,66 @@
 
 import React, { ReactNode, useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { LogOut, Menu, X } from 'lucide-react';
+import {
+  LogOut, Menu, X, LayoutDashboard, Users, DollarSign, FileText,
+  Settings, Eye, UserCheck, GraduationCap, BarChart3, Shield, Monitor,
+  ClipboardList, Lock,
+} from 'lucide-react';
+
+type Role = 'admin' | 'staff' | 'cleaner' | 'digital' | 'transport';
+
+interface NavItem {
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+}
 
 interface DashboardLayoutProps {
   children: ReactNode;
   title: string;
-  role?: 'admin' | 'staff' | 'cleaner' | 'digital' | 'transport';
+  role?: Role;
 }
 
+const NAV_ITEMS: Record<Role, NavItem[]> = {
+  admin: [
+    { href: '/admin-dashboard', label: 'Overview', icon: LayoutDashboard },
+    { href: '/admin-dashboard?tab=employees', label: 'Employees', icon: Users },
+    { href: '/admin-dashboard?tab=services-banking', label: 'Services & Banking', icon: DollarSign },
+    { href: '/admin-dashboard?tab=content', label: 'Content', icon: FileText },
+    { href: '/admin-dashboard?tab=cleaner-analytics', label: 'Analytics', icon: BarChart3 },
+    { href: '/admin/onboarding', label: 'Onboarding', icon: ClipboardList },
+    { href: '/admin/security', label: 'Security', icon: Lock },
+    { href: '/admin/roles', label: 'Roles', icon: Shield },
+    { href: '/admin/monitoring', label: 'Monitoring', icon: Monitor },
+    { href: '/admin/audit-logs', label: 'Audit Logs', icon: Eye },
+  ],
+  staff: [
+    { href: '/supervisor-dashboard', label: 'Overview', icon: LayoutDashboard },
+    { href: '/supervisor-dashboard?tab=jobs', label: 'Jobs', icon: ClipboardList },
+    { href: '/supervisor-dashboard?tab=team', label: 'Team', icon: Users },
+  ],
+  cleaner: [
+    { href: '/CleanerDashboard', label: 'Profile', icon: UserCheck },
+    { href: '/CleanerDashboard?tab=tasks', label: 'Tasks', icon: ClipboardList },
+    { href: '/CleanerDashboard?tab=earnings', label: 'Earnings', icon: DollarSign },
+    { href: '/cleaner-training', label: 'Training', icon: GraduationCap },
+  ],
+  digital: [
+    { href: '/digital-dashboard', label: 'Tasks', icon: ClipboardList },
+  ],
+  transport: [
+    { href: '/transport-dashboard', label: 'Deliveries', icon: ClipboardList },
+  ],
+};
+
 export default function DashboardLayout({ children, title, role = 'admin' }: DashboardLayoutProps) {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const pathname = usePathname();
 
   const handleLogout = async () => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
@@ -21,15 +69,12 @@ export default function DashboardLayout({ children, title, role = 'admin' }: Das
       try {
         await fetch('/api/auth/logout', {
           method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+          headers: { Authorization: `Bearer ${token}` },
         });
       } catch (error) {
         console.error('Logout error:', error);
       }
     }
-    
     if (typeof window !== 'undefined') {
       localStorage.removeItem('authToken');
       localStorage.removeItem('userRole');
@@ -39,142 +84,161 @@ export default function DashboardLayout({ children, title, role = 'admin' }: Das
     }
   };
 
-  const getNavItems = () => {
-    switch (role) {
-      case 'admin':
-        return [
-          { href: '/admin-dashboard', label: 'Overview' },
-          { href: '/admin-dashboard?tab=new-joiners', label: 'New Joiners' },
-          { href: '/admin-dashboard?tab=employees', label: 'Employees' },
-          { href: '/admin-dashboard?tab=services-banking', label: 'Services & Banking' },
-          { href: '/admin-dashboard?tab=content', label: 'Content' },
-          { href: '/admin/onboarding', label: 'Onboarding' },
-          { href: '/admin/security', label: 'Security' },
-          { href: '/admin/roles', label: 'Roles' },
-          { href: '/admin/monitoring', label: 'Monitoring' },
-          { href: '/admin/audit-logs', label: 'Audit Logs' },
-        ];
-      case 'staff':
-        return [
-          { href: '/supervisor-dashboard', label: 'Overview' },
-          { href: '/supervisor-dashboard?tab=jobs', label: 'Jobs' },
-          { href: '/supervisor-dashboard?tab=team', label: 'Team' },
-        ];
-      case 'cleaner':
-        return [
-          { href: '/CleanerDashboard', label: 'Profile' },
-          { href: '/CleanerDashboard?tab=tasks', label: 'Tasks' },
-          { href: '/CleanerDashboard?tab=earnings', label: 'Earnings' },
-        ];
-      case 'digital':
-        return [
-          { href: '/digital-dashboard', label: 'Tasks' },
-        ];
-      case 'transport':
-        return [
-          { href: '/transport-dashboard', label: 'Deliveries' },
-        ];
-      default:
-        return [];
-    }
-  };
-
-  const navItems = getNavItems();
+  const navItems = NAV_ITEMS[role] ?? [];
   const username = (typeof window !== 'undefined' ? localStorage.getItem('username') : '') || 'User';
 
+  const isActive = (href: string) => {
+    const base = href.split('?')[0];
+    return pathname === base;
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/20 to-purple-50/20">
-      {/* Modern Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="lg:hidden p-2 rounded-lg hover:bg-slate-100 transition-colors"
-              >
-                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-              </button>
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold">
-                  SS
-                </div>
-                <div>
-                  <h1 className="text-lg font-semibold text-slate-900">{title}</h1>
-                  <p className="text-xs text-slate-500">Internal Portal</p>
-                </div>
-              </div>
+    <div className="flex min-h-screen bg-background text-foreground">
+      {/* Mobile backdrop */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
+          onClick={() => setMobileOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={cn(
+          'fixed lg:sticky top-0 left-0 z-50 flex h-screen flex-col bg-sidebar text-sidebar-foreground',
+          'transition-all duration-300 ease-in-out shrink-0',
+          collapsed ? 'lg:w-20' : 'lg:w-64',
+          'w-72',
+          mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
+        )}
+      >
+        {/* Brand */}
+        <div className="flex h-16 items-center gap-3 px-4 border-b border-sidebar-border">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sidebar-primary text-sidebar-primary-foreground font-bold">
+            SS
+          </div>
+          {!collapsed && (
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-sidebar-foreground">Scratch Solid</p>
+              <p className="truncate text-xs text-sidebar-foreground/60">Internal Portal</p>
             </div>
-            <div className="flex items-center gap-4">
-              <Avatar className="h-9 w-9">
-                <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white text-sm font-medium">
+          )}
+          <button
+            onClick={() => setMobileOpen(false)}
+            className="ml-auto rounded-lg p-2 hover:bg-sidebar-accent lg:hidden"
+            aria-label="Close menu"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Nav */}
+        <nav className="flex-1 overflow-y-auto px-3 py-4">
+          <ul className="space-y-1">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const active = isActive(item.href);
+              return (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    onClick={() => setMobileOpen(false)}
+                    title={collapsed ? item.label : undefined}
+                    className={cn(
+                      'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                      active
+                        ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-sm'
+                        : 'text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                      collapsed && 'lg:justify-center lg:px-0',
+                    )}
+                  >
+                    <Icon className="h-5 w-5 shrink-0" />
+                    {!collapsed && <span className="truncate">{item.label}</span>}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+
+        {/* Logout */}
+        <div className="border-t border-sidebar-border p-3">
+          <button
+            onClick={handleLogout}
+            title={collapsed ? 'Logout' : undefined}
+            className={cn(
+              'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium',
+              'text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors',
+              collapsed && 'lg:justify-center lg:px-0',
+            )}
+          >
+            <LogOut className="h-5 w-5 shrink-0" />
+            {!collapsed && <span>Logout</span>}
+          </button>
+        </div>
+      </aside>
+
+      {/* Main column */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        {/* Top bar */}
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-card/80 px-4 backdrop-blur-xl sm:px-6">
+          {/* Mobile hamburger */}
+          <button
+            onClick={() => setMobileOpen(true)}
+            className="rounded-lg p-2 hover:bg-muted lg:hidden"
+            aria-label="Open menu"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+          {/* Desktop collapse */}
+          <button
+            onClick={() => setCollapsed((c) => !c)}
+            className="hidden rounded-lg p-2 hover:bg-muted lg:inline-flex"
+            aria-label="Toggle sidebar"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+
+          <h1 className="truncate text-lg font-semibold text-foreground">{title}</h1>
+
+          <div className="ml-auto flex items-center gap-2">
+            <Link
+              href="/admin/monitoring"
+              className="hidden rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground sm:inline-flex"
+              aria-label="Settings"
+            >
+              <Settings className="h-5 w-5" />
+            </Link>
+            <div className="flex items-center gap-2 rounded-full bg-muted px-2 py-1">
+              <Avatar className="h-8 w-8">
+                <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">
                   {username.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <Button
-                onClick={handleLogout}
-                variant="ghost"
-                size="sm"
-                className="gap-2"
-              >
-                <LogOut className="h-4 w-4" />
-                <span className="hidden sm:inline">Logout</span>
-              </Button>
+              <span className="hidden max-w-[120px] truncate text-sm font-medium text-foreground sm:inline">
+                {username}
+              </span>
             </div>
+            <Button onClick={handleLogout} variant="ghost" size="sm" className="gap-2">
+              <LogOut className="h-4 w-4" />
+              <span className="hidden sm:inline">Logout</span>
+            </Button>
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* Navigation */}
-      <nav className={`lg:hidden ${mobileMenuOpen ? 'block' : 'hidden'} border-b bg-white/95 backdrop-blur-xl`}>
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex flex-col gap-2">
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setMobileMenuOpen(false)}
-                className="px-4 py-3 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-colors font-medium"
-              >
-                {item.label}
-              </Link>
-            ))}
-          </div>
-        </div>
-      </nav>
+        {/* Content */}
+        <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">
+          <div className="mx-auto w-full max-w-7xl">{children}</div>
+        </main>
 
-      {/* Desktop Navigation */}
-      <nav className="hidden lg:block border-b bg-white/60 backdrop-blur-xl">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex gap-1 py-2">
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 transition-all duration-200"
-              >
-                {item.label}
-              </Link>
-            ))}
-          </div>
-        </div>
-      </nav>
-
-      {/* Main Content */}
-      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-slate-200/60 shadow-sm p-6 sm:p-8">
-          {children}
-        </div>
-      </main>
-
-      {/* Footer */}
-      <footer className="border-t bg-white/60 backdrop-blur-xl mt-auto">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="text-center text-sm text-slate-500">
-            © 2024 Scratch Solid Solutions. All rights reserved.
-          </div>
-        </div>
-      </footer>
+        {/* Footer */}
+        <footer className="border-t border-border bg-card/60 px-4 py-5 sm:px-6">
+          <p className="text-center text-sm text-muted-foreground">
+            © {new Date().getFullYear()} Scratch Solid Solutions. All rights reserved.
+          </p>
+        </footer>
+      </div>
     </div>
   );
 }
