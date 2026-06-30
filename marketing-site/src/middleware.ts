@@ -20,6 +20,8 @@ const PUBLIC_PATHS = [
   '/api/service-pricing',
   '/api/promo-codes',
   '/api/quote',
+  '/api/chatbot',
+  '/api/about-content',
 ];
 
 export function middleware(request: NextRequest) {
