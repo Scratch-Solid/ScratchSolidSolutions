@@ -73,6 +73,7 @@ jobs:
       run: npm run cloudflare-build
       env:
         CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        NEXT_PUBLIC_ERP_URL: https://erp.scratchsolidsolutions.org
 
     - name: Deploy to Cloudflare Workers (Staging)
       uses: cloudflare/wrangler-action@v3
