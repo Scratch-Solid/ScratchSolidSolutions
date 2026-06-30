@@ -131,14 +131,20 @@ export default function CleanerDashboard() {
         localStorage.setItem('cleanerRedirectTo', '/cleaner-dashboard');
         const storedUsername = typeof window !== 'undefined' ? localStorage.getItem("username") : null;
         const storedUserId = typeof window !== 'undefined' ? localStorage.getItem("user_id") : null;
-        if (storedUsername) {
-          setUsername(storedUsername);
+        const storedPaysheetCode = typeof window !== 'undefined' ? localStorage.getItem("paysheetCode") : null;
+        if (storedUsername || storedUserId) {
+          setUsername(storedUsername || storedPaysheetCode || '');
           const mustChange = (typeof window !== 'undefined' ? localStorage.getItem('mustChangePassword') : '') === 'true';
           setMustChangePassword(mustChange);
 
-          // Fetch cleaner profile
-          const profileRes = await fetch(`/api/cleaner-profile?username=${storedUsername}`);
-          if (profileRes.ok) {
+          // Fetch cleaner profile - try username first, then user_id fallback
+          let profileRes = storedUsername
+            ? await fetch(`/api/cleaner-profile?username=${storedUsername}`)
+            : null;
+          if ((!profileRes || !profileRes.ok) && storedUserId) {
+            profileRes = await fetch(`/api/cleaner-profile?user_id=${storedUserId}`);
+          }
+          if (profileRes && profileRes.ok) {
             const profile = await profileRes.json() as any;
             setProfileData(profile as any);
             setCleanerId(profile.user_id || parseInt(storedUserId || '1'));
@@ -505,11 +511,15 @@ export default function CleanerDashboard() {
 
   const handleSaveProfile = async () => {
     try {
+      const storedUserId = typeof window !== 'undefined' ? localStorage.getItem("user_id") : null;
+      const storedPaysheetCode = typeof window !== 'undefined' ? localStorage.getItem("paysheetCode") : null;
       const response = await fetch("/api/cleaner-profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           username,
+          user_id: storedUserId,
+          paysheet_code: storedPaysheetCode,
           first_name: profileData.firstName,
           last_name: profileData.lastName,
           address: profileData.address,

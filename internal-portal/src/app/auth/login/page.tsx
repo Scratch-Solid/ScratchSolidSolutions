@@ -85,7 +85,9 @@ function LoginContent() {
         localStorage.setItem("userEmail", username);
         router.push("/admin-dashboard");
       } else if (data.role === 'cleaner') {
-        localStorage.setItem("paysheetCode", data.paysheet_code || username);
+        const cleanerUsername = data.paysheet_code || username;
+        localStorage.setItem("paysheetCode", cleanerUsername);
+        localStorage.setItem("username", cleanerUsername);
         localStorage.setItem("cleanerRedirectTo", data.redirect_to || "/cleaner-pre-dashboard");
         router.push(data.redirect_to || "/cleaner-pre-dashboard");
       } else if (data.role === 'digital') {

@@ -849,7 +849,7 @@ export async function updateNotificationPreferences(db: D1Database, userId: numb
   }
 }
 
-export async function updateCleanerProfile(db: D1Database, username: string, data: Record<string, any>) {
+export async function updateCleanerProfile(db: D1Database, lookupValue: string, data: Record<string, any>, lookupField: 'username' | 'paysheet_code' | 'user_id' = 'username') {
   // Map frontend field names to database column names
   const fieldMap: Record<string, string> = {
     'firstName': 'first_name',
@@ -886,10 +886,10 @@ export async function updateCleanerProfile(db: D1Database, username: string, dat
   
   const setClause = fields.map(f => `${f} = ?`).join(', ');
   const values = fields.map(f => mappedData[f]);
-  values.push(username);
+  values.push(lookupField === 'user_id' ? Number(lookupValue) : lookupValue);
   
   const result = await db.prepare(
-    `UPDATE cleaner_profiles SET ${setClause}, updated_at = datetime('now') WHERE username = ? RETURNING *`
+    `UPDATE cleaner_profiles SET ${setClause}, updated_at = datetime('now') WHERE ${lookupField} = ? RETURNING *`
   ).bind(...values).first();
   return result;
 }

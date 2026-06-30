@@ -14,9 +14,21 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const username = searchParams.get("username");
+  const userId = searchParams.get("user_id");
   
   if (username) {
     const profile = await getCleanerProfileByUsername(db, username);
+    if (profile) {
+      const response = NextResponse.json(profile);
+      response.headers.set('Cache-Control', 'private, max-age=60');
+      return withSecurityHeaders(response, traceId);
+    }
+    const response = NextResponse.json({ error: "Profile not found" }, { status: 404 });
+    return withSecurityHeaders(response, traceId);
+  }
+
+  if (userId) {
+    const profile = await db.prepare('SELECT * FROM cleaner_profiles WHERE user_id = ?').bind(userId).first();
     if (profile) {
       const response = NextResponse.json(profile);
       response.headers.set('Cache-Control', 'private, max-age=60');
@@ -120,14 +132,18 @@ export async function PUT(request: NextRequest) {
   await initializeCleanerProfilesTable(db);
 
   const data = await request.json() as Record<string, any>;
-  const { username } = data;
+  const { username, user_id, paysheet_code } = data;
   
-  if (!username) {
-    const response = NextResponse.json({ error: "Username required" }, { status: 400 });
+  if (!username && !user_id && !paysheet_code) {
+    const response = NextResponse.json({ error: "Username, user_id, or paysheet_code required" }, { status: 400 });
     return withSecurityHeaders(response, traceId);
   }
+
+  // Resolve the lookup key: prefer user_id, then paysheet_code, then username
+  const lookupKey = user_id || paysheet_code || username;
+  const lookupField = user_id ? 'user_id' : (paysheet_code ? 'paysheet_code' : 'username');
   
-  const updated = await updateCleanerProfile(db, username, data);
+  const updated = await updateCleanerProfile(db, lookupKey, data, lookupField);
   if (updated) {
     if ((user as any).role === 'admin') {
       await logAuditEvent(db, {
@@ -135,7 +151,7 @@ export async function PUT(request: NextRequest) {
         action: 'update_cleaner_profile',
         resource: 'cleaner_profile',
         resource_id: String((updated as any).id),
-        details: JSON.stringify({ username }),
+        details: JSON.stringify({ username, user_id, paysheet_code }),
         ip_address: request.headers.get('x-forwarded-for') || ''
       });
     }
