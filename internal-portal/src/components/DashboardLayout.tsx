@@ -9,8 +9,11 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   LogOut, Menu, X, LayoutDashboard, Users, DollarSign, FileText,
   Settings, Eye, UserCheck, GraduationCap, BarChart3, Shield, Monitor,
-  ClipboardList, Lock,
+  ClipboardList, Lock, Briefcase,
 } from 'lucide-react';
+
+// ERP console is gated until ERPNext is onboarded (see /admin/erp).
+const ERP_ENABLED = (process.env.NEXT_PUBLIC_ERP_URL || '').length > 0;
 
 type Role = 'admin' | 'staff' | 'cleaner' | 'digital' | 'transport';
 
@@ -38,6 +41,7 @@ const NAV_ITEMS: Record<Role, NavItem[]> = {
     { href: '/admin/roles', label: 'Roles', icon: Shield },
     { href: '/admin/monitoring', label: 'Monitoring', icon: Monitor },
     { href: '/admin/audit-logs', label: 'Audit Logs', icon: Eye },
+    ...(ERP_ENABLED ? [{ href: '/admin/erp', label: 'ERP Console', icon: Briefcase }] : []),
   ],
   staff: [
     { href: '/supervisor-dashboard', label: 'Overview', icon: LayoutDashboard },
