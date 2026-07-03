@@ -18,7 +18,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, validateSession } from './db';
 import { getCloudflareContext } from '@/lib/runtime-context';
-import { validateCsrfToken } from './csrf';
+import { validateCsrfToken, generateCsrfToken } from './csrf';
 import { ACCESS_COOKIE_NAME } from './session';
 
 // ─── Internal helpers ────────────────────────────────────────────────────────

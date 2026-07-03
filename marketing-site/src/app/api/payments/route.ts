@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
       amount?: number;
     };
     const { booking_id, payment_method, amount } = body;
-    const user_id: number = (user as any).id;
+    const user_id: number = (user as any).user_id;
 
     // Validate required fields
     const bookingIdValidation = validateNumber(booking_id, 'booking_id');

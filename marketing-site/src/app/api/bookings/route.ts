@@ -90,7 +90,13 @@ export async function POST(request: NextRequest) {
     // Business contract advance verification
     const user = await db.prepare('SELECT role FROM users WHERE id = ?').bind(client_id).first();
     if (user?.role === 'business') {
-      const contract = await db.prepare('SELECT * FROM contracts WHERE business_id = ? AND status = ?').bind(client_id, 'active').first();
+      let contract: any = null;
+      try {
+        contract = await db.prepare('SELECT * FROM contracts WHERE business_id = ? AND status = ?').bind(client_id, 'active').first();
+      } catch (contractError) {
+        // If contracts table doesn't exist, treat as no active contract
+        logger.error('Contracts table query failed', contractError as Error);
+      }
       if (!contract) {
         return NextResponse.json({ error: 'Business account requires an active service contract to book services' }, { status: 403 });
       }

@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
         return withSecurityHeaders(response, traceId);
       }
 
-      const userId = (user as any).id;
+      const userId = (user as any).user_id;
       const userRole = (user as any).role;
 
       // Only allow client who owns the booking or admin to view tracking
@@ -42,9 +42,15 @@ export async function GET(request: NextRequest) {
       }
 
       // Get cleaner location from database
-      const dbLocation = await db.prepare(
-        'SELECT gps_lat, gps_long, last_location_update FROM bookings WHERE id = ?'
-      ).bind(bookingId).first();
+      let dbLocation: any = null;
+      try {
+        dbLocation = await db.prepare(
+          'SELECT gps_lat, gps_long, last_location_update FROM bookings WHERE id = ?'
+        ).bind(bookingId).first();
+      } catch (columnError) {
+        // GPS columns may not exist yet
+        logger.error('GPS column query failed', columnError as Error);
+      }
 
       const response = NextResponse.json({
         booking_id: bookingId,
@@ -61,7 +67,7 @@ export async function GET(request: NextRequest) {
     // If cleaner_id is provided
     if (cleanerId) {
       // Verify user has access (admin or the cleaner themselves)
-      const userId = (user as any).id;
+      const userId = (user as any).user_id;
       const userRole = (user as any).role;
 
       if (userRole !== 'admin' && parseInt(cleanerId) !== userId) {
@@ -70,9 +76,15 @@ export async function GET(request: NextRequest) {
       }
 
       // Get cleaner location from database
-      const dbLocation = await db.prepare(
-        'SELECT gps_lat, gps_long, updated_at FROM cleaner_profiles WHERE user_id = ?'
-      ).bind(cleanerId).first();
+      let dbLocation: any = null;
+      try {
+        dbLocation = await db.prepare(
+          'SELECT gps_lat, gps_long, updated_at FROM cleaner_profiles WHERE user_id = ?'
+        ).bind(cleanerId).first();
+      } catch (columnError) {
+        // cleaner_profiles table or GPS columns may not exist
+        logger.error('Cleaner profile query failed', columnError as Error);
+      }
 
       const response = NextResponse.json({
         cleaner_id: cleanerId,

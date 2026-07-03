@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 const PUBLIC_PATHS = [
   '/api/health',
   '/api/status',
+  '/api/csrf-token',
   '/api/auth/login',
   '/api/auth/signup',
   '/api/auth/verify-email',
@@ -22,6 +23,7 @@ const PUBLIC_PATHS = [
   '/api/quote',
   '/api/chatbot',
   '/api/about-content',
+  '/api/public',
 ];
 
 export function middleware(request: NextRequest) {

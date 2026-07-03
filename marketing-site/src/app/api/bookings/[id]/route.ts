@@ -38,8 +38,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return withSecurityHeaders(response, traceId);
     }
     const sessionRole: string = (user as any).role;
-    const sessionId: number = (user as any).id;
-    if (sessionRole !== 'admin' && (booking as any).user_id !== sessionId && (booking as any).client_id !== sessionId) {
+    const sessionId: number = (user as any).user_id;
+    if (sessionRole !== 'admin' && (booking as any).client_id !== sessionId) {
       const response = NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       return withSecurityHeaders(response, traceId);
     }

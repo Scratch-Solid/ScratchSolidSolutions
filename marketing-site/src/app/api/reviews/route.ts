@@ -155,6 +155,52 @@ export async function DELETE(request: NextRequest) {
   }
 }
 
+// ─── POPIA Helpers ───────────────────────────────────────────────────────────
+
+const NORTHERN_SUBURBS = new Set([
+  'Bellville','Parow','Goodwood','Kraaifontein','Brackenfell',
+  'Durbanville','Tygerberg','Elsies River','Belhar','Bishop Lavis',
+  'Monte Vista','N1 City','Thornton','Pinelands','Plattekloof',
+  'Kuils River','Edgemead','Bothasig','Panorama','Table View',
+  'Blouberg','Milnerton','Maitland','Woodstock','Observatory',
+  'Salt River','Foreshore','Cape Town CBD'
+]);
+
+function toFirstName(fullName: string | null): string {
+  if (!fullName) return 'Client';
+  const first = fullName.trim().split(/\s+/)[0];
+  return first || 'Client';
+}
+
+function toArea(fullAddress: string | null): string | null {
+  if (!fullAddress) return null;
+  const parts = fullAddress.split(',').map(p => p.trim()).filter(Boolean);
+  if (parts.length >= 3) return parts[parts.length - 2];
+  if (parts.length === 2) return parts[1];
+  return parts[0];
+}
+
+function isNorthernSuburb(area: string | null): boolean {
+  if (!area) return false;
+  const lower = area.toLowerCase();
+  for (const suburb of NORTHERN_SUBURBS) {
+    if (lower === suburb.toLowerCase()) return true;
+  }
+  return false;
+}
+
+function transformForGallery(row: any) {
+  const area = toArea(row.service_location);
+  if (!area || !isNorthernSuburb(area)) return null;
+  return {
+    ...row,
+    user_name: toFirstName(row.user_name),
+    service_location: area
+  };
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+
 export async function GET(request: NextRequest) {
   const traceId = withTracing(request);
   // Allow public read for approved reviews, require admin auth for other statuses
@@ -189,7 +235,14 @@ export async function GET(request: NextRequest) {
        LIMIT ?`
     ).bind(status, limit).all();
 
-    const response = NextResponse.json(reviews);
+    let results = (reviews.results || []) as any[];
+
+    // POPIA compliance: public gallery only sees first name + Northern Suburbs area
+    if (!isAdmin) {
+      results = results.map(transformForGallery).filter(Boolean) as any[];
+    }
+
+    const response = NextResponse.json({ results, success: true });
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     logger.error('Error fetching reviews', error as Error);
