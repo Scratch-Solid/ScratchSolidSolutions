@@ -268,6 +268,7 @@ export default function BookingQuotePanel({
             .join(" | "),
           loyalty_discount: 0,
           price: calc.finalPrice,
+          promo_code: promoResult?.valid ? promoInput.trim() : undefined,
         }),
       });
 

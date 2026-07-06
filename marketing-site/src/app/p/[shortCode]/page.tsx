@@ -24,7 +24,7 @@ export default async function ShortURLRedirect({ params }: PageProps) {
 
     // Look up the short URL in the database
     const shortUrl = await db.prepare(
-      `SELECT target_url, promo_code_id, promo_code, clicks FROM short_urls WHERE short_code = ?`
+      `SELECT target_url, promo_code_id, promo_code, click_count, clicks FROM short_urls WHERE short_code = ?`
     ).bind(shortCode).first();
 
     if (!shortUrl) {
@@ -33,16 +33,16 @@ export default async function ShortURLRedirect({ params }: PageProps) {
 
     const s = shortUrl as Record<string, unknown>;
 
-    // Increment click count
+    // Increment click count (both columns for backward/forward compatibility)
     await db.prepare(
-      `UPDATE short_urls SET clicks = clicks + 1 WHERE short_code = ?`
+      `UPDATE short_urls SET click_count = COALESCE(click_count, 0) + 1, clicks = COALESCE(clicks, 0) + 1 WHERE short_code = ?`
     ).bind(shortCode).run();
 
-    // Track the scan in promo_scans table
+    // Track the scan in promo_scans table (use columns added in migration 021)
     await db.prepare(
-      `INSERT INTO promo_scans (promo_code_id, promo_code, scan_timestamp)
-       VALUES (?, ?, datetime('now'))`
-    ).bind(s.promo_code_id, s.promo_code).run();
+      `INSERT INTO promo_scans (short_url_id, scanned_at, ip_address, user_agent, promo_code_id, promo_code, scan_timestamp)
+       VALUES (?, datetime('now'), '', '', ?, ?, datetime('now'))`
+    ).bind(s.id, s.promo_code_id, s.promo_code).run();
 
     // Redirect to the target URL
     redirect(s.target_url as string);

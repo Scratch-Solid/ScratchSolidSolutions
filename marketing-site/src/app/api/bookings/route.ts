@@ -51,6 +51,8 @@ export async function POST(request: NextRequest) {
       payment_method?: string;
       loyalty_discount?: number;
       cleaner_id?: number;
+      promo_code?: string;
+      price?: number;
     };
     const {
       client_id,
@@ -64,7 +66,9 @@ export async function POST(request: NextRequest) {
       cleaning_type = 'standard',
       payment_method = 'cash',
       loyalty_discount = 0,
-      cleaner_id
+      cleaner_id,
+      promo_code,
+      price
     } = body;
 
     // Validate required fields
@@ -136,6 +140,42 @@ export async function POST(request: NextRequest) {
       }, { status: 409 });
     }
 
+    // Validate and apply promo code if provided
+    let discountAmount = 0;
+    if (promo_code) {
+      const promo = await db.prepare(
+        `SELECT * FROM promo_codes WHERE code = ? AND is_active = 1`
+      ).bind(promo_code.toUpperCase()).first();
+
+      if (promo) {
+        const now = new Date().toISOString();
+        const validFrom = promo.valid_from;
+        const validUntil = promo.valid_until;
+
+        if ((!validFrom || validFrom <= now) && (!validUntil || validUntil >= now)) {
+          if (!promo.max_uses || (promo.used_count as number) < (promo.max_uses as number)) {
+            const priceValue = price || 0;
+            const minAmount = (promo.min_amount as number) || 0;
+
+            if (priceValue >= minAmount) {
+              if (promo.discount_type === 'percentage') {
+                discountAmount = priceValue * ((promo.discount_value as number) / 100);
+              } else {
+                discountAmount = promo.discount_value as number;
+              }
+              // Cap discount at price value
+              discountAmount = Math.min(discountAmount, priceValue);
+
+              // Increment used_count
+              await db.prepare(
+                `UPDATE promo_codes SET used_count = used_count + 1 WHERE id = ?`
+              ).bind(promo.id).run();
+            }
+          }
+        }
+      }
+    }
+
     const booking = await createBooking(db, {
       client_id,
       client_name: client_name || 'Unknown',
@@ -149,7 +189,9 @@ export async function POST(request: NextRequest) {
       payment_method,
       loyalty_discount,
       cleaner_id: undefined, // No cleaner assigned yet - will be assigned after payment confirmation
-      status: 'pending_payment' // New status to indicate waiting for payment
+      status: 'pending_payment', // New status to indicate waiting for payment
+      promo_code: promo_code ? promo_code.toUpperCase() : undefined,
+      discount_amount: discountAmount > 0 ? discountAmount : undefined
     });
 
     // Hand the booking off to Cal.com so the Cal.com -> n8n -> internal-portal

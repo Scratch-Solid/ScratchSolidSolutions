@@ -57,7 +57,10 @@ export async function GET(request: NextRequest) {
       });
     }
     
-    // Return all promo codes for admin
+    // Return all promo codes for admin — requires authentication
+    const authResult = await withAuth(request, ['admin']);
+    if (authResult instanceof NextResponse) return authResult;
+    
     query += ` ORDER BY created_at DESC`;
     const promos = await db.prepare(query).all();
     
@@ -109,7 +112,11 @@ export async function POST(request: NextRequest) {
     if (!code || !discount_type || discount_value === undefined) {
       return NextResponse.json({ error: 'Code, discount type, and discount value are required' }, { status: 400 });
     }
-    
+
+    if (min_amount !== undefined && min_amount !== null && (typeof min_amount !== 'number' || min_amount < 0)) {
+      return NextResponse.json({ error: 'min_amount must be a non-negative number' }, { status: 400 });
+    }
+
     // Check if code already exists
     const existing = await db.prepare(
       `SELECT id FROM promo_codes WHERE code = ?`

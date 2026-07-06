@@ -107,7 +107,7 @@ export async function GET(request: NextRequest) {
       params.push(parseInt(promoCodeId));
     }
 
-    query += ' ORDER BY distributed_at DESC LIMIT 50';
+    query += ' ORDER BY created_at DESC LIMIT 50';
 
     const distributions = await db.prepare(query).bind(...params).all();
 

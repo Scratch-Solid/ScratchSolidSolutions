@@ -376,28 +376,32 @@ export async function createBooking(db: D1Database, data: {
   loyalty_discount?: number;
   cleaner_id?: number;
   status?: string;
+  promo_code?: string;
+  discount_amount?: number;
 }) {
   // Generate unique tracking token
   const trackingToken = generateTrackingToken();
-  
+
   const result = await db.prepare(
-    `INSERT INTO bookings (client_id, client_name, location, service_type, booking_date, booking_time, special_instructions, booking_type, cleaning_type, payment_method, loyalty_discount, cleaner_id, status, tracking_token)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`
+    `INSERT INTO bookings (client_id, client_name, location, service_type, booking_date, booking_time, special_instructions, booking_type, cleaning_type, payment_method, loyalty_discount, cleaner_id, status, tracking_token, promo_code, discount_amount)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`
   ).bind(
-    data.client_id, 
-    data.client_name, 
-    data.location, 
-    data.service_type, 
-    data.booking_date, 
-    data.booking_time, 
-    data.special_instructions || '', 
+    data.client_id,
+    data.client_name,
+    data.location,
+    data.service_type,
+    data.booking_date,
+    data.booking_time,
+    data.special_instructions || '',
     data.booking_type || 'standard',
     data.cleaning_type || 'standard',
     data.payment_method || 'cash',
     data.loyalty_discount || 0,
     data.cleaner_id || null,
     data.status || 'pending',
-    trackingToken
+    trackingToken,
+    data.promo_code || null,
+    data.discount_amount || 0
   ).first();
   return result;
 }
