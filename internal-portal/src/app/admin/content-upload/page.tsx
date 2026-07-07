@@ -157,5 +157,7 @@ export default function ContentUpload() {
               </div>
             </form>
           </div>
+      </div>
+    </div>
   );
 }

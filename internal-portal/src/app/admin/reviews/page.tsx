@@ -300,5 +300,6 @@ export default function AdminReviewsPage() {
             })}
           </div>
         )}
+      </div>
   );
 }

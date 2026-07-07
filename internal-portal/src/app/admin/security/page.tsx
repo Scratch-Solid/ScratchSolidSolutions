@@ -90,5 +90,6 @@ export default function SecurityPage() {
               <RoleManager />
             )}
           </div>
+      </div>
   );
 }
