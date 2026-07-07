@@ -82,6 +82,18 @@ export default function AdminOverviewPage() {
           approvals = a.count || a.pendingApprovals?.length || 0;
         }
 
+        // Auth guard: redirect on 401/403 from any endpoint
+        const responses = [bookingsRes, employeesRes, newJoinersRes, approvalsRes];
+        const authError = responses.find(
+          (r): r is PromiseFulfilledResult<Response> =>
+            r.status === "fulfilled" && (r.value.status === 401 || r.value.status === 403)
+        );
+        if (authError) {
+          localStorage.removeItem("authToken");
+          window.location.href = "/auth/login";
+          return;
+        }
+
         const weekendAssignments = bookings.filter((b: any) => {
           const d = b?.booking_date ? new Date(b.booking_date) : null;
           if (!d || isNaN(d.getTime())) return false;
@@ -101,7 +113,7 @@ export default function AdminOverviewPage() {
           pendingApprovals: approvals,
         });
       } catch (err) {
-        setError("Failed to load dashboard data");
+        setError("Unable to load dashboard data. Please check your connection and try again.");
       } finally {
         setLoading(false);
       }

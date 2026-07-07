@@ -142,7 +142,16 @@ export default function MonitoringDashboard() {
           </div>
         </>
       ) : (
-        <div className="text-red-600">Failed to load health status</div>
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <AlertCircle className="h-10 w-10 text-red-500 mb-3" />
+          <p className="text-sm text-slate-600 mb-4">Unable to load health status. Please check your connection and try again.</p>
+          <button
+            onClick={fetchHealthStatus}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+          >
+            Retry
+          </button>
+        </div>
       )}
     </div>
   );

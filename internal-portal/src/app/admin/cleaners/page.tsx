@@ -30,9 +30,14 @@ export default function AdminCleanersPage() {
         const token = localStorage.getItem("authToken");
         const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
         const res = await fetch("/api/admin/cleaners", { headers });
+        if (res.status === 401 || res.status === 403) {
+          localStorage.removeItem("authToken");
+          window.location.href = "/auth/login";
+          return;
+        }
         if (res.ok) setCleaners(await res.json());
       } catch {
-        setError("Failed to load cleaners");
+        setError("Unable to load cleaners. Please check your connection and try again.");
       } finally {
         setLoading(false);
       }
@@ -66,7 +71,10 @@ export default function AdminCleanersPage() {
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
         <h2 className="text-lg font-semibold text-slate-900 mb-2">Error</h2>
-        <p className="text-sm text-slate-500">{error}</p>
+        <p className="text-sm text-slate-500 max-w-md">{error}</p>
+        <Button onClick={() => window.location.reload()} className="mt-6" variant="outline" size="sm">
+          Retry
+        </Button>
       </div>
     );
   }

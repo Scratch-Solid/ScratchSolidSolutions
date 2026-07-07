@@ -34,13 +34,22 @@ export default function AdminEmployeesPage() {
           fetch("/api/employees", { headers }),
           fetch("/api/admin/new-joiners", { headers }),
         ]);
+        const authError = [empRes, joinRes].find(
+          (r): r is PromiseFulfilledResult<Response> =>
+            r.status === "fulfilled" && (r.value.status === 401 || r.value.status === 403)
+        );
+        if (authError) {
+          localStorage.removeItem("authToken");
+          window.location.href = "/auth/login";
+          return;
+        }
         if (empRes.status === "fulfilled" && empRes.value.ok) setEmployees(await empRes.value.json());
         if (joinRes.status === "fulfilled" && joinRes.value.ok) {
           const j = await joinRes.value.json();
           setNewJoiners(j.data || j || []);
         }
       } catch {
-        setError("Failed to load employees");
+        setError("Unable to load employees. Please check your connection and try again.");
       } finally {
         setLoading(false);
       }
@@ -79,7 +88,10 @@ export default function AdminEmployeesPage() {
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
         <h2 className="text-lg font-semibold text-slate-900 mb-2">Error</h2>
-        <p className="text-sm text-slate-500">{error}</p>
+        <p className="text-sm text-slate-500 max-w-md">{error}</p>
+        <Button onClick={() => window.location.reload()} className="mt-6" variant="outline" size="sm">
+          Retry
+        </Button>
       </div>
     );
   }

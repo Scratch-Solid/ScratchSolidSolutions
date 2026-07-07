@@ -67,7 +67,7 @@ function RolesManagementContent() {
       setRoles(data.roles);
       setPermissions(data.permissions);
     } catch (err) {
-      setError('Failed to load roles and permissions');
+      setError('Unable to load roles and permissions. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }

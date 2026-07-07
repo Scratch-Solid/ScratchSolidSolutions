@@ -51,7 +51,7 @@ function AdminApprovalsContent() {
       const data = await res.json() as { pendingApprovals: PendingApproval[] };
       setPendingApprovals(data.pendingApprovals);
     } catch (err) {
-      setError('Failed to load pending approvals');
+      setError('Unable to load pending approvals. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }

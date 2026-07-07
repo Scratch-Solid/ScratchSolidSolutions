@@ -50,6 +50,15 @@ export default function AdminTrainingPage() {
           fetch("/api/admin/training/modules", { headers }),
           fetch("/api/admin/training/progress", { headers }),
         ]);
+        const authError = [modRes, progRes].find(
+          (r): r is PromiseFulfilledResult<Response> =>
+            r.status === "fulfilled" && (r.value.status === 401 || r.value.status === 403)
+        );
+        if (authError) {
+          localStorage.removeItem("authToken");
+          window.location.href = "/auth/login";
+          return;
+        }
         if (modRes.status === "fulfilled" && modRes.value.ok) {
           const m = await modRes.value.json();
           setModules(Array.isArray(m) ? m : m.data || []);
@@ -59,7 +68,7 @@ export default function AdminTrainingPage() {
           setProgress(Array.isArray(p) ? p : p.data || []);
         }
       } catch {
-        setError("Failed to load training data");
+        setError("Unable to load training data. Please check your connection and try again.");
       } finally {
         setLoading(false);
       }
@@ -82,7 +91,10 @@ export default function AdminTrainingPage() {
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
         <h2 className="text-lg font-semibold text-slate-900 mb-2">Error</h2>
-        <p className="text-sm text-slate-500">{error}</p>
+        <p className="text-sm text-slate-500 max-w-md">{error}</p>
+        <Button onClick={() => window.location.reload()} className="mt-6" variant="outline" size="sm">
+          Retry
+        </Button>
       </div>
     );
   }

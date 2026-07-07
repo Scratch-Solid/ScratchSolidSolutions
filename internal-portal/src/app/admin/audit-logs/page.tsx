@@ -69,7 +69,7 @@ function AuditLogsContent() {
       const data = await res.json() as { auditLogs: AuditLog[] };
       setLogs(data.auditLogs);
     } catch (err) {
-      setError('Failed to load audit logs');
+      setError('Unable to load audit logs. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }

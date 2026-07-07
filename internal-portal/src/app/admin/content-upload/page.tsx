@@ -17,7 +17,7 @@ export default function ContentUpload() {
     const role = typeof window !== 'undefined' ? localStorage.getItem('userRole') : null;
 
     if (!token || role !== 'admin') {
-      router.push('/login');
+      router.push('/auth/login');
       return;
     }
 
