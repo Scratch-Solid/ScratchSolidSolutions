@@ -49,11 +49,13 @@ export default function AdminServicesPage() {
           fetch("/api/admin/services", { headers }),
           fetch("/api/admin/banking-details", { headers }),
         ]);
-        const authError = [svcRes, bankRes].find(
+        // Only a genuine 401 (invalid/expired token) logs the user out. A 403
+        // means valid session, insufficient permission — never clear the token.
+        const tokenInvalid = [svcRes, bankRes].every(
           (r): r is PromiseFulfilledResult<Response> =>
-            r.status === "fulfilled" && (r.value.status === 401 || r.value.status === 403)
+            r.status === "fulfilled" && r.value.status === 401
         );
-        if (authError) {
+        if (token && tokenInvalid) {
           localStorage.removeItem("authToken");
           window.location.href = "/auth/login";
           return;

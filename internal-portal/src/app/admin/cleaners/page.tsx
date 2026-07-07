@@ -30,7 +30,7 @@ export default function AdminCleanersPage() {
         const token = localStorage.getItem("authToken");
         const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
         const res = await fetch("/api/admin/cleaners", { headers });
-        if (res.status === 401 || res.status === 403) {
+        if (res.status === 401) {
           localStorage.removeItem("authToken");
           window.location.href = "/auth/login";
           return;

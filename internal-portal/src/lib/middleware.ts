@@ -2,6 +2,26 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb, validateSession } from './db';
 import { validateCsrfToken, generateCsrfToken } from './csrf';
 import { getUserPermissions, hasPermission, hasResourcePermission, hasRoleLevel, UserPermissions } from './rbac';
+import { isAdminEmailDomain } from './auth';
+
+/**
+ * Determine whether an authenticated user satisfies a route's allowed roles.
+ *
+ * Central authorization rule so individual endpoints never disagree with the
+ * client shell about who counts as an admin:
+ *  - Exact role match always passes.
+ *  - `super_admin` inherits everything `admin` can do.
+ *  - Users on the admin email domain are treated as admins.
+ */
+export function roleSatisfies(user: { role?: string; email?: string } | null | undefined, allowedRoles?: string[]): boolean {
+  if (!allowedRoles || allowedRoles.length === 0) return true;
+  const role = (user?.role || '').toString();
+  if (allowedRoles.includes(role)) return true;
+  const wantsAdmin = allowedRoles.includes('admin');
+  if (wantsAdmin && role === 'super_admin') return true;
+  if (wantsAdmin && user?.email && isAdminEmailDomain(user.email)) return true;
+  return false;
+}
 
 export const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
 export const RATE_LIMIT_MAX = 100; // requests per window per IP
@@ -410,7 +430,7 @@ export async function withAuth(request: NextRequest, allowedRoles?: string[]): P
   // First try to validate session in database
   const session = await validateSession(db, token);
   if (session) {
-    if (allowedRoles && !allowedRoles.includes((session as any).role)) {
+    if (!roleSatisfies(session as any, allowedRoles)) {
       return NextResponse.json({ error: 'Forbidden - insufficient permissions' }, { status: 403 });
     }
     return { user: session, db };
@@ -426,7 +446,7 @@ export async function withAuth(request: NextRequest, allowedRoles?: string[]): P
     ).bind(jwtPayload.userId).first();
 
     if (user) {
-      if (allowedRoles && !allowedRoles.includes((user as any).role)) {
+      if (!roleSatisfies(user as any, allowedRoles)) {
         return NextResponse.json({ error: 'Forbidden - insufficient permissions' }, { status: 403 });
       }
       return { user, db };

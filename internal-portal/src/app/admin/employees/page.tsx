@@ -34,11 +34,13 @@ export default function AdminEmployeesPage() {
           fetch("/api/employees", { headers }),
           fetch("/api/admin/new-joiners", { headers }),
         ]);
-        const authError = [empRes, joinRes].find(
+        // Only a genuine 401 (invalid/expired token) logs the user out. A 403
+        // means valid session, insufficient permission — never clear the token.
+        const tokenInvalid = [empRes, joinRes].every(
           (r): r is PromiseFulfilledResult<Response> =>
-            r.status === "fulfilled" && (r.value.status === 401 || r.value.status === 403)
+            r.status === "fulfilled" && r.value.status === 401
         );
-        if (authError) {
+        if (token && tokenInvalid) {
           localStorage.removeItem("authToken");
           window.location.href = "/auth/login";
           return;

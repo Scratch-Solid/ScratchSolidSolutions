@@ -224,7 +224,27 @@ export async function POST(request: NextRequest) {
 
     // Generate JWT tokens
     const accessToken = await generateAccessToken(Number(user.id), user.email, user.role);
-    const refreshToken = await generateRefreshToken(Number(user.id), crypto.randomUUID());
+    const refreshTokenId = crypto.randomUUID();
+    const refreshToken = await generateRefreshToken(Number(user.id), refreshTokenId);
+
+    // Persist the refresh token so /api/auth/refresh can rotate it later.
+    // Best-effort: never block login if the table is unavailable.
+    try {
+      const { hashPassword } = await import('@/lib/auth');
+      const refreshTokenHash = await hashPassword(refreshToken);
+      await db.prepare(
+        `INSERT INTO refresh_tokens (user_id, token_id, token_hash, expires_at, ip_address, user_agent)
+         VALUES (?, ?, ?, ?, ?, ?)`
+      ).bind(
+        user.id,
+        refreshTokenId,
+        refreshTokenHash,
+        Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60), // 7 days
+        request.headers.get('x-forwarded-for') || 'unknown',
+        request.headers.get('user-agent')?.slice(0, 200) || 'unknown'
+      ).run();
+    } catch {
+    }
 
     // Clear failed attempts on successful login
     await clearFailedAttempts(db, identifier);

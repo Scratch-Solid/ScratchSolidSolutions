@@ -50,7 +50,10 @@ export async function generateAccessToken(userId: number, email: string, role: s
   return await new SignJWT({ userId, email, role })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime('15m')
+    // 8h: matches a working session for an MFA-gated internal portal and
+    // avoids the previous behaviour where tokens expired after 15 minutes and
+    // silently logged admins out mid-session.
+    .setExpirationTime('8h')
     .sign(new TextEncoder().encode(await getJwtSecret()));
 }
 
