@@ -54,10 +54,10 @@ export default function MonitoringDashboard() {
   };
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">System Monitoring</h1>
-        <p className="text-gray-600">Real-time system health and performance metrics</p>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">System Monitoring</h1>
+        <p className="text-sm text-slate-500 mt-1">Real-time system health and performance metrics</p>
       </div>
 
       {loading ? (

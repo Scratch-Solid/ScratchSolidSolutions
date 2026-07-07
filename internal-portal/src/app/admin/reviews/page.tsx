@@ -139,20 +139,16 @@ export default function AdminReviewsPage() {
     </div>
   );
 
-  if (loading) return <div className="p-8">Loading reviews...</div>;
+  if (loading) return <div className="py-8 text-sm text-slate-400">Loading reviews…</div>;
 
   const currentReviews = activeTab === 'pending' ? pendingReviews : approvedReviews;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Review Moderation</h1>
-            <p className="text-sm text-gray-500 mt-1">Approve client reviews before they appear on the public gallery.</p>
-          </div>
-          <a href="/admin" className="text-purple-600 font-medium hover:text-purple-800">Back to Dashboard</a>
-        </div>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Review Moderation</h1>
+        <p className="text-sm text-slate-500 mt-1">Approve client reviews before they appear on the public gallery.</p>
+      </div>
 
         {error && (
           <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">{error}</div>
@@ -304,7 +300,5 @@ export default function AdminReviewsPage() {
             })}
           </div>
         )}
-      </div>
-    </div>
   );
 }

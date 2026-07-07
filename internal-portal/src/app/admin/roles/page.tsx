@@ -118,20 +118,19 @@ function RolesManagementContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="flex items-center justify-center py-20">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1E3A8A]"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        <div className="mb-8 flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Role Management</h1>
-            <p className="mt-2 text-gray-600">Manage system roles and permissions</p>
-          </div>
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Role Management</h1>
+          <p className="text-sm text-slate-500 mt-1">Manage system roles and permissions</p>
+        </div>
           <button
             onClick={() => setShowCreateForm(!showCreateForm)}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
@@ -283,13 +282,12 @@ function RolesManagementContent() {
           </div>
         </div>
       </div>
-    </div>
   );
 }
 
 export default function RolesManagementPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+    <Suspense fallback={<div className="flex items-center justify-center py-20 text-sm text-slate-400">Loading…</div>}>
       <RolesManagementContent />
     </Suspense>
   );

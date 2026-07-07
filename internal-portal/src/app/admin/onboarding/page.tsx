@@ -193,15 +193,10 @@ export default function AdminOnboardingPage() {
   const pendingContracts = contracts.filter(c => c.status === 'pending');
   const pendingJoiners = joiners.filter(j => j.status === 'pending');
 
-  if (loading) return <div className="p-8">Loading...</div>;
+  if (loading) return <div className="py-8 text-sm text-slate-400">Loading…</div>;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Admin Onboarding</h1>
-          <a href="/admin-dashboard" className="text-purple-600 hover:underline">Back to Dashboard</a>
-        </div>
+    <div className="space-y-6">
 
         {message && (
           <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded">
@@ -368,6 +363,5 @@ export default function AdminOnboardingPage() {
           </div>
         )}
       </div>
-    </div>
   );
 }

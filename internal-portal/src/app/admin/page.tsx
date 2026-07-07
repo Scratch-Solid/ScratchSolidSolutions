@@ -15,7 +15,7 @@ export default function AdminLegacyRedirect() {
       return;
     }
 
-    router.replace('/admin-dashboard');
+    router.replace('/admin/overview');
   }, [router]);
 
   return (

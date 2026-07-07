@@ -75,38 +75,20 @@ export default function ContentUpload() {
 
   if (!userRole) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-white">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="flex items-center justify-center py-20">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1E3A8A]"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <a href="/admin" className="text-2xl font-bold text-blue-700 hover:text-blue-600">Admin Dashboard</a>
-            </div>
-            <div className="flex items-center space-x-4">
-              <a href="/admin/content-upload" className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md font-medium">
-                Content Upload
-              </a>
-              <a href="/admin/content" className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md font-medium">
-                Manage Content
-              </a>
-              <a href="/" className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md font-medium">
-                Back to Site
-              </a>
-            </div>
-          </div>
-        </div>
-      </nav>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Content Upload</h1>
+        <p className="text-sm text-slate-500 mt-1">Manage marketing site content pages.</p>
+      </div>
 
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          <h2 className="text-3xl font-bold text-gray-900 mb-6">Content Upload</h2>
+      <div className="bg-white rounded-xl border border-slate-200 p-6">
 
           {message && (
             <div className={`mb-4 p-4 rounded-md ${message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
@@ -175,8 +157,5 @@ export default function ContentUpload() {
               </div>
             </form>
           </div>
-        </div>
-      </main>
-    </div>
   );
 }
