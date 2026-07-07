@@ -249,9 +249,15 @@ export default function AdminShell({ children }: { children: ReactNode }) {
           <button
             onClick={() => setCollapsed((c) => !c)}
             className="hidden rounded-lg p-2 hover:bg-slate-100 lg:inline-flex"
-            aria-label="Toggle sidebar"
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
-            <Menu className="h-5 w-5 text-slate-500" />
+            <ChevronRight
+              className={cn(
+                "h-5 w-5 text-slate-500 transition-transform duration-200",
+                !collapsed && "rotate-180"
+              )}
+            />
           </button>
 
           {/* Breadcrumbs */}
