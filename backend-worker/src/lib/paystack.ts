@@ -122,7 +122,9 @@ export function processWebhookEvent(body: any): {
   const data = body.data || {};
 
   const isChargeSuccess = event === 'charge.success';
-  const reference = data.reference || null;
+  // For charge.success, reference is at data.reference
+  // For refund.processed, reference is at data.transaction.reference
+  const reference = data.reference || data.transaction?.reference || null;
   const amount = data.amount || null;
   const email = data.customer?.email || null;
   const metadata = data.metadata || null;
@@ -159,6 +161,89 @@ export async function verifyWebhookSignature(
   const hashArray = Array.from(new Uint8Array(signatureBuffer));
   const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   return hashHex === signature;
+}
+
+/**
+ * Refund a Paystack transaction (full or partial)
+ * https://api.paystack.co/refund
+ */
+export async function refundTransaction(
+  env: any,
+  params: {
+    reference: string;
+    amount?: number; // in kobo; omit for full refund
+    reason?: string;
+  }
+): Promise<{
+  status: boolean;
+  message: string;
+  data?: {
+    transaction: { id: number; reference: string };
+    integration: number;
+    domain: string;
+    currency: string;
+    amount: number;
+    channel: string;
+    fully_deducted: boolean;
+    refunded_by: string;
+    refunded_at: string;
+    expected_at: string;
+    settlement: { id: number; status: string };
+  };
+}> {
+  const { secretKey } = getConfig(env);
+
+  const body: Record<string, any> = {
+    transaction: params.reference,
+  };
+  if (params.amount) body.amount = params.amount;
+  if (params.reason) body.merchant_note = params.reason;
+
+  const response = await fetch('https://api.paystack.co/refund', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${secretKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+
+  return response.json();
+}
+
+/**
+ * List all refunds for a transaction (for reconciliation)
+ */
+export async function listRefunds(
+  env: any,
+  reference: string
+): Promise<{
+  status: boolean;
+  message: string;
+  data?: Array<{
+    integration: number;
+    transaction: number;
+    amount: number;
+    currency: string;
+    customer: { id: number; email: string };
+    status: string;
+    domain: string;
+  }>;
+}> {
+  const { secretKey } = getConfig(env);
+
+  const response = await fetch(
+    `https://api.paystack.co/refund?transaction=${encodeURIComponent(reference)}`,
+    {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${secretKey}`,
+        'Content-Type': 'application/json',
+      },
+    }
+  );
+
+  return response.json();
 }
 
 /**

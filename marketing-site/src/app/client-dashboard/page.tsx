@@ -48,6 +48,11 @@ export default function ClientDashboard() {
   const [showStatementsModal, setShowStatementsModal] = useState(false);
   const [showInvoicesModal, setShowInvoicesModal] = useState(false);
   const [olderStatementsRequest, setOlderStatementsRequest] = useState(false);
+  const [cancellingBookingId, setCancellingBookingId] = useState<number | null>(null);
+  const [rescheduleBooking, setRescheduleBooking] = useState<any | null>(null);
+  const [rescheduleDate, setRescheduleDate] = useState('');
+  const [rescheduleTime, setRescheduleTime] = useState('');
+  const [rescheduleLoading, setRescheduleLoading] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('authToken');
@@ -330,6 +335,74 @@ export default function ClientDashboard() {
     setIndemnityAccepted(false);
     setPaymentError(false);
     setCleanerUnavailable(false);
+  };
+
+  const handleCancelBooking = async (bookingId: number) => {
+    if (!confirm('Are you sure you want to cancel this booking? Cancellations within 24h of the booking time are not eligible for a refund.')) {
+      return;
+    }
+    setCancellingBookingId(bookingId);
+    try {
+      const token = localStorage.getItem('authToken');
+      const res = await fetch(`/api/bookings/${bookingId}/cancel`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ reason: 'Cancelled by client' }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSuccess(data.message || 'Booking cancelled successfully');
+        fetchClientData();
+      } else {
+        setError(data.error || 'Failed to cancel booking');
+      }
+    } catch (err) {
+      setError('Failed to cancel booking. Please try again.');
+    } finally {
+      setCancellingBookingId(null);
+    }
+  };
+
+  const openRescheduleModal = (booking: any) => {
+    setRescheduleBooking(booking);
+    setRescheduleDate('');
+    setRescheduleTime('');
+    setError('');
+    setSuccess('');
+  };
+
+  const handleRescheduleSubmit = async () => {
+    if (!rescheduleBooking || !rescheduleDate || !rescheduleTime) {
+      setError('Please select a new date and time');
+      return;
+    }
+    setRescheduleLoading(true);
+    try {
+      const token = localStorage.getItem('authToken');
+      const res = await fetch(`/api/bookings/${rescheduleBooking.id}/reschedule`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ new_date: rescheduleDate, new_time: rescheduleTime }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSuccess('Booking rescheduled successfully');
+        setRescheduleBooking(null);
+        fetchClientData();
+      } else {
+        setError(data.error || 'Failed to reschedule booking');
+      }
+    } catch (err) {
+      setError('Failed to reschedule booking. Please try again.');
+    } finally {
+      setRescheduleLoading(false);
+    }
   };
 
   // Zoho Books integration functions
@@ -887,29 +960,71 @@ export default function ClientDashboard() {
                   <p className="text-gray-500 text-center py-4">No bookings yet</p>
                 ) : (
                   <div className="space-y-3">
-                    {bookings.map((booking) => (
-                      <div key={booking.id} className="bg-gray-50 rounded-lg p-4">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <p className="font-medium text-gray-800">
-                              {new Date(booking.booking_date).toLocaleDateString()}
-                            </p>
-                            <p className="text-sm text-gray-600">
-                              {booking.booking_time}
-                            </p>
-                            <p className="text-sm text-gray-600">
-                              Cleaner: {availableCleaners.find(c => c.id === booking.cleaner_id)?.name || 'Auto-assigned'}
-                            </p>
+                    {bookings.map((booking) => {
+                      const canCancelOrReschedule = ['pending', 'confirmed', 'awaiting_payment'].includes(booking.status);
+                      const bookingDateTime = new Date(`${booking.booking_date}T${booking.booking_time || '00:00'}`);
+                      const hoursUntilBooking = (bookingDateTime.getTime() - Date.now()) / (1000 * 60 * 60);
+                      const within24h = hoursUntilBooking > 0 && hoursUntilBooking < 24;
+                      return (
+                        <div key={booking.id} className="bg-gray-50 rounded-lg p-4">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="font-medium text-gray-800">
+                                {new Date(booking.booking_date).toLocaleDateString()}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                {booking.booking_time}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                Cleaner: {availableCleaners.find(c => c.id === booking.cleaner_id)?.name || 'Auto-assigned'}
+                              </p>
+                              {booking.rescheduled_from && (
+                                <p className="text-xs text-gray-400 mt-1">
+                                  Rescheduled from: {booking.rescheduled_from}
+                                </p>
+                              )}
+                              {booking.cancellation_reason && (
+                                <p className="text-xs text-red-500 mt-1">
+                                  Cancelled: {booking.cancellation_reason}
+                                </p>
+                              )}
+                            </div>
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                              booking.status === 'confirmed' ? 'bg-green-100 text-green-800' :
+                              booking.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                              booking.status === 'awaiting_payment' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {booking.status}
+                            </span>
                           </div>
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            booking.status === 'confirmed' ? 'bg-green-100 text-green-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {booking.status}
-                          </span>
+                          {canCancelOrReschedule && (
+                            <div className="flex gap-2 mt-3 pt-3 border-t border-gray-200">
+                              <button
+                                onClick={() => handleCancelBooking(booking.id)}
+                                disabled={cancellingBookingId === booking.id}
+                                className="text-xs font-medium text-red-600 hover:text-red-700 disabled:opacity-50 flex items-center gap-1"
+                                title={within24h ? "Late cancellation — no refund within 24h of booking" : "Full refund available (24h+ before booking)"}
+                              >
+                                {cancellingBookingId === booking.id ? "Cancelling…" : "Cancel"}
+                                {within24h && (
+                                  <span className="text-[10px] text-orange-500">(no refund)</span>
+                                )}
+                              </button>
+                              <span className="text-gray-300">|</span>
+                              <button
+                                onClick={() => openRescheduleModal(booking)}
+                                disabled={hoursUntilBooking <= 0}
+                                className="text-xs font-medium text-blue-600 hover:text-blue-700 disabled:opacity-50 flex items-center gap-1"
+                                title={within24h ? "Rescheduling not allowed within 24h" : "Free rescheduling (24h+ before booking)"}
+                              >
+                                Reschedule
+                              </button>
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -1103,6 +1218,75 @@ export default function ClientDashboard() {
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Reschedule Modal */}
+          {rescheduleBooking && (
+            <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+              <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" onClick={() => setRescheduleBooking(null)} />
+              <div className="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl border-2 border-blue-200 p-8 max-w-md w-full relative z-50">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-black">Reschedule Booking</h2>
+                  <button
+                    onClick={() => setRescheduleBooking(null)}
+                    className="text-gray-500 hover:text-black transition-colors"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <div className="space-y-4">
+                  <div className="bg-blue-50 rounded-lg p-3 text-sm text-gray-700">
+                    <p>Current: <strong>{new Date(rescheduleBooking.booking_date).toLocaleDateString()}</strong> at <strong>{rescheduleBooking.booking_time}</strong></p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">New Date</label>
+                    <input
+                      type="date"
+                      value={rescheduleDate}
+                      onChange={(e) => setRescheduleDate(e.target.value)}
+                      min={new Date().toISOString().split('T')[0]}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">New Time</label>
+                    <select
+                      value={rescheduleTime}
+                      onChange={(e) => setRescheduleTime(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Select a time slot</option>
+                      <option value="08:00">08:00</option>
+                      <option value="09:00">09:00</option>
+                      <option value="10:00">10:00</option>
+                      <option value="11:00">11:00</option>
+                      <option value="12:00">12:00</option>
+                      <option value="13:00">13:00</option>
+                      <option value="14:00">14:00</option>
+                      <option value="15:00">15:00</option>
+                      <option value="16:00">16:00</option>
+                    </select>
+                  </div>
+                  <div className="flex gap-3 pt-2">
+                    <button
+                      onClick={() => setRescheduleBooking(null)}
+                      className="flex-1 rounded-full border-2 border-gray-300 px-4 py-2 text-gray-700 font-semibold hover:border-gray-400 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleRescheduleSubmit}
+                      disabled={rescheduleLoading || !rescheduleDate || !rescheduleTime}
+                      className="flex-1 rounded-full bg-blue-600 px-4 py-2 text-white font-bold hover:bg-blue-700 transition-colors disabled:opacity-50"
+                    >
+                      {rescheduleLoading ? "Rescheduling…" : "Confirm"}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

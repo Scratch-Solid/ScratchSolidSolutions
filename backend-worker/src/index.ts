@@ -24,6 +24,8 @@ import {
   verifyTransaction,
   processWebhookEvent,
   verifyWebhookSignature,
+  refundTransaction,
+  listRefunds,
   generatePaystackReference,
 } from './lib/paystack';
 
@@ -1082,24 +1084,71 @@ router.post('/api/webhooks/paystack', async (request: any, env: any) => {
     const signature = request.headers.get('x-paystack-signature') || '';
     const bodyText = await request.text();
 
-    // Verify webhook signature
-    if (env.PAYSTACK_SECRET_KEY && signature) {
-      const isValid = await verifyWebhookSignature(env.PAYSTACK_SECRET_KEY, signature, bodyText);
-      if (!isValid) {
-        console.error('[paystack webhook] Invalid signature');
-        return new Response(JSON.stringify({ error: 'Invalid signature' }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' }
-        });
-      }
-    } else {
-      console.warn('[paystack webhook] Skipping signature verification (no secret or signature)');
+    // Verify webhook signature — ALWAYS enforce in production
+    if (!env.PAYSTACK_SECRET_KEY) {
+      console.error('[paystack webhook] PAYSTACK_SECRET_KEY not configured — rejecting webhook');
+      return new Response(JSON.stringify({ error: 'Webhook secret not configured' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    if (!signature) {
+      console.error('[paystack webhook] Missing x-paystack-signature header — rejecting');
+      return new Response(JSON.stringify({ error: 'Missing signature' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    const isValid = await verifyWebhookSignature(env.PAYSTACK_SECRET_KEY, signature, bodyText);
+    if (!isValid) {
+      console.error('[paystack webhook] Invalid signature');
+      return new Response(JSON.stringify({ error: 'Invalid signature' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
     const body = JSON.parse(bodyText);
     const event = processWebhookEvent(body);
 
     console.log('[paystack webhook] Received event:', event.event, 'reference:', event.reference);
+
+    // Handle refund events
+    if (event.event === 'refund.processed' && event.reference) {
+      const db = getReadSession(env);
+      const payment = await db.prepare('SELECT * FROM payments WHERE external_payment_id = ?')
+        .bind(event.reference).first();
+      if (payment) {
+        const refundAmount = event.amount ? event.amount / 100 : (payment as any).amount;
+        await env.scratchsolid_db.prepare(`
+          UPDATE payments
+          SET status = 'refunded',
+              refunded_amount = ?,
+              refunded_at = datetime('now'),
+              updated_at = datetime('now')
+          WHERE id = ?
+        `).bind(refundAmount, (payment as any).id).run();
+        console.log('[paystack webhook] Refund processed for payment:', (payment as any).id);
+      }
+      return new Response(JSON.stringify({ status: 'acknowledged', event: event.event }), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Handle failed transaction events
+    if (event.event === 'charge.failed' && event.reference) {
+      const db = getReadSession(env);
+      const payment = await db.prepare('SELECT * FROM payments WHERE external_payment_id = ?')
+        .bind(event.reference).first();
+      if (payment && (payment as any).status === 'pending') {
+        await env.scratchsolid_db.prepare(`
+          UPDATE payments SET status = 'failed', updated_at = datetime('now') WHERE id = ?
+        `).bind((payment as any).id).run();
+      }
+      return new Response(JSON.stringify({ status: 'acknowledged', event: event.event }), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
 
     if (!event.isChargeSuccess || !event.reference) {
       // Acknowledge non-success events but take no action
@@ -1303,6 +1352,174 @@ router.get('/api/payments/paystack/verify/:reference', async (request: any, env:
   } catch (error: any) {
     console.error('[paystack verify] error:', error?.message || error);
     return new Response(JSON.stringify({ error: 'Verification failed', detail: error?.message || String(error) }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
+    });
+  }
+});
+
+// Paystack refund endpoint (admin only)
+router.post('/api/payments/paystack/refund', async (request: any, env: any) => {
+  const payload: any = await verifyToken(request, env);
+  if (!payload || (payload.role !== 'admin' && payload.role !== 'super_admin')) {
+    return new Response(JSON.stringify({ error: 'Unauthorized — admin only' }), {
+      status: 403,
+      headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
+    });
+  }
+
+  try {
+    const { reference, amount, reason } = await request.json() as any;
+
+    if (!reference) {
+      return new Response(JSON.stringify({ error: 'reference is required' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
+      });
+    }
+
+    // Find the payment record
+    const db = getReadSession(env);
+    const payment = await db.prepare('SELECT * FROM payments WHERE external_payment_id = ?')
+      .bind(reference).first();
+
+    if (!payment) {
+      return new Response(JSON.stringify({ error: 'Payment not found' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
+      });
+    }
+
+    if ((payment as any).status === 'refunded') {
+      return new Response(JSON.stringify({ error: 'Payment already refunded' }), {
+        status: 409,
+        headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
+      });
+    }
+
+    // Call Paystack refund API
+    const refundResult = await refundTransaction(env, {
+      reference,
+      amount: amount ? Math.round(amount * 100) : undefined, // convert ZAR to kobo
+      reason: reason || 'Customer cancellation',
+    });
+
+    if (!refundResult.status) {
+      return new Response(JSON.stringify({
+        error: 'Paystack refund failed',
+        detail: refundResult.message
+      }), {
+        status: 502,
+        headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
+      });
+    }
+
+    // Update payment record
+    const refundAmount = amount || (payment as any).amount;
+    await env.scratchsolid_db.prepare(`
+      UPDATE payments
+      SET status = 'refunded',
+          refunded_amount = ?,
+          refund_reference = ?,
+          refund_reason = ?,
+          refunded_at = datetime('now'),
+          updated_at = datetime('now')
+      WHERE id = ?
+    `).bind(
+      refundAmount,
+      refundResult.data?.transaction?.reference || reference,
+      reason || 'Customer cancellation',
+      (payment as any).id
+    ).run();
+
+    // Also update booking status
+    await env.scratchsolid_db.prepare(`
+      UPDATE bookings SET status = 'cancelled', updated_at = datetime('now') WHERE id = ?
+    `).bind((payment as any).booking_id).run();
+
+    return new Response(JSON.stringify({
+      status: 'success',
+      refund: refundResult.data,
+      message: 'Refund processed successfully'
+    }), {
+      headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
+    });
+  } catch (error: any) {
+    console.error('[paystack refund] error:', error?.message || error);
+    return new Response(JSON.stringify({ error: 'Refund failed', detail: error?.message || String(error) }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
+    });
+  }
+});
+
+// Payment reconciliation endpoint (admin only)
+router.get('/api/payments/reconciliation', async (request: any, env: any) => {
+  const payload: any = await verifyToken(request, env);
+  if (!payload || (payload.role !== 'admin' && payload.role !== 'super_admin')) {
+    return new Response(JSON.stringify({ error: 'Unauthorized — admin only' }), {
+      status: 403,
+      headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
+    });
+  }
+
+  try {
+    const db = getReadSession(env);
+    const { searchParams } = new URL(request.url);
+    const startDate = searchParams.get('start_date') || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const endDate = searchParams.get('end_date') || new Date().toISOString().split('T')[0];
+
+    // Summary stats
+    const summary = await db.prepare(`
+      SELECT
+        COUNT(*) as total_payments,
+        COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed,
+        COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending,
+        COUNT(CASE WHEN status = 'failed' THEN 1 END) as failed,
+        COUNT(CASE WHEN status = 'refunded' THEN 1 END) as refunded,
+        COALESCE(SUM(CASE WHEN status = 'completed' THEN amount END), 0) as total_collected,
+        COALESCE(SUM(CASE WHEN status = 'refunded' THEN refunded_amount END), 0) as total_refunded,
+        COALESCE(SUM(CASE WHEN status = 'completed' AND gateway = 'paystack' THEN amount END), 0) as paystack_collected
+      FROM payments
+      WHERE date(created_at) >= date(?) AND date(created_at) <= date(?)
+    `).bind(startDate, endDate).first();
+
+    // Per-payment detail
+    const payments = await db.prepare(`
+      SELECT
+        p.id, p.booking_id, p.amount, p.status, p.gateway,
+        p.external_payment_id, p.refunded_amount, p.refund_reason,
+        p.created_at, p.payment_date, p.refunded_at,
+        b.service_type, b.status as booking_status
+      FROM payments p
+      LEFT JOIN bookings b ON p.booking_id = b.id
+      WHERE date(p.created_at) >= date(?) AND date(p.created_at) <= date(?)
+      ORDER BY p.created_at DESC
+      LIMIT 200
+    `).bind(startDate, endDate).all();
+
+    // Discrepancies: payments marked completed but no booking confirmed
+    const discrepancies = await db.prepare(`
+      SELECT p.id, p.booking_id, p.amount, p.status as payment_status,
+             b.status as booking_status
+      FROM payments p
+      JOIN bookings b ON p.booking_id = b.id
+      WHERE p.status = 'completed' AND b.status NOT IN ('confirmed', 'completed')
+        AND date(p.created_at) >= date(?) AND date(p.created_at) <= date(?)
+    `).bind(startDate, endDate).all();
+
+    return new Response(JSON.stringify({
+      period: { start_date: startDate, end_date: endDate },
+      summary: summary || {},
+      payments: payments.results || [],
+      discrepancies: discrepancies.results || [],
+      discrepancy_count: (discrepancies.results || []).length,
+    }), {
+      headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
+    });
+  } catch (error: any) {
+    console.error('[reconciliation] error:', error?.message || error);
+    return new Response(JSON.stringify({ error: 'Reconciliation failed', detail: error?.message || String(error) }), {
       status: 500,
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
     });

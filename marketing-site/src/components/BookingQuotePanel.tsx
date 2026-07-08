@@ -107,6 +107,7 @@ export default function BookingQuotePanel({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [showPolicy, setShowPolicy] = useState(false);
 
   const isResidential = propertyType === "residential" || propertyType === "short-term-stay";
 
@@ -680,6 +681,57 @@ export default function BookingQuotePanel({
       {!selectedServiceId && (
         <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-5 text-center">
           <p className="text-sm text-gray-500">Select a service above to see your price breakdown</p>
+        </div>
+      )}
+
+      {/* ── Cancellation & Rescheduling Policy ── */}
+      {selectedServiceId && bookingDate && timeSlot && (
+        <div className="rounded-xl border border-gray-200 bg-gray-50 overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setShowPolicy(!showPolicy)}
+            className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-100 transition-colors"
+          >
+            <span className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+              <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Cancellation & Rescheduling Policy
+            </span>
+            <svg
+              className={`w-5 h-5 text-gray-400 transition-transform ${showPolicy ? "rotate-180" : ""}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          {showPolicy && (
+            <div className="px-4 pb-4 text-xs text-gray-600 space-y-2">
+              <p>
+                <strong>Free cancellation:</strong> You may cancel or reschedule your booking free of charge up to
+                24 hours before the scheduled service time for a full refund.
+              </p>
+              <p>
+                <strong>Late cancellation (within 24 hours):</strong> Cancellations made less than 24 hours
+                before the booking will not be eligible for a refund. The booking may still be cancelled but
+                the fee will be forfeited.
+              </p>
+              <p>
+                <strong>Rescheduling:</strong> You may reschedule your booking to a new date/time at no cost,
+                provided the request is made at least 24 hours before the original booking time.
+              </p>
+              <p>
+                <strong>How to cancel/reschedule:</strong> Visit your Client Dashboard, find the booking, and
+                click the "Cancel" or "Reschedule" button. For card payments, refunds are processed
+                automatically to your original payment method.
+              </p>
+              <p className="text-gray-500">
+                By confirming this booking you acknowledge and agree to this cancellation policy.
+              </p>
+            </div>
+          )}
         </div>
       )}
 
