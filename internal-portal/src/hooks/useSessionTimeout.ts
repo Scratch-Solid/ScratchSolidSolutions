@@ -16,8 +16,25 @@ export function useSessionTimeout(enabled: boolean = true) {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const logout = useCallback(async () => {
+    // Attempt silent token refresh before logging out
     try {
-      // Call logout API to invalidate session on server
+      const refreshRes = await fetch('/api/auth/refresh', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (refreshRes.ok) {
+        const data = await refreshRes.json();
+        if (data.token) {
+          localStorage.setItem('authToken', data.token);
+          return; // Token refreshed — do not logout
+        }
+      }
+    } catch {
+      // Refresh failed — proceed with logout
+    }
+
+    // Call logout API to invalidate session on server
+    try {
       await fetch('/api/auth/logout', {
         method: 'POST',
         headers: {

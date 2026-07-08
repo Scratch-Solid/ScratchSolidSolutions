@@ -286,7 +286,28 @@ export default function ClientDashboard() {
         return; // Don't set loading false — we're navigating away
       }
 
-      // For cash/EFT: show success message with instructions
+      // For cash/EFT: record the payment and show success message
+      if (paymentMethod === 'cash' || paymentMethod === 'eft' || paymentMethod === 'instant') {
+        try {
+          const amount = bookingResult.total_amount || calculateAmount(selectedServiceType, selectedCleaningType);
+          await authFetch('/api/payments', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}),
+            },
+            body: JSON.stringify({
+              booking_id: bookingResult.id,
+              payment_method: paymentMethod,
+              amount,
+            }),
+          });
+        } catch (paymentErr) {
+          // Payment recording failed — booking is still created, user can retry payment
+          console.error('Failed to record offline payment:', paymentErr);
+        }
+      }
+
       setBookings(prev => [...prev, bookingResult]);
       setSuccess(`Booking saved! Please make ${paymentMethod.toUpperCase()} payment. Your cleaner will be dispatched once payment is confirmed.`);
       

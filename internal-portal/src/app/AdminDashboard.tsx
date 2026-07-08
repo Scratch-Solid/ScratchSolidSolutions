@@ -5,6 +5,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
+import { useTokenRefresh } from "@/hooks/useTokenRefresh";
 import DashboardLayout from "@/components/DashboardLayout";
 import { BarChartCard, DonutChartCard } from "@/components/charts/MiniCharts";
 import ServicesManagement from "./AdminDashboard/services-management";
@@ -23,6 +24,7 @@ import { LayoutDashboard, Users, DollarSign, Wrench, FileText, Settings, Eye, Us
 
 export default function AdminDashboard() {
   useSessionTimeout(true);
+  useTokenRefresh();
   const [users, setUsers] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [contracts, setContracts] = useState([]);

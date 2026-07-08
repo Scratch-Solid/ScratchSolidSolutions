@@ -3,6 +3,41 @@ import { useDashboardStore } from './store';
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000;
 
+let isRefreshing = false;
+let refreshPromise: Promise<string | null> | null = null;
+
+async function refreshToken(): Promise<string | null> {
+  if (isRefreshing && refreshPromise) {
+    return refreshPromise;
+  }
+
+  isRefreshing = true;
+  refreshPromise = (async () => {
+    try {
+      const res = await fetch('/api/auth/refresh', {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      if (!res.ok) return null;
+
+      const data = await res.json();
+      if (data.token) {
+        localStorage.setItem('authToken', data.token);
+        return data.token as string;
+      }
+      return null;
+    } catch {
+      return null;
+    } finally {
+      isRefreshing = false;
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
+}
+
 export async function fetchWithRetry(
   url: string,
   options: RequestInit = {},
@@ -26,10 +61,18 @@ export async function fetchWithRetry(
       }
 
       if (response.status === 401) {
-        // Unauthorized - clear auth and redirect
+        // Attempt token refresh before giving up
+        const newToken = await refreshToken();
+        if (newToken) {
+          // Retry with new token
+          continue;
+        }
+        // Refresh failed — clear auth and redirect
         localStorage.removeItem('authToken');
         localStorage.removeItem('userRole');
-        window.location.href = '/auth/login';
+        if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth')) {
+          window.location.href = '/auth/login';
+        }
         throw new Error('Unauthorized');
       }
 

@@ -2,6 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
+import { useSessionTimeout } from "@/hooks/useSessionTimeout";
+import { useTokenRefresh } from "@/hooks/useTokenRefresh";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/Button";
@@ -58,6 +60,8 @@ interface Cleaner {
 }
 
 export default function SupervisorDashboard() {
+  useSessionTimeout(true);
+  useTokenRefresh();
   const [data, setData] = useState<DashboardData | null>(null);
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
   const [loading, setLoading] = useState(true);

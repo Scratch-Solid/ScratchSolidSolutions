@@ -5,6 +5,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
+import { useTokenRefresh } from "@/hooks/useTokenRefresh";
 import DashboardLayout from "@/components/DashboardLayout";
 import TrainingModuleCard from "@/components/TrainingModuleCard";
 import QuizInterface from "@/components/QuizInterface";
@@ -13,6 +14,7 @@ import jsPDF from 'jspdf';
 
 export default function CleanerDashboard() {
   useSessionTimeout(true);
+  useTokenRefresh();
   const [cleaner, setCleaner] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [ratings, setRatings] = useState([]);

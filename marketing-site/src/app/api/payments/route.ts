@@ -120,6 +120,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Payment creation failed' }, { status: 500 });
     }
 
+    // Update booking status from pending_payment to confirmed
+    try {
+      await db.prepare(
+        `UPDATE bookings SET status = 'confirmed', updated_at = datetime('now') WHERE id = ? AND status = 'pending_payment'`
+      ).bind(booking_id).run();
+      logger.info('Booking status updated to confirmed after offline payment', { booking_id, payment_method });
+    } catch (updateError) {
+      logger.error('Failed to update booking status after offline payment', updateError as Error);
+    }
+
     // Trigger Zoho Books integration
     try {
       const zohoInvoice = await createZohoInvoice({

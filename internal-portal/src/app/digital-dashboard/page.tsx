@@ -3,11 +3,13 @@
 import { useState, useEffect } from "react";
 import { SkeletonDashboard } from "@/components/Skeleton";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
+import { useTokenRefresh } from "@/hooks/useTokenRefresh";
 import DashboardLayout from "@/components/DashboardLayout";
 import PasswordBanner from "./components/PasswordBanner";
 
 export default function DigitalDashboard() {
   useSessionTimeout(true);
+  useTokenRefresh();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
 
