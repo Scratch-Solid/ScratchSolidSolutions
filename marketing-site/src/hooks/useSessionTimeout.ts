@@ -3,19 +3,35 @@
  * @description Auto-logout hook for session inactivity timeout.
  *
  * Tracks user activity (mouse, keyboard, touch, scroll) and automatically
- * logs out the user after 5 minutes of inactivity for security.
+ * logs out the user after 30 minutes of inactivity for security.
+ * Also attempts a silent token refresh before logging out.
  */
 
 import { useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 
-const INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5 minutes in milliseconds
+const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes in milliseconds
 
 export function useSessionTimeout(enabled: boolean = true) {
   const router = useRouter();
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    // Try to refresh the token first — only logout if refresh fails
+    try {
+      const refreshRes = await fetch('/api/auth/refresh', { method: 'POST', credentials: 'include' });
+      if (refreshRes.ok) {
+        const data = await refreshRes.json();
+        if (data.token) {
+          localStorage.setItem('authToken', data.token);
+          // Don't logout — token refreshed successfully
+          return;
+        }
+      }
+    } catch {
+      // Refresh failed — proceed with logout
+    }
+
     // Clear all auth data
     localStorage.removeItem('authToken');
     localStorage.removeItem('userRole');
@@ -24,7 +40,7 @@ export function useSessionTimeout(enabled: boolean = true) {
     localStorage.removeItem('userEmail');
     localStorage.removeItem('userPhone');
     localStorage.removeItem('userAddress');
-    
+
     // Redirect to auth page
     router.push('/auth');
   }, [router]);
@@ -43,7 +59,7 @@ export function useSessionTimeout(enabled: boolean = true) {
 
     // Reset timer on user activity
     const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
-    
+
     events.forEach(event => {
       window.addEventListener(event, resetTimer);
     });

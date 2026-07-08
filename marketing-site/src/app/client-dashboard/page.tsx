@@ -5,11 +5,14 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
+import { useTokenRefresh } from "@/hooks/useTokenRefresh";
+import { authFetch, getCsrfToken } from "@/lib/authFetch";
 import BookingQuotePanel from "@/components/BookingQuotePanel";
 
 export default function ClientDashboard() {
   const router = useRouter();
-  useSessionTimeout(true); // Enable 5-minute inactivity timeout
+  useSessionTimeout(true); // Enable inactivity timeout with auto-refresh
+  useTokenRefresh(); // Silently refresh token every 5 minutes
   const [bookings, setBookings] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
   const [monthlyStatement, setMonthlyStatement] = useState<any>(null);
@@ -78,10 +81,8 @@ export default function ClientDashboard() {
   useEffect(() => {
     const username = (assignedCleaner as any)?.username;
     if (assignedCleaner && typeof assignedCleaner === 'object' && username) {
-      const token = localStorage.getItem('authToken');
-      fetch(`/api/cleaner-details?username=${encodeURIComponent(username)}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      }).then(res => res.ok ? res.json() : null).then(profile => {
+      authFetch(`/api/cleaner-details?username=${encodeURIComponent(username)}`)
+        .then(res => res.ok ? res.json() : null).then(profile => {
         if (profile) {
           setAssignedCleaner(profile);
         }
@@ -92,8 +93,7 @@ export default function ClientDashboard() {
   const fetchClientData = async () => {
     try {
       const userId = localStorage.getItem("userId");
-      const token = localStorage.getItem("authToken");
-      if (!userId || !token) return;
+      if (!userId) return;
 
       try {
         const [sRes, pRes] = await Promise.all([
@@ -110,9 +110,7 @@ export default function ClientDashboard() {
 
       // Fetch available cleaners from real API
       try {
-        const cleanersRes = await fetch('/api/cleaners?status=idle&blocked=0', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const cleanersRes = await authFetch('/api/cleaners?status=idle&blocked=0');
         if (cleanersRes.ok) {
           const cleanersData = await cleanersRes.json() as any[];
           setAvailableCleaners(cleanersData.map((c: any) => ({
@@ -129,9 +127,7 @@ export default function ClientDashboard() {
 
       // Fetch real bookings for this client
       try {
-        const bookingsRes = await fetch(`/api/bookings?client_id=${userId}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const bookingsRes = await authFetch(`/api/bookings?client_id=${userId}`);
         if (bookingsRes.ok) {
           const bookingsData = await bookingsRes.json() as any[];
           setBookings(bookingsData);
@@ -215,7 +211,6 @@ export default function ClientDashboard() {
 
     try {
       const userId = localStorage.getItem("userId");
-      const token = localStorage.getItem("authToken");
       
       if (!selectedServiceType) {
         setError('Please select a service type');
@@ -224,11 +219,12 @@ export default function ClientDashboard() {
       }
 
       // Step 1: Create booking with pending_payment status
-      const bookingRes = await fetch('/api/bookings', {
+      const csrfToken = await getCsrfToken();
+      const bookingRes = await authFetch('/api/bookings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
+          ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}),
         },
         body: JSON.stringify({
           client_id: parseInt(userId || '0'),
@@ -260,11 +256,10 @@ export default function ClientDashboard() {
         const amount = bookingResult.total_amount || calculateAmount(selectedServiceType, selectedCleaningType);
         const callbackUrl = `${window.location.origin}/payment/verify`;
 
-        const paystackResponse = await fetch("/api/payments/paystack/initialize", {
+        const paystackResponse = await authFetch("/api/payments/paystack/initialize", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
             booking_id: bookingResult.id,
@@ -343,12 +338,12 @@ export default function ClientDashboard() {
     }
     setCancellingBookingId(bookingId);
     try {
-      const token = localStorage.getItem('authToken');
-      const res = await fetch(`/api/bookings/${bookingId}/cancel`, {
+      const csrfToken = await getCsrfToken();
+      const res = await authFetch(`/api/bookings/${bookingId}/cancel`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}),
         },
         body: JSON.stringify({ reason: 'Cancelled by client' }),
       });
@@ -381,12 +376,12 @@ export default function ClientDashboard() {
     }
     setRescheduleLoading(true);
     try {
-      const token = localStorage.getItem('authToken');
-      const res = await fetch(`/api/bookings/${rescheduleBooking.id}/reschedule`, {
+      const csrfToken = await getCsrfToken();
+      const res = await authFetch(`/api/bookings/${rescheduleBooking.id}/reschedule`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}),
         },
         body: JSON.stringify({ new_date: rescheduleDate, new_time: rescheduleTime }),
       });
@@ -411,10 +406,7 @@ export default function ClientDashboard() {
     try {
       const userId = localStorage.getItem("userId");
       
-      const token = localStorage.getItem('authToken');
-      const zohoRes = await fetch(`/api/zoho/financials?customer_id=${userId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const zohoRes = await authFetch(`/api/zoho/financials?customer_id=${userId}`);
       if (zohoRes.ok) {
         const zohoData = await zohoRes.json() as { statements?: any[]; invoices?: any[] };
         setZohoStatements(zohoData.statements || []);
@@ -443,16 +435,13 @@ export default function ClientDashboard() {
     const uploadedUrls: string[] = [];
 
     try {
-      const token = localStorage.getItem('authToken');
-
       for (const file of files) {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('folder', 'review-images');
 
-        const response = await fetch('/api/upload', {
+        const response = await authFetch('/api/upload', {
           method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
           body: formData,
         });
 
@@ -498,12 +487,12 @@ export default function ClientDashboard() {
     setReviewImagesLoading(true);
     try {
       const userId = localStorage.getItem('userId');
-      const token = localStorage.getItem('authToken');
-      const reviewRes = await fetch('/api/reviews', {
+      const csrfToken = await getCsrfToken();
+      const reviewRes = await authFetch('/api/reviews', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
+          ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}),
         },
         body: JSON.stringify({
           user_id: userId,
@@ -547,9 +536,7 @@ export default function ClientDashboard() {
     }
     try {
       const cleanerId = (assignedCleaner as any).id;
-      const response = await fetch(`/api/cleaner-status?cleaner_id=${cleanerId}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` }
-      });
+      const response = await authFetch(`/api/cleaner-status?cleaner_id=${cleanerId}`);
       if (response.ok) {
         const data = await response.json() as { status?: string };
         if (data.status) {
@@ -563,9 +550,7 @@ export default function ClientDashboard() {
       // Fetch GPS coordinates for real-time tracking
       const activeBooking = bookings.find(b => b.status === 'confirmed' || b.status === 'in_progress');
       if (activeBooking) {
-        const trackingResponse = await fetch(`/api/tracking?booking_id=${activeBooking.id}`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` }
-        });
+        const trackingResponse = await authFetch(`/api/tracking?booking_id=${activeBooking.id}`);
         if (trackingResponse.ok) {
           await trackingResponse.json();
           // GPS data available for future map display

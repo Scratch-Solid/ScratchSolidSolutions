@@ -6,6 +6,7 @@ import {
   type QuoteRequest,
   type QuoteResult,
 } from "@/lib/pricing-engine";
+import { authFetch, getCsrfToken } from "@/lib/authFetch";
 
 interface Service {
   id: number;
@@ -228,27 +229,19 @@ export default function BookingQuotePanel({
 
     setLoading(true);
     try {
-      const token = localStorage.getItem("authToken");
       const userId = localStorage.getItem("userId");
       const userName = localStorage.getItem("userName") || "";
       const selectedService = services.find((s) => s.id === selectedServiceId);
 
-      // Get CSRF token first
-      let csrfToken = "";
-      try {
-        const csrfRes = await fetch("/api/csrf-token");
-        const csrfData = await csrfRes.json();
-        csrfToken = csrfData.csrfToken || "";
-      } catch { /* non-fatal */ }
+      // Get CSRF token
+      const csrfToken = await getCsrfToken();
 
-      const res = await fetch("/api/bookings", {
+      const res = await authFetch("/api/bookings", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
           ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
         },
-        credentials: "include",
         body: JSON.stringify({
           client_id: parseInt(userId || "0"),
           client_name: userName,

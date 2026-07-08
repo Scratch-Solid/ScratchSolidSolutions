@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import BookingQuotePanel from "@/components/BookingQuotePanel";
+import { authFetch, getCsrfToken } from "@/lib/authFetch";
 
 export default function BusinessBookingPage() {
   const [bookingMode, setBookingMode] = useState<"choose" | "once-off" | "contract">("choose");
@@ -39,10 +40,13 @@ export default function BusinessBookingPage() {
     setError('');
     try {
       const userId = localStorage.getItem('userId');
-      const res = await fetch('/api/contracts', {
+      const csrfToken = await getCsrfToken();
+      const res = await authFetch('/api/contracts', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}),
+        },
         body: JSON.stringify({
           business_id: userId,
           business_name: localStorage.getItem('userName') || '',
@@ -60,10 +64,12 @@ export default function BusinessBookingPage() {
         return;
       }
       if (weekendRequired) {
-        await fetch('/api/weekend-requests', {
+        await authFetch('/api/weekend-requests', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}),
+          },
           body: JSON.stringify({
             business_id: userId,
             requested_date: contractData.start_date || new Date().toISOString().split('T')[0],

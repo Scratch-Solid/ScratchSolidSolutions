@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { authFetch } from "@/lib/authFetch";
 
 export default function PaymentVerifyContent() {
   const router = useRouter();
@@ -22,10 +23,7 @@ export default function PaymentVerifyContent() {
       }
 
       try {
-        const token = localStorage.getItem("token");
-        const response = await fetch(`/api/payments/paystack/verify?reference=${ref}`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
+        const response = await authFetch(`/api/payments/paystack/verify?reference=${ref}`);
         const data = await response.json() as { status?: string; message?: string };
 
         if (response.ok && data.status === "success") {

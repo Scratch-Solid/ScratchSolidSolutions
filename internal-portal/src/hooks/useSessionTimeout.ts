@@ -9,7 +9,7 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 
-const INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5 minutes in milliseconds
+const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes in milliseconds
 
 export function useSessionTimeout(enabled: boolean = true) {
   const router = useRouter();

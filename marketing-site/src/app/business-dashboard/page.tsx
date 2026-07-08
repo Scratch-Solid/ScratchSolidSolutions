@@ -4,10 +4,13 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
+import { useTokenRefresh } from "@/hooks/useTokenRefresh";
+import { authFetch, getCsrfToken } from "@/lib/authFetch";
 
 export default function BusinessDashboard() {
   const router = useRouter();
-  useSessionTimeout(true); // Enable 5-minute inactivity timeout
+  useSessionTimeout(true); // Enable inactivity timeout with auto-refresh
+  useTokenRefresh(); // Silently refresh token every 5 minutes
   const [weekendRequests, setWeekendRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [assignedCleaner, setAssignedCleaner] = useState<any>(null);
@@ -51,12 +54,9 @@ export default function BusinessDashboard() {
   const fetchWeekendRequests = async () => {
     try {
       const businessId = localStorage.getItem("userId");
-      const token = localStorage.getItem("authToken");
-      if (!businessId || !token) return;
+      if (!businessId) return;
 
-      const response = await fetch(`/api/weekend-requests?business_id=${businessId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await authFetch(`/api/weekend-requests?business_id=${businessId}`);
       if (response.ok) {
         const data = await response.json() as any[];
         setWeekendRequests(data);
@@ -92,17 +92,17 @@ export default function BusinessDashboard() {
     setLoading(true);
     try {
       const businessId = localStorage.getItem("userId");
-      const token = localStorage.getItem("authToken");
-      if (!businessId || !token) {
+      if (!businessId) {
         setError("Authentication required");
         setLoading(false);
         return;
       }
-      const response = await fetch('/api/weekend-requests', {
+      const csrfToken = await getCsrfToken();
+      const response = await authFetch('/api/weekend-requests', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
+          ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}),
         },
         body: JSON.stringify({
           business_id: parseInt(businessId),
@@ -128,10 +128,7 @@ export default function BusinessDashboard() {
   const fetchContracts = async () => {
     try {
       const businessId = localStorage.getItem("userId");
-      const token = localStorage.getItem("authToken");
-      const response = await fetch(`/api/contracts?business_id=${businessId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await authFetch(`/api/contracts?business_id=${businessId}`);
       if (response.ok) {
         const data = await response.json() as any[];
         setContracts(data);
@@ -144,10 +141,7 @@ export default function BusinessDashboard() {
   const fetchRecurringBookings = async () => {
     try {
       const businessId = localStorage.getItem("userId");
-      const token = localStorage.getItem("authToken");
-      const response = await fetch(`/api/bookings?client_id=${businessId}&booking_type=recurring`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await authFetch(`/api/bookings?client_id=${businessId}&booking_type=recurring`);
       if (response.ok) {
         const data = await response.json() as any[];
         setRecurringBookings(data);
@@ -160,10 +154,7 @@ export default function BusinessDashboard() {
   const fetchUserProfile = async () => {
     try {
       const userId = localStorage.getItem("userId");
-      const token = localStorage.getItem("authToken");
-      const response = await fetch(`/api/users/${userId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await authFetch(`/api/users/${userId}`);
       if (response.ok) {
         const data = await response.json() as any[];
         setUserProfile(data);
@@ -178,10 +169,12 @@ export default function BusinessDashboard() {
     
     try {
       const userId = localStorage.getItem("userId");
-      const token = localStorage.getItem("authToken");
-      const response = await fetch(`/api/users/${userId}`, {
+      const csrfToken = await getCsrfToken();
+      const response = await authFetch(`/api/users/${userId}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
+        headers: {
+          ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}),
+        },
       });
       if (response.ok) {
         localStorage.clear();
@@ -196,10 +189,12 @@ export default function BusinessDashboard() {
 
   const cancelRequest = async (requestId: number) => {
     try {
-      const token = localStorage.getItem("authToken");
-      const response = await fetch(`/api/weekend-requests/${requestId}`, {
+      const csrfToken = await getCsrfToken();
+      const response = await authFetch(`/api/weekend-requests/${requestId}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
+        headers: {
+          ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}),
+        },
       });
       if (response.ok) {
         setWeekendRequests((prev: any[]) => prev.filter(req => req.id !== requestId));
@@ -215,10 +210,7 @@ export default function BusinessDashboard() {
 
   const handleExportPDF = async (contractId: number) => {
     try {
-      const token = localStorage.getItem("authToken");
-      const response = await fetch(`/api/contracts/${contractId}/export`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await authFetch(`/api/contracts/${contractId}/export`);
       
       if (response.ok) {
         const blob = await response.blob();
@@ -266,10 +258,8 @@ export default function BusinessDashboard() {
         formData.append('file', file);
         formData.append('folder', 'review-images');
 
-        const token = localStorage.getItem('authToken');
-        const response = await fetch('/api/upload', {
+        const response = await authFetch('/api/upload', {
           method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
           body: formData,
         });
 
@@ -312,15 +302,15 @@ export default function BusinessDashboard() {
     }
 
     const userId = localStorage.getItem('userId');
-    const token = localStorage.getItem('authToken');
 
     setReviewImagesLoading(true);
     try {
-      const reviewRes = await fetch('/api/reviews', {
+      const csrfToken = await getCsrfToken();
+      const reviewRes = await authFetch('/api/reviews', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
+          ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}),
         },
         body: JSON.stringify({
           user_id: userId,
