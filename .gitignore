@@ -2,6 +2,7 @@
 node_modules/
 dist/
 .env
+.env.local
 .env.secrets
 
 # Generated test artifacts (Playwright/Selenium) — never commit to production repo

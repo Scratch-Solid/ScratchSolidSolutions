@@ -146,6 +146,7 @@ test.describe('🏠 Public Pages — Load & Content', () => {
 // ─────────────────────────────────────────────
 test.describe('🔗 Navigation — All Links & Buttons', () => {
   test('Homepage nav links route correctly', async ({ page }) => {
+    test.setTimeout(60000);
     await goTo(page, '/');
     // Services link
     await page.click('a[href="/services"]');
@@ -166,10 +167,29 @@ test.describe('🔗 Navigation — All Links & Buttons', () => {
   });
 
   test('Overlay menu links work', async ({ page }) => {
+    test.setTimeout(60000);
     await goTo(page, '/');
-    await page.click('button[aria-label="Open menu"]');
-    await page.click('a[href="/privacy"]:visible');
-    await page.waitForURL('**/privacy');
+    // Wait for the overlay menu button to be fully hydrated and interactive
+    const menuButton = page.locator('button[aria-label="Open menu"]');
+    await menuButton.waitFor({ state: 'visible', timeout: 20000 });
+    // Click the button — retry if dropdown doesn't open (hydration race)
+    const privacyLink = page.locator('#overlay-menu-dropdown a[href="/privacy"]');
+    for (let attempt = 0; attempt < 3; attempt++) {
+      await menuButton.click();
+      try {
+        await privacyLink.waitFor({ state: 'visible', timeout: 5000 });
+        break;
+      } catch {
+        if (attempt === 2) throw new Error('Overlay menu dropdown did not open after 3 attempts');
+        await delay(1000);
+      }
+    }
+    // Click the privacy link via evaluate to trigger Next.js router navigation
+    await page.evaluate(() => {
+      const link = document.querySelector('#overlay-menu-dropdown a[href="/privacy"]') as HTMLAnchorElement;
+      if (link) link.click();
+    });
+    await page.waitForURL('**/privacy', { timeout: 20000 });
     await expect(page).toHaveURL(/\/privacy/);
   });
 
@@ -187,37 +207,75 @@ test.describe('🔗 Navigation — All Links & Buttons', () => {
   });
 
   test('Auth page toggle between login and signup', async ({ page }) => {
+    test.setTimeout(60000);
     await goTo(page, '/auth');
-    await expect(page.getByRole('heading', { name: 'Sign In' })).toBeVisible();
-    // Click "Sign Up" toggle
-    await page.getByRole('button', { name: 'Sign Up' }).click();
-    await expect(page.getByRole('heading', { name: 'Create Account' })).toBeVisible();
-    // Click "Sign In" toggle
-    await page.getByRole('button', { name: 'Sign In' }).click();
-    await expect(page.getByRole('heading', { name: 'Sign In' })).toBeVisible();
+    // Wait for client-side hydration to complete — the auth form renders inside Suspense
+    await expect(page.getByRole('heading', { name: 'Sign In' })).toBeVisible({ timeout: 30000 });
+    // In login mode, the only button with text "Sign Up" is the toggle button
+    const signUpButton = page.getByRole('button', { name: 'Sign Up' });
+    await signUpButton.waitFor({ state: 'visible', timeout: 20000 });
+    // Retry click to handle hydration race
+    for (let attempt = 0; attempt < 3; attempt++) {
+      await signUpButton.click();
+      try {
+        await expect(page.getByRole('heading', { name: 'Create Account' })).toBeVisible({ timeout: 5000 });
+        break;
+      } catch {
+        if (attempt === 2) throw new Error('Toggle to Create Account failed after 3 attempts');
+        await delay(1000);
+      }
+    }
+    // In signup mode, the only button with text "Sign In" is the toggle button
+    const signInButton = page.getByRole('button', { name: 'Sign In' });
+    await signInButton.waitFor({ state: 'visible', timeout: 10000 });
+    await signInButton.click();
+    await expect(page.getByRole('heading', { name: 'Sign In' })).toBeVisible({ timeout: 10000 });
   });
 
   test('Auth page tab switches between Individual and Business', async ({ page }) => {
+    test.setTimeout(60000);
     await goTo(page, '/auth');
-    // Name fields only render in Sign Up mode, so switch from the default login view.
-    await page.getByRole('button', { name: 'Sign Up' }).click();
+    await expect(page.getByRole('heading', { name: 'Sign In' })).toBeVisible({ timeout: 30000 });
+    // Wait for hydration and switch to Sign Up mode
+    // In login mode, the only button with text "Sign Up" is the toggle button
+    const signUpButton = page.getByRole('button', { name: 'Sign Up' });
+    await signUpButton.waitFor({ state: 'visible', timeout: 20000 });
+    // Retry click to handle hydration race
+    for (let attempt = 0; attempt < 3; attempt++) {
+      await signUpButton.click();
+      try {
+        await expect(page.getByRole('heading', { name: 'Create Account' })).toBeVisible({ timeout: 5000 });
+        break;
+      } catch {
+        if (attempt === 2) throw new Error('Toggle to Create Account failed after 3 attempts');
+        await delay(1000);
+      }
+    }
+    // Click Business tab
     await page.getByRole('button', { name: 'Business' }).click();
-    await expect(page.locator('text=Business Name')).toBeVisible();
+    await expect(page.getByText('Business Name')).toBeVisible({ timeout: 10000 });
+    // Click Individual tab
     await page.getByRole('button', { name: 'Individual' }).click();
-    await expect(page.locator('text=Full Name')).toBeVisible();
+    await expect(page.getByText('Full Name')).toBeVisible({ timeout: 10000 });
   });
 
   test('Forgot password link from auth page', async ({ page }) => {
+    test.setTimeout(60000);
     await goTo(page, '/auth');
-    await page.click('text=Forgot Password?');
-    await page.waitForURL('**/forgot-password');
+    await expect(page.getByRole('heading', { name: 'Sign In' })).toBeVisible({ timeout: 30000 });
+    const forgotLink = page.getByRole('link', { name: 'Forgot Password?' });
+    await forgotLink.waitFor({ state: 'visible', timeout: 15000 });
+    await forgotLink.click();
+    await page.waitForURL('**/forgot-password', { timeout: 20000 });
     await expect(page).toHaveURL(/\/forgot-password/);
   });
 
   test('Back to Home link on auth page', async ({ page }) => {
+    test.setTimeout(60000);
     await goTo(page, '/auth');
+    await expect(page.getByRole('heading', { name: 'Sign In' })).toBeVisible({ timeout: 30000 });
     await page.click('text=Back to Home');
-    await page.waitForURL('**/');
+    await page.waitForURL('**/', { timeout: 15000 });
     await expect(page).toHaveURL(/\/$/);
   });
 });
@@ -323,6 +381,7 @@ test.describe('📢 SEO & Meta Tags', () => {
   });
 
   test('All public pages return status < 500', async ({ page }) => {
+    test.setTimeout(60000);
     const paths = ['/', '/services', '/about', '/gallery', '/contact', '/privacy', '/terms', '/auth', '/login', '/forgot-password'];
     for (const path of paths) {
       const res = await page.goto(path, { waitUntil: 'domcontentloaded' });

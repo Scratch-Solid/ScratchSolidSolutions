@@ -222,7 +222,8 @@ CREATE TABLE IF NOT EXISTS task_completions (
   booking_id INTEGER REFERENCES bookings(id),
   cleaner_id INTEGER REFERENCES users(id),
   completed_at TEXT DEFAULT (datetime('now')),
-  earnings REAL DEFAULT 150
+  earnings REAL DEFAULT 150,
+  created_at TEXT DEFAULT (datetime('now'))
 );
 
 -- Sessions (for auth token validation)
@@ -357,16 +358,6 @@ CREATE TABLE IF NOT EXISTS templates (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL,
   content TEXT DEFAULT '',
-  created_at TEXT DEFAULT (datetime('now'))
-);
-
--- Task completions (for cleaner payroll tracking)
-CREATE TABLE IF NOT EXISTS task_completions (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  booking_id INTEGER REFERENCES bookings(id),
-  cleaner_id INTEGER REFERENCES users(id),
-  completed_at TEXT DEFAULT (datetime('now')),
-  earnings REAL DEFAULT 150,
   created_at TEXT DEFAULT (datetime('now'))
 );
 
