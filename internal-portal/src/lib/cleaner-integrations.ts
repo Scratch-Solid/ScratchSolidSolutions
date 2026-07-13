@@ -2,6 +2,9 @@ import { log } from '@/lib/logger';
 import { notifyAdminApproved, notifyAdminRejected, notifyConsentSubmitted, notifyContractSigned, sendCleanerWelcome } from '@/lib/notifications';
 import { createEnvelope, getSigningUrl, isDocusignFullyConfigured } from '@/lib/docusign';
 import { getCloudflareContext } from '@/lib/runtime-context';
+import { logOnboardingTransition } from '@/lib/db';
+import { ensureCleanerTrainingProgress, setCleanerOnboardingStage } from '@/lib/cleaner-training';
+import type { D1Database } from '@cloudflare/workers-types';
 
 export async function getErpNextCreds() {
   const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
@@ -222,6 +225,150 @@ export async function createSignupSignatureReference(traceId: string) {
       reference,
       reason: configured ? undefined : 'DocuSign credentials not configured',
     } satisfies CleanerIntegrationResult,
+  };
+}
+
+// Generate paysheet code from first name per spec: abcX#####
+// Format: first 3 letters of first name (lowercase) + random uppercase letter + 6 random digits
+function generatePaysheetCode(firstName: string): string {
+  const normalized = firstName.toLowerCase().replace(/[^a-z]/g, '').substring(0, 3);
+  const randomUpper = String.fromCharCode(65 + Math.floor(Math.random() * 26)); // A-Z
+  const randomDigits = Math.floor(Math.random() * 900000 + 100000).toString(); // 100000-999999
+  return `${normalized}${randomUpper}${randomDigits}`;
+}
+
+async function generateUniquePaysheetCode(db: D1Database, name: string): Promise<string> {
+  const firstName = name.split(' ')[0] || name;
+  let attempts = 0;
+  const maxAttempts = 5;
+
+  while (attempts < maxAttempts) {
+    const code = generatePaysheetCode(firstName);
+    const existing = await db.prepare(
+      'SELECT 1 FROM cleaner_profiles WHERE paysheet_code = ? LIMIT 1'
+    ).bind(code).first();
+    if (!existing) {
+      return code;
+    }
+    attempts++;
+  }
+
+  // Fallback: append timestamp suffix if all retries collided
+  const fallbackSuffix = Date.now().toString().slice(-4);
+  const firstNameBase = firstName.toLowerCase().replace(/[^a-z]/g, '').substring(0, 3);
+  const randomUpper = String.fromCharCode(65 + Math.floor(Math.random() * 26));
+  return `${firstNameBase}${randomUpper}${fallbackSuffix}`;
+}
+
+/**
+ * Single entry point for turning a person (self-applied or admin-entered) into
+ * a fully active cleaner account: user + cleaner_profile + training record +
+ * onboarding_stage + ERPNext registration + welcome notification. Used by both
+ * the application-approval route and the admin "add cleaner" route so there is
+ * exactly one place this logic lives.
+ */
+export async function activateCleanerAccount(
+  db: D1Database,
+  data: {
+    name: string;
+    email: string;
+    phone: string;
+    emergencyContact?: string;
+    idNumber?: string;
+    bankDetailsPresent?: boolean;
+  },
+  traceId: string
+) {
+  const bcrypt = require('bcryptjs');
+
+  const paysheetCode = await generateUniquePaysheetCode(db, data.name);
+
+  // Cross-runtime random bytes helper (Cloudflare Workers crypto vs Node.js crypto)
+  const tempPasswordBytes = (() => {
+    const arr = new Uint8Array(18);
+    if (typeof crypto !== 'undefined' && 'getRandomValues' in crypto) {
+      crypto.getRandomValues(arr);
+    } else {
+      const nodeCrypto = require('crypto');
+      const buf = nodeCrypto.randomBytes(18);
+      arr.set(buf);
+    }
+    return arr;
+  })();
+  const tempPassword = Array.from(tempPasswordBytes)
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+  const passwordHash = await bcrypt.hash(tempPassword, 12);
+
+  const firstName = data.name.split(' ')[0] || data.name;
+  const lastName = data.name.split(' ').slice(1).join(' ');
+
+  // Account is activated straight to consent_approved: approving/adding a
+  // cleaner is now a single step, not "approve" here + a second "approve"
+  // click on a different admin page before they can proceed.
+  const insertResult = await db.prepare(
+    `INSERT INTO users (name, email, password_hash, role, phone, password_needs_reset, email_verified, onboarding_stage, created_at)
+     VALUES (?, ?, ?, 'cleaner', ?, 1, 1, 'consent_approved', datetime('now'))`
+  ).bind(data.name, data.email, passwordHash, data.phone).run();
+
+  const newUserId = insertResult.meta.last_row_id as number;
+
+  await db.prepare(
+    `INSERT INTO cleaner_profiles (user_id, username, paysheet_code, first_name, last_name, cellphone, emergency_contact, emergency_phone, id_number, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
+  ).bind(
+    newUserId,
+    paysheetCode,
+    paysheetCode,
+    firstName,
+    lastName,
+    data.phone,
+    data.emergencyContact || '',
+    data.phone,
+    data.idNumber || ''
+  ).run();
+
+  await ensureCleanerTrainingProgress(db, paysheetCode);
+  await setCleanerOnboardingStage(db, newUserId, 'consent_approved');
+  await logOnboardingTransition(db, {
+    user_id: newUserId,
+    to_stage: 'consent_approved',
+    event_type: 'account_activated',
+    metadata: { traceId },
+  });
+
+  const erpEmployeeResult = await registerCleanerInErpNext({
+    traceId,
+    employeeId: paysheetCode,
+    firstName,
+    lastName,
+    email: data.email,
+    phone: data.phone,
+    department: 'Scratch',
+    position: 'Cleaner',
+  });
+  const payrollSetupResult = await setupCleanerPayrollInErpNext({
+    traceId,
+    employeeId: paysheetCode,
+    paysheetCode,
+    bankDetailsPresent: Boolean(data.bankDetailsPresent),
+  });
+  const notificationResult = await notifyCleanerApproval({
+    traceId,
+    phone: data.phone,
+    email: data.email,
+    name: data.name,
+    paysheetCode,
+    tempPassword,
+  });
+
+  return {
+    newUserId,
+    paysheetCode,
+    tempPassword,
+    erpEmployeeResult,
+    payrollSetupResult,
+    notificationResult,
   };
 }
 

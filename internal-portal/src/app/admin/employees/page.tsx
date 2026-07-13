@@ -5,8 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { authFetch } from "@/lib/authFetch";
 import {
-  Users,
   Plus,
   Search,
   CheckCircle2,
@@ -15,74 +15,124 @@ import {
   Phone,
   Building2,
   AlertCircle,
+  X,
 } from "lucide-react";
+
+const EMPTY_FORM = {
+  name: "",
+  id_number: "",
+  email: "",
+  phone: "",
+  address: "",
+  emergency_contact: "",
+};
 
 export default function AdminEmployeesPage() {
   const [tab, setTab] = useState<"new" | "existing">("new");
-  const [employees, setEmployees] = useState<any[]>([]);
+  const [cleaners, setCleaners] = useState<any[]>([]);
   const [newJoiners, setNewJoiners] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const token = typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
-        const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
-        const [empRes, joinRes] = await Promise.allSettled([
-          fetch("/api/employees", { headers }),
-          fetch("/api/admin/new-joiners", { headers }),
-        ]);
-        // Only a genuine 401 (invalid/expired token) logs the user out. A 403
-        // means valid session, insufficient permission — never clear the token.
-        const tokenInvalid = [empRes, joinRes].every(
-          (r): r is PromiseFulfilledResult<Response> =>
-            r.status === "fulfilled" && r.value.status === 401
-        );
-        if (token && tokenInvalid) {
-          localStorage.removeItem("authToken");
-          window.location.href = "/auth/login";
-          return;
-        }
-        if (empRes.status === "fulfilled" && empRes.value.ok) setEmployees(await empRes.value.json());
-        if (joinRes.status === "fulfilled" && joinRes.value.ok) {
-          const j = await joinRes.value.json();
-          setNewJoiners(j.data || j || []);
-        }
-      } catch {
-        setError("Unable to load employees. Please check your connection and try again.");
-      } finally {
-        setLoading(false);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [formError, setFormError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [successInfo, setSuccessInfo] = useState<{ paysheetCode: string } | null>(null);
+
+  async function load() {
+    setLoading(true);
+    try {
+      const [cleanerRes, joinRes] = await Promise.allSettled([
+        authFetch("/api/admin/cleaners"),
+        authFetch("/api/admin/new-joiners"),
+      ]);
+      const tokenInvalid = [cleanerRes, joinRes].every(
+        (r): r is PromiseFulfilledResult<Response> =>
+          r.status === "fulfilled" && r.value.status === 401
+      );
+      if (tokenInvalid) {
+        window.location.href = "/auth/login";
+        return;
       }
+      if (cleanerRes.status === "fulfilled" && cleanerRes.value.ok) setCleaners(await cleanerRes.value.json());
+      if (joinRes.status === "fulfilled" && joinRes.value.ok) {
+        const j = await joinRes.value.json();
+        setNewJoiners(j.data || j || []);
+      }
+    } catch {
+      setError("Unable to load employees. Please check your connection and try again.");
+    } finally {
+      setLoading(false);
     }
+  }
+
+  useEffect(() => {
     load();
   }, []);
 
-  const filtered = (tab === "existing" ? employees : newJoiners).filter((e: any) => {
+  const existingRows = cleaners.map((c: any) => ({
+    id: c.user_id,
+    full_name: [c.first_name, c.last_name].filter(Boolean).join(" ") || "Unnamed",
+    email: c.email,
+    phone: c.cellphone,
+    role: c.role,
+    status: c.blocked ? "blocked" : (c.status || "active"),
+    paysheet_code: c.paysheet_code,
+  }));
+
+  const filtered = (tab === "existing" ? existingRows : newJoiners).filter((e: any) => {
     const q = search.toLowerCase();
-    const name = (e.full_name || e.name || "").toLowerCase();
+    const name = (e.full_name || e.fullName || e.name || "").toLowerCase();
     const email = (e.email || "").toLowerCase();
     return name.includes(q) || email.includes(q);
   });
 
   const handleApprove = async (id: number) => {
-    const token = localStorage.getItem("authToken");
-    const res = await fetch(`/api/admin/new-joiners/${id}/approve`, {
+    const res = await authFetch(`/api/admin/new-joiners/${id}/approve`, { method: "POST" });
+    if (res.ok) {
+      setNewJoiners((prev) => prev.filter((j) => j.id !== id));
+      load();
+    }
+  };
+
+  const handleReject = async (id: number) => {
+    const res = await authFetch(`/api/admin/new-joiners/${id}/reject`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ reason: "Rejected by admin" }),
     });
     if (res.ok) setNewJoiners((prev) => prev.filter((j) => j.id !== id));
   };
 
-  const handleReject = async (id: number) => {
-    const token = localStorage.getItem("authToken");
-    const res = await fetch(`/api/admin/new-joiners/${id}/reject`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ reason: "Rejected by admin" }),
-    });
-    if (res.ok) setNewJoiners((prev) => prev.filter((j) => j.id !== id));
+  const handleAddCleaner = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError("");
+    if (!form.name || !form.id_number || !form.phone) {
+      setFormError("Full name, ID/passport number, and phone are required.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const res = await authFetch("/api/admin/employees/add", {
+        method: "POST",
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setFormError(data.error?.message || data.error || "Failed to create cleaner account");
+        return;
+      }
+      setSuccessInfo({ paysheetCode: data.data.paysheetCode });
+      setForm(EMPTY_FORM);
+      setShowAddForm(false);
+      setTab("existing");
+      load();
+    } catch {
+      setFormError("Network error. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (error) {
@@ -105,7 +155,111 @@ export default function AdminEmployeesPage() {
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Employees</h1>
           <p className="text-sm text-slate-500 mt-1">Manage existing staff and review new applications.</p>
         </div>
+        <Button onClick={() => { setSuccessInfo(null); setShowAddForm(true); }} className="gap-1.5 bg-[#1E3A8A] hover:bg-[#1E3A8A]/90">
+          <Plus className="h-4 w-4" /> Add Cleaner
+        </Button>
       </div>
+
+      {successInfo && (
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 flex items-center justify-between">
+          <span>
+            Cleaner account created. Paysheet code (their login username): <strong>{successInfo.paysheetCode}</strong>.
+            Login credentials were sent via WhatsApp/email where configured.
+          </span>
+          <button onClick={() => setSuccessInfo(null)} className="text-emerald-600 hover:text-emerald-800">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
+      {showAddForm && (
+        <Card>
+          <CardHeader className="pb-3 flex flex-row items-center justify-between">
+            <CardTitle className="text-base font-semibold">Add Cleaner</CardTitle>
+            <button onClick={() => setShowAddForm(false)} className="text-slate-400 hover:text-slate-600">
+              <X className="h-4 w-4" />
+            </button>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-slate-500 mb-4">
+              Use this when you've already verified someone in person. It creates their account immediately -
+              no separate application/approval step needed.
+            </p>
+            {formError && (
+              <div className="mb-4 rounded-md bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">
+                {formError}
+              </div>
+            )}
+            <form onSubmit={handleAddCleaner} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Full Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">ID / Passport Number *</label>
+                <input
+                  type="text"
+                  required
+                  value={form.id_number}
+                  onChange={(e) => setForm({ ...form, id_number: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Phone *</label>
+                <input
+                  type="tel"
+                  required
+                  value={form.phone}
+                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Email (optional)</label>
+                <input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Address (optional)</label>
+                <input
+                  type="text"
+                  value={form.address}
+                  onChange={(e) => setForm({ ...form, address: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Emergency Contact (optional)</label>
+                <input
+                  type="text"
+                  value={form.emergency_contact}
+                  onChange={(e) => setForm({ ...form, emergency_contact: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <div className="sm:col-span-2 flex justify-end gap-2 pt-2">
+                <Button type="button" variant="outline" onClick={() => setShowAddForm(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={submitting} className="bg-[#1E3A8A] hover:bg-[#1E3A8A]/90">
+                  {submitting ? "Creating..." : "Create Cleaner Account"}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
@@ -114,7 +268,7 @@ export default function AdminEmployeesPage() {
               New Joiners ({newJoiners.length})
             </TabsTrigger>
             <TabsTrigger value="existing" className="data-[state=active]:bg-[#1E3A8A] data-[state=active]:text-white">
-              Existing ({employees.length})
+              Existing ({existingRows.length})
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -153,10 +307,10 @@ export default function AdminEmployeesPage() {
                 <div key={item.id} className="py-4 flex items-start sm:items-center justify-between gap-4">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium text-slate-900">{item.full_name || item.name || "Unnamed"}</p>
-                      {item.role && (
+                      <p className="text-sm font-medium text-slate-900">{item.full_name || item.fullName || item.name || "Unnamed"}</p>
+                      {(item.role || item.paysheet_code) && (
                         <Badge variant="outline" className="text-xs font-normal">
-                          {item.role}
+                          {item.role || item.paysheet_code}
                         </Badge>
                       )}
                     </div>
@@ -171,9 +325,9 @@ export default function AdminEmployeesPage() {
                           <Phone className="h-3 w-3" /> {item.phone}
                         </span>
                       )}
-                      {item.position_applied_for && (
+                      {item.positionAppliedFor && (
                         <span className="flex items-center gap-1 text-xs text-slate-500">
-                          <Building2 className="h-3 w-3" /> {item.position_applied_for}
+                          <Building2 className="h-3 w-3" /> {item.positionAppliedFor}
                         </span>
                       )}
                     </div>
@@ -188,8 +342,8 @@ export default function AdminEmployeesPage() {
                       </Button>
                     </div>
                   ) : (
-                    <Badge className={item.status === "active" ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100" : "bg-slate-100 text-slate-600 hover:bg-slate-100"}>
-                      {item.status || "Active"}
+                    <Badge className={item.status === "blocked" ? "bg-red-100 text-red-700 hover:bg-red-100" : "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"}>
+                      {item.status}
                     </Badge>
                   )}
                 </div>
