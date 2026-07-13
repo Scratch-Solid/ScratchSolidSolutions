@@ -504,7 +504,7 @@ function BarChart({ data }: { data: { key: string; label: string; value: number 
           x2={W - pad.right}
           y1={pad.top + innerH * (1 - f)}
           y2={pad.top + innerH * (1 - f)}
-          stroke="#F1F5F9"
+          stroke="#E9E0D3"
           strokeWidth={1}
         />
       ))}
@@ -540,7 +540,7 @@ function Donut({ segments, total }: { segments: { label: string; value: number; 
   return (
     <div className="flex items-center gap-4">
       <svg viewBox={`0 0 ${size} ${size}`} className="h-32 w-32 shrink-0 -rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#F1F5F9" strokeWidth={stroke} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#E9E0D3" strokeWidth={stroke} />
         {segments.map((s) => {
           const len = (s.value / sum) * c;
           const el = (

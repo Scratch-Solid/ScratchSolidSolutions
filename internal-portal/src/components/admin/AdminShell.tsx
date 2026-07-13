@@ -4,7 +4,6 @@ import React, { ReactNode, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/Button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   LogOut,
@@ -71,7 +70,6 @@ const NAV_GROUPS: NavGroup[] = [
 export default function AdminShell({ children }: { children: ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
   const [userName, setUserName] = useState("Admin");
   const [userRole, setUserRole] = useState("admin");
   const pathname = usePathname();
@@ -84,7 +82,6 @@ export default function AdminShell({ children }: { children: ReactNode }) {
       setUserName(name);
       setUserRole(role);
 
-      // Guard: non-admin gets kicked to their own dashboard
       if (role !== "admin" && role !== "super_admin") {
         router.push(role === "cleaner" ? "/CleanerDashboard" : "/supervisor-dashboard");
       }
@@ -122,52 +119,49 @@ export default function AdminShell({ children }: { children: ReactNode }) {
     .find((i) => isActive(i.href))?.label || "Dashboard";
 
   return (
-    <div className="flex min-h-screen bg-stone-50 text-stone-900">
-      {/* Mobile backdrop */}
+    <div className="flex min-h-screen bg-background text-foreground">
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-40 bg-black/40 lg:hidden"
           onClick={() => setMobileOpen(false)}
           aria-hidden="true"
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar - dark espresso, the shell's one high-contrast surface */}
       <aside
         className={cn(
-          "fixed lg:sticky top-0 left-0 z-50 flex h-screen flex-col bg-white border-r border-stone-200",
-          "transition-all duration-300 ease-out shrink-0 shadow-[2px_0_12px_rgba(0,0,0,0.04)]",
-          collapsed ? "lg:w-[72px]" : "lg:w-64",
-          "w-72",
+          "fixed lg:sticky top-0 left-0 z-50 flex h-screen flex-col bg-sidebar text-sidebar-foreground",
+          "transition-all duration-200 ease-out shrink-0",
+          collapsed ? "lg:w-[68px]" : "lg:w-60",
+          "w-64",
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         )}
       >
-        {/* Brand */}
-        <div className="flex h-16 items-center gap-3 px-4 border-b border-stone-100">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#2E1F16] text-white font-bold text-sm">
+        <div className="flex h-14 items-center gap-2.5 px-4 border-b border-sidebar-border">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground font-semibold text-xs">
             SS
           </div>
           {!collapsed && (
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-stone-900">Scratch Solid</p>
-              <p className="truncate text-[11px] text-stone-400 font-medium tracking-wide uppercase">Admin Console</p>
+              <p className="truncate text-sm font-medium text-sidebar-foreground">Scratch Solid</p>
+              <p className="truncate text-[10px] text-sidebar-foreground/50 font-medium tracking-wide uppercase">Admin console</p>
             </div>
           )}
           <button
             onClick={() => setMobileOpen(false)}
-            className="ml-auto rounded-lg p-2 hover:bg-stone-100 lg:hidden"
+            className="ml-auto rounded-md p-2 hover:bg-sidebar-accent lg:hidden"
             aria-label="Close menu"
           >
-            <X className="h-5 w-5 text-stone-500" />
+            <X className="h-4.5 w-4.5" />
           </button>
         </div>
 
-        {/* Nav */}
-        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
+        <nav className="flex-1 overflow-y-auto px-2.5 py-4 space-y-5">
           {NAV_GROUPS.map((group) => (
             <div key={group.label}>
               {!collapsed && (
-                <p className="px-3 mb-2 text-[10px] font-semibold text-stone-400 uppercase tracking-wider">
+                <p className="px-2.5 mb-1.5 text-[10px] font-medium text-sidebar-foreground/40 uppercase tracking-wider">
                   {group.label}
                 </p>
               )}
@@ -182,17 +176,17 @@ export default function AdminShell({ children }: { children: ReactNode }) {
                         onClick={() => setMobileOpen(false)}
                         title={collapsed ? item.label : undefined}
                         className={cn(
-                          "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
+                          "flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium transition-colors",
                           active
-                            ? "bg-[#2E1F16]/10 text-[#2E1F16] shadow-sm"
-                            : "text-stone-600 hover:bg-stone-100 hover:text-stone-900",
+                            ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                            : "text-sidebar-foreground/65 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
                           collapsed && "lg:justify-center lg:px-0",
                         )}
                       >
-                        <Icon className={cn("h-5 w-5 shrink-0", active && "text-[#2E1F16]")} />
+                        <Icon className={cn("h-4.5 w-4.5 shrink-0", active && "text-sidebar-primary")} />
                         {!collapsed && <span className="truncate">{item.label}</span>}
                         {!collapsed && item.badge && (
-                          <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white">
+                          <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-semibold text-white">
                             {item.badge}
                           </span>
                         )}
@@ -205,18 +199,17 @@ export default function AdminShell({ children }: { children: ReactNode }) {
           ))}
         </nav>
 
-        {/* Bottom */}
-        <div className="border-t border-stone-100 p-3 space-y-2">
+        <div className="border-t border-sidebar-border p-2.5 space-y-1">
           {!collapsed && (
-            <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-stone-50">
-              <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-[#2E1F16] text-white text-xs font-semibold">
+            <div className="flex items-center gap-2.5 px-2.5 py-2 rounded-md bg-sidebar-accent/40">
+              <Avatar className="h-7 w-7">
+                <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground text-xs font-semibold">
                   {userName.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-stone-900">{userName}</p>
-                <p className="truncate text-xs text-stone-400 capitalize">{userRole}</p>
+                <p className="truncate text-sm font-medium text-sidebar-foreground">{userName}</p>
+                <p className="truncate text-xs text-sidebar-foreground/50 capitalize">{userRole}</p>
               </div>
             </div>
           )}
@@ -224,96 +217,86 @@ export default function AdminShell({ children }: { children: ReactNode }) {
             onClick={handleLogout}
             title={collapsed ? "Logout" : undefined}
             className={cn(
-              "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium",
-              "text-stone-500 hover:bg-red-50 hover:text-red-600 transition-colors",
+              "flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium",
+              "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors",
               collapsed && "lg:justify-center lg:px-0",
             )}
           >
-            <LogOut className="h-5 w-5 shrink-0" />
+            <LogOut className="h-4.5 w-4.5 shrink-0" />
             {!collapsed && <span>Logout</span>}
           </button>
         </div>
       </aside>
 
-      {/* Main column */}
       <div className="flex min-w-0 flex-1 flex-col">
-        {/* Top bar */}
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-stone-200 bg-white/80 px-4 backdrop-blur-xl sm:px-6">
+        <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-card px-4 sm:px-6">
           <button
             onClick={() => setMobileOpen(true)}
-            className="rounded-lg p-2 hover:bg-stone-100 lg:hidden"
+            className="rounded-md p-2 hover:bg-muted lg:hidden"
             aria-label="Open menu"
           >
-            <Menu className="h-5 w-5 text-stone-500" />
+            <Menu className="h-4.5 w-4.5 text-muted-foreground" />
           </button>
           <button
             onClick={() => setCollapsed((c) => !c)}
-            className="hidden rounded-lg p-2 hover:bg-stone-100 lg:inline-flex"
+            className="hidden rounded-md p-2 hover:bg-muted lg:inline-flex"
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             <ChevronRight
               className={cn(
-                "h-5 w-5 text-stone-500 transition-transform duration-200",
+                "h-4 w-4 text-muted-foreground transition-transform duration-200",
                 !collapsed && "rotate-180"
               )}
             />
           </button>
 
-          {/* Breadcrumbs */}
-          <div className="hidden md:flex items-center text-sm text-stone-400">
-            <span className="font-medium text-stone-900">Admin</span>
-            <ChevronRight className="h-4 w-4 mx-1" />
-            <span className="text-stone-600">{pageTitle}</span>
+          <div className="hidden md:flex items-center text-sm">
+            <span className="font-medium text-foreground">Admin</span>
+            <ChevronRight className="h-3.5 w-3.5 mx-1 text-muted-foreground" />
+            <span className="text-muted-foreground">{pageTitle}</span>
           </div>
 
-          <div className="ml-auto flex items-center gap-2">
-            {/* Search */}
+          <div className="ml-auto flex items-center gap-1.5">
             <button
-              onClick={() => setSearchOpen(true)}
-              className="hidden sm:flex items-center gap-2 rounded-lg border border-stone-200 bg-stone-50 px-3 py-1.5 text-sm text-stone-400 hover:border-stone-300 hover:text-stone-600 transition-colors"
+              className="hidden sm:flex items-center gap-2 rounded-md border border-border bg-background px-3 py-1.5 text-sm text-muted-foreground hover:border-accent transition-colors"
             >
-              <Search className="h-4 w-4" />
+              <Search className="h-3.5 w-3.5" />
               <span className="hidden lg:inline">Search…</span>
-              <kbd className="hidden lg:inline-flex h-5 items-center rounded border border-stone-200 bg-white px-1.5 text-[10px] font-medium text-stone-400">⌘K</kbd>
+              <kbd className="hidden lg:inline-flex h-5 items-center rounded border border-border bg-card px-1.5 text-[10px] font-medium text-muted-foreground">⌘K</kbd>
             </button>
 
-            {/* Notifications */}
             <button
-              className="relative rounded-lg p-2 text-stone-500 hover:bg-stone-100 hover:text-stone-700 transition-colors"
+              className="relative rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
               aria-label="Notifications"
             >
-              <Bell className="h-5 w-5" />
-              <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" />
+              <Bell className="h-4.5 w-4.5" />
+              <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-destructive" />
             </button>
 
-            {/* Settings */}
             <Link
               href="/admin/monitoring"
-              className="hidden rounded-lg p-2 text-stone-500 hover:bg-stone-100 hover:text-stone-700 sm:inline-flex transition-colors"
+              className="hidden rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground sm:inline-flex transition-colors"
               aria-label="Settings"
             >
-              <Settings className="h-5 w-5" />
+              <Settings className="h-4.5 w-4.5" />
             </Link>
 
-            {/* Avatar */}
-            <Avatar className="h-8 w-8 border border-stone-200">
-              <AvatarFallback className="bg-[#2E1F16] text-white text-xs font-semibold">
+            <Avatar className="h-7 w-7 border border-border ml-1">
+              <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
                 {userName.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
           </div>
         </header>
 
-        {/* Content */}
         <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">
           <div className="mx-auto w-full max-w-7xl">{children}</div>
         </main>
 
-        {/* Footer */}
-        <footer className="border-t border-stone-200 bg-white px-4 py-4 sm:px-6">
-          <p className="text-center text-xs text-stone-400">
-            © {new Date().getFullYear()} Scratch Solid Solutions. All rights reserved.
+        <footer className="border-t border-border bg-card px-4 py-3 sm:px-6">
+          <p className="text-center text-xs text-muted-foreground">
+            © {new Date().getFullYear()} Scratch Solid Solutions
           </p>
         </footer>
       </div>

@@ -108,7 +108,7 @@ export default function Setup2FAPage() {
   if (success) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
-        <div className="glass-panel p-8 max-w-md w-full text-center" style={{ boxShadow: '0 16px 40px rgba(9,23,42,0.12)' }}>
+        <div className="glass-panel p-8 max-w-md w-full text-center">
           <h2 className="text-2xl font-bold mb-4 text-green-600">2FA Enabled Successfully</h2>
           <p className="mb-4">Your account is now secured with two-factor authentication.</p>
           <p className="text-sm text-stone-500">Redirecting to your dashboard...</p>
@@ -118,9 +118,9 @@ export default function Setup2FAPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-8" style={{ background: 'linear-gradient(135deg, #f0f4f8 0%, #e6eef7 100%)' }}>
+    <div className="min-h-screen flex items-center justify-center px-4 py-8 bg-background">
       <div className="max-w-md w-full">
-        <div className="glass-panel p-8" style={{ boxShadow: '0 16px 40px rgba(9,23,42,0.12)' }}>
+        <div className="glass-panel p-8">
           <h2 className="text-2xl font-bold mb-2" style={{ color: 'var(--text-h)' }}>Set Up Two-Factor Authentication</h2>
           <p className="text-sm mb-6" style={{ color: 'var(--text)' }}>
             Secure your account with an authenticator app

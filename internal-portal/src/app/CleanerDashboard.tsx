@@ -576,8 +576,8 @@ export default function CleanerDashboard() {
     <DashboardLayout title="Cleaner Dashboard" role="cleaner">
       {showTrainingPrompt && (
         <div className="mb-4 glass-panel" style={{ background: 'rgba(59, 130, 246, 0.1)', borderColor: 'rgba(59, 130, 246, 0.3)' }}>
-          <div className="font-bold" style={{ color: '#1e40af' }}>Training Required</div>
-          <div style={{ color: '#1e40af' }}>Please complete the mandatory training modules to get started.</div>
+          <div className="font-bold" style={{ color: '#2E1F16' }}>Training Required</div>
+          <div style={{ color: '#2E1F16' }}>Please complete the mandatory training modules to get started.</div>
           <button className="mt-2 primary-button" onClick={() => { setActiveTile('training'); setShowTrainingPrompt(false); }}>
             Start Training
           </button>
@@ -585,8 +585,8 @@ export default function CleanerDashboard() {
       )}
       {mustChangePassword && (
         <div className="mb-4 glass-panel" style={{ background: 'rgba(254, 249, 195, 0.9)', borderColor: 'rgba(234, 179, 8, 0.4)' }}>
-          <div className="font-bold" style={{ color: '#854d0e' }}>Action required</div>
-          <div style={{ color: '#854d0e' }}>Please update your password to continue using the portal.</div>
+          <div className="font-bold" style={{ color: '#96631E' }}>Action required</div>
+          <div style={{ color: '#96631E' }}>Please update your password to continue using the portal.</div>
           <button className="mt-2 primary-button" onClick={() => window.location.href = '/auth/change-password'}>
             Change Password
           </button>
@@ -597,63 +597,63 @@ export default function CleanerDashboard() {
         <button
           onClick={() => setActiveTile("profile")}
           className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTile === "profile" ? "bg-white/20" : "bg-white/10 hover:bg-white/15"}`}
-          style={{ color: activeTile === "profile" ? '#09172a' : '#0e223a' }}
+          style={{ color: activeTile === "profile" ? '#2E1F16' : '#6B5D52' }}
         >
           Personal Details
         </button>
         <button
           onClick={() => setActiveTile("status")}
           className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTile === "status" ? "bg-white/20" : "bg-white/10 hover:bg-white/15"}`}
-          style={{ color: activeTile === "status" ? '#09172a' : '#0e223a' }}
+          style={{ color: activeTile === "status" ? '#2E1F16' : '#6B5D52' }}
         >
           Status
         </button>
         <button
           onClick={() => setActiveTile("tasks")}
           className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTile === "tasks" ? "bg-white/20" : "bg-white/10 hover:bg-white/15"}`}
-          style={{ color: activeTile === "tasks" ? '#09172a' : '#0e223a' }}
+          style={{ color: activeTile === "tasks" ? '#2E1F16' : '#6B5D52' }}
         >
           Tasks
         </button>
         <button
           onClick={() => setActiveTile("earnings")}
           className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTile === "earnings" ? "bg-white/20" : "bg-white/10 hover:bg-white/15"}`}
-          style={{ color: activeTile === "earnings" ? '#09172a' : '#0e223a' }}
+          style={{ color: activeTile === "earnings" ? '#2E1F16' : '#6B5D52' }}
         >
           Earnings
         </button>
         <button
           onClick={() => setActiveTile("performance")}
           className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTile === "performance" ? "bg-white/20" : "bg-white/10 hover:bg-white/15"}`}
-          style={{ color: activeTile === "performance" ? '#09172a' : '#0e223a' }}
+          style={{ color: activeTile === "performance" ? '#2E1F16' : '#6B5D52' }}
         >
           Performance
         </button>
         <button
           onClick={() => setActiveTile("training")}
           className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTile === "training" ? "bg-white/20" : "bg-white/10 hover:bg-white/15"}`}
-          style={{ color: activeTile === "training" ? '#09172a' : '#0e223a' }}
+          style={{ color: activeTile === "training" ? '#2E1F16' : '#6B5D52' }}
         >
           Training
         </button>
         <button
           onClick={() => setActiveTile("geolocation")}
           className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTile === "geolocation" ? "bg-white/20" : "bg-white/10 hover:bg-white/15"}`}
-          style={{ color: activeTile === "geolocation" ? '#09172a' : '#0e223a' }}
+          style={{ color: activeTile === "geolocation" ? '#2E1F16' : '#6B5D52' }}
         >
           Geolocation
         </button>
         <button
           onClick={() => setActiveTile("shifts")}
           className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTile === "shifts" ? "bg-white/20" : "bg-white/10 hover:bg-white/15"}`}
-          style={{ color: activeTile === "shifts" ? '#09172a' : '#0e223a' }}
+          style={{ color: activeTile === "shifts" ? '#2E1F16' : '#6B5D52' }}
         >
           Shifts
         </button>
         <button
           onClick={() => setActiveTile("payslips")}
           className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTile === "payslips" ? "bg-white/20" : "bg-white/10 hover:bg-white/15"}`}
-          style={{ color: activeTile === "payslips" ? '#09172a' : '#0e223a' }}
+          style={{ color: activeTile === "payslips" ? '#2E1F16' : '#6B5D52' }}
         >
           Payslips
         </button>
@@ -1274,10 +1274,10 @@ export default function CleanerDashboard() {
             )}
             <div className="bg-[#B08A5E]/10 border border-[#B08A5E]/30 rounded-lg p-4">
               <div className="flex items-start gap-3">
-                <div style={{ color: '#3b82f6', fontSize: '1.25rem' }}>📍</div>
+                <div style={{ color: '#B08A5E', fontSize: '1.25rem' }}>📍</div>
                 <div>
-                  <h4 className="font-semibold" style={{ color: '#1e40af' }}>Privacy Notice</h4>
-                  <p className="text-sm" style={{ color: '#1e40af', opacity: 0.8 }}>
+                  <h4 className="font-semibold" style={{ color: '#2E1F16' }}>Privacy Notice</h4>
+                  <p className="text-sm" style={{ color: '#2E1F16', opacity: 0.8 }}>
                     Your location is only shared when you're on the way to a job. This helps clients track your arrival for better service coordination.
                   </p>
                 </div>

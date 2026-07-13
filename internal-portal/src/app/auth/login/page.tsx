@@ -109,162 +109,132 @@ function LoginContent() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-8" style={{ background: 'linear-gradient(135deg, #f0f4f8 0%, #e6eef7 100%)' }}>
-      <div className="max-w-5xl w-full">
-        <div className="text-center mb-10">
-          <img src="/logo-scratch-solid.png" alt="Scratch Solid" className="mx-auto mb-4" style={{ width: 80, height: 80, objectFit: 'contain' }} />
-          <h1 className="text-3xl font-bold mb-1" style={{ color: 'var(--text-h)' }}>Internal Portal</h1>
-          <p className="text-base font-medium" style={{ color: 'var(--text)' }}>Your gateway to Scratch Solid Solutions</p>
+    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-background">
+      <div className="w-full max-w-[380px]">
+        <div className="flex flex-col items-center mb-8">
+          <img src="/logo-scratch-solid.png" alt="Scratch Solid" className="h-10 w-10 object-contain mb-4" />
+          <h1 className="text-xl font-semibold text-foreground">Internal Portal</h1>
+          <p className="text-sm text-muted-foreground mt-1">Scratch Solid Solutions</p>
         </div>
 
-        {error && (
-          <div className="error-msg text-center font-semibold mb-6 max-w-md mx-auto">
-            {error}
-          </div>
-        )}
-        {successMessage && (
-          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6 text-center max-w-md mx-auto">
-            {successMessage}
-          </div>
-        )}
+        <div className="bg-card border border-border rounded-xl p-7 shadow-sm">
+          <h2 className="text-base font-semibold text-foreground mb-1">
+            {require2FA ? 'Two-factor authentication' : 'Welcome back'}
+          </h2>
+          <p className="text-sm text-muted-foreground mb-6">
+            {require2FA ? 'Enter the 6-digit code from your authenticator app' : 'Sign in to continue'}
+          </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="glass-panel p-8" style={{ boxShadow: '0 16px 40px rgba(9,23,42,0.12)' }}>
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold mb-1" style={{ color: 'var(--text-h)' }}>
-                {require2FA ? 'Two-Factor Authentication' : 'Staff Login'}
-              </h2>
-              <p className="text-sm" style={{ color: 'var(--text)' }}>
-                {require2FA ? 'Enter the 6-digit code from your authenticator app' : 'For existing employees, admins, and managers'}
-              </p>
-            </div>
-            <form onSubmit={handleLogin} className="space-y-5">
-              {!require2FA && (
-                <>
-                  <div>
-                    <label htmlFor="username" className="block text-sm font-semibold mb-2">
-                      Username (Paysheet Code or Email)
-                    </label>
-                    <input
-                      type="text"
-                      id="username"
-                      name="username"
-                      autoComplete="username"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      className="w-full"
-                      required
-                      placeholder="Enter paysheet code or email"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="password" className="block text-sm font-semibold mb-2">
-                      Password
-                    </label>
-                    <input
-                      type="password"
-                      id="password"
-                      name="password"
-                      autoComplete="current-password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="w-full"
-                      required
-                      placeholder="Enter password"
-                    />
-                  </div>
-                </>
-              )}
-              {require2FA && (
+          {error && (
+            <div className="error-msg text-sm mb-4">{error}</div>
+          )}
+          {successMessage && (
+            <div className="success-msg text-sm mb-4">{successMessage}</div>
+          )}
+
+          <form onSubmit={handleLogin} className="space-y-4">
+            {!require2FA && (
+              <>
                 <div>
-                  <label htmlFor="totp" className="block text-sm font-semibold mb-2">
-                    Authentication Code
+                  <label htmlFor="username" className="block text-xs font-medium text-muted-foreground mb-1.5">
+                    Paysheet code or email
                   </label>
                   <input
                     type="text"
-                    id="totp"
-                    name="totp"
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    value={totpCode}
-                    onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    className="w-full text-center text-2xl tracking-widest"
+                    id="username"
+                    name="username"
+                    autoComplete="username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="w-full"
                     required
-                    placeholder="000000"
-                    maxLength={6}
+                    placeholder="Enter paysheet code or email"
                   />
-                  <p className="text-xs mt-2" style={{ color: 'var(--text)' }}>
-                    Enter the code from your authenticator app
-                  </p>
                 </div>
-              )}
-              <button
-                type="submit"
-                className="w-full primary-button"
-                disabled={loading}
-              >
-                {loading ? 'Signing in...' : require2FA ? 'Verify Code' : 'Login'}
-              </button>
-              {require2FA && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setRequire2FA(false);
-                    setTotpCode('');
-                    setError('');
-                  }}
-                  className="w-full text-sm text-stone-500 hover:text-stone-700 mt-2"
-                >
-                  Back to login
-                </button>
-              )}
-            </form>
-            {!require2FA && (
-              <div className="mt-4 text-center">
-                <button
-                  type="button"
-                  onClick={() => router.push("/auth/forgot-password")}
-                  className="text-sm underline hover:text-[#2E1F16]"
-                >
-                  Forgot Password?
-                </button>
+                <div>
+                  <label htmlFor="password" className="block text-xs font-medium text-muted-foreground mb-1.5">
+                    Password
+                  </label>
+                  <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full"
+                    required
+                    placeholder="Enter password"
+                  />
+                </div>
+              </>
+            )}
+            {require2FA && (
+              <div>
+                <label htmlFor="totp" className="block text-xs font-medium text-muted-foreground mb-1.5">
+                  Authentication code
+                </label>
+                <input
+                  type="text"
+                  id="totp"
+                  name="totp"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  value={totpCode}
+                  onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  className="w-full text-center text-xl tracking-[0.3em]"
+                  required
+                  placeholder="000000"
+                  maxLength={6}
+                />
               </div>
             )}
-          </div>
-
-          <div className="glass-panel p-8 flex flex-col justify-between" style={{ boxShadow: '0 16px 40px rgba(9,23,42,0.12)', background: 'linear-gradient(160deg, #ffffff 0%, #f8fbff 100%)' }}>
-            <div>
-              <div className="mb-6">
-                <h2 className="text-2xl font-bold mb-1" style={{ color: 'var(--text-h)' }}>Become part of the team</h2>
-                <p className="text-sm" style={{ color: 'var(--text)' }}>Join Scratch Solid Solutions as a cleaner</p>
-              </div>
-              <ul className="space-y-3 mb-8 text-sm" style={{ color: 'var(--text)' }}>
-                <li className="flex items-start gap-2">
-                  <span className="text-green-500 font-bold">&#10003;</span>
-                  <span>Competitive pay with weekly payslips</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-green-500 font-bold">&#10003;</span>
-                  <span>Flexible scheduling around your availability</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-green-500 font-bold">&#10003;</span>
-                  <span>Full training and onboarding support</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-green-500 font-bold">&#10003;</span>
-                  <span>Growth opportunities and bonuses</span>
-                </li>
-              </ul>
-            </div>
             <button
-              type="button"
-              onClick={() => router.push("/signup/cleaner")}
-              className="w-full secondary-button"
+              type="submit"
+              className="w-full primary-button"
+              disabled={loading}
             >
-              Apply Now
+              {loading ? 'Signing in...' : require2FA ? 'Verify code' : 'Sign in'}
             </button>
+            {require2FA && (
+              <button
+                type="button"
+                onClick={() => {
+                  setRequire2FA(false);
+                  setTotpCode('');
+                  setError('');
+                }}
+                className="w-full text-sm text-muted-foreground hover:text-foreground"
+              >
+                Back to login
+              </button>
+            )}
+          </form>
+          {!require2FA && (
+            <div className="mt-5 text-center">
+              <button
+                type="button"
+                onClick={() => router.push("/auth/forgot-password")}
+                className="text-sm text-muted-foreground hover:text-foreground"
+              >
+                Forgot password?
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-4 rounded-xl border border-border bg-secondary/40 px-5 py-4 flex items-center justify-between gap-4">
+          <div>
+            <p className="text-sm font-medium text-foreground">Join the cleaning team</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Competitive pay, flexible scheduling, full training</p>
           </div>
+          <button
+            type="button"
+            onClick={() => router.push("/signup/cleaner")}
+            className="shrink-0 text-sm font-medium text-accent-foreground bg-accent/20 hover:bg-accent/30 rounded-lg px-3.5 py-2 transition-colors"
+          >
+            Apply now
+          </button>
         </div>
       </div>
     </div>
