@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import { withTracing, withSecurityHeaders, withRateLimit } from '@/lib/middleware';
+import { withAuth, withTracing, withSecurityHeaders, withRateLimit } from '@/lib/middleware';
 
 export async function GET(request: NextRequest) {
   const traceId = withTracing(request);
 
   const rateLimitResponse = await withRateLimit(request);
   if (rateLimitResponse) return withSecurityHeaders(rateLimitResponse, traceId);
+
+  const authResult = await withAuth(request);
+  if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
+
 
   try {
     const db = await getDb();
@@ -43,6 +47,11 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+  const traceId = withTracing(request);
+
+  const authResult = await withAuth(request, ['admin']);
+  if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
+
   try {
     const body = await request.json();
     const { serviceType, basePrice, transportFee, weekendSurcharge, holidaySurcharge, rushSurcharge } = body;

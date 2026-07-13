@@ -9,14 +9,21 @@ export async function GET(request: NextRequest) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['business', 'admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
-  const { db } = authResult;
+  const { db, user } = authResult;
 
   try {
     const { searchParams } = new URL(request.url);
-    const businessId = searchParams.get('business_id');
+    const queryBusinessId = searchParams.get('business_id');
+    const sessionRole: string = (user as any).role;
+    const sessionId: number = (user as any).id;
+    const businessId = sessionRole === 'admin'
+      ? queryBusinessId || sessionId.toString()
+      : sessionId.toString();
+
     if (!businessId) {
       return NextResponse.json({ error: 'business_id required' }, { status: 400 });
     }
+
     const results = await db.prepare(
       'SELECT * FROM weekend_requests WHERE business_id = ? ORDER BY created_at DESC'
     ).bind(businessId).all();

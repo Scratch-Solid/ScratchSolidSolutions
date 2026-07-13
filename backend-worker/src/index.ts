@@ -621,11 +621,12 @@ router.post('/api/bookings', async (request: any, env: any) => {
   
   try {
     const { user_id, booking_type, cleaning_type, payment_method, start_time, end_time, special_instructions } = await request.json() as any;
+    const effectiveUserId = payload.role === 'admin' && user_id ? user_id : payload.sub;
     
     const result = await env.scratchsolid_db.prepare(`
       INSERT INTO bookings (user_id, booking_type, cleaning_type, payment_method, start_time, end_time, status, created_at)
       VALUES (?, ?, ?, ?, ?, ?, 'pending', datetime('now'))
-    `).bind(user_id, booking_type, cleaning_type, payment_method, start_time, end_time).run();
+    `).bind(effectiveUserId, booking_type, cleaning_type, payment_method, start_time, end_time).run();
     
     return new Response(JSON.stringify({ 
       id: result.meta.last_row_id,
@@ -651,12 +652,13 @@ router.get('/api/bookings', async (request: any, env: any) => {
   }
   
   const url = new URL(request.url);
-  const userId = url.searchParams.get('user_id') || payload.sub;
+  const requestedUserId = url.searchParams.get('user_id');
+  const effectiveUserId = payload.role === 'admin' && requestedUserId ? parseInt(requestedUserId, 10) : payload.sub;
   
   const db = getReadSession(env);
   const bookings = await db.prepare(`
     SELECT * FROM bookings WHERE user_id = ? ORDER BY created_at DESC
-  `).bind(userId).all();
+  `).bind(effectiveUserId).all();
     
   return new Response(JSON.stringify(bookings.results || bookings), {
     headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
@@ -746,7 +748,7 @@ router.get('/api/templates', async (request: any, env: any) => {
 // Contracts endpoints
 router.post('/api/contracts', async (request: any, env: any) => {
   const payload: any = await verifyToken(request, env);
-  if (!payload || payload.role !== 'business') {
+  if (!payload || (payload.role !== 'business' && payload.role !== 'admin')) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
@@ -755,15 +757,15 @@ router.post('/api/contracts', async (request: any, env: any) => {
   
   try {
     const { business_id, duration, template_id } = await request.json() as any;
+    const effectiveBusinessId = payload.role === 'admin' ? business_id : payload.sub;
     
-    // Get template content for contract
     const db = getReadSession(env);
-  const template = await db.prepare('SELECT content FROM templates WHERE id = ?').bind(template_id).first();
+    const template = await db.prepare('SELECT content FROM templates WHERE id = ?').bind(template_id).first();
     
     const result = await env.scratchsolid_db.prepare(`
       INSERT INTO contracts (business_id, duration, rate, template_id, immutable, created_at)
       VALUES (?, ?, 0, ?, TRUE, datetime('now'))
-    `).bind(business_id, duration, template_id).run();
+    `).bind(effectiveBusinessId, duration, template_id).run();
     
     return new Response(JSON.stringify({ 
       id: result.meta.last_row_id,
@@ -1537,16 +1539,17 @@ router.post('/api/weekend-requests', async (request: any, env: any) => {
   }
   
   try {
-    const { business_id, requested_date, special_instructions } = await request.json() as any;
+    const { requested_date, special_instructions } = await request.json() as any;
+    const businessId = payload.sub;
     
     const result = await env.scratchsolid_db.prepare(`
       INSERT INTO weekend_requests (business_id, requested_date, special_instructions, status, created_at)
       VALUES (?, ?, ?, 'pending', datetime('now'))
-    `).bind(business_id, requested_date, special_instructions).run();
+    `).bind(businessId, requested_date, special_instructions).run();
     
-    return new Response(JSON.stringify({ 
+    return new Response(JSON.stringify({
       id: result.meta.last_row_id,
-      business_id, requested_date, special_instructions,
+      business_id: businessId, requested_date, special_instructions,
       status: 'pending',
       message: 'Weekend request created successfully'
     }), {
@@ -1599,6 +1602,14 @@ router.delete('/api/weekend-requests/:id', async (request: any, env: any) => {
   
   try {
     const { id } = request.params;
+    const db = getReadSession(env);
+    const requestRecord = await db.prepare('SELECT business_id FROM weekend_requests WHERE id = ?').bind(id).first();
+    if (!requestRecord || requestRecord.business_id !== payload.sub) {
+      return new Response(JSON.stringify({ error: 'Request not found' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
+      });
+    }
     
     const result = await env.scratchsolid_db.prepare('UPDATE weekend_requests SET status = ? WHERE id = ?').bind('cancelled', id).run();
     
@@ -1887,16 +1898,20 @@ router.post('/api/business-events', async (request: any, env: any) => {
   }
   
   try {
-    const { business_id, event_type, requested_date, special_instructions } = await request.json() as any;
+    const { event_type, requested_date, special_instructions } = await request.json() as any;
+    const businessId = payload.sub;
     
     const result = await env.scratchsolid_db.prepare(`
       INSERT INTO business_events (business_id, event_type, requested_date, special_instructions, created_at)
       VALUES (?, ?, ?, ?, datetime('now'))
-    `).bind(business_id, event_type, requested_date, special_instructions).run();
+    `).bind(businessId, event_type, requested_date, special_instructions).run();
     
     return new Response(JSON.stringify({ 
       id: result.meta.last_row_id,
-      business_id, event_type, requested_date, special_instructions,
+      business_id: businessId,
+      event_type,
+      requested_date,
+      special_instructions,
       message: 'Business event created successfully'
     }), {
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }

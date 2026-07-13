@@ -433,6 +433,9 @@ export async function withAuth(request: NextRequest, allowedRoles?: string[]): P
     if (!roleSatisfies(session as any, allowedRoles)) {
       return NextResponse.json({ error: 'Forbidden - insufficient permissions' }, { status: 403 });
     }
+    if (!(session as any).userId && (session as any).user_id) {
+      (session as any).userId = (session as any).user_id;
+    }
     return { user: session, db };
   }
 

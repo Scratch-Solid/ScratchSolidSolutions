@@ -57,9 +57,11 @@ export async function POST(request: NextRequest) {
       duration = '1_year',
       weekend_required = false
     } = body;
+    const sessionRole: string = (user as any).role;
+    const effectiveBusinessId = sessionRole === 'admin' && business_id ? business_id : (user as any).id;
 
     // Validate required fields
-    const businessIdValidation = validateNumber(business_id, 'business_id');
+    const businessIdValidation = validateNumber(effectiveBusinessId, 'business_id');
     if (!businessIdValidation.valid) {
       return NextResponse.json({ error: businessIdValidation.errors.join(', ') }, { status: 400 });
     }
@@ -76,7 +78,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (!business_id || !start_date) {
+    if (!effectiveBusinessId || !start_date) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -96,7 +98,7 @@ export async function POST(request: NextRequest) {
       `INSERT INTO contracts (business_id, business_name, contract_type, rate_per_hour, weekend_rate_multiplier, start_date, end_date, terms, is_immutable, status, weekend_required, created_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 'active', ?, datetime('now'))`
     ).bind(
-      business_id,
+      effectiveBusinessId,
       business_name || '',
       contract_type || 'standard',
       rate_per_hour || 150,
@@ -135,13 +137,19 @@ export async function GET(request: NextRequest) {
   try {
     
     const { searchParams } = new URL(request.url);
-    const business_id = searchParams.get('business_id');
+    const queryBusinessId = searchParams.get('business_id');
+    const sessionRole: string = (user as any).role;
+    const sessionId: number = (user as any).id;
 
     let result;
-    if (business_id) {
-      result = await db.prepare('SELECT * FROM contracts WHERE business_id = ?').bind(business_id).all();
+    if (sessionRole === 'admin') {
+      if (queryBusinessId) {
+        result = await db.prepare('SELECT * FROM contracts WHERE business_id = ?').bind(queryBusinessId).all();
+      } else {
+        result = await db.prepare('SELECT * FROM contracts').all();
+      }
     } else {
-      result = await db.prepare('SELECT * FROM contracts').all();
+      result = await db.prepare('SELECT * FROM contracts WHERE business_id = ?').bind(sessionId.toString()).all();
     }
 
     const response = NextResponse.json(result.results || []);

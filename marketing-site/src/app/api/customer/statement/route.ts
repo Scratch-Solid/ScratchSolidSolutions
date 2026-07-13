@@ -14,24 +14,26 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  const authResult = await withAuth(request);
+  if (authResult instanceof NextResponse) {
+    return authResult;
+  }
+  const { user } = authResult;
+
   try {
-    // Get auth token from header
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const token = authHeader.substring(7);
     const db = await getDb();
-
     if (!db) {
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
     }
 
-    // Get user from token (simplified - in production use proper JWT verification)
-    const user = await db.prepare(
+    const email = (user as any).email;
+    if (!email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const userRecord = await db.prepare(
       `SELECT id, email, name, phone, zoho_contact_id FROM users WHERE email = ?`
-    ).bind(token).first() as {
+    ).bind(email).first() as {
       id: number;
       email: string;
       name: string;
@@ -39,24 +41,21 @@ export async function GET(request: NextRequest) {
       zoho_contact_id: string | null;
     } | null;
 
-    if (!user) {
+    if (!userRecord) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Get query parameters for date range
     const { searchParams } = new URL(request.url);
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
 
-    // Ensure user has Zoho contact ID
-    let contactId: string | null = user.zoho_contact_id;
+    let contactId: string | null = userRecord.zoho_contact_id;
     if (!contactId) {
-      // Create or find Zoho contact
-      contactId = await findOrCreateContact(user.name, user.email, user.phone || '');
+      contactId = await findOrCreateContact(userRecord.name, userRecord.email, userRecord.phone || '');
       if (contactId) {
         await db.prepare(
           `UPDATE users SET zoho_contact_id = ? WHERE id = ?`
-        ).bind(contactId, user.id).run();
+        ).bind(contactId, userRecord.id).run();
       }
     }
 
@@ -64,16 +63,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to get Zoho contact' }, { status: 500 });
     }
 
-    // Get statement PDF from Zoho
     try {
       const zohoPdf = await getCustomerStatementPdf(contactId);
       const pdfBuffer = await zohoPdf.arrayBuffer();
-      
+
       return new NextResponse(pdfBuffer, {
         status: 200,
         headers: {
           'Content-Type': 'application/pdf',
-          'Content-Disposition': `attachment; filename="Statement-${user.email}.pdf"`,
+          'Content-Disposition': `attachment; filename="Statement-${userRecord.email}.pdf"`,
         },
       });
     } catch (zohoError) {

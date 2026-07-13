@@ -12,7 +12,9 @@ export async function POST(request: NextRequest) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['client', 'business', 'admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
-  const { db } = authResult;
+  const { db, user } = authResult;
+  const requestingUserId = (user as any).id || (user as any).userId || (user as any).user_id;
+  const requestingUserRole = (user as any).role;
 
   // CSRF protection
   const csrfResult = await withCsrf(request);
@@ -71,10 +73,16 @@ export async function POST(request: NextRequest) {
       price
     } = body;
 
-    // Validate required fields
-    const clientIdValidation = validateNumber(client_id, 'client_id');
-    if (!clientIdValidation.valid) {
-      return NextResponse.json({ error: clientIdValidation.errors.join(', ') }, { status: 400 });
+    const effectiveClientId = requestingUserRole === 'admin'
+      ? client_id || requestingUserId
+      : requestingUserId;
+
+    if (!effectiveClientId) {
+      return NextResponse.json({ error: 'Missing or unauthorized client_id' }, { status: 400 });
+    }
+
+    if (requestingUserRole !== 'admin' && client_id && client_id !== effectiveClientId) {
+      return NextResponse.json({ error: 'Cannot create bookings for another client' }, { status: 403 });
     }
 
     const dateValidation = validateDate(booking_date, 'booking_date');
@@ -87,16 +95,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: timeValidation.errors.join(', ') }, { status: 400 });
     }
 
-    if (!client_id || !booking_date || !booking_time) {
+    if (!effectiveClientId || !booking_date || !booking_time) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
     // Business contract advance verification
-    const user = await db.prepare('SELECT role FROM users WHERE id = ?').bind(client_id).first();
+    const user = await db.prepare('SELECT role FROM users WHERE id = ?').bind(effectiveClientId).first();
     if (user?.role === 'business') {
       let contract: any = null;
       try {
-        contract = await db.prepare('SELECT * FROM contracts WHERE business_id = ? AND status = ?').bind(client_id, 'active').first();
+        contract = await db.prepare('SELECT * FROM contracts WHERE business_id = ? AND status = ?').bind(effectiveClientId, 'active').first();
       } catch (contractError) {
         // If contracts table doesn't exist, treat as no active contract
         logger.error('Contracts table query failed', contractError as Error);
@@ -177,7 +185,7 @@ export async function POST(request: NextRequest) {
     }
 
     const booking = await createBooking(db, {
-      client_id,
+      client_id: effectiveClientId,
       client_name: client_name || 'Unknown',
       location: location || '',
       service_type: service_type || 'standard',
@@ -200,7 +208,7 @@ export async function POST(request: NextRequest) {
     // stays local with calcom_status = 'not_sent'.
     const bookingId = (booking as any)?.id as number | undefined;
     try {
-      const bookingUser = await getUserById(db, client_id);
+      const bookingUser = await getUserById(db, effectiveClientId);
       const calResult = await createCalcomBooking({
         name: client_name || (bookingUser as any)?.name || 'Customer',
         email: (bookingUser as any)?.email || '',
@@ -232,7 +240,7 @@ export async function POST(request: NextRequest) {
 
     // Send booking confirmation email to client
     try {
-      const user = await getUserById(db, client_id);
+      const user = await getUserById(db, effectiveClientId);
       if (user && (user as any).email) {
         await sendBookingConfirmationEmail(
           (user as any).email,
@@ -249,7 +257,7 @@ export async function POST(request: NextRequest) {
 
     // Send admin alert email
     try {
-      const user = await getUserById(db, client_id);
+      const user = await getUserById(db, effectiveClientId);
       await sendAdminAlertEmail(
         client_name || 'Customer',
         booking_date,
@@ -275,7 +283,7 @@ export async function GET(request: NextRequest) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
-  const { db } = authResult;
+  const { db, user } = authResult;
 
   try {
     const { searchParams } = new URL(request.url);
@@ -283,11 +291,27 @@ export async function GET(request: NextRequest) {
     const cleanerId = searchParams.get('cleaner_id');
     const date = searchParams.get('date');
 
+    const requestingUserRole = (user as any).role;
+    const requestingUserId = (user as any).id || (user as any).userId || (user as any).user_id;
     let bookings;
+
     if (cleanerId) {
-      bookings = await getBookingsByCleaner(db, parseInt(cleanerId));
+      const cleanerIdNumber = parseInt(cleanerId);
+      if (requestingUserRole !== 'admin' && requestingUserRole !== 'cleaner') {
+        return withSecurityHeaders(NextResponse.json({ error: 'Forbidden' }, { status: 403 }), traceId);
+      }
+      if (requestingUserRole === 'cleaner' && cleanerIdNumber !== requestingUserId) {
+        return withSecurityHeaders(NextResponse.json({ error: 'Forbidden' }, { status: 403 }), traceId);
+      }
+      bookings = await getBookingsByCleaner(db, cleanerIdNumber);
     } else if (clientId) {
-      bookings = await getBookingsByClient(db, parseInt(clientId));
+      const clientIdNumber = parseInt(clientId);
+      if (requestingUserRole !== 'admin' && clientIdNumber !== requestingUserId) {
+        return withSecurityHeaders(NextResponse.json({ error: 'Forbidden' }, { status: 403 }), traceId);
+      }
+      bookings = await getBookingsByClient(db, clientIdNumber);
+    } else if (requestingUserRole !== 'admin') {
+      bookings = await getBookingsByClient(db, requestingUserId);
     } else {
       bookings = await getBookingsByDateRange(db, date || new Date().toISOString().split('T')[0], date || new Date().toISOString().split('T')[0]);
     }

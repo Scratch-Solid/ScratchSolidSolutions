@@ -32,16 +32,25 @@ export async function GET(request: NextRequest) {
 
   try {
     const { searchParams } = new URL(request.url);
-    const businessId = searchParams.get('business_id');
+    const queryBusinessId = searchParams.get('business_id');
+    const sessionRole: string = (user as any).role;
+    const sessionId: number = (user as any).id;
     let results;
-    if (businessId) {
-      results = await db.prepare(
-        'SELECT * FROM business_events WHERE business_id = ? ORDER BY created_at DESC'
-      ).bind(businessId).all();
+
+    if (sessionRole === 'admin') {
+      if (queryBusinessId) {
+        results = await db.prepare(
+          'SELECT * FROM business_events WHERE business_id = ? ORDER BY created_at DESC'
+        ).bind(queryBusinessId).all();
+      } else {
+        results = await db.prepare(
+          'SELECT * FROM business_events ORDER BY created_at DESC LIMIT 100'
+        ).all();
+      }
     } else {
       results = await db.prepare(
-        'SELECT * FROM business_events ORDER BY created_at DESC LIMIT 100'
-      ).all();
+        'SELECT * FROM business_events WHERE business_id = ? ORDER BY created_at DESC'
+      ).bind(sessionId.toString()).all();
     }
     const response = NextResponse.json(results.results || []);
     response.headers.set('Cache-Control', 'private, max-age=30');
@@ -86,12 +95,15 @@ export async function POST(request: NextRequest) {
       special_instructions?: string;
     };
     const { business_id, event_type, requested_date, special_instructions } = body;
-    if (!business_id || !event_type) {
+    const sessionRole: string = (user as any).role;
+    const effectiveBusinessId = sessionRole === 'admin' && business_id ? business_id : (user as any).id;
+
+    if (!effectiveBusinessId || !event_type) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
     const result = await db.prepare(
       'INSERT INTO business_events (business_id, event_type, requested_date, special_instructions, created_at) VALUES (?, ?, ?, ?, datetime("now")) RETURNING *'
-    ).bind(business_id, event_type, requested_date || '', special_instructions || '').first();
+    ).bind(effectiveBusinessId, event_type, requested_date || '', special_instructions || '').first();
     const response = NextResponse.json(result, { status: 201 });
     return withSecurityHeaders(response, traceId);
   } catch (error) {

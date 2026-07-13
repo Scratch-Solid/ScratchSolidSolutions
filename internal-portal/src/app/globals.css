@@ -1,8 +1,15 @@
+/* Explicitly rank the legacy glassmorphism stylesheet BELOW Tailwind's
+   layers. Without this, glass-theme.css's un-layered rules (plain `body`,
+   `h1`-`h5`, `textarea` selectors) would win the cascade over every Tailwind
+   utility/theme rule regardless of specificity or source order, since
+   un-layered CSS always beats layered CSS. */
+@layer legacy, base, components, utilities;
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@import "./glass-theme.css";
+@import "./glass-theme.css" layer(legacy);
 
 @import "tw-animate-css";
 

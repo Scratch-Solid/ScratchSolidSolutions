@@ -18,6 +18,12 @@ export async function GET(
     );
   }
 
+  const authResult = await withAuth(request);
+  if (authResult instanceof NextResponse) {
+    return authResult;
+  }
+  const { user } = authResult;
+
   const { refNumber } = await params;
 
   try {
@@ -26,7 +32,6 @@ export async function GET(
       return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
     }
 
-    // Get quote request with invoice details
     const quote = await db.prepare(
       `SELECT * FROM quote_requests WHERE ref_number = ?`
     ).bind(refNumber).first() as {
@@ -40,22 +45,15 @@ export async function GET(
       return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
     }
 
+    const userEmail = (user as any).email?.toLowerCase() || '';
+    if (quote.email?.toLowerCase() !== userEmail && (user as any).role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     if (!quote.zoho_invoice_id) {
       return NextResponse.json({ error: 'Invoice not yet generated' }, { status: 404 });
     }
 
-    // Get invoice status from Zoho
-    let invoiceStatus = 'unknown';
-    try {
-      const statusResult = await getInvoiceStatus(quote.zoho_invoice_id) as { invoice?: { status: string } };
-      if (statusResult.invoice) {
-        invoiceStatus = statusResult.invoice.status;
-      }
-    } catch (zohoError) {
-      console.error('Failed to get invoice status:', zohoError);
-    }
-
-    // Get invoice PDF from Zoho
     try {
       const zohoPdf = await getInvoicePdf(quote.zoho_invoice_id);
       const pdfBuffer = await zohoPdf.arrayBuffer();

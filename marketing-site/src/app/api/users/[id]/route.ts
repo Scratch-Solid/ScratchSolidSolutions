@@ -31,11 +31,19 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
   try {
     const { id } = await params;
-    const user = await db.prepare('SELECT id, email, role, name, phone, address, business_name FROM users WHERE id = ?').bind(id).first();
-    if (!user) {
+    const userId = parseInt(id, 10);
+    const requestingUserId = (user as any).id || (user as any).userId || (user as any).user_id;
+    const requestingUserRole = (user as any).role;
+
+    if (requestingUserRole !== 'admin' && requestingUserId !== userId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const userRecord = await db.prepare('SELECT id, email, role, name, phone, address, business_name FROM users WHERE id = ?').bind(id).first();
+    if (!userRecord) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
-    const response = NextResponse.json(user);
+    const response = NextResponse.json(userRecord);
     response.headers.set('Cache-Control', 'private, max-age=30');
     return withSecurityHeaders(response, traceId);
   } catch (error) {
