@@ -70,7 +70,7 @@ export default function Sidebar({ activeTab, onTabChange, role }: SidebarProps) 
       <aside
         className={`
           fixed lg:static inset-y-0 left-0 z-50
-          bg-white border-r border-gray-200
+          bg-white border-r border-stone-200
           transition-all duration-300 ease-in-out
           ${isCollapsed ? 'w-16' : 'w-64'}
           ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
@@ -79,15 +79,15 @@ export default function Sidebar({ activeTab, onTabChange, role }: SidebarProps) 
       >
         <div className="h-full flex flex-col">
           {/* Header */}
-          <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+          <div className="p-4 border-b border-stone-200 flex items-center justify-between">
             {!isCollapsed && (
-              <h1 className="text-lg font-bold text-gray-900">
+              <h1 className="text-lg font-bold text-stone-900">
                 {role === 'admin' ? 'Admin Portal' : 'Cleaner Portal'}
               </h1>
             )}
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
-              className="hidden lg:flex p-1 hover:bg-gray-100 rounded transition-colors"
+              className="hidden lg:flex p-1 hover:bg-stone-100 rounded transition-colors"
               aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
               <ChevronRight className={`w-5 h-5 transition-transform ${isCollapsed ? 'rotate-180' : ''}`} />
@@ -108,8 +108,8 @@ export default function Sidebar({ activeTab, onTabChange, role }: SidebarProps) 
                       w-full flex items-center gap-3 px-3 py-2 rounded-lg
                       transition-colors duration-200
                       ${activeTab === item.id
-                        ? 'bg-blue-50 text-blue-700 font-medium'
-                        : 'text-gray-700 hover:bg-gray-100'
+                        ? 'bg-[#F7F2EA] text-[#241811] font-medium'
+                        : 'text-stone-700 hover:bg-stone-100'
                       }
                       ${isCollapsed ? 'justify-center' : ''}
                     `}
@@ -133,9 +133,9 @@ export default function Sidebar({ activeTab, onTabChange, role }: SidebarProps) 
           </nav>
 
           {/* Footer */}
-          <div className="p-4 border-t border-gray-200">
+          <div className="p-4 border-t border-stone-200">
             {!isCollapsed && (
-              <div className="text-xs text-gray-500">
+              <div className="text-xs text-stone-500">
                 <p>Scratch Solid Solutions</p>
                 <p>v1.0.0</p>
               </div>

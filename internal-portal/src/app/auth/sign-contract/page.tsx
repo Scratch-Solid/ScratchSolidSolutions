@@ -154,7 +154,7 @@ export default function SignContractPage() {
           {contractHistory.length > 0 && (
             <button
               onClick={() => setShowHistory(!showHistory)}
-              className="text-sm text-blue-600 hover:text-blue-800 mt-2 underline"
+              className="text-sm text-[#2E1F16] hover:text-[#1C130D] mt-2 underline"
             >
               {showHistory ? 'Hide' : 'View'} Contract History ({contractHistory.length})
             </button>
@@ -162,16 +162,16 @@ export default function SignContractPage() {
         </div>
 
         {showHistory && contractHistory.length > 0 && (
-          <div className="bg-gray-50 p-4 rounded-lg mb-6">
+          <div className="bg-stone-50 p-4 rounded-lg mb-6">
             <h3 className="font-semibold mb-3">Contract History</h3>
             <div className="space-y-2">
               {contractHistory.map((item) => (
                 <div key={item.id} className="text-sm border-b pb-2 last:border-0">
                   <div className="font-medium">Version {item.version_number}</div>
-                  <div className="text-gray-600">Signed: {new Date(item.signed_at).toLocaleString()}</div>
-                  <div className="text-gray-500 text-xs">IP: {item.ip_address}</div>
+                  <div className="text-stone-600">Signed: {new Date(item.signed_at).toLocaleString()}</div>
+                  <div className="text-stone-500 text-xs">IP: {item.ip_address}</div>
                   {item.pdf_url && (
-                    <a href={item.pdf_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 text-xs hover:underline">
+                    <a href={item.pdf_url} target="_blank" rel="noopener noreferrer" className="text-[#2E1F16] text-xs hover:underline">
                       View PDF
                     </a>
                   )}
@@ -181,7 +181,7 @@ export default function SignContractPage() {
           </div>
         )}
 
-        <div className="bg-gray-50 p-6 rounded-lg mb-6 text-sm leading-relaxed">
+        <div className="bg-stone-50 p-6 rounded-lg mb-6 text-sm leading-relaxed">
           <h2 className="font-bold text-lg mb-4">EMPLOYMENT AGREEMENT</h2>
           {loadingContent ? (
             <p>Loading contract content...</p>
@@ -192,7 +192,7 @@ export default function SignContractPage() {
                 <p>This Employment Agreement is entered into between Scratch Solid Solutions and the Employee.</p>
                 <p>By signing this contract, you agree to the terms and conditions of employment.</p>
                 <p>Terms include but are not limited to: work hours, compensation, confidentiality, and termination policies.</p>
-                <p class="text-xs text-gray-500">Full contract details available from HR department.</p>
+                <p class="text-xs text-stone-500">Full contract details available from HR department.</p>
               `) }}
             />
           )}
@@ -205,8 +205,8 @@ export default function SignContractPage() {
           <div className="text-center">
             <div className="text-6xl mb-4">✓</div>
             <p className="text-green-600 font-bold text-xl">Contract signed successfully!</p>
-            <p className="text-sm text-gray-500 mb-2">Signature Date: {new Date(signatureDate).toLocaleString()}</p>
-            <p className="text-sm text-gray-500">Redirecting to your dashboard...</p>
+            <p className="text-sm text-stone-500 mb-2">Signature Date: {new Date(signatureDate).toLocaleString()}</p>
+            <p className="text-sm text-stone-500">Redirecting to your dashboard...</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -224,7 +224,7 @@ export default function SignContractPage() {
               <div className="border-t pt-4 space-y-4">
                 <div>
                   <label className="block text-sm font-semibold mb-2">Your Signature</label>
-                  <div className="border-2 border-gray-300 rounded-lg bg-white">
+                  <div className="border-2 border-stone-300 rounded-lg bg-white">
                     <SignatureCanvas
                       ref={signatureRef}
                       canvasProps={{
@@ -236,12 +236,12 @@ export default function SignContractPage() {
                   <div className="flex gap-2 mt-2">
                     <button
                       onClick={clearSignature}
-                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-sm"
+                      className="px-4 py-2 bg-stone-200 text-stone-700 rounded-lg hover:bg-stone-300 text-sm"
                     >
                       Clear Signature
                     </button>
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">
+                  <p className="text-xs text-stone-500 mt-2">
                     Sign in the box above using your mouse or touch screen
                   </p>
                 </div>
@@ -255,7 +255,7 @@ export default function SignContractPage() {
                   />
                   <span className="text-sm font-semibold">I hereby sign this contract electronically</span>
                 </label>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-stone-500">
                   By checking this box, you are providing your electronic signature and agreeing to be bound by the terms of this contract.
                 </p>
               </div>

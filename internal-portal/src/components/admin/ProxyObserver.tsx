@@ -109,8 +109,8 @@ export default function ProxyObserver() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Proxy Observer State Engine</h2>
-          <p className="text-slate-500 text-sm mt-1">View dashboards as different user roles for testing</p>
+          <h2 className="text-2xl font-bold text-stone-900">Proxy Observer State Engine</h2>
+          <p className="text-stone-500 text-sm mt-1">View dashboards as different user roles for testing</p>
         </div>
         {message && (
           <Badge variant={message.includes('success') || message.includes('started') || message.includes('ended') ? 'default' : 'destructive'}>
@@ -128,7 +128,7 @@ export default function ProxyObserver() {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Target User Role</label>
+              <label className="text-sm font-medium text-stone-700">Target User Role</label>
               <Select value={targetUserRole} onValueChange={(value) => setTargetUserRole(value as any)}>
                 <SelectTrigger>
                   <SelectValue />
@@ -141,7 +141,7 @@ export default function ProxyObserver() {
               </Select>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Target User ID</label>
+              <label className="text-sm font-medium text-stone-700">Target User ID</label>
               <Input
                 type="text"
                 value={targetUserId}
@@ -185,12 +185,12 @@ export default function ProxyObserver() {
                   Started: {new Date(activeSession.startedAt).toLocaleString()}
                 </span>
               </div>
-              <div className="text-slate-700 text-sm">
+              <div className="text-stone-700 text-sm">
                 Viewing as: {activeSession.targetUserId} ({targetUserRole})
               </div>
               <div className="mt-3 p-3 bg-white rounded border border-green-100">
-                <div className="text-slate-500 text-xs mb-2 font-medium">READ-ONLY VIEW</div>
-                <div className="text-slate-600 text-sm">
+                <div className="text-stone-500 text-xs mb-2 font-medium">READ-ONLY VIEW</div>
+                <div className="text-stone-600 text-sm">
                   This is a simulated view of the target user's dashboard. Actual dashboard rendering would require iframe integration.
                 </div>
               </div>
@@ -207,18 +207,18 @@ export default function ProxyObserver() {
         </CardHeader>
         <CardContent>
           {sessionHistory.length === 0 ? (
-            <p className="text-slate-500 text-center py-8">No proxy sessions recorded.</p>
+            <p className="text-stone-500 text-center py-8">No proxy sessions recorded.</p>
           ) : (
             <div className="space-y-3">
               {sessionHistory.map((session: any) => (
-                <div key={session.id} className="border border-slate-200 rounded-lg p-4 bg-slate-50">
+                <div key={session.id} className="border border-stone-200 rounded-lg p-4 bg-stone-50">
                   <div className="flex justify-between items-start">
                     <div>
-                      <div className="font-semibold text-slate-900">Session ID: {session.sessionId}</div>
-                      <div className="text-slate-600 text-sm">Target: {session.targetUserId} ({session.targetRole})</div>
-                      <div className="text-slate-500 text-xs">Started: {new Date(session.startedAt).toLocaleString()}</div>
+                      <div className="font-semibold text-stone-900">Session ID: {session.sessionId}</div>
+                      <div className="text-stone-600 text-sm">Target: {session.targetUserId} ({session.targetRole})</div>
+                      <div className="text-stone-500 text-xs">Started: {new Date(session.startedAt).toLocaleString()}</div>
                       {session.endedAt && (
-                        <div className="text-slate-500 text-xs">Ended: {new Date(session.endedAt).toLocaleString()}</div>
+                        <div className="text-stone-500 text-xs">Ended: {new Date(session.endedAt).toLocaleString()}</div>
                       )}
                     </div>
                     <Badge variant={session.status === 'active' ? 'default' : 'secondary'}>

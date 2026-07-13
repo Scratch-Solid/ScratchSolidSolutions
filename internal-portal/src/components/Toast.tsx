@@ -32,14 +32,14 @@ function ToastItem({ toast, onClose }: ToastProps) {
   const icons = {
     success: <CheckCircle className="w-5 h-5 text-green-500" />,
     error: <AlertCircle className="w-5 h-5 text-red-500" />,
-    info: <Info className="w-5 h-5 text-blue-500" />,
+    info: <Info className="w-5 h-5 text-[#B08A5E]" />,
     warning: <AlertTriangle className="w-5 h-5 text-yellow-500" />,
   };
 
   const bgColors = {
     success: 'bg-green-50 border-green-200',
     error: 'bg-red-50 border-red-200',
-    info: 'bg-blue-50 border-blue-200',
+    info: 'bg-[#F7F2EA] border-[#E9E0D3]',
     warning: 'bg-yellow-50 border-yellow-200',
   };
 
@@ -54,13 +54,13 @@ function ToastItem({ toast, onClose }: ToastProps) {
       role="alert"
     >
       {icons[toast.type]}
-      <p className="flex-1 text-sm font-medium text-gray-900">{toast.message}</p>
+      <p className="flex-1 text-sm font-medium text-stone-900">{toast.message}</p>
       <button
         onClick={() => onClose(toast.id)}
         className="p-1 hover:bg-black/5 rounded transition-colors"
         aria-label="Close notification"
       >
-        <X className="w-4 h-4 text-gray-500" />
+        <X className="w-4 h-4 text-stone-500" />
       </button>
     </div>
   );

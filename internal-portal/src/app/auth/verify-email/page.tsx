@@ -65,8 +65,8 @@ function VerifyEmailContent() {
         
         {loading && (
           <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Verifying your email...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2E1F16] mx-auto mb-4"></div>
+            <p className="text-stone-600">Verifying your email...</p>
           </div>
         )}
         
@@ -104,13 +104,13 @@ function VerifyEmailContent() {
 
         {!loading && error && (
           <div className="text-center mt-6">
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="text-sm text-stone-600 mb-4">
               Need a new verification link?
             </p>
             <button
               type="button"
               onClick={() => router.push("/auth/send-verification")}
-              className="text-sm underline hover:text-blue-600"
+              className="text-sm underline hover:text-[#2E1F16]"
             >
               Request New Verification Email
             </button>

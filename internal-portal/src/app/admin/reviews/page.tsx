@@ -129,7 +129,7 @@ export default function AdminReviewsPage() {
       {[1, 2, 3, 4, 5].map((star) => (
         <svg
           key={star}
-          className={`w-4 h-4 ${star <= rating ? 'text-yellow-400' : 'text-gray-300'}`}
+          className={`w-4 h-4 ${star <= rating ? 'text-yellow-400' : 'text-stone-300'}`}
           fill="currentColor"
           viewBox="0 0 20 20"
         >
@@ -139,15 +139,15 @@ export default function AdminReviewsPage() {
     </div>
   );
 
-  if (loading) return <div className="py-8 text-sm text-slate-400">Loading reviews…</div>;
+  if (loading) return <div className="py-8 text-sm text-stone-400">Loading reviews…</div>;
 
   const currentReviews = activeTab === 'pending' ? pendingReviews : approvedReviews;
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Review Moderation</h1>
-        <p className="text-sm text-slate-500 mt-1">Approve client reviews before they appear on the public gallery.</p>
+        <h1 className="text-2xl font-bold text-stone-900 tracking-tight">Review Moderation</h1>
+        <p className="text-sm text-stone-500 mt-1">Approve client reviews before they appear on the public gallery.</p>
       </div>
 
         {error && (
@@ -156,21 +156,21 @@ export default function AdminReviewsPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-            <p className="text-sm text-gray-500">Pending Reviews</p>
+          <div className="bg-white p-4 rounded-xl shadow-sm border border-stone-100">
+            <p className="text-sm text-stone-500">Pending Reviews</p>
             <p className="text-2xl font-bold text-orange-600">{pendingReviews.length}</p>
           </div>
-          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-            <p className="text-sm text-gray-500">Approved Reviews</p>
+          <div className="bg-white p-4 rounded-xl shadow-sm border border-stone-100">
+            <p className="text-sm text-stone-500">Approved Reviews</p>
             <p className="text-2xl font-bold text-green-600">{approvedReviews.length}</p>
           </div>
-          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-            <p className="text-sm text-gray-500">Avg. Rating (Approved)</p>
-            <p className="text-2xl font-bold text-blue-600">
+          <div className="bg-white p-4 rounded-xl shadow-sm border border-stone-100">
+            <p className="text-sm text-stone-500">Avg. Rating (Approved)</p>
+            <p className="text-2xl font-bold text-[#2E1F16]">
               {approvedReviews.length > 0
                 ? (approvedReviews.reduce((acc, r) => acc + r.rating, 0) / approvedReviews.length).toFixed(1)
                 : '-'}
-              <span className="text-sm text-gray-400 font-normal"> /5</span>
+              <span className="text-sm text-stone-400 font-normal"> /5</span>
             </p>
           </div>
         </div>
@@ -182,7 +182,7 @@ export default function AdminReviewsPage() {
             className={`px-5 py-2 rounded-lg font-medium transition-colors ${
               activeTab === 'pending'
                 ? 'bg-orange-600 text-white'
-                : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+                : 'bg-white text-stone-700 border border-stone-200 hover:bg-stone-50'
             }`}
           >
             Pending ({pendingReviews.length})
@@ -192,7 +192,7 @@ export default function AdminReviewsPage() {
             className={`px-5 py-2 rounded-lg font-medium transition-colors ${
               activeTab === 'approved'
                 ? 'bg-green-600 text-white'
-                : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+                : 'bg-white text-stone-700 border border-stone-200 hover:bg-stone-50'
             }`}
           >
             Approved ({approvedReviews.length})
@@ -200,39 +200,39 @@ export default function AdminReviewsPage() {
         </div>
 
         {currentReviews.length === 0 ? (
-          <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-            <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="bg-white rounded-xl border border-stone-200 p-12 text-center">
+            <svg className="w-16 h-16 text-stone-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
             </svg>
-            <p className="text-gray-500 text-lg">No {activeTab} reviews found.</p>
+            <p className="text-stone-500 text-lg">No {activeTab} reviews found.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {currentReviews.map((review) => {
               const images = parseImages(review.images);
               return (
-                <div key={review.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div key={review.id} className="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
                   <div className="p-5">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#B08A5E] to-[#2E1F16] flex items-center justify-center text-white font-bold">
                           {(review.user_name || 'C').charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <p className="font-semibold text-gray-900">{review.user_name || 'Client'}</p>
-                          <p className="text-xs text-gray-500">{new Date(review.created_at).toLocaleDateString()}</p>
+                          <p className="font-semibold text-stone-900">{review.user_name || 'Client'}</p>
+                          <p className="text-xs text-stone-500">{new Date(review.created_at).toLocaleDateString()}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         {renderStars(review.rating)}
-                        <span className="text-sm font-medium text-gray-700">{review.rating}/5</span>
+                        <span className="text-sm font-medium text-stone-700">{review.rating}/5</span>
                       </div>
                     </div>
 
-                    <p className="text-gray-700 text-sm leading-relaxed mb-3">{review.text}</p>
+                    <p className="text-stone-700 text-sm leading-relaxed mb-3">{review.text}</p>
 
                     {review.service_location && (
-                      <p className="text-xs text-gray-400 mb-3">📍 {review.service_location}</p>
+                      <p className="text-xs text-stone-400 mb-3">📍 {review.service_location}</p>
                     )}
 
                     {images.length > 0 && (
@@ -243,7 +243,7 @@ export default function AdminReviewsPage() {
                             href={img}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="block aspect-square rounded-lg overflow-hidden bg-gray-100 hover:opacity-80 transition-opacity"
+                            className="block aspect-square rounded-lg overflow-hidden bg-stone-100 hover:opacity-80 transition-opacity"
                           >
                             <img
                               src={img}
@@ -258,7 +258,7 @@ export default function AdminReviewsPage() {
                       </div>
                     )}
 
-                    <div className="flex items-center gap-2 pt-3 border-t border-gray-100">
+                    <div className="flex items-center gap-2 pt-3 border-t border-stone-100">
                       {activeTab === 'pending' ? (
                         <>
                           <button

@@ -102,7 +102,7 @@ export default function TrainingLedger() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12 text-slate-500">
+      <div className="flex items-center justify-center py-12 text-stone-500">
         <Clock className="h-6 w-6 animate-spin mr-2" />
         <span>Loading training data...</span>
       </div>
@@ -125,22 +125,22 @@ export default function TrainingLedger() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-slate-900">Training Ledger</h2>
-        <p className="text-slate-500 text-sm mt-1">Track staff training progress and certifications</p>
+        <h2 className="text-2xl font-bold text-stone-900">Training Ledger</h2>
+        <p className="text-stone-500 text-sm mt-1">Track staff training progress and certifications</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">Total Staff</CardTitle>
+            <CardTitle className="text-sm font-medium text-stone-600">Total Staff</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-slate-900">{trainingData.length}</p>
+            <p className="text-2xl font-bold text-stone-900">{trainingData.length}</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">Completed Training</CardTitle>
+            <CardTitle className="text-sm font-medium text-stone-600">Completed Training</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold text-green-600">{completedCount}</p>
@@ -148,7 +148,7 @@ export default function TrainingLedger() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">In Progress</CardTitle>
+            <CardTitle className="text-sm font-medium text-stone-600">In Progress</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold text-amber-600">{inProgressCount}</p>
@@ -179,7 +179,7 @@ export default function TrainingLedger() {
           </div>
 
           {filteredData.length === 0 ? (
-            <p className="text-slate-500 text-center py-8">No training data found.</p>
+            <p className="text-stone-500 text-center py-8">No training data found.</p>
           ) : (
             <Table>
               <TableHeader>
@@ -197,8 +197,8 @@ export default function TrainingLedger() {
                 {filteredData.map((item) => (
                   <TableRow key={item.user_id}>
                     <TableCell>
-                      <div className="font-medium text-slate-900">{item.staff.full_name}</div>
-                      <div className="text-sm text-slate-500">{item.staff.email}</div>
+                      <div className="font-medium text-stone-900">{item.staff.full_name}</div>
+                      <div className="text-sm text-stone-500">{item.staff.email}</div>
                     </TableCell>
                     <TableCell>
                       <Badge variant={item.training_status === 'Completed' ? 'default' : 'secondary'}>
@@ -229,7 +229,7 @@ export default function TrainingLedger() {
                           Verified
                         </Badge>
                       ) : (
-                        <span className="text-slate-400">—</span>
+                        <span className="text-stone-400">—</span>
                       )}
                     </TableCell>
                     <TableCell>

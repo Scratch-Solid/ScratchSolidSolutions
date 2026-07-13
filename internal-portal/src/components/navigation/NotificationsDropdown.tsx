@@ -71,7 +71,7 @@ export default function NotificationsDropdown() {
       case 'success': return 'bg-green-100 text-green-700';
       case 'warning': return 'bg-yellow-100 text-yellow-700';
       case 'error': return 'bg-red-100 text-red-700';
-      default: return 'bg-blue-100 text-blue-700';
+      default: return 'bg-[#F0E6D6] text-[#241811]';
     }
   };
 
@@ -90,13 +90,13 @@ export default function NotificationsDropdown() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-96 overflow-hidden flex flex-col">
-          <div className="p-4 border-b border-gray-100 flex justify-between items-center">
-            <h3 className="font-semibold text-gray-900">Notifications</h3>
+        <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-stone-200 z-50 max-h-96 overflow-hidden flex flex-col">
+          <div className="p-4 border-b border-stone-100 flex justify-between items-center">
+            <h3 className="font-semibold text-stone-900">Notifications</h3>
             {unreadCount > 0 && (
               <button
                 onClick={markAllAsRead}
-                className="text-xs text-blue-600 hover:text-blue-700"
+                className="text-xs text-[#2E1F16] hover:text-[#241811]"
               >
                 Mark all as read
               </button>
@@ -105,14 +105,14 @@ export default function NotificationsDropdown() {
 
           <div className="overflow-y-auto flex-1">
             {notifications.length === 0 ? (
-              <div className="p-8 text-center text-gray-500">
+              <div className="p-8 text-center text-stone-500">
                 No notifications
               </div>
             ) : (
               notifications.map(notification => (
                 <div
                   key={notification.id}
-                  className={`p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors ${!notification.read ? 'bg-blue-50/50' : ''}`}
+                  className={`p-4 border-b border-stone-50 hover:bg-stone-50 transition-colors ${!notification.read ? 'bg-[#F7F2EA]/50' : ''}`}
                 >
                   <div className="flex justify-between items-start gap-2">
                     <div className="flex-1">
@@ -121,12 +121,12 @@ export default function NotificationsDropdown() {
                           {notification.type}
                         </span>
                         {!notification.read && (
-                          <span className="w-2 h-2 bg-blue-500 rounded-full" />
+                          <span className="w-2 h-2 bg-[#B08A5E] rounded-full" />
                         )}
                       </div>
-                      <h4 className="text-sm font-medium text-gray-900">{notification.title}</h4>
-                      <p className="text-xs text-gray-600 mt-1">{notification.message}</p>
-                      <p className="text-xs text-gray-400 mt-2">
+                      <h4 className="text-sm font-medium text-stone-900">{notification.title}</h4>
+                      <p className="text-xs text-stone-600 mt-1">{notification.message}</p>
+                      <p className="text-xs text-stone-400 mt-2">
                         {notification.timestamp.toLocaleDateString()} {notification.timestamp.toLocaleTimeString()}
                       </p>
                     </div>
@@ -134,18 +134,18 @@ export default function NotificationsDropdown() {
                       {!notification.read && (
                         <button
                           onClick={() => markAsRead(notification.id)}
-                          className="p-1 hover:bg-gray-200 rounded transition-colors"
+                          className="p-1 hover:bg-stone-200 rounded transition-colors"
                           aria-label="Mark as read"
                         >
-                          <Check className="w-4 h-4 text-gray-500" />
+                          <Check className="w-4 h-4 text-stone-500" />
                         </button>
                       )}
                       <button
                         onClick={() => dismissNotification(notification.id)}
-                        className="p-1 hover:bg-gray-200 rounded transition-colors"
+                        className="p-1 hover:bg-stone-200 rounded transition-colors"
                         aria-label="Dismiss"
                       >
-                        <X className="w-4 h-4 text-gray-500" />
+                        <X className="w-4 h-4 text-stone-500" />
                       </button>
                     </div>
                   </div>

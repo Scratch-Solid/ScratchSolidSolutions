@@ -94,7 +94,7 @@ export default function ContractPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2E1F16]"></div>
       </div>
     );
   }
@@ -111,10 +111,10 @@ export default function ContractPage() {
           <div className="glass-card text-center">
             <div className="text-6xl mb-4">⏳</div>
             <h2 className="text-2xl font-bold mb-4">Your application is being reviewed</h2>
-            <p className="text-gray-600 mb-6">
+            <p className="text-stone-600 mb-6">
               Your consent form has been submitted and is currently under review by our admin team. You will be able to access and sign your contract once approved.
             </p>
-            <p className="text-sm text-gray-500 mb-6">
+            <p className="text-sm text-stone-500 mb-6">
               Please check back later or contact admin if you have any questions.
             </p>
           </div>

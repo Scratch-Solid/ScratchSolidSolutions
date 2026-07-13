@@ -137,8 +137,8 @@ export default function SessionManager({ onClose }: SessionManagerProps) {
     return (
       <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-md">
         <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading sessions...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2E1F16] mx-auto"></div>
+          <p className="mt-2 text-stone-600">Loading sessions...</p>
         </div>
       </div>
     );
@@ -151,7 +151,7 @@ export default function SessionManager({ onClose }: SessionManagerProps) {
         {onClose && (
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
+            className="text-stone-500 hover:text-stone-700"
           >
             ✕
           </button>
@@ -165,7 +165,7 @@ export default function SessionManager({ onClose }: SessionManagerProps) {
       )}
 
       <div className="mb-4">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-stone-600">
           You have {sessions.length} active session{sessions.length !== 1 ? 's' : ''} 
           (maximum 3 allowed)
         </p>
@@ -176,7 +176,7 @@ export default function SessionManager({ onClose }: SessionManagerProps) {
           <button
             onClick={revokeAllOtherSessions}
             disabled={revoking === -1}
-            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 disabled:bg-stone-400 disabled:cursor-not-allowed transition-colors"
           >
             {revoking === -1 ? 'Revoking...' : 'Revoke All Other Sessions'}
           </button>
@@ -189,8 +189,8 @@ export default function SessionManager({ onClose }: SessionManagerProps) {
             key={session.id}
             className={`border rounded-lg p-4 ${
               isCurrentSession(session) 
-                ? 'border-blue-500 bg-blue-50' 
-                : 'border-gray-200'
+                ? 'border-[#B08A5E] bg-[#F7F2EA]' 
+                : 'border-stone-200'
             }`}
           >
             <div className="flex justify-between items-start">
@@ -200,13 +200,13 @@ export default function SessionManager({ onClose }: SessionManagerProps) {
                     {getDeviceName(session.user_agent)}
                   </h3>
                   {isCurrentSession(session) && (
-                    <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
+                    <span className="bg-[#F0E6D6] text-[#1C130D] text-xs px-2 py-1 rounded">
                       Current Session
                     </span>
                   )}
                 </div>
                 
-                <div className="text-sm text-gray-600 space-y-1">
+                <div className="text-sm text-stone-600 space-y-1">
                   <p>Created: {formatDate(session.created_at)}</p>
                   <p>Expires: {formatDate(session.expires_at)}</p>
                   {session.ip_address && (
@@ -219,7 +219,7 @@ export default function SessionManager({ onClose }: SessionManagerProps) {
                 <button
                   onClick={() => revokeSession(session.id)}
                   disabled={revoking === session.id}
-                  className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                  className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 disabled:bg-stone-400 disabled:cursor-not-allowed transition-colors"
                 >
                   {revoking === session.id ? 'Revoking...' : 'Revoke'}
                 </button>
@@ -230,7 +230,7 @@ export default function SessionManager({ onClose }: SessionManagerProps) {
       </div>
 
       {sessions.length === 0 && (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-stone-500">
           No active sessions found
         </div>
       )}

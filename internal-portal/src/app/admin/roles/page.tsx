@@ -112,14 +112,14 @@ function RolesManagementContent() {
     if (level >= 100) return 'bg-purple-100 text-purple-800';
     if (level >= 80) return 'bg-red-100 text-red-800';
     if (level >= 60) return 'bg-orange-100 text-orange-800';
-    if (level >= 40) return 'bg-blue-100 text-blue-800';
-    return 'bg-gray-100 text-gray-800';
+    if (level >= 40) return 'bg-[#F0E6D6] text-[#1C130D]';
+    return 'bg-stone-100 text-stone-800';
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1E3A8A]"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2E1F16]"></div>
       </div>
     );
   }
@@ -128,12 +128,12 @@ function RolesManagementContent() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Role Management</h1>
-          <p className="text-sm text-slate-500 mt-1">Manage system roles and permissions</p>
+          <h1 className="text-2xl font-bold text-stone-900 tracking-tight">Role Management</h1>
+          <p className="text-sm text-stone-500 mt-1">Manage system roles and permissions</p>
         </div>
           <button
             onClick={() => setShowCreateForm(!showCreateForm)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+            className="bg-[#2E1F16] hover:bg-[#241811] text-white px-4 py-2 rounded-lg"
           >
             {showCreateForm ? 'Cancel' : 'Create Role'}
           </button>
@@ -154,40 +154,40 @@ function RolesManagementContent() {
         {/* Create Role Form */}
         {showCreateForm && (
           <div className="bg-white shadow rounded-lg mb-6">
-            <div className="px-4 py-5 border-b border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900">Create New Role</h3>
+            <div className="px-4 py-5 border-b border-stone-200">
+              <h3 className="text-lg font-medium text-stone-900">Create New Role</h3>
             </div>
             <form onSubmit={handleCreateRole} className="p-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Role Name</label>
+                  <label className="block text-sm font-medium text-stone-700 mb-2">Role Name</label>
                   <input
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-stone-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
                     placeholder="e.g., content_manager"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                  <label className="block text-sm font-medium text-stone-700 mb-2">Description</label>
                   <textarea
                     value={formData.description}
                     onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                     required
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-stone-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
                     placeholder="Describe the role's responsibilities"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Access Level</label>
+                  <label className="block text-sm font-medium text-stone-700 mb-2">Access Level</label>
                   <select
                     value={formData.level}
                     onChange={(e) => setFormData(prev => ({ ...prev, level: parseInt(e.target.value) }))}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-stone-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
                   >
                     <option value={10}>Basic Access (10)</option>
                     <option value={20}>Client Access (20)</option>
@@ -202,7 +202,7 @@ function RolesManagementContent() {
                 <button
                   type="submit"
                   disabled={creating || !formData.name || !formData.description}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md disabled:opacity-50"
+                  className="bg-[#2E1F16] hover:bg-[#241811] text-white px-4 py-2 rounded-md disabled:opacity-50"
                 >
                   {creating ? 'Creating...' : 'Create Role'}
                 </button>
@@ -213,34 +213,34 @@ function RolesManagementContent() {
 
         {/* Roles Table */}
         <div className="bg-white shadow overflow-hidden rounded-lg">
-          <div className="px-4 py-5 border-b border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">Existing Roles</h3>
+          <div className="px-4 py-5 border-b border-stone-200">
+            <h3 className="text-lg font-medium text-stone-900">Existing Roles</h3>
           </div>
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-stone-200">
+              <thead className="bg-stone-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">
                     Role Name
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">
                     Description
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">
                     Access Level
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">
                     Created
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-stone-200">
                 {roles.map((role) => (
-                  <tr key={role.id} className="hover:bg-gray-50">
+                  <tr key={role.id} className="hover:bg-stone-50">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{role.name}</div>
+                      <div className="text-sm font-medium text-stone-900">{role.name}</div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
+                    <td className="px-6 py-4 text-sm text-stone-500">
                       {role.description}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -248,7 +248,7 @@ function RolesManagementContent() {
                         Level {role.level}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-500">
                       {new Date(role.created_at).toLocaleDateString()}
                     </td>
                   </tr>
@@ -260,20 +260,20 @@ function RolesManagementContent() {
 
         {/* Permissions Overview */}
         <div className="mt-8 bg-white shadow overflow-hidden rounded-lg">
-          <div className="px-4 py-5 border-b border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">System Permissions</h3>
+          <div className="px-4 py-5 border-b border-stone-200">
+            <h3 className="text-lg font-medium text-stone-900">System Permissions</h3>
           </div>
           <div className="p-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {permissions.map((permission) => (
-                <div key={permission.id} className="border border-gray-200 rounded-lg p-4">
-                  <div className="text-sm font-medium text-gray-900 mb-1">
+                <div key={permission.id} className="border border-stone-200 rounded-lg p-4">
+                  <div className="text-sm font-medium text-stone-900 mb-1">
                     {permission.name}
                   </div>
-                  <div className="text-xs text-gray-500 mb-2">
+                  <div className="text-xs text-stone-500 mb-2">
                     {permission.resource}.{permission.action}
                   </div>
-                  <div className="text-sm text-gray-600">
+                  <div className="text-sm text-stone-600">
                     {permission.description}
                   </div>
                 </div>
@@ -287,7 +287,7 @@ function RolesManagementContent() {
 
 export default function RolesManagementPage() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center py-20 text-sm text-slate-400">Loading…</div>}>
+    <Suspense fallback={<div className="flex items-center justify-center py-20 text-sm text-stone-400">Loading…</div>}>
       <RolesManagementContent />
     </Suspense>
   );

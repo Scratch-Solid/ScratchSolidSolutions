@@ -120,8 +120,8 @@ export default function AdminServicesPage() {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
-        <h2 className="text-lg font-semibold text-slate-900 mb-2">Error</h2>
-        <p className="text-sm text-slate-500 max-w-md">{error}</p>
+        <h2 className="text-lg font-semibold text-stone-900 mb-2">Error</h2>
+        <p className="text-sm text-stone-500 max-w-md">{error}</p>
         <Button onClick={() => window.location.reload()} className="mt-6" variant="outline" size="sm">
           Retry
         </Button>
@@ -133,17 +133,17 @@ export default function AdminServicesPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Services & Banking</h1>
-          <p className="text-sm text-slate-500 mt-1">Manage service offerings and company banking details.</p>
+          <h1 className="text-2xl font-bold text-stone-900 tracking-tight">Services & Banking</h1>
+          <p className="text-sm text-stone-500 mt-1">Manage service offerings and company banking details.</p>
         </div>
       </div>
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
-        <TabsList className="bg-white border border-slate-200">
-          <TabsTrigger value="services" className="data-[state=active]:bg-[#1E3A8A] data-[state=active]:text-white">
+        <TabsList className="bg-white border border-stone-200">
+          <TabsTrigger value="services" className="data-[state=active]:bg-[#2E1F16] data-[state=active]:text-white">
             <DollarSign className="h-4 w-4 mr-1.5" /> Services
           </TabsTrigger>
-          <TabsTrigger value="banking" className="data-[state=active]:bg-[#1E3A8A] data-[state=active]:text-white">
+          <TabsTrigger value="banking" className="data-[state=active]:bg-[#2E1F16] data-[state=active]:text-white">
             <Landmark className="h-4 w-4 mr-1.5" /> Banking
           </TabsTrigger>
         </TabsList>
@@ -153,19 +153,19 @@ export default function AdminServicesPage() {
         <Card>
           <CardHeader className="pb-3 flex flex-row items-center justify-between">
             <CardTitle className="text-base font-semibold">Service Catalog</CardTitle>
-            <Button size="sm" className="gap-1 bg-[#1E3A8A] hover:bg-[#1e3a8a]/90" onClick={() => setShowAddService(true)}>
+            <Button size="sm" className="gap-1 bg-[#2E1F16] hover:bg-[#2e1f16]/90" onClick={() => setShowAddService(true)}>
               <Plus className="h-4 w-4" /> Add Service
             </Button>
           </CardHeader>
           <CardContent>
             {showAddService && (
-              <div className="mb-6 p-4 rounded-lg border border-slate-200 bg-slate-50 space-y-3">
+              <div className="mb-6 p-4 rounded-lg border border-stone-200 bg-stone-50 space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <input placeholder="Service name" value={serviceForm.name} onChange={(e) => setServiceForm({ ...serviceForm, name: e.target.value })} className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#1E3A8A]" />
-                  <input placeholder="Base price (R)" value={serviceForm.base_price} onChange={(e) => setServiceForm({ ...serviceForm, base_price: e.target.value })} className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#1E3A8A]" />
-                  <input placeholder="Duration (hours)" value={serviceForm.duration_hours} onChange={(e) => setServiceForm({ ...serviceForm, duration_hours: e.target.value })} className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#1E3A8A]" />
+                  <input placeholder="Service name" value={serviceForm.name} onChange={(e) => setServiceForm({ ...serviceForm, name: e.target.value })} className="rounded-lg border border-stone-200 px-3 py-2 text-sm outline-none focus:border-[#2E1F16]" />
+                  <input placeholder="Base price (R)" value={serviceForm.base_price} onChange={(e) => setServiceForm({ ...serviceForm, base_price: e.target.value })} className="rounded-lg border border-stone-200 px-3 py-2 text-sm outline-none focus:border-[#2E1F16]" />
+                  <input placeholder="Duration (hours)" value={serviceForm.duration_hours} onChange={(e) => setServiceForm({ ...serviceForm, duration_hours: e.target.value })} className="rounded-lg border border-stone-200 px-3 py-2 text-sm outline-none focus:border-[#2E1F16]" />
                 </div>
-                <textarea placeholder="Description" value={serviceForm.description} onChange={(e) => setServiceForm({ ...serviceForm, description: e.target.value })} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#1E3A8A]" rows={2} />
+                <textarea placeholder="Description" value={serviceForm.description} onChange={(e) => setServiceForm({ ...serviceForm, description: e.target.value })} className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm outline-none focus:border-[#2E1F16]" rows={2} />
                 <div className="flex gap-2">
                   <Button size="sm" className="gap-1 bg-emerald-600 hover:bg-emerald-700" onClick={addService}>
                     <Save className="h-4 w-4" /> Save
@@ -179,22 +179,22 @@ export default function AdminServicesPage() {
             {loading ? (
               <div className="space-y-3">
                 {[...Array(4)].map((_, i) => (
-                  <div key={i} className="h-16 bg-slate-100 rounded animate-pulse" />
+                  <div key={i} className="h-16 bg-stone-100 rounded animate-pulse" />
                 ))}
               </div>
             ) : services.length === 0 ? (
-              <div className="py-12 text-center text-sm text-slate-400">No services found</div>
+              <div className="py-12 text-center text-sm text-stone-400">No services found</div>
             ) : (
-              <div className="divide-y divide-slate-100">
+              <div className="divide-y divide-stone-100">
                 {services.map((s: any) => (
                   <div key={s.id} className="py-4 flex items-start sm:items-center justify-between gap-4">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium text-slate-900">{s.name}</p>
+                        <p className="text-sm font-medium text-stone-900">{s.name}</p>
                         <Badge variant="outline" className="text-[10px] font-normal">{s.category || "standard"}</Badge>
                       </div>
-                      <p className="text-xs text-slate-500 mt-0.5 truncate">{s.description}</p>
-                      <div className="flex gap-4 mt-1 text-xs text-slate-400">
+                      <p className="text-xs text-stone-500 mt-0.5 truncate">{s.description}</p>
+                      <div className="flex gap-4 mt-1 text-xs text-stone-400">
                         <span>R{s.base_price}</span>
                         <span>{s.duration_hours}h</span>
                       </div>
@@ -225,20 +225,20 @@ export default function AdminServicesPage() {
               <div className="space-y-3 max-w-lg">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-medium text-slate-500 mb-1">Bank Name</label>
-                    <input value={bankingForm.bank_name} onChange={(e) => setBankingForm({ ...bankingForm, bank_name: e.target.value })} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#1E3A8A]" />
+                    <label className="block text-xs font-medium text-stone-500 mb-1">Bank Name</label>
+                    <input value={bankingForm.bank_name} onChange={(e) => setBankingForm({ ...bankingForm, bank_name: e.target.value })} className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm outline-none focus:border-[#2E1F16]" />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-500 mb-1">Account Number</label>
-                    <input value={bankingForm.account_number} onChange={(e) => setBankingForm({ ...bankingForm, account_number: e.target.value })} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#1E3A8A]" />
+                    <label className="block text-xs font-medium text-stone-500 mb-1">Account Number</label>
+                    <input value={bankingForm.account_number} onChange={(e) => setBankingForm({ ...bankingForm, account_number: e.target.value })} className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm outline-none focus:border-[#2E1F16]" />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-500 mb-1">Account Holder</label>
-                    <input value={bankingForm.account_holder} onChange={(e) => setBankingForm({ ...bankingForm, account_holder: e.target.value })} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#1E3A8A]" />
+                    <label className="block text-xs font-medium text-stone-500 mb-1">Account Holder</label>
+                    <input value={bankingForm.account_holder} onChange={(e) => setBankingForm({ ...bankingForm, account_holder: e.target.value })} className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm outline-none focus:border-[#2E1F16]" />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-500 mb-1">Branch Code</label>
-                    <input value={bankingForm.branch_code} onChange={(e) => setBankingForm({ ...bankingForm, branch_code: e.target.value })} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#1E3A8A]" />
+                    <label className="block text-xs font-medium text-stone-500 mb-1">Branch Code</label>
+                    <input value={bankingForm.branch_code} onChange={(e) => setBankingForm({ ...bankingForm, branch_code: e.target.value })} className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm outline-none focus:border-[#2E1F16]" />
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -253,11 +253,11 @@ export default function AdminServicesPage() {
             ) : loading ? (
               <div className="space-y-3">
                 {[...Array(4)].map((_, i) => (
-                  <div key={i} className="h-10 bg-slate-100 rounded animate-pulse" />
+                  <div key={i} className="h-10 bg-stone-100 rounded animate-pulse" />
                 ))}
               </div>
             ) : !banking ? (
-              <div className="py-12 text-center text-sm text-slate-400">No banking details configured</div>
+              <div className="py-12 text-center text-sm text-stone-400">No banking details configured</div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg">
                 <Field label="Bank Name" value={banking.bank_name} />
@@ -277,8 +277,8 @@ export default function AdminServicesPage() {
 function Field({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-xs font-medium text-slate-400 uppercase tracking-wide">{label}</p>
-      <p className="text-sm font-semibold text-slate-900 mt-0.5">{value || "—"}</p>
+      <p className="text-xs font-medium text-stone-400 uppercase tracking-wide">{label}</p>
+      <p className="text-sm font-semibold text-stone-900 mt-0.5">{value || "—"}</p>
     </div>
   );
 }

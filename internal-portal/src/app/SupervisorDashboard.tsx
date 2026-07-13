@@ -135,7 +135,7 @@ export default function SupervisorDashboard() {
 
   const statusBadge = (status: string) => {
     const map: Record<string, string> = {
-      scheduled: "bg-blue-100 text-blue-800",
+      scheduled: "bg-[#F0E6D6] text-[#1C130D]",
       assigned: "bg-yellow-100 text-yellow-800",
       in_progress: "bg-purple-100 text-purple-800",
       completed: "bg-green-100 text-green-800",
@@ -143,7 +143,7 @@ export default function SupervisorDashboard() {
       paid: "bg-green-100 text-green-800",
       pending: "bg-orange-100 text-orange-800",
     };
-    return <Badge className={map[status] || "bg-gray-100 text-gray-800"}>{status.replace(/_/g, " ")}</Badge>;
+    return <Badge className={map[status] || "bg-stone-100 text-stone-800"}>{status.replace(/_/g, " ")}</Badge>;
   };
 
   if (loading) {
@@ -181,49 +181,49 @@ export default function SupervisorDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-slate-600 flex items-center gap-2">
+              <CardTitle className="text-sm font-medium text-stone-600 flex items-center gap-2">
                 <CalendarDays className="h-4 w-4" />
                 Today&apos;s Jobs
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold text-slate-900">{data?.jobs.total || 0}</p>
+              <p className="text-2xl font-bold text-stone-900">{data?.jobs.total || 0}</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-slate-600 flex items-center gap-2">
+              <CardTitle className="text-sm font-medium text-stone-600 flex items-center gap-2">
                 <Users className="h-4 w-4" />
                 Active Cleaners
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold text-slate-900">{data?.workforce.active_cleaners || 0}</p>
+              <p className="text-2xl font-bold text-stone-900">{data?.workforce.active_cleaners || 0}</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-slate-600 flex items-center gap-2">
+              <CardTitle className="text-sm font-medium text-stone-600 flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4" />
                 Completed
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold text-slate-900">{data?.jobs.completed || 0}</p>
+              <p className="text-2xl font-bold text-stone-900">{data?.jobs.completed || 0}</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-slate-600 flex items-center gap-2">
+              <CardTitle className="text-sm font-medium text-stone-600 flex items-center gap-2">
                 <ClipboardCheck className="h-4 w-4" />
                 Overdue Checklists
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold text-slate-900">{data?.quality.overdue_checklists || 0}</p>
+              <p className="text-2xl font-bold text-stone-900">{data?.quality.overdue_checklists || 0}</p>
             </CardContent>
           </Card>
         </div>
@@ -238,9 +238,9 @@ export default function SupervisorDashboard() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center p-3 bg-blue-50 rounded-lg">
-                <p className="text-2xl font-bold text-blue-700">{data?.jobs.scheduled || 0}</p>
-                <p className="text-sm text-blue-600">Scheduled</p>
+              <div className="text-center p-3 bg-[#F7F2EA] rounded-lg">
+                <p className="text-2xl font-bold text-[#241811]">{data?.jobs.scheduled || 0}</p>
+                <p className="text-sm text-[#2E1F16]">Scheduled</p>
               </div>
               <div className="text-center p-3 bg-yellow-50 rounded-lg">
                 <p className="text-2xl font-bold text-yellow-700">{data?.jobs.assigned || 0}</p>
@@ -280,7 +280,7 @@ export default function SupervisorDashboard() {
                 ))}
               </div>
             ) : (
-              <p className="text-slate-500 text-center py-8">No jobs scheduled for today.</p>
+              <p className="text-stone-500 text-center py-8">No jobs scheduled for today.</p>
             )}
           </CardContent>
         </Card>
@@ -319,7 +319,7 @@ function JobRow({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
-            <span className="font-semibold text-slate-900">{job.client_name}</span>
+            <span className="font-semibold text-stone-900">{job.client_name}</span>
             {statusBadge(job.status)}
             {job.payment_status === "paid" && (
               <Badge className="bg-green-100 text-green-800">
@@ -328,14 +328,14 @@ function JobRow({
               </Badge>
             )}
           </div>
-          <div className="flex items-center gap-1 text-sm text-slate-600">
+          <div className="flex items-center gap-1 text-sm text-stone-600">
             <MapPin className="h-3.5 w-3.5" />
             {job.property_address}
           </div>
-          <div className="text-sm text-slate-500 mt-1">
+          <div className="text-sm text-stone-500 mt-1">
             {job.property_type.replace(/_/g, " ")} • {scheduledTime}
             {job.team_members && job.team_members.length > 0 && (
-              <span className="ml-2 text-slate-700">
+              <span className="ml-2 text-stone-700">
                 • Team: {job.team_members.join(", ")}
               </span>
             )}
@@ -354,8 +354,8 @@ function JobRow({
                       onClick={() => toggleCleaner(cleaner.paysheet_code)}
                       className={`px-2 py-1 text-xs rounded border transition-colors ${
                         selectedCleaners.includes(cleaner.paysheet_code)
-                          ? "bg-blue-600 text-white border-blue-600"
-                          : "bg-white text-slate-700 border-slate-300 hover:border-blue-400"
+                          ? "bg-[#2E1F16] text-white border-[#2E1F16]"
+                          : "bg-white text-stone-700 border-stone-300 hover:border-[#B08A5E]"
                       }`}
                     >
                       {cleaner.first_name} {cleaner.last_name?.charAt(0)}
@@ -395,11 +395,11 @@ function JobRow({
 
 function statusBadge(status: string) {
   const map: Record<string, string> = {
-    scheduled: "bg-blue-100 text-blue-800",
+    scheduled: "bg-[#F0E6D6] text-[#1C130D]",
     assigned: "bg-yellow-100 text-yellow-800",
     in_progress: "bg-purple-100 text-purple-800",
     completed: "bg-green-100 text-green-800",
     cancelled: "bg-red-100 text-red-800",
   };
-  return <Badge className={map[status] || "bg-gray-100 text-gray-800"}>{status.replace(/_/g, " ")}</Badge>;
+  return <Badge className={map[status] || "bg-stone-100 text-stone-800"}>{status.replace(/_/g, " ")}</Badge>;
 }

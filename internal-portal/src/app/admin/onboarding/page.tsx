@@ -193,7 +193,7 @@ export default function AdminOnboardingPage() {
   const pendingContracts = contracts.filter(c => c.status === 'pending');
   const pendingJoiners = joiners.filter(j => j.status === 'pending');
 
-  if (loading) return <div className="py-8 text-sm text-slate-400">Loading…</div>;
+  if (loading) return <div className="py-8 text-sm text-stone-400">Loading…</div>;
 
   return (
     <div className="space-y-6">
@@ -213,13 +213,13 @@ export default function AdminOnboardingPage() {
         <div className="flex gap-4 mb-6 border-b">
           <button
             onClick={() => { setActiveTab('contracts'); setError(''); setMessage(''); }}
-            className={`pb-2 px-4 font-medium ${activeTab === 'contracts' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+            className={`pb-2 px-4 font-medium ${activeTab === 'contracts' ? 'text-[#2E1F16] border-b-2 border-[#2E1F16]' : 'text-stone-500 hover:text-stone-700'}`}
           >
             Pending Contracts ({pendingContracts.length})
           </button>
           <button
             onClick={() => { setActiveTab('joiners'); setError(''); setMessage(''); }}
-            className={`pb-2 px-4 font-medium ${activeTab === 'joiners' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+            className={`pb-2 px-4 font-medium ${activeTab === 'joiners' ? 'text-[#2E1F16] border-b-2 border-[#2E1F16]' : 'text-stone-500 hover:text-stone-700'}`}
           >
             New Joiner Applications ({pendingJoiners.length})
           </button>
@@ -230,7 +230,7 @@ export default function AdminOnboardingPage() {
           <div className="mb-6">
             <button
               onClick={() => setShowForm(!showForm)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+              className="bg-[#2E1F16] text-white px-4 py-2 rounded-lg hover:bg-[#241811] transition"
             >
               {showForm ? 'Cancel' : 'Register New Cleaner'}
             </button>
@@ -243,42 +243,42 @@ export default function AdminOnboardingPage() {
             <h2 className="text-lg font-semibold mb-4">Register New Cleaner</h2>
             <form onSubmit={handleCreateJoiner} className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+                <label className="block text-sm font-medium text-stone-700 mb-1">Full Name *</label>
                 <input
                   type="text"
                   required
                   value={formData.fullName}
                   onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-[#B08A5E]"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">ID / Passport Number *</label>
+                <label className="block text-sm font-medium text-stone-700 mb-1">ID / Passport Number *</label>
                 <input
                   type="text"
                   required
                   value={formData.idPassportNumber}
                   onChange={(e) => setFormData({ ...formData, idPassportNumber: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-[#B08A5E]"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Contact Number *</label>
+                <label className="block text-sm font-medium text-stone-700 mb-1">Contact Number *</label>
                 <input
                   type="tel"
                   required
                   value={formData.contactNumber}
                   onChange={(e) => setFormData({ ...formData, contactNumber: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-[#B08A5E]"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Position</label>
+                <label className="block text-sm font-medium text-stone-700 mb-1">Position</label>
                 <input
                   type="text"
                   value={formData.positionAppliedFor}
                   onChange={(e) => setFormData({ ...formData, positionAppliedFor: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-[#B08A5E]"
                 />
               </div>
               <div className="md:col-span-2">
@@ -298,14 +298,14 @@ export default function AdminOnboardingPage() {
         {activeTab === 'contracts' && (
           <div className="space-y-4">
             {pendingContracts.length === 0 ? (
-              <p className="text-gray-500 bg-white p-6 rounded-lg shadow">No pending contracts</p>
+              <p className="text-stone-500 bg-white p-6 rounded-lg shadow">No pending contracts</p>
             ) : (
               pendingContracts.map((c) => (
                 <div key={c.id} className="bg-white p-4 rounded shadow flex justify-between items-center">
                   <div>
                     <p className="font-bold">{c.full_name}</p>
-                    <p className="text-sm text-gray-600">{c.position_applied_for} - {c.department}</p>
-                    <p className="text-sm text-gray-500">{c.contact_number}</p>
+                    <p className="text-sm text-stone-600">{c.position_applied_for} - {c.department}</p>
+                    <p className="text-sm text-stone-500">{c.contact_number}</p>
                   </div>
                   <div className="space-x-2">
                     <button
@@ -331,15 +331,15 @@ export default function AdminOnboardingPage() {
         {activeTab === 'joiners' && (
           <div className="space-y-4">
             {pendingJoiners.length === 0 ? (
-              <p className="text-gray-500 bg-white p-6 rounded-lg shadow">No pending new joiner applications</p>
+              <p className="text-stone-500 bg-white p-6 rounded-lg shadow">No pending new joiner applications</p>
             ) : (
               pendingJoiners.map((j) => (
                 <div key={j.id} className="bg-white p-4 rounded shadow flex justify-between items-center">
                   <div>
                     <p className="font-bold">{j.fullName}</p>
-                    <p className="text-sm text-gray-600">{j.positionAppliedFor}</p>
-                    <p className="text-sm text-gray-500">{j.contactNumber} / {j.email}</p>
-                    <p className="text-xs text-gray-400">ID: {j.idPassportNumber}</p>
+                    <p className="text-sm text-stone-600">{j.positionAppliedFor}</p>
+                    <p className="text-sm text-stone-500">{j.contactNumber} / {j.email}</p>
+                    <p className="text-xs text-stone-400">ID: {j.idPassportNumber}</p>
                   </div>
                   <div className="space-x-2">
                     <button

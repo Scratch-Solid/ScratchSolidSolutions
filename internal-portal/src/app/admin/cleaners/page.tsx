@@ -70,8 +70,8 @@ export default function AdminCleanersPage() {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
-        <h2 className="text-lg font-semibold text-slate-900 mb-2">Error</h2>
-        <p className="text-sm text-slate-500 max-w-md">{error}</p>
+        <h2 className="text-lg font-semibold text-stone-900 mb-2">Error</h2>
+        <p className="text-sm text-stone-500 max-w-md">{error}</p>
         <Button onClick={() => window.location.reload()} className="mt-6" variant="outline" size="sm">
           Retry
         </Button>
@@ -83,8 +83,8 @@ export default function AdminCleanersPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Cleaners</h1>
-          <p className="text-sm text-slate-500 mt-1">Workforce visibility and status management.</p>
+          <h1 className="text-2xl font-bold text-stone-900 tracking-tight">Cleaners</h1>
+          <p className="text-sm text-stone-500 mt-1">Workforce visibility and status management.</p>
         </div>
       </div>
 
@@ -95,7 +95,7 @@ export default function AdminCleanersPage() {
               key={f}
               onClick={() => setFilter(f)}
               className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-                filter === f ? "bg-[#1E3A8A] text-white" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+                filter === f ? "bg-[#2E1F16] text-white" : "bg-white border border-stone-200 text-stone-600 hover:bg-stone-50"
               }`}
             >
               {f.charAt(0).toUpperCase() + f.slice(1)}
@@ -103,13 +103,13 @@ export default function AdminCleanersPage() {
           ))}
         </div>
         <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
           <input
             type="text"
             placeholder="Search cleaners..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 py-2 text-sm outline-none focus:border-[#1E3A8A] focus:ring-1 focus:ring-[#1E3A8A] transition-colors"
+            className="w-full rounded-lg border border-stone-200 bg-white pl-9 pr-3 py-2 text-sm outline-none focus:border-[#2E1F16] focus:ring-1 focus:ring-[#2E1F16] transition-colors"
           />
         </div>
       </div>
@@ -122,33 +122,33 @@ export default function AdminCleanersPage() {
           {loading ? (
             <div className="space-y-3">
               {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-16 bg-slate-100 rounded animate-pulse" />
+                <div key={i} className="h-16 bg-stone-100 rounded animate-pulse" />
               ))}
             </div>
           ) : filtered.length === 0 ? (
-            <div className="py-12 text-center text-sm text-slate-400">No cleaners found</div>
+            <div className="py-12 text-center text-sm text-stone-400">No cleaners found</div>
           ) : (
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-stone-100">
               {filtered.map((c: any) => (
                 <div key={c.id} className="py-4 flex items-start sm:items-center justify-between gap-4">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium text-slate-900">{c.full_name || c.name || "Unnamed"}</p>
+                      <p className="text-sm font-medium text-stone-900">{c.full_name || c.name || "Unnamed"}</p>
                       <CleanerStatusBadge status={c.status} blocked={c.blocked} />
                     </div>
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
                       {c.email && (
-                        <span className="flex items-center gap-1 text-xs text-slate-500">
+                        <span className="flex items-center gap-1 text-xs text-stone-500">
                           <Mail className="h-3 w-3" /> {c.email}
                         </span>
                       )}
                       {c.phone && (
-                        <span className="flex items-center gap-1 text-xs text-slate-500">
+                        <span className="flex items-center gap-1 text-xs text-stone-500">
                           <Phone className="h-3 w-3" /> {c.phone}
                         </span>
                       )}
                       {c.location && (
-                        <span className="flex items-center gap-1 text-xs text-slate-500">
+                        <span className="flex items-center gap-1 text-xs text-stone-500">
                           <MapPin className="h-3 w-3" /> {c.location}
                         </span>
                       )}
@@ -156,7 +156,7 @@ export default function AdminCleanersPage() {
                     {c.rating && (
                       <div className="flex items-center gap-1 mt-1">
                         <Star className="h-3 w-3 text-amber-400 fill-amber-400" />
-                        <span className="text-xs text-slate-500">{c.rating}</span>
+                        <span className="text-xs text-stone-500">{c.rating}</span>
                       </div>
                     )}
                   </div>
@@ -196,7 +196,7 @@ function CleanerStatusBadge({ status, blocked }: { status?: string; blocked?: bo
   }
   if (s === "idle") {
     return (
-      <Badge className="bg-slate-100 text-slate-600 hover:bg-slate-100 border-0 text-[10px]">
+      <Badge className="bg-stone-100 text-stone-600 hover:bg-stone-100 border-0 text-[10px]">
         <Clock className="h-3 w-3 mr-0.5" /> Idle
       </Badge>
     );

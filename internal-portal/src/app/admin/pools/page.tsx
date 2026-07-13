@@ -65,8 +65,8 @@ export default function AdminPoolsPage() {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
-        <h2 className="text-lg font-semibold text-slate-900 mb-2">Error</h2>
-        <p className="text-sm text-slate-500 max-w-md">{error}</p>
+        <h2 className="text-lg font-semibold text-stone-900 mb-2">Error</h2>
+        <p className="text-sm text-stone-500 max-w-md">{error}</p>
         <Button onClick={() => window.location.reload()} className="mt-6" variant="outline" size="sm">
           Retry
         </Button>
@@ -78,8 +78,8 @@ export default function AdminPoolsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Pool Management</h1>
-          <p className="text-sm text-slate-500 mt-1">Assign cleaners to Individual or Business pools.</p>
+          <h1 className="text-2xl font-bold text-stone-900 tracking-tight">Pool Management</h1>
+          <p className="text-sm text-stone-500 mt-1">Assign cleaners to Individual or Business pools.</p>
         </div>
       </div>
 
@@ -87,29 +87,29 @@ export default function AdminPoolsPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">Individual Pool</CardTitle>
+            <CardTitle className="text-sm font-medium text-stone-500">Individual Pool</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-slate-900">{individualCount}</div>
-            <p className="text-xs text-slate-400 mt-1">Residential & LekkeSlaap</p>
+            <div className="text-2xl font-bold text-stone-900">{individualCount}</div>
+            <p className="text-xs text-stone-400 mt-1">Residential & LekkeSlaap</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">Business Pool</CardTitle>
+            <CardTitle className="text-sm font-medium text-stone-500">Business Pool</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-slate-900">{businessCount}</div>
-            <p className="text-xs text-slate-400 mt-1">Commercial & Office</p>
+            <div className="text-2xl font-bold text-stone-900">{businessCount}</div>
+            <p className="text-xs text-stone-400 mt-1">Commercial & Office</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">Total Cleaners</CardTitle>
+            <CardTitle className="text-sm font-medium text-stone-500">Total Cleaners</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-slate-900">{cleaners.length}</div>
-            <p className="text-xs text-slate-400 mt-1">Across all pools</p>
+            <div className="text-2xl font-bold text-stone-900">{cleaners.length}</div>
+            <p className="text-xs text-stone-400 mt-1">Across all pools</p>
           </CardContent>
         </Card>
       </div>
@@ -120,7 +120,7 @@ export default function AdminPoolsPage() {
             key={f}
             onClick={() => setFilter(f)}
             className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-              filter === f ? "bg-[#1E3A8A] text-white" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+              filter === f ? "bg-[#2E1F16] text-white" : "bg-white border border-stone-200 text-stone-600 hover:bg-stone-50"
             }`}
           >
             {f === "all" ? "All Pools" : f}
@@ -136,26 +136,26 @@ export default function AdminPoolsPage() {
           {loading ? (
             <div className="space-y-3">
               {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-14 bg-slate-100 rounded animate-pulse" />
+                <div key={i} className="h-14 bg-stone-100 rounded animate-pulse" />
               ))}
             </div>
           ) : filtered.length === 0 ? (
-            <div className="py-12 text-center text-sm text-slate-400">No cleaners found</div>
+            <div className="py-12 text-center text-sm text-stone-400">No cleaners found</div>
           ) : (
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-stone-100">
               {filtered.map((c: any) => (
                 <div key={c.id} className="py-4 flex items-center justify-between gap-4">
                   <div className="min-w-0 flex-1 flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-semibold text-xs">
+                    <div className="h-9 w-9 rounded-full bg-stone-100 flex items-center justify-center text-stone-500 font-semibold text-xs">
                       {(c.full_name || c.name || "?").charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-slate-900">{c.full_name || c.name || "Unnamed"}</p>
-                      <p className="text-xs text-slate-500">{c.email || c.phone || "—"}</p>
+                      <p className="text-sm font-medium text-stone-900">{c.full_name || c.name || "Unnamed"}</p>
+                      <p className="text-xs text-stone-500">{c.email || c.phone || "—"}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    <Badge className={c.pool_type === "BUSINESS" ? "bg-blue-100 text-blue-700 hover:bg-blue-100 border-0" : "bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-0"}>
+                    <Badge className={c.pool_type === "BUSINESS" ? "bg-[#F0E6D6] text-[#241811] hover:bg-[#F0E6D6] border-0" : "bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-0"}>
                       {c.pool_type === "BUSINESS" ? (
                         <Building2 className="h-3 w-3 mr-0.5" />
                       ) : (

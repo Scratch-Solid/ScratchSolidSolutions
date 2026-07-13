@@ -226,7 +226,7 @@ export default function CreateProfilePage() {
                 <img
                   src={profilePicturePreview}
                   alt="Profile Preview"
-                  className="w-32 h-32 rounded-full object-cover mx-auto border-4 border-blue-500"
+                  className="w-32 h-32 rounded-full object-cover mx-auto border-4 border-[#B08A5E]"
                 />
                 <button
                   type="button"
@@ -274,7 +274,7 @@ export default function CreateProfilePage() {
                 >
                   📷 Take Photo with Camera
                 </button>
-                <div className="text-center text-gray-500">or</div>
+                <div className="text-center text-stone-500">or</div>
                 <div>
                   <input
                     type="file"

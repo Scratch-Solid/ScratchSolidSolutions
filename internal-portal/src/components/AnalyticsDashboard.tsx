@@ -128,7 +128,7 @@ export default function AnalyticsDashboard({ promoCodeId }: AnalyticsDashboardPr
                 </div>
                 <div className="text-right">
                   <p className="text-sm text-white/80">Scans: <span className="font-bold text-green-400">{promo.scan_count}</span></p>
-                  <p className="text-sm text-white/80">Clicks: <span className="font-bold text-blue-400">{promo.click_count}</span></p>
+                  <p className="text-sm text-white/80">Clicks: <span className="font-bold text-[#B08A5E]">{promo.click_count}</span></p>
                 </div>
               </div>
             ))}
@@ -149,7 +149,7 @@ export default function AnalyticsDashboard({ promoCodeId }: AnalyticsDashboardPr
                 </div>
                 <div className="text-right">
                   <p className="text-sm text-white/80">Distributions: <span className="font-bold text-green-400">{dist.distributions}</span></p>
-                  <p className="text-sm text-white/80">Recipients: <span className="font-bold text-blue-400">{dist.total_recipients}</span></p>
+                  <p className="text-sm text-white/80">Recipients: <span className="font-bold text-[#B08A5E]">{dist.total_recipients}</span></p>
                 </div>
               </div>
             ))}

@@ -22,7 +22,7 @@ export default function CornerButton() {
       )}
       {/* Floating Action Button */}
       <button
-        className="fixed bottom-8 right-8 z-50 w-16 h-16 rounded-full bg-white shadow-xl flex items-center justify-center border-2 border-blue-600 hover:scale-110 transition-transform focus:outline-none focus:ring-4 focus:ring-blue-300"
+        className="fixed bottom-8 right-8 z-50 w-16 h-16 rounded-full bg-white shadow-xl flex items-center justify-center border-2 border-[#2E1F16] hover:scale-110 transition-transform focus:outline-none focus:ring-4 focus:ring-[#D8CBB5]"
         onClick={() => setOpen(true)}
         aria-label="Open menu"
         style={{ padding: 0 }}
@@ -51,7 +51,7 @@ export default function CornerButton() {
           {/* Content */}
           <div className="p-6 pt-8 flex flex-col gap-6">
             <section>
-              <h2 className="text-xl font-bold mb-2 text-blue-700">Contact Details</h2>
+              <h2 className="text-xl font-bold mb-2 text-[#241811]">Contact Details</h2>
               <div className="mb-2">
                 <div className="font-semibold">Phone:</div>
                 <div>+1 234 567 8901</div>
@@ -60,7 +60,7 @@ export default function CornerButton() {
               </div>
             </section>
             <section>
-              <h3 className="text-lg font-semibold mb-1 text-blue-700">Preferences</h3>
+              <h3 className="text-lg font-semibold mb-1 text-[#241811]">Preferences</h3>
               <label className="flex items-center gap-2">
                 <span>Background color:</span>
                 <input

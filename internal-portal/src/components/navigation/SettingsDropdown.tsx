@@ -31,31 +31,31 @@ export default function SettingsDropdown() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+        <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-stone-200 py-1 z-50">
           <button
             onClick={() => window.location.href = '/auth/change-password'}
-            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3"
+            className="w-full px-4 py-2 text-left text-sm text-stone-700 hover:bg-stone-50 flex items-center gap-3"
           >
             <User className="w-4 h-4" />
             Account Settings
           </button>
           <button
             onClick={() => window.location.href = '/settings/notifications'}
-            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3"
+            className="w-full px-4 py-2 text-left text-sm text-stone-700 hover:bg-stone-50 flex items-center gap-3"
           >
             <Bell className="w-4 h-4" />
             Notification Preferences
           </button>
           <button
             onClick={() => window.location.href = '/settings/security'}
-            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3"
+            className="w-full px-4 py-2 text-left text-sm text-stone-700 hover:bg-stone-50 flex items-center gap-3"
           >
             <Shield className="w-4 h-4" />
             Security & Privacy
           </button>
           <button
             onClick={() => window.location.href = '/settings/appearance'}
-            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3"
+            className="w-full px-4 py-2 text-left text-sm text-stone-700 hover:bg-stone-50 flex items-center gap-3"
           >
             <Palette className="w-4 h-4" />
             Appearance

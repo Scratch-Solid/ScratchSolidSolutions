@@ -56,7 +56,7 @@ export default function StaffReviews() {
 
   const ScoreInput = ({ label, field, min = 0, max = 10 }: { label: string; field: keyof typeof form; min?: number; max?: number }) => (
     <div className="space-y-1">
-      <label className="text-sm font-medium text-slate-700">{label} ({min}–{max})</label>
+      <label className="text-sm font-medium text-stone-700">{label} ({min}–{max})</label>
       <Input
         type="number" min={min} max={max} step="0.5"
         value={form[field] as number}
@@ -69,8 +69,8 @@ export default function StaffReviews() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Monthly Staff Reviews</h2>
-          <p className="text-slate-500 text-sm mt-1">Enter monthly scores for attendance, company values, and quality</p>
+          <h2 className="text-2xl font-bold text-stone-900">Monthly Staff Reviews</h2>
+          <p className="text-stone-500 text-sm mt-1">Enter monthly scores for attendance, company values, and quality</p>
         </div>
         {message && (
           <Badge variant={message.includes('submitted') ? 'default' : 'destructive'}>
@@ -98,7 +98,7 @@ export default function StaffReviews() {
         <CardContent>
           <div className="space-y-6">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Select Staff Member</label>
+              <label className="text-sm font-medium text-stone-700">Select Staff Member</label>
               <Select
                 value={selected?.id?.toString() || ''}
                 onValueChange={(v) => setSelected(cleaners.find(c => c.id === parseInt(v)) || null)}
@@ -117,8 +117,8 @@ export default function StaffReviews() {
             </div>
 
             {selected && (
-              <div className="space-y-6 p-6 border border-slate-200 rounded-lg bg-slate-50">
-                <h3 className="text-lg font-semibold text-slate-900">Review for {selected.first_name} {selected.last_name}</h3>
+              <div className="space-y-6 p-6 border border-stone-200 rounded-lg bg-stone-50">
+                <h3 className="text-lg font-semibold text-stone-900">Review for {selected.first_name} {selected.last_name}</h3>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <ScoreInput label="Client Rating (1–5 stars)" field="client_rating" min={1} max={5} />
@@ -130,7 +130,7 @@ export default function StaffReviews() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700">Notes</label>
+                  <label className="text-sm font-medium text-stone-700">Notes</label>
                   <Textarea
                     rows={3}
                     value={form.notes}

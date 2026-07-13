@@ -50,7 +50,7 @@ function SendVerificationContent() {
               </svg>
             </div>
             <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--text-h)' }}>Email Sent!</h1>
-            <p className="text-gray-600 mb-6">
+            <p className="text-stone-600 mb-6">
               {message}
             </p>
           </div>
@@ -112,7 +112,7 @@ function SendVerificationContent() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-stone-300 rounded-lg focus:ring-2 focus:ring-[#B08A5E] focus:border-transparent"
               placeholder="Enter your email address"
             />
           </div>
@@ -130,7 +130,7 @@ function SendVerificationContent() {
           <button
             type="button"
             onClick={() => router.push("/auth/login")}
-            className="text-sm underline hover:text-blue-600"
+            className="text-sm underline hover:text-[#2E1F16]"
           >
             Back to Login
           </button>

@@ -76,7 +76,7 @@ export default function ContentUpload() {
   if (!userRole) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1E3A8A]"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2E1F16]"></div>
       </div>
     );
   }
@@ -84,11 +84,11 @@ export default function ContentUpload() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Content Upload</h1>
-        <p className="text-sm text-slate-500 mt-1">Manage marketing site content pages.</p>
+        <h1 className="text-2xl font-bold text-stone-900 tracking-tight">Content Upload</h1>
+        <p className="text-sm text-stone-500 mt-1">Manage marketing site content pages.</p>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 p-6">
+      <div className="bg-white rounded-xl border border-stone-200 p-6">
 
           {message && (
             <div className={`mb-4 p-4 rounded-md ${message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
@@ -99,14 +99,14 @@ export default function ContentUpload() {
           <div className="bg-white rounded-lg shadow p-6">
             <form onSubmit={handleSubmit}>
               <div className="mb-4">
-                <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="type" className="block text-sm font-medium text-stone-700 mb-2">
                   Content Type
                 </label>
                 <select
                   id="type"
                   value={type}
                   onChange={(e) => handleTypeChange(e.target.value)}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="block w-full px-3 py-2 border border-stone-300 rounded-md shadow-sm focus:outline-none focus:ring-[#B08A5E] focus:border-[#B08A5E]"
                 >
                   <option value="privacy">Privacy Policy</option>
                   <option value="terms">Terms of Service</option>
@@ -118,7 +118,7 @@ export default function ContentUpload() {
               </div>
 
               <div className="mb-4">
-                <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="title" className="block text-sm font-medium text-stone-700 mb-2">
                   Title
                 </label>
                 <input
@@ -127,12 +127,12 @@ export default function ContentUpload() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder={type.charAt(0).toUpperCase() + type.slice(1)}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="block w-full px-3 py-2 border border-stone-300 rounded-md shadow-sm focus:outline-none focus:ring-[#B08A5E] focus:border-[#B08A5E]"
                 />
               </div>
 
               <div className="mb-4">
-                <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="content" className="block text-sm font-medium text-stone-700 mb-2">
                   Content
                 </label>
                 <textarea
@@ -141,7 +141,7 @@ export default function ContentUpload() {
                   onChange={(e) => setContent(e.target.value)}
                   rows={15}
                   required
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="block w-full px-3 py-2 border border-stone-300 rounded-md shadow-sm focus:outline-none focus:ring-[#B08A5E] focus:border-[#B08A5E]"
                   placeholder="Enter your content here..."
                 />
               </div>
@@ -150,7 +150,7 @@ export default function ContentUpload() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-[#2E1F16] hover:bg-[#241811] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? 'Saving...' : 'Save Content'}
                 </button>

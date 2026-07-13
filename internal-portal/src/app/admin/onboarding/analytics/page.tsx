@@ -76,7 +76,7 @@ export default function OnboardingAnalytics() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Loading analytics...</div>
+        <div className="text-stone-500">Loading analytics...</div>
       </div>
     );
   }
@@ -86,10 +86,10 @@ export default function OnboardingAnalytics() {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Onboarding Analytics</h1>
+        <h1 className="text-2xl font-bold text-stone-900">Onboarding Analytics</h1>
         <button
           onClick={() => handleExport('csv')}
-          className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+          className="bg-[#B08A5E] text-white px-4 py-2 rounded-lg hover:bg-[#2E1F16]"
         >
           Export CSV
         </button>
@@ -101,18 +101,18 @@ export default function OnboardingAnalytics() {
         <div className="space-y-3">
           {funnelData.map((item, index) => (
             <div key={item.stage} className="flex items-center">
-              <div className="w-40 text-sm text-gray-600">{item.stage.replace(/_/g, ' ')}</div>
+              <div className="w-40 text-sm text-stone-600">{item.stage.replace(/_/g, ' ')}</div>
               <div className="flex-1 mx-4">
-                <div className="bg-gray-200 rounded-full h-8 relative">
+                <div className="bg-stone-200 rounded-full h-8 relative">
                   <div
-                    className="bg-blue-500 h-8 rounded-full flex items-center justify-end pr-2"
+                    className="bg-[#B08A5E] h-8 rounded-full flex items-center justify-end pr-2"
                     style={{ width: `${item.percentage}%` }}
                   >
                     <span className="text-white text-xs font-medium">{item.count}</span>
                   </div>
                 </div>
               </div>
-              <div className="w-20 text-sm text-gray-600">{item.percentage.toFixed(1)}%</div>
+              <div className="w-20 text-sm text-stone-600">{item.percentage.toFixed(1)}%</div>
             </div>
           ))}
         </div>
@@ -124,7 +124,7 @@ export default function OnboardingAnalytics() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {stageDurations.map((item) => (
             <div key={item.stage} className="bg-white border rounded-lg p-4 shadow-sm">
-              <div className="text-sm text-gray-500 mb-1">{item.stage.replace(/_/g, ' ')}</div>
+              <div className="text-sm text-stone-500 mb-1">{item.stage.replace(/_/g, ' ')}</div>
               <div className="text-xl font-bold">
                 {item.avg_duration_hours < 24
                   ? `${item.avg_duration_hours.toFixed(1)}h`
@@ -137,9 +137,9 @@ export default function OnboardingAnalytics() {
 
       {/* Summary Stats */}
       <div className="grid grid-cols-3 gap-4 mb-8">
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="text-sm text-blue-600">Total Applicants</div>
-          <div className="text-2xl font-bold text-blue-900">{totalApplicants}</div>
+        <div className="bg-[#F7F2EA] border border-[#E9E0D3] rounded-lg p-4">
+          <div className="text-sm text-[#2E1F16]">Total Applicants</div>
+          <div className="text-2xl font-bold text-[#150E09]">{totalApplicants}</div>
         </div>
         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
           <div className="text-sm text-green-600">Completed Onboarding</div>
@@ -180,7 +180,7 @@ export default function OnboardingAnalytics() {
               <div className="grid grid-cols-7 gap-2 text-sm">
                 {Object.entries(stages as Record<string, number>).map(([stage, count]) => (
                   <div key={stage} className="text-center">
-                    <div className="text-gray-500">{stage.replace(/_/g, ' ')}</div>
+                    <div className="text-stone-500">{stage.replace(/_/g, ' ')}</div>
                     <div className="font-bold">{count}</div>
                   </div>
                 ))}
@@ -202,8 +202,8 @@ export default function OnboardingAnalytics() {
               const height = (count / maxCount) * 100;
               return (
                 <div key={i} className="flex-1 flex flex-col items-center">
-                  <div className="w-full bg-blue-500 rounded-t" style={{ height: `${height}%` }}></div>
-                  <div className="text-xs text-gray-500 mt-1">{i}</div>
+                  <div className="w-full bg-[#B08A5E] rounded-t" style={{ height: `${height}%` }}></div>
+                  <div className="text-xs text-stone-500 mt-1">{i}</div>
                 </div>
               );
             })}

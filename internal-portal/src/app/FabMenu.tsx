@@ -34,7 +34,7 @@ export default function FabMenu() {
       )}
       {/* FAB */}
       <button
-        className="fixed bottom-6 left-6 z-50 w-10 h-10 rounded-full bg-white shadow-2xl flex items-center justify-center border-2 border-blue-600 hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-blue-300"
+        className="fixed bottom-6 left-6 z-50 w-10 h-10 rounded-full bg-white shadow-2xl flex items-center justify-center border-2 border-[#2E1F16] hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-[#D8CBB5]"
         onClick={() => setOpen((v) => !v)}
         aria-label="Open menu"
         style={{ padding: 0 }}
@@ -54,10 +54,10 @@ export default function FabMenu() {
           {menuOptions.map((opt, i) => (
             <button
               key={opt.key}
-              className="w-full flex items-center gap-3 px-5 py-4 rounded-xl hover:bg-blue-50 text-lg font-medium text-zinc-800 transition-colors focus:outline-none mb-1"
+              className="w-full flex items-center gap-3 px-5 py-4 rounded-xl hover:bg-[#F7F2EA] text-lg font-medium text-zinc-800 transition-colors focus:outline-none mb-1"
               onClick={() => setActive(opt.key)}
             >
-              <span className="w-7 h-7 flex items-center justify-center rounded-full bg-blue-100 text-blue-700 font-bold text-base">
+              <span className="w-7 h-7 flex items-center justify-center rounded-full bg-[#F0E6D6] text-[#241811] font-bold text-base">
                 {i + 1}
               </span>
               {opt.label}
@@ -71,7 +71,7 @@ export default function FabMenu() {
           <button className="self-end mb-2 text-zinc-400 hover:text-zinc-700" onClick={() => setActive(null)} aria-label="Close">
             <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M6 6l12 12M6 18L18 6"/></svg>
           </button>
-          <h2 className="text-xl font-bold mb-2 text-blue-700">Cleaning Products</h2>
+          <h2 className="text-xl font-bold mb-2 text-[#241811]">Cleaning Products</h2>
           <div className="text-zinc-700">List your cleaning products here.</div>
         </div>
       )}
@@ -80,7 +80,7 @@ export default function FabMenu() {
           <button className="self-end mb-2 text-zinc-400 hover:text-zinc-700" onClick={() => setActive(null)} aria-label="Close">
             <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M6 6l12 12M6 18L18 6"/></svg>
           </button>
-          <h2 className="text-xl font-bold mb-2 text-blue-700">Contact Details</h2>
+          <h2 className="text-xl font-bold mb-2 text-[#241811]">Contact Details</h2>
           <div className="mb-2">
             <div className="font-semibold">Phone:</div>
             <div>+1 234 567 8901</div>
@@ -94,7 +94,7 @@ export default function FabMenu() {
           <button className="self-end mb-2 text-zinc-400 hover:text-zinc-700" onClick={() => setActive(null)} aria-label="Close">
             <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M6 6l12 12M6 18L18 6"/></svg>
           </button>
-          <h2 className="text-xl font-bold mb-2 text-blue-700">Settings</h2>
+          <h2 className="text-xl font-bold mb-2 text-[#241811]">Settings</h2>
           <label className="flex items-center gap-2 mt-2">
             <span>Background color:</span>
             <input
@@ -111,7 +111,7 @@ export default function FabMenu() {
           <button className="self-end mb-2 text-zinc-400 hover:text-zinc-700" onClick={() => setActive(null)} aria-label="Close">
             <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M6 6l12 12M6 18L18 6"/></svg>
           </button>
-          <h2 className="text-xl font-bold mb-2 text-blue-700">Operations & Timeslots</h2>
+          <h2 className="text-xl font-bold mb-2 text-[#241811]">Operations & Timeslots</h2>
           <div className="text-zinc-700">
             <div className="mb-2">Our cleaning operations run in two main timeslots each day:</div>
             <ul className="list-disc pl-5 mb-2">

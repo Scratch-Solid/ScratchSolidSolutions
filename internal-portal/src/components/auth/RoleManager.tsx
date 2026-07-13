@@ -90,10 +90,10 @@ export default function RoleManager({ onClose }: RoleManagerProps) {
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
       case 'admin': return 'bg-purple-100 text-purple-800';
-      case 'cleaner': return 'bg-blue-100 text-blue-800';
+      case 'cleaner': return 'bg-[#F0E6D6] text-[#1C130D]';
       case 'digital': return 'bg-green-100 text-green-800';
       case 'transport': return 'bg-orange-100 text-orange-800';
-      default: return 'bg-gray-100 text-gray-800';
+      default: return 'bg-stone-100 text-stone-800';
     }
   };
 
@@ -111,8 +111,8 @@ export default function RoleManager({ onClose }: RoleManagerProps) {
     return (
       <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-md">
         <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading users...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2E1F16] mx-auto"></div>
+          <p className="mt-2 text-stone-600">Loading users...</p>
         </div>
       </div>
     );
@@ -125,7 +125,7 @@ export default function RoleManager({ onClose }: RoleManagerProps) {
         {onClose && (
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
+            className="text-stone-500 hover:text-stone-700"
           >
             ✕
           </button>
@@ -139,8 +139,8 @@ export default function RoleManager({ onClose }: RoleManagerProps) {
       )}
 
       <div className="mb-6">
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h3 className="font-medium text-blue-900 mb-2">Role Permissions</h3>
+        <div className="bg-[#F7F2EA] border border-[#E9E0D3] rounded-lg p-4">
+          <h3 className="font-medium text-[#150E09] mb-2">Role Permissions</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div>
               <span className="font-medium">Admin:</span> Full system access, user management
@@ -159,32 +159,32 @@ export default function RoleManager({ onClose }: RoleManagerProps) {
       </div>
 
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+        <table className="min-w-full divide-y divide-stone-200">
+          <thead className="bg-stone-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">
                 User
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">
                 Current Role
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">
                 Actions
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">
                 Created
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-white divide-y divide-stone-200">
             {users.map((user) => (
               <tr key={user.id}>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div>
-                    <div className="text-sm font-medium text-gray-900">
+                    <div className="text-sm font-medium text-stone-900">
                       {user.name || 'N/A'}
                     </div>
-                    <div className="text-sm text-gray-500">
+                    <div className="text-sm text-stone-500">
                       {user.email}
                     </div>
                   </div>
@@ -194,7 +194,7 @@ export default function RoleManager({ onClose }: RoleManagerProps) {
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleBadgeColor(user.role)}`}>
                       {user.role}
                     </span>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-stone-500">
                       {getRoleDescription(user.role)}
                     </div>
                   </div>
@@ -204,7 +204,7 @@ export default function RoleManager({ onClose }: RoleManagerProps) {
                     value={user.role}
                     onChange={(e) => updateRole(user.id, e.target.value)}
                     disabled={updating === user.id}
-                    className="text-sm border border-gray-300 rounded px-3 py-1 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                    className="text-sm border border-stone-300 rounded px-3 py-1 focus:ring-2 focus:ring-[#B08A5E] focus:border-transparent disabled:bg-stone-100"
                   >
                     <option value="admin">Admin</option>
                     <option value="cleaner">Cleaner</option>
@@ -212,10 +212,10 @@ export default function RoleManager({ onClose }: RoleManagerProps) {
                     <option value="transport">Transport</option>
                   </select>
                   {updating === user.id && (
-                    <span className="ml-2 text-sm text-blue-600">Updating...</span>
+                    <span className="ml-2 text-sm text-[#2E1F16]">Updating...</span>
                   )}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-500">
                   {formatDate(user.created_at)}
                 </td>
               </tr>
@@ -225,7 +225,7 @@ export default function RoleManager({ onClose }: RoleManagerProps) {
       </div>
 
       {users.length === 0 && (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-stone-500">
           No users found
         </div>
       )}

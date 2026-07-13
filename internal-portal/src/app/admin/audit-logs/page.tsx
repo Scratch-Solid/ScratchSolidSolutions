@@ -87,7 +87,7 @@ function AuditLogsContent() {
   const getActionColor = (action: string) => {
     if (action.includes('FAILED') || action.includes('REJECTED')) return 'text-red-600';
     if (action.includes('APPROVED') || action.includes('VERIFIED')) return 'text-green-600';
-    return 'text-gray-600';
+    return 'text-stone-600';
   };
 
   const getSuccessIcon = (success: boolean) => {
@@ -105,7 +105,7 @@ function AuditLogsContent() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1E3A8A]"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2E1F16]"></div>
       </div>
     );
   }
@@ -113,8 +113,8 @@ function AuditLogsContent() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Audit Logs</h1>
-        <p className="text-sm text-slate-500 mt-1">View system activity and security events</p>
+        <h1 className="text-2xl font-bold text-stone-900 tracking-tight">Audit Logs</h1>
+        <p className="text-sm text-stone-500 mt-1">View system activity and security events</p>
       </div>
 
         {error && (
@@ -125,27 +125,27 @@ function AuditLogsContent() {
 
         {/* Filters */}
         <div className="bg-white shadow rounded-lg mb-6">
-          <div className="px-4 py-5 border-b border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">Filters</h3>
+          <div className="px-4 py-5 border-b border-stone-200">
+            <h3 className="text-lg font-medium text-stone-900">Filters</h3>
           </div>
           <div className="p-4">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">User ID</label>
+                <label className="block text-sm font-medium text-stone-700 mb-2">User ID</label>
                 <input
                   type="text"
                   value={filters.user_id}
                   onChange={(e) => handleFilterChange('user_id', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-stone-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
                   placeholder="Enter user ID"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Action</label>
+                <label className="block text-sm font-medium text-stone-700 mb-2">Action</label>
                 <select
                   value={filters.action}
                   onChange={(e) => handleFilterChange('action', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-stone-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
                 >
                   <option value="">All Actions</option>
                   <option value="USER_REGISTERED">User Registered</option>
@@ -157,11 +157,11 @@ function AuditLogsContent() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Resource</label>
+                <label className="block text-sm font-medium text-stone-700 mb-2">Resource</label>
                 <select
                   value={filters.resource}
                   onChange={(e) => handleFilterChange('resource', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-stone-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
                 >
                   <option value="">All Resources</option>
                   <option value="user">User</option>
@@ -171,11 +171,11 @@ function AuditLogsContent() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Limit</label>
+                <label className="block text-sm font-medium text-stone-700 mb-2">Limit</label>
                 <select
                   value={filters.limit}
                   onChange={(e) => handleFilterChange('limit', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-stone-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
                 >
                   <option value="25">25</option>
                   <option value="50">50</option>
@@ -187,7 +187,7 @@ function AuditLogsContent() {
             <div className="mt-4">
               <button
                 onClick={fetchAuditLogs}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+                className="bg-[#2E1F16] hover:bg-[#241811] text-white px-4 py-2 rounded-md"
               >
                 Apply Filters
               </button>
@@ -198,39 +198,39 @@ function AuditLogsContent() {
         {/* Logs Table */}
         <div className="bg-white shadow overflow-hidden rounded-lg">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-stone-200">
+              <thead className="bg-stone-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">
                     Timestamp
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">
                     User ID
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">
                     Action
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">
                     Resource
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">
                     IP Address
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">
                     Success
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">
                     Details
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-stone-200">
                 {logs.map((log) => (
-                  <tr key={log.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <tr key={log.id} className="hover:bg-stone-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-900">
                       {formatTimestamp(log.timestamp)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-900">
                       {log.user_id || 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
@@ -238,10 +238,10 @@ function AuditLogsContent() {
                         {log.action}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-900">
                       {log.resource || 'N/A'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-900">
                       {log.ip_address || 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
@@ -252,7 +252,7 @@ function AuditLogsContent() {
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
+                    <td className="px-6 py-4 text-sm text-stone-900 max-w-xs truncate">
                       <div className="truncate" title={log.details}>
                         {log.details || 'N/A'}
                       </div>
@@ -265,13 +265,13 @@ function AuditLogsContent() {
           
           {logs.length === 0 && (
             <div className="text-center py-12">
-              <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="mx-auto w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Audit Logs Found</h3>
-              <p className="text-gray-500">No audit logs match the current filters.</p>
+              <h3 className="text-lg font-medium text-stone-900 mb-2">No Audit Logs Found</h3>
+              <p className="text-stone-500">No audit logs match the current filters.</p>
             </div>
           )}
         </div>
@@ -279,21 +279,21 @@ function AuditLogsContent() {
         {/* Pagination */}
         {logs.length > 0 && (
           <div className="mt-6 flex items-center justify-between">
-            <div className="text-sm text-gray-700">
+            <div className="text-sm text-stone-700">
               Showing {logs.length} results
             </div>
             <div className="flex space-x-2">
               <button
                 onClick={() => setPage(Math.max(0, page - 1))}
                 disabled={page === 0}
-                className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50"
+                className="px-3 py-1 border border-stone-300 rounded-md text-sm disabled:opacity-50"
               >
                 Previous
               </button>
               <button
                 onClick={() => setPage(page + 1)}
                 disabled={logs.length < parseInt(filters.limit)}
-                className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50"
+                className="px-3 py-1 border border-stone-300 rounded-md text-sm disabled:opacity-50"
               >
                 Next
               </button>
@@ -306,7 +306,7 @@ function AuditLogsContent() {
 
 export default function AuditLogsPage() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center py-20 text-sm text-slate-400">Loading…</div>}>
+    <Suspense fallback={<div className="flex items-center justify-center py-20 text-sm text-stone-400">Loading…</div>}>
       <AuditLogsContent />
     </Suspense>
   );

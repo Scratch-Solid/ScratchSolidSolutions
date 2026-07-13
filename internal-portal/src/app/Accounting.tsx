@@ -53,7 +53,7 @@ export default function Accounting() {
           Amount:
           <input type="number" value={amount} onChange={e => setAmount(e.target.value)} className="border rounded px-2 py-1 ml-2" required />
         </label>
-        <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded" disabled={processing}>
+        <button type="submit" className="bg-[#2E1F16] text-white px-4 py-2 rounded" disabled={processing}>
           {processing ? "Processing..." : "Submit"}
         </button>
       </form>

@@ -98,15 +98,15 @@ export default function PreCleanerDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-gradient-to-br from-[#F7F2EA] to-[#F0E6D6] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2E1F16]"></div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-[#F7F2EA] to-[#F0E6D6] flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-8">
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
             {error}
@@ -127,11 +127,11 @@ export default function PreCleanerDashboard() {
   const currentStep = steps.find(s => !s.completed) || steps[steps.length - 1];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#F7F2EA] to-[#F0E6D6] p-4">
       <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-2xl shadow-xl p-8 mb-6">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Onboarding Dashboard</h1>
-          <p className="text-gray-600 mb-8">Complete the following steps to start working</p>
+          <h1 className="text-3xl font-bold text-stone-800 mb-2">Onboarding Dashboard</h1>
+          <p className="text-stone-600 mb-8">Complete the following steps to start working</p>
 
           <div className="space-y-4 mb-8">
             {steps.map((step, index) => (
@@ -141,18 +141,18 @@ export default function PreCleanerDashboard() {
                   step.completed
                     ? 'border-green-500 bg-green-50'
                     : index === steps.indexOf(currentStep)
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-200 bg-gray-50'
+                    ? 'border-[#B08A5E] bg-[#F7F2EA]'
+                    : 'border-stone-200 bg-stone-50'
                 }`}
               >
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-4 ${
-                  step.completed ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'
+                  step.completed ? 'bg-green-500 text-white' : 'bg-stone-300 text-stone-600'
                 }`}>
                   {step.completed ? '✓' : index + 1}
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-gray-800">{step.label}</h3>
-                  <p className="text-sm text-gray-600">
+                  <h3 className="font-semibold text-stone-800">{step.label}</h3>
+                  <p className="text-sm text-stone-600">
                     {step.completed ? 'Completed' : index === steps.indexOf(currentStep) ? 'In Progress' : 'Pending'}
                   </p>
                 </div>
@@ -161,15 +161,15 @@ export default function PreCleanerDashboard() {
           </div>
 
           {!onboardingComplete && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Current Step: {currentStep.label}</h2>
+            <div className="bg-[#F7F2EA] border border-[#E9E0D3] rounded-lg p-6">
+              <h2 className="text-xl font-semibold text-stone-800 mb-4">Current Step: {currentStep.label}</h2>
               
               {currentStep.key === 'background_check' && (
                 <div className="space-y-4">
-                  <p className="text-gray-600">Please review and sign the background check consent form.</p>
+                  <p className="text-stone-600">Please review and sign the background check consent form.</p>
                   <button
                     onClick={() => handleBackgroundCheckConsent()}
-                    className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition"
+                    className="px-6 py-3 bg-[#2E1F16] text-white rounded-lg font-semibold hover:bg-[#241811] transition"
                   >
                     Sign Consent Form
                   </button>
@@ -178,10 +178,10 @@ export default function PreCleanerDashboard() {
 
               {currentStep.key === 'contract' && (
                 <div className="space-y-4">
-                  <p className="text-gray-600">Please review and sign your employment contract.</p>
+                  <p className="text-stone-600">Please review and sign your employment contract.</p>
                   <button
                     onClick={() => handleContractSign()}
-                    className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition"
+                    className="px-6 py-3 bg-[#2E1F16] text-white rounded-lg font-semibold hover:bg-[#241811] transition"
                   >
                     Sign Contract
                   </button>
@@ -190,10 +190,10 @@ export default function PreCleanerDashboard() {
 
               {currentStep.key === 'training' && (
                 <div className="space-y-4">
-                  <p className="text-gray-600">Complete all training modules to finish onboarding.</p>
+                  <p className="text-stone-600">Complete all training modules to finish onboarding.</p>
                   <button
                     onClick={() => router.push('/cleaner-training')}
-                    className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition"
+                    className="px-6 py-3 bg-[#2E1F16] text-white rounded-lg font-semibold hover:bg-[#241811] transition"
                   >
                     Start Training
                   </button>

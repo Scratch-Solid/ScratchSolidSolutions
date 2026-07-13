@@ -31,7 +31,7 @@ export function CookieConsentBanner() {
   if (!visible) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-gray-900 text-white p-4 shadow-lg">
+    <div className="fixed bottom-0 left-0 right-0 z-50 bg-stone-900 text-white p-4 shadow-lg">
       <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
         <p className="text-sm">
           We use cookies to ensure the best experience. Necessary cookies are always active.
@@ -40,13 +40,13 @@ export function CookieConsentBanner() {
         <div className="flex gap-2">
           <button
             onClick={acceptNecessaryOnly}
-            className="px-4 py-2 text-sm bg-gray-700 hover:bg-gray-600 rounded"
+            className="px-4 py-2 text-sm bg-stone-700 hover:bg-stone-600 rounded"
           >
             Necessary Only
           </button>
           <button
             onClick={acceptAll}
-            className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-500 rounded"
+            className="px-4 py-2 text-sm bg-[#2E1F16] hover:bg-[#B08A5E] rounded"
           >
             Accept All
           </button>

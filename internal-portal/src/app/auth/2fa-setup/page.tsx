@@ -111,7 +111,7 @@ export default function Setup2FAPage() {
         <div className="glass-panel p-8 max-w-md w-full text-center" style={{ boxShadow: '0 16px 40px rgba(9,23,42,0.12)' }}>
           <h2 className="text-2xl font-bold mb-4 text-green-600">2FA Enabled Successfully</h2>
           <p className="mb-4">Your account is now secured with two-factor authentication.</p>
-          <p className="text-sm text-gray-500">Redirecting to your dashboard...</p>
+          <p className="text-sm text-stone-500">Redirecting to your dashboard...</p>
         </div>
       </div>
     );
@@ -145,8 +145,8 @@ export default function Setup2FAPage() {
           )}
 
           {secret && (
-            <div className="mb-6 p-3 bg-gray-50 rounded border border-gray-200 text-center">
-              <p className="text-xs text-gray-500 mb-1">Or enter this key manually</p>
+            <div className="mb-6 p-3 bg-stone-50 rounded border border-stone-200 text-center">
+              <p className="text-xs text-stone-500 mb-1">Or enter this key manually</p>
               <code className="text-sm font-mono break-all select-all">{secret}</code>
             </div>
           )}
@@ -195,7 +195,7 @@ export default function Setup2FAPage() {
             <button
               type="button"
               onClick={() => router.push("/auth/login")}
-              className="text-sm underline hover:text-blue-600"
+              className="text-sm underline hover:text-[#2E1F16]"
             >
               Cancel and return to login
             </button>

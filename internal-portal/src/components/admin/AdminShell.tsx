@@ -122,7 +122,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
     .find((i) => isActive(i.href))?.label || "Dashboard";
 
   return (
-    <div className="flex min-h-screen bg-slate-50 text-slate-900">
+    <div className="flex min-h-screen bg-stone-50 text-stone-900">
       {/* Mobile backdrop */}
       {mobileOpen && (
         <div
@@ -135,7 +135,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed lg:sticky top-0 left-0 z-50 flex h-screen flex-col bg-white border-r border-slate-200",
+          "fixed lg:sticky top-0 left-0 z-50 flex h-screen flex-col bg-white border-r border-stone-200",
           "transition-all duration-300 ease-out shrink-0 shadow-[2px_0_12px_rgba(0,0,0,0.04)]",
           collapsed ? "lg:w-[72px]" : "lg:w-64",
           "w-72",
@@ -143,22 +143,22 @@ export default function AdminShell({ children }: { children: ReactNode }) {
         )}
       >
         {/* Brand */}
-        <div className="flex h-16 items-center gap-3 px-4 border-b border-slate-100">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#1E3A8A] text-white font-bold text-sm">
+        <div className="flex h-16 items-center gap-3 px-4 border-b border-stone-100">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#2E1F16] text-white font-bold text-sm">
             SS
           </div>
           {!collapsed && (
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-slate-900">Scratch Solid</p>
-              <p className="truncate text-[11px] text-slate-400 font-medium tracking-wide uppercase">Admin Console</p>
+              <p className="truncate text-sm font-semibold text-stone-900">Scratch Solid</p>
+              <p className="truncate text-[11px] text-stone-400 font-medium tracking-wide uppercase">Admin Console</p>
             </div>
           )}
           <button
             onClick={() => setMobileOpen(false)}
-            className="ml-auto rounded-lg p-2 hover:bg-slate-100 lg:hidden"
+            className="ml-auto rounded-lg p-2 hover:bg-stone-100 lg:hidden"
             aria-label="Close menu"
           >
-            <X className="h-5 w-5 text-slate-500" />
+            <X className="h-5 w-5 text-stone-500" />
           </button>
         </div>
 
@@ -167,7 +167,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
           {NAV_GROUPS.map((group) => (
             <div key={group.label}>
               {!collapsed && (
-                <p className="px-3 mb-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                <p className="px-3 mb-2 text-[10px] font-semibold text-stone-400 uppercase tracking-wider">
                   {group.label}
                 </p>
               )}
@@ -184,12 +184,12 @@ export default function AdminShell({ children }: { children: ReactNode }) {
                         className={cn(
                           "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
                           active
-                            ? "bg-[#1E3A8A]/10 text-[#1E3A8A] shadow-sm"
-                            : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
+                            ? "bg-[#2E1F16]/10 text-[#2E1F16] shadow-sm"
+                            : "text-stone-600 hover:bg-stone-100 hover:text-stone-900",
                           collapsed && "lg:justify-center lg:px-0",
                         )}
                       >
-                        <Icon className={cn("h-5 w-5 shrink-0", active && "text-[#1E3A8A]")} />
+                        <Icon className={cn("h-5 w-5 shrink-0", active && "text-[#2E1F16]")} />
                         {!collapsed && <span className="truncate">{item.label}</span>}
                         {!collapsed && item.badge && (
                           <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white">
@@ -206,17 +206,17 @@ export default function AdminShell({ children }: { children: ReactNode }) {
         </nav>
 
         {/* Bottom */}
-        <div className="border-t border-slate-100 p-3 space-y-2">
+        <div className="border-t border-stone-100 p-3 space-y-2">
           {!collapsed && (
-            <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-slate-50">
+            <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-stone-50">
               <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-[#1E3A8A] text-white text-xs font-semibold">
+                <AvatarFallback className="bg-[#2E1F16] text-white text-xs font-semibold">
                   {userName.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-slate-900">{userName}</p>
-                <p className="truncate text-xs text-slate-400 capitalize">{userRole}</p>
+                <p className="truncate text-sm font-medium text-stone-900">{userName}</p>
+                <p className="truncate text-xs text-stone-400 capitalize">{userRole}</p>
               </div>
             </div>
           )}
@@ -225,7 +225,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
             title={collapsed ? "Logout" : undefined}
             className={cn(
               "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium",
-              "text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors",
+              "text-stone-500 hover:bg-red-50 hover:text-red-600 transition-colors",
               collapsed && "lg:justify-center lg:px-0",
             )}
           >
@@ -238,49 +238,49 @@ export default function AdminShell({ children }: { children: ReactNode }) {
       {/* Main column */}
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Top bar */}
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-slate-200 bg-white/80 px-4 backdrop-blur-xl sm:px-6">
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-stone-200 bg-white/80 px-4 backdrop-blur-xl sm:px-6">
           <button
             onClick={() => setMobileOpen(true)}
-            className="rounded-lg p-2 hover:bg-slate-100 lg:hidden"
+            className="rounded-lg p-2 hover:bg-stone-100 lg:hidden"
             aria-label="Open menu"
           >
-            <Menu className="h-5 w-5 text-slate-500" />
+            <Menu className="h-5 w-5 text-stone-500" />
           </button>
           <button
             onClick={() => setCollapsed((c) => !c)}
-            className="hidden rounded-lg p-2 hover:bg-slate-100 lg:inline-flex"
+            className="hidden rounded-lg p-2 hover:bg-stone-100 lg:inline-flex"
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             <ChevronRight
               className={cn(
-                "h-5 w-5 text-slate-500 transition-transform duration-200",
+                "h-5 w-5 text-stone-500 transition-transform duration-200",
                 !collapsed && "rotate-180"
               )}
             />
           </button>
 
           {/* Breadcrumbs */}
-          <div className="hidden md:flex items-center text-sm text-slate-400">
-            <span className="font-medium text-slate-900">Admin</span>
+          <div className="hidden md:flex items-center text-sm text-stone-400">
+            <span className="font-medium text-stone-900">Admin</span>
             <ChevronRight className="h-4 w-4 mx-1" />
-            <span className="text-slate-600">{pageTitle}</span>
+            <span className="text-stone-600">{pageTitle}</span>
           </div>
 
           <div className="ml-auto flex items-center gap-2">
             {/* Search */}
             <button
               onClick={() => setSearchOpen(true)}
-              className="hidden sm:flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-400 hover:border-slate-300 hover:text-slate-600 transition-colors"
+              className="hidden sm:flex items-center gap-2 rounded-lg border border-stone-200 bg-stone-50 px-3 py-1.5 text-sm text-stone-400 hover:border-stone-300 hover:text-stone-600 transition-colors"
             >
               <Search className="h-4 w-4" />
               <span className="hidden lg:inline">Search…</span>
-              <kbd className="hidden lg:inline-flex h-5 items-center rounded border border-slate-200 bg-white px-1.5 text-[10px] font-medium text-slate-400">⌘K</kbd>
+              <kbd className="hidden lg:inline-flex h-5 items-center rounded border border-stone-200 bg-white px-1.5 text-[10px] font-medium text-stone-400">⌘K</kbd>
             </button>
 
             {/* Notifications */}
             <button
-              className="relative rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+              className="relative rounded-lg p-2 text-stone-500 hover:bg-stone-100 hover:text-stone-700 transition-colors"
               aria-label="Notifications"
             >
               <Bell className="h-5 w-5" />
@@ -290,15 +290,15 @@ export default function AdminShell({ children }: { children: ReactNode }) {
             {/* Settings */}
             <Link
               href="/admin/monitoring"
-              className="hidden rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700 sm:inline-flex transition-colors"
+              className="hidden rounded-lg p-2 text-stone-500 hover:bg-stone-100 hover:text-stone-700 sm:inline-flex transition-colors"
               aria-label="Settings"
             >
               <Settings className="h-5 w-5" />
             </Link>
 
             {/* Avatar */}
-            <Avatar className="h-8 w-8 border border-slate-200">
-              <AvatarFallback className="bg-[#1E3A8A] text-white text-xs font-semibold">
+            <Avatar className="h-8 w-8 border border-stone-200">
+              <AvatarFallback className="bg-[#2E1F16] text-white text-xs font-semibold">
                 {userName.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
@@ -311,8 +311,8 @@ export default function AdminShell({ children }: { children: ReactNode }) {
         </main>
 
         {/* Footer */}
-        <footer className="border-t border-slate-200 bg-white px-4 py-4 sm:px-6">
-          <p className="text-center text-xs text-slate-400">
+        <footer className="border-t border-stone-200 bg-white px-4 py-4 sm:px-6">
+          <p className="text-center text-xs text-stone-400">
             © {new Date().getFullYear()} Scratch Solid Solutions. All rights reserved.
           </p>
         </footer>

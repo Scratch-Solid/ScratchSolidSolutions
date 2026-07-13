@@ -14,7 +14,7 @@ interface Applicant {
 
 const STAGES = [
   { id: 'consent_pending', label: 'Consent Pending', color: 'bg-yellow-100 border-yellow-300' },
-  { id: 'consent_approved', label: 'Consent Approved', color: 'bg-blue-100 border-blue-300' },
+  { id: 'consent_approved', label: 'Consent Approved', color: 'bg-[#F0E6D6] border-[#D8CBB5]' },
   { id: 'profile_created', label: 'Profile Created', color: 'bg-purple-100 border-purple-300' },
   { id: 'contract_signed', label: 'Contract Signed', color: 'bg-green-100 border-green-300' },
   { id: 'training_in_progress', label: 'Training In Progress', color: 'bg-orange-100 border-orange-300' },
@@ -146,7 +146,7 @@ export default function OnboardingPipeline() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Loading pipeline...</div>
+        <div className="text-stone-500">Loading pipeline...</div>
       </div>
     );
   }
@@ -154,14 +154,14 @@ export default function OnboardingPipeline() {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">Onboarding Pipeline</h1>
+        <h1 className="text-2xl font-bold text-stone-900 mb-4">Onboarding Pipeline</h1>
         
         {/* Stats Cards */}
         <div className="grid grid-cols-7 gap-4 mb-6">
           {getStageStats().map(stat => (
             <div key={stat.id} className={`${stat.color} border rounded-lg p-4`}>
               <div className="text-2xl font-bold">{stat.count}</div>
-              <div className="text-sm text-gray-600">{stat.label}</div>
+              <div className="text-sm text-stone-600">{stat.label}</div>
             </div>
           ))}
         </div>
@@ -189,8 +189,8 @@ export default function OnboardingPipeline() {
 
         {/* Bulk Actions */}
         {selectedApplicants.length > 0 && (
-          <div className="flex gap-2 mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <span className="text-sm text-blue-800 self-center">
+          <div className="flex gap-2 mb-4 p-3 bg-[#F7F2EA] border border-[#E9E0D3] rounded-lg">
+            <span className="text-sm text-[#1C130D] self-center">
               {selectedApplicants.length} selected
             </span>
             <button
@@ -203,13 +203,13 @@ export default function OnboardingPipeline() {
             <button
               onClick={handleBulkRemind}
               disabled={bulkActionLoading}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              className="px-4 py-2 bg-[#2E1F16] text-white rounded-lg hover:bg-[#241811] disabled:opacity-50"
             >
               {bulkActionLoading ? 'Sending...' : 'Send Reminders'}
             </button>
             <button
               onClick={() => setSelectedApplicants([])}
-              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+              className="px-4 py-2 bg-stone-200 text-stone-700 rounded-lg hover:bg-stone-300"
             >
               Clear Selection
             </button>
@@ -239,8 +239,8 @@ export default function OnboardingPipeline() {
                   draggable
                   onDragStart={(e) => handleDragStart(e, applicant.id)}
                   className={`bg-white p-3 rounded shadow-sm cursor-pointer border-2 ${
-                    selectedApplicants.includes(applicant.id) ? 'border-blue-500' : 'border-transparent'
-                  } hover:border-gray-300`}
+                    selectedApplicants.includes(applicant.id) ? 'border-[#B08A5E]' : 'border-transparent'
+                  } hover:border-stone-300`}
                   onClick={(e) => {
                     const target = e.target as HTMLElement;
                     if (target.tagName !== 'INPUT') {
@@ -258,9 +258,9 @@ export default function OnboardingPipeline() {
                     />
                     <div className="flex-1">
                       <div className="font-medium">{applicant.name}</div>
-                      <div className="text-sm text-gray-500">{applicant.phone}</div>
-                      <div className="text-sm text-gray-500">{applicant.email}</div>
-                      <div className="text-xs text-gray-400 mt-1">
+                      <div className="text-sm text-stone-500">{applicant.phone}</div>
+                      <div className="text-sm text-stone-500">{applicant.email}</div>
+                      <div className="text-xs text-stone-400 mt-1">
                         {new Date(applicant.created_at).toLocaleDateString()}
                       </div>
                     </div>
@@ -280,41 +280,41 @@ export default function OnboardingPipeline() {
               <h3 className="text-xl font-bold">Applicant Details</h3>
               <button
                 onClick={() => setShowDetails(false)}
-                className="text-gray-500 hover:text-gray-700"
+                className="text-stone-500 hover:text-stone-700"
               >
                 ✕
               </button>
             </div>
             <div className="space-y-3">
               <div>
-                <label className="text-sm font-semibold text-gray-600">Name</label>
-                <p className="text-gray-900">{selectedApplicant.name}</p>
+                <label className="text-sm font-semibold text-stone-600">Name</label>
+                <p className="text-stone-900">{selectedApplicant.name}</p>
               </div>
               <div>
-                <label className="text-sm font-semibold text-gray-600">Phone</label>
-                <p className="text-gray-900">{selectedApplicant.phone}</p>
+                <label className="text-sm font-semibold text-stone-600">Phone</label>
+                <p className="text-stone-900">{selectedApplicant.phone}</p>
               </div>
               <div>
-                <label className="text-sm font-semibold text-gray-600">Email</label>
-                <p className="text-gray-900">{selectedApplicant.email}</p>
+                <label className="text-sm font-semibold text-stone-600">Email</label>
+                <p className="text-stone-900">{selectedApplicant.email}</p>
               </div>
               <div>
-                <label className="text-sm font-semibold text-gray-600">Department</label>
-                <p className="text-gray-900">{selectedApplicant.department}</p>
+                <label className="text-sm font-semibold text-stone-600">Department</label>
+                <p className="text-stone-900">{selectedApplicant.department}</p>
               </div>
               <div>
-                <label className="text-sm font-semibold text-gray-600">Current Stage</label>
-                <p className="text-gray-900">{selectedApplicant.onboarding_stage}</p>
+                <label className="text-sm font-semibold text-stone-600">Current Stage</label>
+                <p className="text-stone-900">{selectedApplicant.onboarding_stage}</p>
               </div>
               <div>
-                <label className="text-sm font-semibold text-gray-600">Created At</label>
-                <p className="text-gray-900">{new Date(selectedApplicant.created_at).toLocaleString()}</p>
+                <label className="text-sm font-semibold text-stone-600">Created At</label>
+                <p className="text-stone-900">{new Date(selectedApplicant.created_at).toLocaleString()}</p>
               </div>
             </div>
             <div className="mt-6 flex gap-2">
               <button
                 onClick={() => setShowDetails(false)}
-                className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                className="flex-1 px-4 py-2 bg-stone-200 text-stone-700 rounded-lg hover:bg-stone-300"
               >
                 Close
               </button>

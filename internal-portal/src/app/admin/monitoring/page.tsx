@@ -41,7 +41,7 @@ export default function MonitoringDashboard() {
       case 'healthy': return 'bg-green-100 text-green-800 border-green-300';
       case 'degraded': return 'bg-yellow-100 text-yellow-800 border-yellow-300';
       case 'unhealthy': return 'bg-red-100 text-red-800 border-red-300';
-      default: return 'bg-gray-100 text-gray-800 border-gray-300';
+      default: return 'bg-stone-100 text-stone-800 border-stone-300';
     }
   };
 
@@ -56,13 +56,13 @@ export default function MonitoringDashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">System Monitoring</h1>
-        <p className="text-sm text-slate-500 mt-1">Real-time system health and performance metrics</p>
+        <h1 className="text-2xl font-bold text-stone-900 tracking-tight">System Monitoring</h1>
+        <p className="text-sm text-stone-500 mt-1">Real-time system health and performance metrics</p>
       </div>
 
       {loading ? (
         <div className="flex items-center justify-center h-64">
-          <div className="text-gray-500">Loading monitoring data...</div>
+          <div className="text-stone-500">Loading monitoring data...</div>
         </div>
       ) : healthStatus ? (
         <>
@@ -94,37 +94,37 @@ export default function MonitoringDashboard() {
 
           {/* Metrics Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-white border border-gray-200 rounded-lg p-4">
+            <div className="bg-white border border-stone-200 rounded-lg p-4">
               <h3 className="font-semibold mb-4">Performance Metrics</h3>
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Response Time</span>
+                  <span className="text-stone-600">Response Time</span>
                   <span className="font-medium">-- ms</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Error Rate</span>
+                  <span className="text-stone-600">Error Rate</span>
                   <span className="font-medium">-- %</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Requests/min</span>
+                  <span className="text-stone-600">Requests/min</span>
                   <span className="font-medium">--</span>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-lg p-4">
+            <div className="bg-white border border-stone-200 rounded-lg p-4">
               <h3 className="font-semibold mb-4">Alert Status</h3>
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Active Alerts</span>
+                  <span className="text-stone-600">Active Alerts</span>
                   <span className="font-medium text-green-600">0</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Warnings</span>
+                  <span className="text-stone-600">Warnings</span>
                   <span className="font-medium text-yellow-600">0</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Critical</span>
+                  <span className="text-stone-600">Critical</span>
                   <span className="font-medium text-red-600">0</span>
                 </div>
               </div>
@@ -135,7 +135,7 @@ export default function MonitoringDashboard() {
           <div className="mt-6">
             <button
               onClick={fetchHealthStatus}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="px-4 py-2 bg-[#2E1F16] text-white rounded-lg hover:bg-[#241811] transition-colors"
             >
               Refresh Status
             </button>
@@ -144,10 +144,10 @@ export default function MonitoringDashboard() {
       ) : (
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <AlertCircle className="h-10 w-10 text-red-500 mb-3" />
-          <p className="text-sm text-slate-600 mb-4">Unable to load health status. Please check your connection and try again.</p>
+          <p className="text-sm text-stone-600 mb-4">Unable to load health status. Please check your connection and try again.</p>
           <button
             onClick={fetchHealthStatus}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+            className="px-4 py-2 bg-[#2E1F16] text-white rounded-lg hover:bg-[#241811] transition-colors text-sm"
           >
             Retry
           </button>

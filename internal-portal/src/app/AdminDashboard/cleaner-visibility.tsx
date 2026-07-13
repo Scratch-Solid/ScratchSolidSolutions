@@ -64,11 +64,11 @@ export default function CleanerVisibility() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'idle': return 'bg-slate-100 text-slate-800';
-      case 'on_way': return 'bg-blue-100 text-blue-800';
+      case 'idle': return 'bg-stone-100 text-stone-800';
+      case 'on_way': return 'bg-[#F0E6D6] text-[#1C130D]';
       case 'arrived': return 'bg-yellow-100 text-yellow-800';
       case 'completed': return 'bg-green-100 text-green-800';
-      default: return 'bg-slate-100 text-slate-800';
+      default: return 'bg-stone-100 text-stone-800';
     }
   };
 
@@ -90,39 +90,39 @@ export default function CleanerVisibility() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Cleaner Visibility</h2>
-          <p className="text-slate-500 text-sm mt-1">Real-time cleaner status and GPS tracking</p>
+          <h2 className="text-2xl font-bold text-stone-900">Cleaner Visibility</h2>
+          <p className="text-stone-500 text-sm mt-1">Real-time cleaner status and GPS tracking</p>
         </div>
         <div className="flex items-center gap-2">
-          <RefreshCw className={`h-4 w-4 ${autoRefresh ? 'text-green-600 animate-spin' : 'text-slate-400'}`} />
+          <RefreshCw className={`h-4 w-4 ${autoRefresh ? 'text-green-600 animate-spin' : 'text-stone-400'}`} />
           <Switch
             checked={autoRefresh}
             onCheckedChange={setAutoRefresh}
           />
-          <span className="text-sm text-slate-600">Auto-refresh</span>
+          <span className="text-sm text-stone-600">Auto-refresh</span>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">Total Cleaners</CardTitle>
+            <CardTitle className="text-sm font-medium text-stone-600">Total Cleaners</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-slate-900">{cleaners.length}</p>
+            <p className="text-2xl font-bold text-stone-900">{cleaners.length}</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">Active</CardTitle>
+            <CardTitle className="text-sm font-medium text-stone-600">Active</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-blue-600">{activeCleaners.length}</p>
+            <p className="text-2xl font-bold text-[#2E1F16]">{activeCleaners.length}</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">Idle</CardTitle>
+            <CardTitle className="text-sm font-medium text-stone-600">Idle</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold text-green-600">{idleCleaners.length}</p>
@@ -130,7 +130,7 @@ export default function CleanerVisibility() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">Blocked</CardTitle>
+            <CardTitle className="text-sm font-medium text-stone-600">Blocked</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold text-red-600">{blockedCleaners.length}</p>
@@ -152,18 +152,18 @@ export default function CleanerVisibility() {
               {activeCleaners.map(cleaner => (
                 <div
                   key={cleaner.user_id}
-                  className="flex items-center justify-between p-4 border rounded-lg bg-slate-50 hover:bg-slate-100 cursor-pointer transition-colors"
+                  className="flex items-center justify-between p-4 border rounded-lg bg-stone-50 hover:bg-stone-100 cursor-pointer transition-colors"
                   onClick={() => setSelectedCleaner(cleaner)}
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
+                    <div className="w-12 h-12 bg-[#B08A5E] rounded-full flex items-center justify-center text-white font-bold">
                       {cleaner.first_name?.[0]}{cleaner.last_name?.[0]}
                     </div>
                     <div>
-                      <p className="font-semibold text-slate-900">
+                      <p className="font-semibold text-stone-900">
                         {cleaner.first_name} {cleaner.last_name}
                       </p>
-                      <p className="text-sm text-slate-500">ID: {cleaner.user_id}</p>
+                      <p className="text-sm text-stone-500">ID: {cleaner.user_id}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
@@ -195,7 +195,7 @@ export default function CleanerVisibility() {
               {idleCleaners.map(cleaner => (
                 <div
                   key={cleaner.user_id}
-                  className="flex items-center justify-between p-4 border rounded-lg bg-slate-50 hover:bg-slate-100 cursor-pointer transition-colors"
+                  className="flex items-center justify-between p-4 border rounded-lg bg-stone-50 hover:bg-stone-100 cursor-pointer transition-colors"
                   onClick={() => setSelectedCleaner(cleaner)}
                 >
                   <div className="flex items-center gap-4">
@@ -203,10 +203,10 @@ export default function CleanerVisibility() {
                       {cleaner.first_name?.[0]}{cleaner.last_name?.[0]}
                     </div>
                     <div>
-                      <p className="font-semibold text-slate-900">
+                      <p className="font-semibold text-stone-900">
                         {cleaner.first_name} {cleaner.last_name}
                       </p>
-                      <p className="text-sm text-slate-500">ID: {cleaner.user_id}</p>
+                      <p className="text-sm text-stone-500">ID: {cleaner.user_id}</p>
                     </div>
                   </div>
                   <Badge variant={getStatusVariant(cleaner.status)} className={getStatusColor(cleaner.status)}>
@@ -237,10 +237,10 @@ export default function CleanerVisibility() {
                       {cleaner.first_name?.[0]}{cleaner.last_name?.[0]}
                     </div>
                     <div>
-                      <p className="font-semibold text-slate-900">
+                      <p className="font-semibold text-stone-900">
                         {cleaner.first_name} {cleaner.last_name}
                       </p>
-                      <p className="text-sm text-slate-500">ID: {cleaner.user_id}</p>
+                      <p className="text-sm text-stone-500">ID: {cleaner.user_id}</p>
                     </div>
                   </div>
                   <Badge variant="destructive">Blocked</Badge>
@@ -259,11 +259,11 @@ export default function CleanerVisibility() {
           {selectedCleaner && (
             <div className="space-y-4">
               <div>
-                <p className="text-sm text-slate-500">Name</p>
-                <p className="font-semibold text-slate-900">{selectedCleaner.first_name} {selectedCleaner.last_name}</p>
+                <p className="text-sm text-stone-500">Name</p>
+                <p className="font-semibold text-stone-900">{selectedCleaner.first_name} {selectedCleaner.last_name}</p>
               </div>
               <div>
-                <p className="text-sm text-slate-500">Status</p>
+                <p className="text-sm text-stone-500">Status</p>
                 <Badge variant={getStatusVariant(selectedCleaner.status)} className={getStatusColor(selectedCleaner.status)}>
                   {getStatusText(selectedCleaner.status)}
                 </Badge>
@@ -271,16 +271,16 @@ export default function CleanerVisibility() {
               {selectedCleaner.gps_lat && selectedCleaner.gps_long && (
                 <>
                   <div>
-                    <p className="text-sm text-slate-500">GPS Latitude</p>
-                    <p className="font-semibold text-slate-900">{selectedCleaner.gps_lat.toFixed(6)}</p>
+                    <p className="text-sm text-stone-500">GPS Latitude</p>
+                    <p className="font-semibold text-stone-900">{selectedCleaner.gps_lat.toFixed(6)}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-slate-500">GPS Longitude</p>
-                    <p className="font-semibold text-slate-900">{selectedCleaner.gps_long.toFixed(6)}</p>
+                    <p className="text-sm text-stone-500">GPS Longitude</p>
+                    <p className="font-semibold text-stone-900">{selectedCleaner.gps_long.toFixed(6)}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-slate-500">Last Updated</p>
-                    <p className="font-semibold text-slate-900">{selectedCleaner.updated_at || 'Unknown'}</p>
+                    <p className="text-sm text-stone-500">Last Updated</p>
+                    <p className="font-semibold text-stone-900">{selectedCleaner.updated_at || 'Unknown'}</p>
                   </div>
                   <Button
                     asChild
@@ -300,7 +300,7 @@ export default function CleanerVisibility() {
       </Dialog>
 
       {loading && (
-        <div className="flex items-center justify-center py-12 text-slate-500">
+        <div className="flex items-center justify-center py-12 text-stone-500">
           <RefreshCw className="h-6 w-6 animate-spin mr-2" />
           <span>Loading cleaner data...</span>
         </div>

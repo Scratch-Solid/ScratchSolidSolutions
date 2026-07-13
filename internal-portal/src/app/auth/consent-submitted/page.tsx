@@ -70,7 +70,7 @@ export default function ConsentSubmittedPage() {
             <>
               <div className="text-6xl mb-4">✕</div>
               <h2 className="text-2xl font-bold mb-4 text-red-600">Application Rejected</h2>
-              <p className="text-gray-600 mb-4">
+              <p className="text-stone-600 mb-4">
                 Your application has been rejected.
               </p>
               {rejectionReason && (
@@ -80,7 +80,7 @@ export default function ConsentSubmittedPage() {
                   </p>
                 </div>
               )}
-              <p className="text-sm text-gray-500 mb-6">
+              <p className="text-sm text-stone-500 mb-6">
                 Please contact administration for more information.
               </p>
             </>
@@ -88,28 +88,28 @@ export default function ConsentSubmittedPage() {
             <>
               <div className="text-6xl mb-4">✓</div>
               <h2 className="text-2xl font-bold mb-4">Consent form submitted</h2>
-              <p className="text-gray-600 mb-6">
+              <p className="text-stone-600 mb-6">
                 You will be notified of the next steps.
               </p>
 
               {/* Display login credentials */}
               {consentData?.generatedUsername && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                  <p className="text-sm text-gray-700 mb-2">
+                <div className="bg-[#F7F2EA] border border-[#E9E0D3] rounded-lg p-4 mb-6">
+                  <p className="text-sm text-stone-700 mb-2">
                     <strong>Your Login Credentials:</strong>
                   </p>
                   <div className="space-y-2 text-left">
                     <div>
-                      <p className="text-xs text-gray-500">Username / Paysheet Code:</p>
+                      <p className="text-xs text-stone-500">Username / Paysheet Code:</p>
                       <p className="font-mono font-bold text-lg">{consentData.generatedUsername}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500">Password:</p>
+                      <p className="text-xs text-stone-500">Password:</p>
                       <p className="text-sm">Your registered cellphone number</p>
                       <p className="text-sm font-mono">{consentData.contactNumber}</p>
                     </div>
                   </div>
-                  <p className="text-xs text-blue-600 mt-3">
+                  <p className="text-xs text-[#2E1F16] mt-3">
                     Please save these credentials. You will need them to login after approval.
                   </p>
                 </div>
@@ -117,11 +117,11 @@ export default function ConsentSubmittedPage() {
 
               {checking && (
                 <div className="flex items-center justify-center gap-2 mb-6">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                  <p className="text-sm text-gray-500">Checking status...</p>
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#2E1F16]"></div>
+                  <p className="text-sm text-stone-500">Checking status...</p>
                 </div>
               )}
-              <p className="text-sm text-gray-500 mb-6">
+              <p className="text-sm text-stone-500 mb-6">
                 {status === 'approved' ? 'Redirecting to profile creation...' : 'Please check back later or contact admin if you have any questions.'}
               </p>
             </>

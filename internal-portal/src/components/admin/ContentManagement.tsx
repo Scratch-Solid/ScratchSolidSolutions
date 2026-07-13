@@ -250,8 +250,8 @@ export default function ContentManagement() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-slate-900">Content Management</h2>
-        <p className="text-slate-500 text-sm mt-1">Manage marketing content, leaders, AI bot responses, and reviews</p>
+        <h2 className="text-2xl font-bold text-stone-900">Content Management</h2>
+        <p className="text-stone-500 text-sm mt-1">Manage marketing content, leaders, AI bot responses, and reviews</p>
       </div>
 
       {message && (
@@ -316,7 +316,7 @@ export default function ContentManagement() {
                 </div>
 
                 {loading ? (
-                  <div className="text-center py-8 text-slate-500">Loading...</div>
+                  <div className="text-center py-8 text-stone-500">Loading...</div>
                 ) : (
                   <div className="space-y-4">
                     {contentType === 'consent-form' ? (
@@ -381,7 +381,7 @@ export default function ContentManagement() {
             </CardHeader>
             <CardContent>
               {loading ? (
-                <div className="text-center py-8 text-slate-500">Loading leaders...</div>
+                <div className="text-center py-8 text-stone-500">Loading leaders...</div>
               ) : (
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -424,14 +424,14 @@ export default function ContentManagement() {
                   </div>
                   <div className="space-y-2 mt-6">
                     {leaders.map((leader: any) => (
-                      <div key={leader.id} className="flex items-center justify-between p-3 border rounded-lg bg-slate-50">
+                      <div key={leader.id} className="flex items-center justify-between p-3 border rounded-lg bg-stone-50">
                         <div className="flex items-center gap-3">
                           {leader.image_url && (
                             <img src={leader.image_url} alt={leader.name} className="h-10 w-10 object-cover rounded" />
                           )}
                           <div>
                             <div className="font-medium">{leader.name}</div>
-                            <div className="text-sm text-slate-500">{leader.title}</div>
+                            <div className="text-sm text-stone-500">{leader.title}</div>
                           </div>
                         </div>
                         <div className="flex gap-2">
@@ -459,7 +459,7 @@ export default function ContentManagement() {
             </CardHeader>
             <CardContent>
               {loading ? (
-                <div className="text-center py-8 text-slate-500">Loading...</div>
+                <div className="text-center py-8 text-stone-500">Loading...</div>
               ) : (
                 <div className="space-y-4">
                   <div className="space-y-3">
@@ -492,9 +492,9 @@ export default function ContentManagement() {
                   </div>
                   <div className="space-y-2 mt-6">
                     {aiItems.map((item: any) => (
-                      <div key={item.id} className="p-3 border rounded-lg bg-slate-50">
+                      <div key={item.id} className="p-3 border rounded-lg bg-stone-50">
                         <div className="font-medium">{item.question}</div>
-                        <div className="text-sm text-slate-600 mt-1">{item.response}</div>
+                        <div className="text-sm text-stone-600 mt-1">{item.response}</div>
                         <div className="flex gap-2 mt-2">
                           <Button size="sm" variant="outline" onClick={() => setAiForm(item)}>
                             <Edit className="h-4 w-4" />
@@ -562,9 +562,9 @@ export default function ContentManagement() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {galleryImages.map((img, idx) => (
-                    <div key={idx} className="relative rounded-lg overflow-hidden border bg-slate-50">
+                    <div key={idx} className="relative rounded-lg overflow-hidden border bg-stone-50">
                       <img src={img.url} alt={img.caption || `Gallery ${idx + 1}`} className="w-full h-40 object-cover" />
-                      {img.caption && <div className="p-2 text-sm text-slate-600">{img.caption}</div>}
+                      {img.caption && <div className="p-2 text-sm text-stone-600">{img.caption}</div>}
                       <Button 
                         size="sm" 
                         variant="destructive" 
@@ -607,11 +607,11 @@ export default function ContentManagement() {
                 </div>
                 <div className="space-y-3">
                   {reviews.map((rev: any) => (
-                    <div key={rev.id} className="p-4 border rounded-lg bg-slate-50">
+                    <div key={rev.id} className="p-4 border rounded-lg bg-stone-50">
                       <div className="flex justify-between items-start">
                         <div>
                           <div className="font-semibold">{rev.user_name || 'Client'} • {rev.rating}★</div>
-                          <div className="text-sm text-slate-500">{rev.service_location || 'Verified Client'}</div>
+                          <div className="text-sm text-stone-500">{rev.service_location || 'Verified Client'}</div>
                         </div>
                         <div className="flex gap-2">
                           <Button size="sm" variant="default" onClick={() => {}}>
@@ -625,7 +625,7 @@ export default function ContentManagement() {
                           </Button>
                         </div>
                       </div>
-                      <p className="mt-2 text-slate-700">{rev.text}</p>
+                      <p className="mt-2 text-stone-700">{rev.text}</p>
                     </div>
                   ))}
                 </div>

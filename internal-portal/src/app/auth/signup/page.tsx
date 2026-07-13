@@ -93,7 +93,7 @@ export default function StaffSignupPage() {
               autoComplete="name"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
               required
             />
           </div>
@@ -108,7 +108,7 @@ export default function StaffSignupPage() {
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
               required
             />
           </div>
@@ -120,7 +120,7 @@ export default function StaffSignupPage() {
               id="department"
               value={department}
               onChange={handleDepartmentChange}
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
               required
             >
               <option value="Scratch">Cleaning Team (Scratch)</option>
@@ -137,10 +137,10 @@ export default function StaffSignupPage() {
               id="paysheetCode"
               value={generatedPaysheetCode || generatePaysheetCode(department)}
               readOnly
-              className="w-full px-3 py-2 border rounded-md bg-gray-100 focus:outline-none"
+              className="w-full px-3 py-2 border rounded-md bg-stone-100 focus:outline-none"
               required
             />
-            <p className="text-xs mt-1 text-gray-600">
+            <p className="text-xs mt-1 text-stone-600">
               Your paysheet code will be your username for login
             </p>
           </div>
@@ -155,7 +155,7 @@ export default function StaffSignupPage() {
               autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
               required
             />
           </div>
@@ -170,7 +170,7 @@ export default function StaffSignupPage() {
               autoComplete="new-password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
               required
             />
           </div>
@@ -182,7 +182,7 @@ export default function StaffSignupPage() {
           </button>
         </form>
         <div className="mt-4 text-center">
-          <a href="/auth/login" className="text-blue-600 hover:underline">
+          <a href="/auth/login" className="text-[#2E1F16] hover:underline">
             Back to Login
           </a>
         </div>

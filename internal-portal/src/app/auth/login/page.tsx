@@ -213,7 +213,7 @@ function LoginContent() {
                     setTotpCode('');
                     setError('');
                   }}
-                  className="w-full text-sm text-gray-500 hover:text-gray-700 mt-2"
+                  className="w-full text-sm text-stone-500 hover:text-stone-700 mt-2"
                 >
                   Back to login
                 </button>
@@ -224,7 +224,7 @@ function LoginContent() {
                 <button
                   type="button"
                   onClick={() => router.push("/auth/forgot-password")}
-                  className="text-sm underline hover:text-blue-600"
+                  className="text-sm underline hover:text-[#2E1F16]"
                 >
                   Forgot Password?
                 </button>

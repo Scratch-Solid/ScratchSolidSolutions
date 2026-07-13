@@ -46,8 +46,8 @@ export default function PoolManagement() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Pool Management</h2>
-          <p className="text-slate-500 text-sm mt-1">Toggle cleaners between INDIVIDUAL and BUSINESS pools</p>
+          <h2 className="text-2xl font-bold text-stone-900">Pool Management</h2>
+          <p className="text-stone-500 text-sm mt-1">Toggle cleaners between INDIVIDUAL and BUSINESS pools</p>
         </div>
         {message && (
           <Badge variant={message.includes('moved') ? 'default' : 'destructive'}>
@@ -66,7 +66,7 @@ export default function PoolManagement() {
 
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <div className="text-slate-500">Loading cleaners…</div>
+          <div className="text-stone-500">Loading cleaners…</div>
         </div>
       ) : (
         <Card>
@@ -79,20 +79,20 @@ export default function PoolManagement() {
           </CardHeader>
           <CardContent>
             {cleaners.length === 0 ? (
-              <div className="text-center py-8 text-slate-500">No cleaners found.</div>
+              <div className="text-center py-8 text-stone-500">No cleaners found.</div>
             ) : (
               <div className="space-y-3">
                 {cleaners.map((c: any) => (
-                  <div key={c.id} className="flex items-center justify-between p-4 border border-slate-200 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors">
+                  <div key={c.id} className="flex items-center justify-between p-4 border border-stone-200 rounded-lg bg-stone-50 hover:bg-stone-100 transition-colors">
                     <div>
-                      <div className="font-semibold text-slate-900">{c.first_name} {c.last_name}</div>
-                      <div className="text-sm text-slate-500">{c.email || c.username}</div>
+                      <div className="font-semibold text-stone-900">{c.first_name} {c.last_name}</div>
+                      <div className="text-sm text-stone-500">{c.email || c.username}</div>
                     </div>
                     <div className="flex items-center gap-4">
                       <Badge 
                         variant={(c.pool_type || 'INDIVIDUAL') === 'INDIVIDUAL' ? 'default' : 'secondary'}
                         className={(c.pool_type || 'INDIVIDUAL') === 'INDIVIDUAL' 
-                          ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' 
+                          ? 'bg-[#F0E6D6] text-[#241811] hover:bg-[#E9E0D3]' 
                           : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
                         }
                       >

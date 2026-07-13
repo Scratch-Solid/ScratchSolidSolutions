@@ -1272,7 +1272,7 @@ export default function CleanerDashboard() {
                 )}
               </div>
             )}
-            <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+            <div className="bg-[#B08A5E]/10 border border-[#B08A5E]/30 rounded-lg p-4">
               <div className="flex items-start gap-3">
                 <div style={{ color: '#3b82f6', fontSize: '1.25rem' }}>📍</div>
                 <div>

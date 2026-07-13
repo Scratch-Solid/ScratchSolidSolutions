@@ -91,10 +91,10 @@ export default function CleanerSignup() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#F7F2EA] to-[#F0E6D6] flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full p-8">
-        <h1 className="text-3xl font-bold text-center text-gray-800 mb-2">Cleaner Application</h1>
-        <p className="text-center text-gray-600 mb-8">Submit your application to join our cleaning team</p>
+        <h1 className="text-3xl font-bold text-center text-stone-800 mb-2">Cleaner Application</h1>
+        <p className="text-center text-stone-600 mb-8">Submit your application to join our cleaning team</p>
 
         {success && (
           <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-6">
@@ -112,134 +112,134 @@ export default function CleanerSignup() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
+                <label htmlFor="name" className="block text-sm font-medium text-stone-700 mb-2">Full Name *</label>
                 <input
                   id="name"
                   type="text"
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-[#B08A5E] focus:border-transparent"
                 />
               </div>
 
               <div>
-                <label htmlFor="id_number" className="block text-sm font-medium text-gray-700 mb-2">ID Number / Passport *</label>
+                <label htmlFor="id_number" className="block text-sm font-medium text-stone-700 mb-2">ID Number / Passport *</label>
                 <input
                   id="id_number"
                   type="text"
                   required
                   value={formData.id_number}
                   onChange={(e) => setFormData({ ...formData, id_number: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-[#B08A5E] focus:border-transparent"
                 />
               </div>
 
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">Email *</label>
+                <label htmlFor="email" className="block text-sm font-medium text-stone-700 mb-2">Email *</label>
                 <input
                   id="email"
                   type="email"
                   required
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-[#B08A5E] focus:border-transparent"
                 />
               </div>
 
               <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">Phone Number *</label>
+                <label htmlFor="phone" className="block text-sm font-medium text-stone-700 mb-2">Phone Number *</label>
                 <input
                   id="phone"
                   type="tel"
                   required
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-[#B08A5E] focus:border-transparent"
                 />
               </div>
 
               <div>
-                <label htmlFor="whatsapp" className="block text-sm font-medium text-gray-700 mb-2">WhatsApp Number</label>
+                <label htmlFor="whatsapp" className="block text-sm font-medium text-stone-700 mb-2">WhatsApp Number</label>
                 <input
                   id="whatsapp"
                   type="tel"
                   value={formData.whatsapp}
                   onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-[#B08A5E] focus:border-transparent"
                 />
               </div>
 
               <div>
-                <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">Address *</label>
+                <label htmlFor="address" className="block text-sm font-medium text-stone-700 mb-2">Address *</label>
                 <input
                   id="address"
                   type="text"
                   required
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-[#B08A5E] focus:border-transparent"
                 />
               </div>
 
               <div className="md:col-span-2">
-                <label htmlFor="emergency_contact" className="block text-sm font-medium text-gray-700 mb-2">Emergency Contact *</label>
+                <label htmlFor="emergency_contact" className="block text-sm font-medium text-stone-700 mb-2">Emergency Contact *</label>
                 <input
                   id="emergency_contact"
                   type="text"
                   required
                   value={formData.emergency_contact}
                   onChange={(e) => setFormData({ ...formData, emergency_contact: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-[#B08A5E] focus:border-transparent"
                 />
               </div>
 
               <div className="md:col-span-2">
-                <h3 className="text-sm font-medium text-gray-700 mb-2">Bank Details *</h3>
+                <h3 className="text-sm font-medium text-stone-700 mb-2">Bank Details *</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="bank_name" className="block text-xs font-medium text-gray-600 mb-1">Bank Name</label>
+                    <label htmlFor="bank_name" className="block text-xs font-medium text-stone-600 mb-1">Bank Name</label>
                     <input
                       id="bank_name"
                       type="text"
                       required
                       value={formData.bank_name}
                       onChange={(e) => setFormData({ ...formData, bank_name: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-[#B08A5E] focus:border-transparent"
                     />
                   </div>
                   <div>
-                    <label htmlFor="account_holder" className="block text-xs font-medium text-gray-600 mb-1">Account Holder Name</label>
+                    <label htmlFor="account_holder" className="block text-xs font-medium text-stone-600 mb-1">Account Holder Name</label>
                     <input
                       id="account_holder"
                       type="text"
                       required
                       value={formData.account_holder}
                       onChange={(e) => setFormData({ ...formData, account_holder: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-[#B08A5E] focus:border-transparent"
                     />
                   </div>
                   <div>
-                    <label htmlFor="account_number" className="block text-xs font-medium text-gray-600 mb-1">Account Number</label>
+                    <label htmlFor="account_number" className="block text-xs font-medium text-stone-600 mb-1">Account Number</label>
                     <input
                       id="account_number"
                       type="text"
                       required
                       value={formData.account_number}
                       onChange={(e) => setFormData({ ...formData, account_number: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-[#B08A5E] focus:border-transparent"
                       inputMode="numeric"
                     />
                   </div>
                   <div>
-                    <label htmlFor="branch_code" className="block text-xs font-medium text-gray-600 mb-1">Branch Code</label>
+                    <label htmlFor="branch_code" className="block text-xs font-medium text-stone-600 mb-1">Branch Code</label>
                     <input
                       id="branch_code"
                       type="text"
                       required
                       value={formData.branch_code}
                       onChange={(e) => setFormData({ ...formData, branch_code: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-[#B08A5E] focus:border-transparent"
                       inputMode="numeric"
                     />
                   </div>
@@ -254,11 +254,11 @@ export default function CleanerSignup() {
                   required
                   checked={formData.popia_consent}
                   onChange={(e) => setFormData({ ...formData, popia_consent: e.target.checked })}
-                  className="mt-1 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  className="mt-1 h-4 w-4 text-[#2E1F16] border-stone-300 rounded focus:ring-[#B08A5E]"
                 />
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-stone-600">
                   I consent to Scratch Solid Solutions collecting and processing my personal information in accordance with the
-                  {' '}<a href="/privacy-policy" target="_blank" className="text-blue-600 hover:underline">POPIA Privacy Policy</a>.
+                  {' '}<a href="/privacy-policy" target="_blank" className="text-[#2E1F16] hover:underline">POPIA Privacy Policy</a>.
                   I understand my data will be stored securely and I may request deletion at any time.
                 </span>
               </label>
@@ -268,9 +268,9 @@ export default function CleanerSignup() {
                   type="checkbox"
                   checked={formData.background_check_consent}
                   onChange={(e) => setFormData({ ...formData, background_check_consent: e.target.checked })}
-                  className="mt-1 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  className="mt-1 h-4 w-4 text-[#2E1F16] border-stone-300 rounded focus:ring-[#B08A5E]"
                 />
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-stone-600">
                   I consent to a background check (criminal record, credit, and reference verification) being conducted
                   should my application proceed to the final stage. I understand this is optional at application time and
                   may be requested later.
@@ -281,7 +281,7 @@ export default function CleanerSignup() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-200 disabled:bg-gray-400"
+              className="w-full bg-[#2E1F16] text-white py-3 rounded-lg font-semibold hover:bg-[#241811] transition duration-200 disabled:bg-stone-400"
             >
               {loading ? 'Submitting...' : 'Submit Application'}
             </button>

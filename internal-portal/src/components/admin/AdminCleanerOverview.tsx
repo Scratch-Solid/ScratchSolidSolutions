@@ -52,7 +52,7 @@ export default function AdminCleanerOverview() {
 
   if (loading) {
     return <div className="animate-pulse space-y-4">
-      {[1, 2, 3, 4].map(i => <div key={i} className="h-32 bg-gray-200 rounded-lg" />)}
+      {[1, 2, 3, 4].map(i => <div key={i} className="h-32 bg-stone-200 rounded-lg" />)}
     </div>;
   }
 
@@ -66,15 +66,15 @@ export default function AdminCleanerOverview() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">Total Cleaners</CardTitle>
+            <CardTitle className="text-sm font-medium text-stone-600">Total Cleaners</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-slate-900">{overview?.total || 0}</p>
+            <p className="text-2xl font-bold text-stone-900">{overview?.total || 0}</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">Active</CardTitle>
+            <CardTitle className="text-sm font-medium text-stone-600">Active</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold text-green-600">{overview?.active || 0}</p>
@@ -82,7 +82,7 @@ export default function AdminCleanerOverview() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">Pending Onboarding</CardTitle>
+            <CardTitle className="text-sm font-medium text-stone-600">Pending Onboarding</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold text-yellow-600">{overview?.pending_onboarding || 0}</p>
@@ -90,10 +90,10 @@ export default function AdminCleanerOverview() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">Training Complete</CardTitle>
+            <CardTitle className="text-sm font-medium text-stone-600">Training Complete</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-blue-600">{overview?.training_complete || 0}</p>
+            <p className="text-2xl font-bold text-[#2E1F16]">{overview?.training_complete || 0}</p>
           </CardContent>
         </Card>
       </div>
@@ -108,16 +108,16 @@ export default function AdminCleanerOverview() {
           <div className="space-y-3">
             {trainingGraph?.completion_ranges?.map((range: any, idx: number) => (
               <div key={idx} className="flex items-center gap-4">
-                <div className="w-32 text-sm text-slate-600">{range.label}</div>
-                <div className="flex-1 bg-slate-100 rounded-full h-4 overflow-hidden">
+                <div className="w-32 text-sm text-stone-600">{range.label}</div>
+                <div className="flex-1 bg-stone-100 rounded-full h-4 overflow-hidden">
                   <div
-                    className="bg-blue-500 h-full rounded-full transition-all"
+                    className="bg-[#B08A5E] h-full rounded-full transition-all"
                     style={{ width: `${range.percentage}%` }}
                   />
                 </div>
-                <div className="w-16 text-sm font-medium text-slate-900">{range.count}</div>
+                <div className="w-16 text-sm font-medium text-stone-900">{range.count}</div>
               </div>
-            )) || <div className="text-slate-500">No training data available</div>}
+            )) || <div className="text-stone-500">No training data available</div>}
           </div>
         </CardContent>
       </Card>
@@ -132,16 +132,16 @@ export default function AdminCleanerOverview() {
           <div className="space-y-3">
             {onboardingFunnel?.stages?.map((stage: any, idx: number) => (
               <div key={idx} className="flex items-center gap-4">
-                <div className="w-32 text-sm text-slate-600">{stage.stage}</div>
-                <div className="flex-1 bg-slate-100 rounded-full h-4 overflow-hidden">
+                <div className="w-32 text-sm text-stone-600">{stage.stage}</div>
+                <div className="flex-1 bg-stone-100 rounded-full h-4 overflow-hidden">
                   <div
                     className="bg-green-500 h-full rounded-full transition-all"
                     style={{ width: `${stage.percentage}%` }}
                   />
                 </div>
-                <div className="w-16 text-sm font-medium text-slate-900">{stage.count}</div>
+                <div className="w-16 text-sm font-medium text-stone-900">{stage.count}</div>
               </div>
-            )) || <div className="text-slate-500">No onboarding data available</div>}
+            )) || <div className="text-stone-500">No onboarding data available</div>}
           </div>
         </CardContent>
       </Card>
@@ -156,16 +156,16 @@ export default function AdminCleanerOverview() {
           <div className="space-y-3">
             {loginActivity?.daily_logins?.map((day: any, idx: number) => (
               <div key={idx} className="flex items-center gap-4">
-                <div className="w-32 text-sm text-slate-600">{day.date}</div>
-                <div className="flex-1 bg-slate-100 rounded-full h-4 overflow-hidden">
+                <div className="w-32 text-sm text-stone-600">{day.date}</div>
+                <div className="flex-1 bg-stone-100 rounded-full h-4 overflow-hidden">
                   <div
                     className="bg-purple-500 h-full rounded-full transition-all"
                     style={{ width: `${Math.min(day.count * 10, 100)}%` }}
                   />
                 </div>
-                <div className="w-16 text-sm font-medium text-slate-900">{day.count}</div>
+                <div className="w-16 text-sm font-medium text-stone-900">{day.count}</div>
               </div>
-            )) || <div className="text-slate-500">No login activity data available</div>}
+            )) || <div className="text-stone-500">No login activity data available</div>}
           </div>
         </CardContent>
       </Card>
@@ -181,15 +181,15 @@ export default function AdminCleanerOverview() {
             <table className="w-full">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left py-2 px-3 text-sm font-medium text-slate-600">Name</th>
-                  <th className="text-left py-2 px-3 text-sm font-medium text-slate-600">Status</th>
-                  <th className="text-left py-2 px-3 text-sm font-medium text-slate-600">Training</th>
-                  <th className="text-left py-2 px-3 text-sm font-medium text-slate-600">Onboarding</th>
+                  <th className="text-left py-2 px-3 text-sm font-medium text-stone-600">Name</th>
+                  <th className="text-left py-2 px-3 text-sm font-medium text-stone-600">Status</th>
+                  <th className="text-left py-2 px-3 text-sm font-medium text-stone-600">Training</th>
+                  <th className="text-left py-2 px-3 text-sm font-medium text-stone-600">Onboarding</th>
                 </tr>
               </thead>
               <tbody>
                 {overview?.cleaners?.map((cleaner: any, idx: number) => (
-                  <tr key={idx} className="border-b hover:bg-slate-50">
+                  <tr key={idx} className="border-b hover:bg-stone-50">
                     <td className="py-2 px-3 text-sm">{cleaner.name}</td>
                     <td className="py-2 px-3">
                       <Badge variant={cleaner.status === 'active' ? 'default' : 'secondary'}>
@@ -201,7 +201,7 @@ export default function AdminCleanerOverview() {
                   </tr>
                 )) || (
                   <tr>
-                    <td colSpan={4} className="py-4 text-center text-slate-500">No cleaners found</td>
+                    <td colSpan={4} className="py-4 text-center text-stone-500">No cleaners found</td>
                   </tr>
                 )}
               </tbody>

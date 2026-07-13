@@ -147,8 +147,8 @@ export default function AdminOverviewPage() {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
-        <h2 className="text-lg font-semibold text-slate-900 mb-2">Unable to load dashboard</h2>
-        <p className="text-sm text-slate-500 max-w-md">{error}</p>
+        <h2 className="text-lg font-semibold text-stone-900 mb-2">Unable to load dashboard</h2>
+        <p className="text-sm text-stone-500 max-w-md">{error}</p>
         <Button onClick={() => window.location.reload()} className="mt-6" variant="outline">
           Retry
         </Button>
@@ -191,7 +191,7 @@ export default function AdminOverviewPage() {
     statusCounts.set(s, (statusCounts.get(s) ?? 0) + 1);
   });
   const STATUS_COLORS: Record<string, string> = {
-    completed: "#10B981",
+    completed: "#3F6B4A",
     pending: "#F59E0B",
     assigned: "#3B82F6",
     "in_progress": "#6366F1",
@@ -214,8 +214,8 @@ export default function AdminOverviewPage() {
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight">Operations Dashboard</h1>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <h1 className="text-xl font-bold text-stone-900 tracking-tight">Operations Dashboard</h1>
+          <p className="text-xs text-stone-500 mt-0.5">
             {new Date().toLocaleDateString("en-ZA", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
           </p>
         </div>
@@ -225,7 +225,7 @@ export default function AdminOverviewPage() {
             Refresh
           </Button>
           <Link href="/admin/onboarding">
-            <Button size="sm" className="gap-2 bg-[#1E3A8A] hover:bg-[#1e3a8a]/90 text-white">
+            <Button size="sm" className="gap-2 bg-[#2E1F16] hover:bg-[#2e1f16]/90 text-white">
               <UserPlus className="h-3.5 w-3.5" />
               Onboard
             </Button>
@@ -273,14 +273,14 @@ export default function AdminOverviewPage() {
         <Card className="xl:col-span-2" size="sm">
           <CardHeader className="pb-1 flex flex-row items-center justify-between">
             <div>
-              <CardTitle className="text-sm font-semibold text-slate-900">Bookings — last 14 days</CardTitle>
-              <p className="text-xs text-slate-500 mt-0.5">Daily booking volume by service date</p>
+              <CardTitle className="text-sm font-semibold text-stone-900">Bookings — last 14 days</CardTitle>
+              <p className="text-xs text-stone-500 mt-0.5">Daily booking volume by service date</p>
             </div>
             <DeltaChip delta={wowDelta} />
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="h-40 bg-slate-100 rounded animate-pulse" />
+              <div className="h-40 bg-stone-100 rounded animate-pulse" />
             ) : (
               <BarChart data={trend} />
             )}
@@ -289,14 +289,14 @@ export default function AdminOverviewPage() {
 
         <Card size="sm">
           <CardHeader className="pb-1">
-            <CardTitle className="text-sm font-semibold text-slate-900">Status breakdown</CardTitle>
-            <p className="text-xs text-slate-500 mt-0.5">All bookings by state</p>
+            <CardTitle className="text-sm font-semibold text-stone-900">Status breakdown</CardTitle>
+            <p className="text-xs text-stone-500 mt-0.5">All bookings by state</p>
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="h-40 bg-slate-100 rounded animate-pulse" />
+              <div className="h-40 bg-stone-100 rounded animate-pulse" />
             ) : donutSegments.length === 0 ? (
-              <div className="py-10 text-center text-sm text-slate-400">No bookings yet</div>
+              <div className="py-10 text-center text-sm text-stone-400">No bookings yet</div>
             ) : (
               <Donut segments={donutSegments} total={stats.totalBookings} />
             )}
@@ -309,9 +309,9 @@ export default function AdminOverviewPage() {
         {/* Recent bookings table */}
         <Card className="xl:col-span-2" size="sm">
           <CardHeader className="pb-1 flex flex-row items-center justify-between">
-            <CardTitle className="text-sm font-semibold text-slate-900">Recent Bookings</CardTitle>
+            <CardTitle className="text-sm font-semibold text-stone-900">Recent Bookings</CardTitle>
             <Link href="/admin/services">
-              <Button variant="ghost" size="xs" className="gap-1 text-[#1E3A8A]">
+              <Button variant="ghost" size="xs" className="gap-1 text-[#2E1F16]">
                 View all <ArrowRight className="h-3 w-3" />
               </Button>
             </Link>
@@ -320,28 +320,28 @@ export default function AdminOverviewPage() {
             {loading ? (
               <div className="space-y-2 px-4">
                 {[...Array(6)].map((_, i) => (
-                  <div key={i} className="h-9 bg-slate-100 rounded animate-pulse" />
+                  <div key={i} className="h-9 bg-stone-100 rounded animate-pulse" />
                 ))}
               </div>
             ) : (data?.recentBookings.length ?? 0) === 0 ? (
-              <div className="py-10 text-center text-sm text-slate-400">No bookings found</div>
+              <div className="py-10 text-center text-sm text-stone-400">No bookings found</div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-y border-slate-100 text-left text-[11px] uppercase tracking-wide text-slate-400">
+                    <tr className="border-y border-stone-100 text-left text-[11px] uppercase tracking-wide text-stone-400">
                       <th className="px-4 py-2 font-medium">Client</th>
                       <th className="px-4 py-2 font-medium">Service</th>
                       <th className="px-4 py-2 font-medium">Date</th>
                       <th className="px-4 py-2 font-medium text-right">Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-50">
+                  <tbody className="divide-y divide-stone-50">
                     {data!.recentBookings.map((b: any) => (
-                      <tr key={b.id} className="hover:bg-slate-50/60">
-                        <td className="px-4 py-2.5 font-medium text-slate-900 whitespace-nowrap">{b.client_name || "Unknown"}</td>
-                        <td className="px-4 py-2.5 text-slate-500 whitespace-nowrap capitalize">{b.service_type || "—"}</td>
-                        <td className="px-4 py-2.5 text-slate-500 whitespace-nowrap">{b.booking_date || "—"}</td>
+                      <tr key={b.id} className="hover:bg-stone-50/60">
+                        <td className="px-4 py-2.5 font-medium text-stone-900 whitespace-nowrap">{b.client_name || "Unknown"}</td>
+                        <td className="px-4 py-2.5 text-stone-500 whitespace-nowrap capitalize">{b.service_type || "—"}</td>
+                        <td className="px-4 py-2.5 text-stone-500 whitespace-nowrap">{b.booking_date || "—"}</td>
                         <td className="px-4 py-2.5 text-right"><StatusBadge status={b.status} /></td>
                       </tr>
                     ))}
@@ -357,9 +357,9 @@ export default function AdminOverviewPage() {
           {/* New joiners */}
           <Card size="sm">
             <CardHeader className="pb-1 flex flex-row items-center justify-between">
-              <CardTitle className="text-sm font-semibold text-slate-900">New Joiners</CardTitle>
+              <CardTitle className="text-sm font-semibold text-stone-900">New Joiners</CardTitle>
               <Link href="/admin/onboarding">
-                <Button variant="ghost" size="xs" className="gap-1 text-[#1E3A8A]">
+                <Button variant="ghost" size="xs" className="gap-1 text-[#2E1F16]">
                   Manage <ArrowRight className="h-3 w-3" />
                 </Button>
               </Link>
@@ -368,18 +368,18 @@ export default function AdminOverviewPage() {
               {loading ? (
                 <div className="space-y-2">
                   {[...Array(3)].map((_, i) => (
-                    <div key={i} className="h-9 bg-slate-100 rounded animate-pulse" />
+                    <div key={i} className="h-9 bg-stone-100 rounded animate-pulse" />
                   ))}
                 </div>
               ) : (data?.recentJoiners.length ?? 0) === 0 ? (
-                <div className="py-6 text-center text-sm text-slate-400">No pending joiners</div>
+                <div className="py-6 text-center text-sm text-stone-400">No pending joiners</div>
               ) : (
-                <div className="divide-y divide-slate-50">
+                <div className="divide-y divide-stone-50">
                   {data!.recentJoiners.map((j: any) => (
                     <div key={j.id} className="py-2 flex items-center justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-slate-900 truncate">{j.full_name || j.name || "Applicant"}</p>
-                        <p className="text-xs text-slate-500 truncate">{j.position_applied_for || j.position || "Cleaner"}</p>
+                        <p className="text-sm font-medium text-stone-900 truncate">{j.full_name || j.name || "Applicant"}</p>
+                        <p className="text-xs text-stone-500 truncate">{j.position_applied_for || j.position || "Cleaner"}</p>
                       </div>
                       <span className="shrink-0 inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">
                         Pending
@@ -394,7 +394,7 @@ export default function AdminOverviewPage() {
           {/* System health */}
           <Card size="sm">
             <CardHeader className="pb-1">
-              <CardTitle className="text-sm font-semibold text-slate-900">System Health</CardTitle>
+              <CardTitle className="text-sm font-semibold text-stone-900">System Health</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2.5">
               <HealthRow label="Database" status="operational" />
@@ -445,21 +445,21 @@ function MetricTile({
     <Card size="sm" className="relative">
       <CardContent className="px-4">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-medium text-slate-500">{label}</span>
-          <div className={cn("rounded-md p-1.5", tone === "warn" ? "bg-amber-50" : "bg-[#1E3A8A]/10")}>
-            <Icon className={cn("h-3.5 w-3.5", tone === "warn" ? "text-amber-600" : "text-[#1E3A8A]")} />
+          <span className="text-xs font-medium text-stone-500">{label}</span>
+          <div className={cn("rounded-md p-1.5", tone === "warn" ? "bg-amber-50" : "bg-[#2E1F16]/10")}>
+            <Icon className={cn("h-3.5 w-3.5", tone === "warn" ? "text-amber-600" : "text-[#2E1F16]")} />
           </div>
         </div>
         {loading ? (
-          <div className="mt-2 h-7 w-14 bg-slate-100 rounded animate-pulse" />
+          <div className="mt-2 h-7 w-14 bg-stone-100 rounded animate-pulse" />
         ) : (
-          <div className="mt-1 text-2xl font-bold tabular-nums text-slate-900">{value.toLocaleString()}</div>
+          <div className="mt-1 text-2xl font-bold tabular-nums text-stone-900">{value.toLocaleString()}</div>
         )}
         <div className="mt-0.5 flex items-center gap-1.5">
           {typeof delta === "number" && !loading && <DeltaChip delta={delta} />}
-          {sub && <span className="text-[11px] text-slate-400">{sub}</span>}
+          {sub && <span className="text-[11px] text-stone-400">{sub}</span>}
           {deltaLabel && typeof delta === "number" && !loading && (
-            <span className="text-[11px] text-slate-400">{deltaLabel}</span>
+            <span className="text-[11px] text-stone-400">{deltaLabel}</span>
           )}
         </div>
       </CardContent>
@@ -514,7 +514,7 @@ function BarChart({ data }: { data: { key: string; label: string; value: number 
         const y = pad.top + innerH - h;
         return (
           <g key={d.key}>
-            <rect x={x} y={y} width={barW} height={Math.max(h, d.value > 0 ? 2 : 0)} rx={3} fill="#1E3A8A">
+            <rect x={x} y={y} width={barW} height={Math.max(h, d.value > 0 ? 2 : 0)} rx={3} fill="#2E1F16">
               <title>{`${d.key}: ${d.value} booking(s)`}</title>
             </rect>
             {i % 2 === 0 && (
@@ -569,9 +569,9 @@ function Donut({ segments, total }: { segments: { label: string; value: number; 
         {segments.map((s) => (
           <div key={s.label} className="flex items-center gap-2 text-xs">
             <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ backgroundColor: s.color }} />
-            <span className="capitalize text-slate-600 truncate">{s.label.replace(/_/g, " ")}</span>
-            <span className="ml-auto font-semibold tabular-nums text-slate-900">{s.value}</span>
-            <span className="w-9 text-right tabular-nums text-slate-400">{Math.round((s.value / sum) * 100)}%</span>
+            <span className="capitalize text-stone-600 truncate">{s.label.replace(/_/g, " ")}</span>
+            <span className="ml-auto font-semibold tabular-nums text-stone-900">{s.value}</span>
+            <span className="w-9 text-right tabular-nums text-stone-400">{Math.round((s.value / sum) * 100)}%</span>
           </div>
         ))}
       </div>
@@ -584,10 +584,10 @@ function StatusBadge({ status }: { status?: string }) {
   const map: Record<string, { color: string; bg: string; icon: React.ComponentType<{ className?: string }> }> = {
     completed: { color: "text-emerald-700", bg: "bg-emerald-50 ring-emerald-600/20", icon: CheckCircle2 },
     pending: { color: "text-amber-700", bg: "bg-amber-50 ring-amber-600/20", icon: Clock },
-    assigned: { color: "text-blue-700", bg: "bg-blue-50 ring-blue-600/20", icon: CheckCircle2 },
+    assigned: { color: "text-[#241811]", bg: "bg-[#F7F2EA] ring-[#2E1F16]/20", icon: CheckCircle2 },
     cancelled: { color: "text-red-700", bg: "bg-red-50 ring-red-600/20", icon: XCircle },
   };
-  const style = map[s] || { color: "text-slate-700", bg: "bg-slate-50 ring-slate-600/20", icon: Clock };
+  const style = map[s] || { color: "text-stone-700", bg: "bg-stone-50 ring-stone-600/20", icon: Clock };
   const Icon = style.icon;
   return (
     <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset capitalize", style.color, style.bg)}>
@@ -601,9 +601,9 @@ function QuickAction({ href, icon: Icon, label }: { href: string; icon: React.Co
   return (
     <Link
       href={href}
-      className="flex items-center gap-2 rounded-lg border border-slate-100 px-3 py-2.5 text-sm font-medium text-slate-700 hover:border-[#1E3A8A]/30 hover:bg-slate-50 hover:text-[#1E3A8A] transition-colors"
+      className="flex items-center gap-2 rounded-lg border border-stone-100 px-3 py-2.5 text-sm font-medium text-stone-700 hover:border-[#2E1F16]/30 hover:bg-stone-50 hover:text-[#2E1F16] transition-colors"
     >
-      <Icon className="h-4 w-4 text-slate-400" />
+      <Icon className="h-4 w-4 text-stone-400" />
       {label}
     </Link>
   );
@@ -613,13 +613,13 @@ function HealthRow({ label, status }: { label: string; status: "operational" | "
   const colors = {
     operational: { dot: "bg-emerald-500", text: "text-emerald-700", bg: "bg-emerald-50" },
     degraded: { dot: "bg-amber-500", text: "text-amber-700", bg: "bg-amber-50" },
-    paused: { dot: "bg-slate-400", text: "text-slate-600", bg: "bg-slate-50" },
+    paused: { dot: "bg-stone-400", text: "text-stone-600", bg: "bg-stone-50" },
     down: { dot: "bg-red-500", text: "text-red-700", bg: "bg-red-50" },
   };
   const c = colors[status];
   return (
     <div className="flex items-center justify-between">
-      <span className="text-sm text-slate-700">{label}</span>
+      <span className="text-sm text-stone-700">{label}</span>
       <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium", c.text, c.bg)}>
         <span className={cn("h-1.5 w-1.5 rounded-full", c.dot)} />
         {status.charAt(0).toUpperCase() + status.slice(1)}

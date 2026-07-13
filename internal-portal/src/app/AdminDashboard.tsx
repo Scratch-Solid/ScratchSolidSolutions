@@ -267,34 +267,34 @@ export default function AdminDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-slate-600">Total Bookings</CardTitle>
+                  <CardTitle className="text-sm font-medium text-stone-600">Total Bookings</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-2xl font-bold text-slate-900">{stats.totalBookings}</p>
+                  <p className="text-2xl font-bold text-stone-900">{stats.totalBookings}</p>
                 </CardContent>
               </Card>
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-slate-600">Total Revenue</CardTitle>
+                  <CardTitle className="text-sm font-medium text-stone-600">Total Revenue</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-2xl font-bold text-slate-900">R{(stats.totalRevenue || 0).toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-stone-900">R{(stats.totalRevenue || 0).toFixed(2)}</p>
                 </CardContent>
               </Card>
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-slate-600">Active Cleaners</CardTitle>
+                  <CardTitle className="text-sm font-medium text-stone-600">Active Cleaners</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-2xl font-bold text-slate-900">{stats.activeCleaners}</p>
+                  <p className="text-2xl font-bold text-stone-900">{stats.activeCleaners}</p>
                 </CardContent>
               </Card>
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-slate-600">Weekend Assignments</CardTitle>
+                  <CardTitle className="text-sm font-medium text-stone-600">Weekend Assignments</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-2xl font-bold text-slate-900">{stats.pendingWeekendAssignments}</p>
+                  <p className="text-2xl font-bold text-stone-900">{stats.pendingWeekendAssignments}</p>
                 </CardContent>
               </Card>
             </div>
@@ -329,11 +329,11 @@ export default function AdminDashboard() {
                 <CardContent>
                   <ul className="space-y-2">
                     {notifications.map((notif: any) => (
-                      <li key={notif.id} className="flex justify-between items-center p-3 bg-slate-50 rounded">
+                      <li key={notif.id} className="flex justify-between items-center p-3 bg-stone-50 rounded">
                         <div><b>Booking #{notif.booking_id}</b> - {notif.message}</div>
                         <button
                           onClick={() => assignCleaner(notif.booking_id, "")}
-                          className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                          className="px-3 py-1 bg-[#B08A5E] text-white rounded hover:bg-[#2E1F16]"
                         >
                           Assign Cleaner
                         </button>
@@ -346,31 +346,31 @@ export default function AdminDashboard() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Shield className="h-5 w-5 text-indigo-500" />Admin Tools</CardTitle>
+                <CardTitle className="flex items-center gap-2"><Shield className="h-5 w-5 text-[#B08A5E]" />Admin Tools</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                  <a href="/admin/onboarding" className="flex flex-col items-center justify-center p-4 rounded-lg bg-slate-50 hover:bg-indigo-50 hover:text-indigo-600 transition-colors border border-slate-200">
+                  <a href="/admin/onboarding" className="flex flex-col items-center justify-center p-4 rounded-lg bg-stone-50 hover:bg-[#F7F2EA] hover:text-[#2E1F16] transition-colors border border-stone-200">
                     <ClipboardList className="h-6 w-6 mb-2" />
                     <span className="text-sm font-medium">Onboarding</span>
                   </a>
-                  <a href="/admin/security" className="flex flex-col items-center justify-center p-4 rounded-lg bg-slate-50 hover:bg-indigo-50 hover:text-indigo-600 transition-colors border border-slate-200">
+                  <a href="/admin/security" className="flex flex-col items-center justify-center p-4 rounded-lg bg-stone-50 hover:bg-[#F7F2EA] hover:text-[#2E1F16] transition-colors border border-stone-200">
                     <Lock className="h-6 w-6 mb-2" />
                     <span className="text-sm font-medium">Security</span>
                   </a>
-                  <a href="/admin/roles" className="flex flex-col items-center justify-center p-4 rounded-lg bg-slate-50 hover:bg-indigo-50 hover:text-indigo-600 transition-colors border border-slate-200">
+                  <a href="/admin/roles" className="flex flex-col items-center justify-center p-4 rounded-lg bg-stone-50 hover:bg-[#F7F2EA] hover:text-[#2E1F16] transition-colors border border-stone-200">
                     <Users className="h-6 w-6 mb-2" />
                     <span className="text-sm font-medium">Roles</span>
                   </a>
-                  <a href="/admin/monitoring" className="flex flex-col items-center justify-center p-4 rounded-lg bg-slate-50 hover:bg-indigo-50 hover:text-indigo-600 transition-colors border border-slate-200">
+                  <a href="/admin/monitoring" className="flex flex-col items-center justify-center p-4 rounded-lg bg-stone-50 hover:bg-[#F7F2EA] hover:text-[#2E1F16] transition-colors border border-stone-200">
                     <Monitor className="h-6 w-6 mb-2" />
                     <span className="text-sm font-medium">Monitoring</span>
                   </a>
-                  <a href="/admin/reviews" className="flex flex-col items-center justify-center p-4 rounded-lg bg-slate-50 hover:bg-indigo-50 hover:text-indigo-600 transition-colors border border-slate-200">
+                  <a href="/admin/reviews" className="flex flex-col items-center justify-center p-4 rounded-lg bg-stone-50 hover:bg-[#F7F2EA] hover:text-[#2E1F16] transition-colors border border-stone-200">
                     <Star className="h-6 w-6 mb-2" />
                     <span className="text-sm font-medium">Gallery Reviews</span>
                   </a>
-                  <a href="/admin/audit-logs" className="flex flex-col items-center justify-center p-4 rounded-lg bg-slate-50 hover:bg-indigo-50 hover:text-indigo-600 transition-colors border border-slate-200">
+                  <a href="/admin/audit-logs" className="flex flex-col items-center justify-center p-4 rounded-lg bg-stone-50 hover:bg-[#F7F2EA] hover:text-[#2E1F16] transition-colors border border-stone-200">
                     <FileText className="h-6 w-6 mb-2" />
                     <span className="text-sm font-medium">Audit Logs</span>
                   </a>
@@ -385,7 +385,7 @@ export default function AdminDashboard() {
               <CardContent>
                 <ul className="space-y-2">
                   {users.map((u: any) => (
-                    <li key={u.id} className="flex justify-between p-2 bg-slate-50 rounded">
+                    <li key={u.id} className="flex justify-between p-2 bg-stone-50 rounded">
                       <span><b>{u.name}</b> ({u.role}) - {u.email}</span>
                     </li>
                   ))}
@@ -400,7 +400,7 @@ export default function AdminDashboard() {
               <CardContent>
                 <ul className="space-y-2">
                   {bookings.map((b: any) => (
-                    <li key={b.id} className="flex justify-between p-2 bg-slate-50 rounded">
+                    <li key={b.id} className="flex justify-between p-2 bg-stone-50 rounded">
                       <span><b>{b.client_name}</b> - {b.booking_date} {b.booking_time}</span>
                       <Badge>{b.status}</Badge>
                     </li>
@@ -426,12 +426,12 @@ export default function AdminDashboard() {
                   <CardContent>
                     <button
                       onClick={() => setShowCreateCleaner(true)}
-                      className="mb-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                      className="mb-4 px-4 py-2 bg-[#2E1F16] text-white rounded hover:bg-[#241811]"
                     >
                       + Add New Cleaner
                     </button>
                     {showCreateCleaner && (
-                      <div className="mb-4 p-4 border rounded bg-gray-50">
+                      <div className="mb-4 p-4 border rounded bg-stone-50">
                         <h3 className="font-bold mb-3">Create New Cleaner</h3>
                         <div className="grid grid-cols-2 gap-3 mb-3">
                           <input
@@ -472,7 +472,7 @@ export default function AdminDashboard() {
                           </button>
                           <button
                             onClick={() => setShowCreateCleaner(false)}
-                            className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+                            className="px-4 py-2 bg-stone-300 text-stone-700 rounded hover:bg-stone-400"
                           >
                             Cancel
                           </button>
@@ -480,7 +480,7 @@ export default function AdminDashboard() {
                       </div>
                     )}
                     {newJoiners.length === 0 ? (
-                      <p className="text-slate-500">No pending new joiners.</p>
+                      <p className="text-stone-500">No pending new joiners.</p>
                     ) : (
                       <div className="space-y-3">
                         {newJoiners.map((joiner: any) => (
@@ -488,15 +488,15 @@ export default function AdminDashboard() {
                             <div className="flex justify-between items-start mb-2">
                               <div>
                                 <p className="font-bold">{joiner.fullName}</p>
-                                <p className="text-sm text-slate-600">ID/Passport: {joiner.idPassportNumber}</p>
-                                <p className="text-sm text-slate-600">Contact: {joiner.contactNumber}</p>
-                                <p className="text-sm text-slate-600">Position: {joiner.positionAppliedFor}</p>
-                                <p className="text-sm text-slate-600">Username: {joiner.generatedUsername}</p>
+                                <p className="text-sm text-stone-600">ID/Passport: {joiner.idPassportNumber}</p>
+                                <p className="text-sm text-stone-600">Contact: {joiner.contactNumber}</p>
+                                <p className="text-sm text-stone-600">Position: {joiner.positionAppliedFor}</p>
+                                <p className="text-sm text-stone-600">Username: {joiner.generatedUsername}</p>
                               </div>
                               <div className="flex gap-2 flex-wrap">
                                 <button
                                   onClick={() => setSelectedJoiner(joiner)}
-                                  className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                                  className="px-3 py-1 bg-[#B08A5E] text-white rounded hover:bg-[#2E1F16]"
                                 >
                                   View Consent
                                 </button>
@@ -550,7 +550,7 @@ export default function AdminDashboard() {
                         </button>
                         <button
                           onClick={() => setSelectedJoiner(null)}
-                          className="flex-1 py-2 bg-slate-500 text-white rounded hover:bg-slate-600"
+                          className="flex-1 py-2 bg-stone-500 text-white rounded hover:bg-stone-600"
                         >
                           Close
                         </button>
@@ -566,7 +566,7 @@ export default function AdminDashboard() {
                   </CardHeader>
                   <CardContent>
                     {employees.length === 0 ? (
-                      <p className="text-slate-500">No employees found.</p>
+                      <p className="text-stone-500">No employees found.</p>
                     ) : (
                       <div className="overflow-x-auto">
                         <table className="w-full">

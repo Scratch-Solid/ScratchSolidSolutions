@@ -111,8 +111,8 @@ export default function TwoFactorSetup({ onSuccess, onCancel }: TwoFactorSetupPr
         
         {loading && (
           <div className="text-center py-4">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-2 text-gray-600">Setting up 2FA...</p>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2E1F16] mx-auto"></div>
+            <p className="mt-2 text-stone-600">Setting up 2FA...</p>
           </div>
         )}
 
@@ -131,8 +131,8 @@ export default function TwoFactorSetup({ onSuccess, onCancel }: TwoFactorSetupPr
       
       {loading && (
         <div className="text-center py-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Verifying...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2E1F16] mx-auto"></div>
+          <p className="mt-2 text-stone-600">Verifying...</p>
         </div>
       )}
 
@@ -146,11 +146,11 @@ export default function TwoFactorSetup({ onSuccess, onCancel }: TwoFactorSetupPr
         <div className="space-y-6">
           <div>
             <h3 className="text-lg font-semibold mb-2">Step 1: Scan QR Code</h3>
-            <p className="text-gray-600 mb-4">
+            <p className="text-stone-600 mb-4">
               Use your authenticator app (Google Authenticator, Authy, etc.) to scan this QR code:
             </p>
             <div className="flex justify-center mb-4">
-              <div className="bg-white p-4 border border-gray-200 rounded">
+              <div className="bg-white p-4 border border-stone-200 rounded">
                 {qrCodeUrl && (
                   <img 
                     src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrCodeUrl)}`}
@@ -161,17 +161,17 @@ export default function TwoFactorSetup({ onSuccess, onCancel }: TwoFactorSetupPr
               </div>
             </div>
             <div className="text-center">
-              <p className="text-sm text-gray-600 mb-2">Or manually enter this secret:</p>
-              <code className="bg-gray-100 px-2 py-1 rounded text-sm break-all">{secret}</code>
+              <p className="text-sm text-stone-600 mb-2">Or manually enter this secret:</p>
+              <code className="bg-stone-100 px-2 py-1 rounded text-sm break-all">{secret}</code>
             </div>
           </div>
 
           <div>
             <h3 className="text-lg font-semibold mb-2">Step 2: Save Backup Codes</h3>
-            <p className="text-gray-600 mb-4">
+            <p className="text-stone-600 mb-4">
               Save these backup codes in a secure location. You can use them if you lose access to your authenticator app:
             </p>
-            <div className="bg-gray-50 p-4 rounded border">
+            <div className="bg-stone-50 p-4 rounded border">
               <div className="grid grid-cols-2 gap-2 mb-4">
                 {backupCodes.map((code, index) => (
                   <code key={index} className="text-sm bg-white px-2 py-1 rounded border">
@@ -182,7 +182,7 @@ export default function TwoFactorSetup({ onSuccess, onCancel }: TwoFactorSetupPr
               <div className="flex gap-2">
                 <button
                   onClick={downloadBackupCodes}
-                  className="flex-1 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
+                  className="flex-1 bg-[#2E1F16] text-white px-4 py-2 rounded hover:bg-[#241811] transition-colors"
                 >
                   Download
                 </button>
@@ -198,7 +198,7 @@ export default function TwoFactorSetup({ onSuccess, onCancel }: TwoFactorSetupPr
 
           <div>
             <h3 className="text-lg font-semibold mb-2">Step 3: Verify Setup</h3>
-            <p className="text-gray-600 mb-4">
+            <p className="text-stone-600 mb-4">
               Enter the 6-digit code from your authenticator app to complete setup:
             </p>
             <input
@@ -206,7 +206,7 @@ export default function TwoFactorSetup({ onSuccess, onCancel }: TwoFactorSetupPr
               value={verificationCode}
               onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
               placeholder="000000"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-[#B08A5E] focus:border-transparent"
               maxLength={6}
             />
           </div>
@@ -215,13 +215,13 @@ export default function TwoFactorSetup({ onSuccess, onCancel }: TwoFactorSetupPr
             <button
               onClick={verifyTwoFactor}
               disabled={loading || verificationCode.length !== 6}
-              className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+              className="flex-1 bg-[#2E1F16] text-white px-4 py-2 rounded-lg hover:bg-[#241811] disabled:bg-stone-400 disabled:cursor-not-allowed transition-colors"
             >
               {loading ? 'Verifying...' : 'Enable 2FA'}
             </button>
             <button
               onClick={onCancel}
-              className="flex-1 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+              className="flex-1 bg-stone-600 text-white px-4 py-2 rounded-lg hover:bg-stone-700 transition-colors"
             >
               Cancel
             </button>

@@ -12,7 +12,7 @@ export default function ContentManagement() {
 
   return (
     <div className="flex items-center justify-center py-20">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1E3A8A]"></div>
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2E1F16]"></div>
     </div>
   );
 }

@@ -92,8 +92,8 @@ export default function AdminTrainingPage() {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
-        <h2 className="text-lg font-semibold text-slate-900 mb-2">Error</h2>
-        <p className="text-sm text-slate-500 max-w-md">{error}</p>
+        <h2 className="text-lg font-semibold text-stone-900 mb-2">Error</h2>
+        <p className="text-sm text-stone-500 max-w-md">{error}</p>
         <Button onClick={() => window.location.reload()} className="mt-6" variant="outline" size="sm">
           Retry
         </Button>
@@ -105,8 +105,8 @@ export default function AdminTrainingPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Training</h1>
-          <p className="text-sm text-slate-500 mt-1">Modules, completions, and progress tracking.</p>
+          <h1 className="text-2xl font-bold text-stone-900 tracking-tight">Training</h1>
+          <p className="text-sm text-stone-500 mt-1">Modules, completions, and progress tracking.</p>
         </div>
       </div>
 
@@ -114,29 +114,29 @@ export default function AdminTrainingPage() {
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">Total Modules</CardTitle>
+            <CardTitle className="text-sm font-medium text-stone-500">Total Modules</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-slate-900">{modules.length}</div>
-            <p className="text-xs text-slate-400 mt-1">Available for staff</p>
+            <div className="text-2xl font-bold text-stone-900">{modules.length}</div>
+            <p className="text-xs text-stone-400 mt-1">Available for staff</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">Enrolled</CardTitle>
+            <CardTitle className="text-sm font-medium text-stone-500">Enrolled</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-slate-900">{progress.length}</div>
-            <p className="text-xs text-slate-400 mt-1">Active learners</p>
+            <div className="text-2xl font-bold text-stone-900">{progress.length}</div>
+            <p className="text-xs text-stone-400 mt-1">Active learners</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">Completion Rate</CardTitle>
+            <CardTitle className="text-sm font-medium text-stone-500">Completion Rate</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-slate-900">{completionRate}%</div>
-            <p className="text-xs text-slate-400 mt-1">Modules finished</p>
+            <div className="text-2xl font-bold text-stone-900">{completionRate}%</div>
+            <p className="text-xs text-stone-400 mt-1">Modules finished</p>
           </CardContent>
         </Card>
       </div>
@@ -148,7 +148,7 @@ export default function AdminTrainingPage() {
               key={t}
               onClick={() => setActiveTab(t)}
               className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-                activeTab === t ? "bg-[#1E3A8A] text-white" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+                activeTab === t ? "bg-[#2E1F16] text-white" : "bg-white border border-stone-200 text-stone-600 hover:bg-stone-50"
               }`}
             >
               {t === "modules" ? "Modules" : "Progress"}
@@ -156,13 +156,13 @@ export default function AdminTrainingPage() {
           ))}
         </div>
         <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
           <input
             type="text"
             placeholder={activeTab === "modules" ? "Search modules..." : "Search learners..."}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 py-2 text-sm outline-none focus:border-[#1E3A8A] focus:ring-1 focus:ring-[#1E3A8A] transition-colors"
+            className="w-full rounded-lg border border-stone-200 bg-white pl-9 pr-3 py-2 text-sm outline-none focus:border-[#2E1F16] focus:ring-1 focus:ring-[#2E1F16] transition-colors"
           />
         </div>
       </div>
@@ -177,24 +177,24 @@ export default function AdminTrainingPage() {
           {loading ? (
             <div className="space-y-3">
               {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-14 bg-slate-100 rounded animate-pulse" />
+                <div key={i} className="h-14 bg-stone-100 rounded animate-pulse" />
               ))}
             </div>
           ) : activeTab === "modules" ? (
             filteredModules.length === 0 ? (
-              <div className="py-12 text-center text-sm text-slate-400">No training modules found</div>
+              <div className="py-12 text-center text-sm text-stone-400">No training modules found</div>
             ) : (
-              <div className="divide-y divide-slate-100">
+              <div className="divide-y divide-stone-100">
                 {filteredModules.map((m) => (
                   <div key={m.id} className="py-4 flex items-center justify-between gap-4">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium text-slate-900">{m.title}</p>
+                        <p className="text-sm font-medium text-stone-900">{m.title}</p>
                         <Badge variant="outline" className="text-[10px] font-normal">{m.category || "General"}</Badge>
                       </div>
-                      <p className="text-xs text-slate-500 mt-0.5">{m.description}</p>
+                      <p className="text-xs text-stone-500 mt-0.5">{m.description}</p>
                     </div>
-                    <div className="flex items-center gap-1 text-xs text-slate-400 shrink-0">
+                    <div className="flex items-center gap-1 text-xs text-stone-400 shrink-0">
                       <Clock className="h-3 w-3" /> {m.duration_minutes}m
                     </div>
                   </div>
@@ -203,18 +203,18 @@ export default function AdminTrainingPage() {
             )
           ) : (
             filteredProgress.length === 0 ? (
-              <div className="py-12 text-center text-sm text-slate-400">No progress records found</div>
+              <div className="py-12 text-center text-sm text-stone-400">No progress records found</div>
             ) : (
-              <div className="divide-y divide-slate-100">
+              <div className="divide-y divide-stone-100">
                 {filteredProgress.map((p) => (
                   <div key={`${p.user_id}-${p.module_id}`} className="py-4 flex items-center justify-between gap-4">
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-slate-900">{p.user_name || `User ${p.user_id}`}</p>
-                      <p className="text-xs text-slate-500">{p.module_title || `Module ${p.module_id}`}</p>
+                      <p className="text-sm font-medium text-stone-900">{p.user_name || `User ${p.user_id}`}</p>
+                      <p className="text-xs text-stone-500">{p.module_title || `Module ${p.module_id}`}</p>
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
                       {p.score !== undefined && (
-                        <span className="text-xs font-medium text-slate-600">{p.score}%</span>
+                        <span className="text-xs font-medium text-stone-600">{p.score}%</span>
                       )}
                       <TrainingStatusBadge status={p.status} />
                     </div>
@@ -240,13 +240,13 @@ function TrainingStatusBadge({ status }: { status: string }) {
   }
   if (s === "in_progress") {
     return (
-      <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-0 text-[10px]">
+      <Badge className="bg-[#F0E6D6] text-[#241811] hover:bg-[#F0E6D6] border-0 text-[10px]">
         <TrendingUp className="h-3 w-3 mr-0.5" /> In Progress
       </Badge>
     );
   }
   return (
-    <Badge className="bg-slate-100 text-slate-600 hover:bg-slate-100 border-0 text-[10px]">
+    <Badge className="bg-stone-100 text-stone-600 hover:bg-stone-100 border-0 text-[10px]">
       <BookOpen className="h-3 w-3 mr-0.5" /> Not Started
     </Badge>
   );

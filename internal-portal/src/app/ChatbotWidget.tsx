@@ -38,7 +38,7 @@ export default function ChatbotWidget() {
       {/* Floating AI Button */}
       {!open && (
         <button
-          className="fixed bottom-32 right-8 z-50 w-16 h-16 rounded-full bg-gradient-to-tr from-blue-500 via-purple-500 to-pink-400 shadow-2xl flex items-center justify-center border-4 border-white hover:scale-110 transition-transform focus:outline-none focus:ring-4 focus:ring-blue-300 animate-fab-pop"
+          className="fixed bottom-32 right-8 z-50 w-16 h-16 rounded-full bg-gradient-to-tr from-[#B08A5E] via-purple-500 to-pink-400 shadow-2xl flex items-center justify-center border-4 border-white hover:scale-110 transition-transform focus:outline-none focus:ring-4 focus:ring-[#D8CBB5] animate-fab-pop"
           onClick={() => setOpen(true)}
           aria-label="Open AI Chat Assistant"
         >
@@ -48,9 +48,9 @@ export default function ChatbotWidget() {
 
       {/* Chat Window */}
       {open && (
-        <div className="fixed bottom-24 right-6 z-50 w-80 max-w-full bg-white rounded-3xl shadow-2xl border-2 border-blue-200 flex flex-col animate-fab-pop">
+        <div className="fixed bottom-24 right-6 z-50 w-80 max-w-full bg-white rounded-3xl shadow-2xl border-2 border-[#E9E0D3] flex flex-col animate-fab-pop">
           {/* Header */}
-          <div className="bg-gradient-to-tr from-blue-500 via-purple-500 to-pink-400 text-white rounded-t-3xl px-5 py-3 flex items-center justify-between">
+          <div className="bg-gradient-to-tr from-[#B08A5E] via-purple-500 to-pink-400 text-white rounded-t-3xl px-5 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2 font-extrabold text-lg">
               <span className="text-2xl">🤖</span>
               <span>AI Magic Chat</span>
@@ -65,7 +65,7 @@ export default function ChatbotWidget() {
             </button>
           </div>
           {/* Messages */}
-          <div className="flex-1 p-4 overflow-y-auto max-h-72 bg-gradient-to-br from-blue-50 via-white to-pink-50">
+          <div className="flex-1 p-4 overflow-y-auto max-h-72 bg-gradient-to-br from-[#F7F2EA] via-white to-pink-50">
             {messages.map((msg, i) => (
               <div
                 key={i}
@@ -74,7 +74,7 @@ export default function ChatbotWidget() {
                 <div
                   className={`px-4 py-2 rounded-2xl shadow text-base max-w-[80%] whitespace-pre-line ${
                     msg.sender === "bot"
-                      ? "bg-blue-100 text-blue-800 border border-blue-200 animate-fade-in"
+                      ? "bg-[#F0E6D6] text-[#1C130D] border border-[#E9E0D3] animate-fade-in"
                       : "bg-pink-100 text-pink-800 border border-pink-200 animate-fade-in"
                   }`}
                 >
@@ -84,13 +84,13 @@ export default function ChatbotWidget() {
             ))}
             {loading && (
               <div className="mb-3 flex justify-start">
-                <div className="px-4 py-2 rounded-2xl shadow bg-blue-100 text-blue-800 border border-blue-200 animate-pulse">🤖 Thinking...</div>
+                <div className="px-4 py-2 rounded-2xl shadow bg-[#F0E6D6] text-[#1C130D] border border-[#E9E0D3] animate-pulse">🤖 Thinking...</div>
               </div>
             )}
             <div ref={messagesEndRef} />
           </div>
           {/* Input */}
-          <form onSubmit={sendMessage} className="flex border-t border-blue-100 bg-white rounded-b-3xl">
+          <form onSubmit={sendMessage} className="flex border-t border-[#F0E6D6] bg-white rounded-b-3xl">
             <input
               className="flex-1 px-4 py-3 rounded-bl-3xl outline-none text-base bg-transparent"
               placeholder="Type your question..."
@@ -101,7 +101,7 @@ export default function ChatbotWidget() {
             />
             <button
               type="submit"
-              className="bg-gradient-to-tr from-blue-500 via-purple-500 to-pink-400 text-white px-5 py-3 rounded-br-3xl font-bold hover:scale-105 transition-transform disabled:opacity-50"
+              className="bg-gradient-to-tr from-[#B08A5E] via-purple-500 to-pink-400 text-white px-5 py-3 rounded-br-3xl font-bold hover:scale-105 transition-transform disabled:opacity-50"
               disabled={loading || !input.trim()}
             >
               <span className="text-lg">Send</span>

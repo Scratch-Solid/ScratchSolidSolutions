@@ -33,7 +33,7 @@ export default function ProfileDropdown() {
         aria-label="Profile menu"
         aria-expanded={isOpen}
       >
-        <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold">
+        <div className="w-8 h-8 rounded-full bg-[#B08A5E] flex items-center justify-center text-white font-semibold">
           {username.charAt(0).toUpperCase()}
         </div>
         <span className="text-sm font-medium">{username}</span>
@@ -41,26 +41,26 @@ export default function ProfileDropdown() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
-          <div className="px-4 py-2 border-b border-gray-100">
-            <p className="text-sm font-medium text-gray-900">{username}</p>
-            <p className="text-xs text-gray-500">Cleaner</p>
+        <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-stone-200 py-1 z-50">
+          <div className="px-4 py-2 border-b border-stone-100">
+            <p className="text-sm font-medium text-stone-900">{username}</p>
+            <p className="text-xs text-stone-500">Cleaner</p>
           </div>
           <button
             onClick={() => window.location.href = '/cleaner-dashboard'}
-            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+            className="w-full px-4 py-2 text-left text-sm text-stone-700 hover:bg-stone-50 flex items-center gap-2"
           >
             <User className="w-4 h-4" />
             Profile
           </button>
           <button
             onClick={() => window.location.href = '/auth/change-password'}
-            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+            className="w-full px-4 py-2 text-left text-sm text-stone-700 hover:bg-stone-50 flex items-center gap-2"
           >
             <Settings className="w-4 h-4" />
             Change Password
           </button>
-          <div className="border-t border-gray-100 mt-1 pt-1">
+          <div className="border-t border-stone-100 mt-1 pt-1">
             <button
               onClick={handleLogout}
               className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"

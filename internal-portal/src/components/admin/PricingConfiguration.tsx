@@ -77,7 +77,7 @@ export default function PricingConfiguration() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="text-slate-500">Loading pricing configuration...</div>
+        <div className="text-stone-500">Loading pricing configuration...</div>
       </div>
     );
   }
@@ -86,8 +86,8 @@ export default function PricingConfiguration() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Dynamic Pricing Matrix</h2>
-          <p className="text-slate-500 text-sm mt-1">Configure service pricing and transport fees</p>
+          <h2 className="text-2xl font-bold text-stone-900">Dynamic Pricing Matrix</h2>
+          <p className="text-stone-500 text-sm mt-1">Configure service pricing and transport fees</p>
         </div>
         {message && (
           <Badge variant={message.includes('success') ? 'default' : 'destructive'}>
@@ -133,7 +133,7 @@ export default function PricingConfiguration() {
                         />
                       ) : (
                         <span
-                          className="cursor-pointer hover:text-indigo-600 font-medium"
+                          className="cursor-pointer hover:text-[#2E1F16] font-medium"
                           onClick={() => handleCellEdit(item.serviceType, 'basePrice', item.basePrice?.toString() || '')}
                         >
                           R{item.basePrice?.toFixed(2) || '0.00'}
@@ -153,7 +153,7 @@ export default function PricingConfiguration() {
                         />
                       ) : (
                         <span
-                          className="cursor-pointer hover:text-indigo-600 font-medium"
+                          className="cursor-pointer hover:text-[#2E1F16] font-medium"
                           onClick={() => handleCellEdit(item.serviceType, 'transportFee', item.transportFee?.toString() || '')}
                         >
                           R{item.transportFee?.toFixed(2) || '0.00'}
@@ -173,7 +173,7 @@ export default function PricingConfiguration() {
                         />
                       ) : (
                         <span
-                          className="cursor-pointer hover:text-indigo-600 font-medium"
+                          className="cursor-pointer hover:text-[#2E1F16] font-medium"
                           onClick={() => handleCellEdit(item.serviceType, 'weekendSurcharge', item.weekendSurcharge?.toString() || '')}
                         >
                           {item.weekendSurcharge || 0}%
@@ -193,7 +193,7 @@ export default function PricingConfiguration() {
                         />
                       ) : (
                         <span
-                          className="cursor-pointer hover:text-indigo-600 font-medium"
+                          className="cursor-pointer hover:text-[#2E1F16] font-medium"
                           onClick={() => handleCellEdit(item.serviceType, 'holidaySurcharge', item.holidaySurcharge?.toString() || '')}
                         >
                           {item.holidaySurcharge || 0}%
@@ -213,14 +213,14 @@ export default function PricingConfiguration() {
                         />
                       ) : (
                         <span
-                          className="cursor-pointer hover:text-indigo-600 font-medium"
+                          className="cursor-pointer hover:text-[#2E1F16] font-medium"
                           onClick={() => handleCellEdit(item.serviceType, 'rushSurcharge', item.rushSurcharge?.toString() || '')}
                         >
                           {item.rushSurcharge || 0}%
                         </span>
                       )}
                     </TableCell>
-                    <TableCell className="text-slate-500 text-sm">
+                    <TableCell className="text-stone-500 text-sm">
                       {item.lastUpdated ? new Date(item.lastUpdated).toLocaleString() : 'Never'}
                     </TableCell>
                   </TableRow>
@@ -228,7 +228,7 @@ export default function PricingConfiguration() {
               </TableBody>
             </Table>
           </div>
-          <div className="mt-4 flex items-start gap-2 text-sm text-slate-500 bg-slate-50 p-3 rounded-lg">
+          <div className="mt-4 flex items-start gap-2 text-sm text-stone-500 bg-stone-50 p-3 rounded-lg">
             <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
             <p>Changes are saved immediately and cached for 5 minutes.</p>
           </div>
@@ -254,7 +254,7 @@ export default function PricingConfiguration() {
                 {transportFees.map((item: any) => (
                   <TableRow key={item.areaName}>
                     <TableCell className="font-medium">{item.areaName}</TableCell>
-                    <TableCell className="font-medium text-slate-700">
+                    <TableCell className="font-medium text-stone-700">
                       R{item.baseTransportFee?.toFixed(2) || '0.00'}
                     </TableCell>
                   </TableRow>

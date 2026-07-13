@@ -418,7 +418,7 @@ export default function ServicesManagement() {
     }
   };
 
-  if (loading) return <DashboardLayout title="Services Management" role="admin"><div className="flex items-center justify-center py-12 text-slate-500">Loading...</div></DashboardLayout>;
+  if (loading) return <DashboardLayout title="Services Management" role="admin"><div className="flex items-center justify-center py-12 text-stone-500">Loading...</div></DashboardLayout>;
   if (error) return <DashboardLayout title="Services Management" role="admin"><div className="text-red-500">{error}</div></DashboardLayout>;
 
   return (
@@ -503,13 +503,13 @@ export default function ServicesManagement() {
               <CardContent>
                 <div className="space-y-3">
                   {services.map((service) => (
-                    <div key={service.id} className="flex items-center justify-between p-4 border rounded-lg bg-slate-50">
+                    <div key={service.id} className="flex items-center justify-between p-4 border rounded-lg bg-stone-50">
                       <div className="flex items-center space-x-3">
                         <span className="text-2xl">{service.icon}</span>
                         <div>
-                          <p className="font-semibold text-slate-900">{service.name}</p>
-                          <p className="text-sm text-slate-500">{service.description}</p>
-                          <p className="text-xs text-slate-400">Order: {service.display_order} | Active: {service.is_active ? 'Yes' : 'No'}</p>
+                          <p className="font-semibold text-stone-900">{service.name}</p>
+                          <p className="text-sm text-stone-500">{service.description}</p>
+                          <p className="text-xs text-stone-400">Order: {service.display_order} | Active: {service.is_active ? 'Yes' : 'No'}</p>
                         </div>
                       </div>
                       <Button variant="destructive" size="sm" onClick={() => handleDeleteService(service.id)}>
@@ -606,12 +606,12 @@ export default function ServicesManagement() {
                   {servicePricing.map((pricing) => {
                     const service = services.find(s => s.id === pricing.service_id);
                     return (
-                      <div key={pricing.id} className="p-3 border rounded-lg bg-slate-50">
+                      <div key={pricing.id} className="p-3 border rounded-lg bg-stone-50">
                         <div className="flex justify-between items-start">
                           <div>
-                            <p className="font-semibold text-slate-900">{service?.name || 'Unknown Service'}</p>
-                            <p className="text-sm text-slate-600">R{pricing.price} per {pricing.unit} | {pricing.client_type}</p>
-                            <p className="text-xs text-slate-500">Min: {pricing.min_quantity} | Max: {pricing.max_quantity || 'Unlimited'}</p>
+                            <p className="font-semibold text-stone-900">{service?.name || 'Unknown Service'}</p>
+                            <p className="text-sm text-stone-600">R{pricing.price} per {pricing.unit} | {pricing.client_type}</p>
+                            <p className="text-xs text-stone-500">Min: {pricing.min_quantity} | Max: {pricing.max_quantity || 'Unlimited'}</p>
                             {pricing.special_price && (
                               <p className="text-xs text-green-600">Special: R{pricing.special_price} ({pricing.special_label})</p>
                             )}
@@ -708,16 +708,16 @@ export default function ServicesManagement() {
               <CardContent>
                 <div className="space-y-2">
                   {promoCodes.map((promo) => (
-                    <div key={promo.id} className="flex items-center justify-between p-4 border rounded-lg bg-slate-50">
+                    <div key={promo.id} className="flex items-center justify-between p-4 border rounded-lg bg-stone-50">
                       <div>
-                        <p className="font-semibold text-slate-900">{promo.code}</p>
-                        <p className="text-sm text-slate-600">{promo.description}</p>
-                        <p className="text-xs text-slate-500">
+                        <p className="font-semibold text-stone-900">{promo.code}</p>
+                        <p className="text-sm text-stone-600">{promo.description}</p>
+                        <p className="text-xs text-stone-500">
                           {promo.discount_type === 'percentage' ? `${promo.discount_value}% off` : `R${promo.discount_value} off`}
                           {promo.max_uses && ` | Max uses: ${promo.max_uses}`}
                           {promo.used_count > 0 && ` | Used: ${promo.used_count}`}
                         </p>
-                        <p className="text-xs text-slate-500">
+                        <p className="text-xs text-stone-500">
                           Active: {promo.is_active ? 'Yes' : 'No'}
                           {promo.valid_until && ` | Expires: ${new Date(promo.valid_until).toLocaleDateString()}`}
                         </p>
