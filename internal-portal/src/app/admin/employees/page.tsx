@@ -40,6 +40,8 @@ export default function AdminEmployeesPage() {
   const [formError, setFormError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [successInfo, setSuccessInfo] = useState<{ paysheetCode: string } | null>(null);
+  const [actionError, setActionError] = useState("");
+  const [actioningId, setActioningId] = useState<number | null>(null);
 
   async function load() {
     setLoading(true);
@@ -90,19 +92,44 @@ export default function AdminEmployeesPage() {
   });
 
   const handleApprove = async (id: number) => {
-    const res = await authFetch(`/api/admin/new-joiners/${id}/approve`, { method: "POST" });
-    if (res.ok) {
+    setActionError("");
+    setActioningId(id);
+    try {
+      const res = await authFetch(`/api/admin/new-joiners/${id}/approve`, { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setActionError(data?.error?.message || data?.error || `Approval failed (${res.status})`);
+        return;
+      }
+      setSuccessInfo({ paysheetCode: data?.data?.paysheetCode || "" });
       setNewJoiners((prev) => prev.filter((j) => j.id !== id));
       load();
+    } catch {
+      setActionError("Network error while approving. Please try again.");
+    } finally {
+      setActioningId(null);
     }
   };
 
   const handleReject = async (id: number) => {
-    const res = await authFetch(`/api/admin/new-joiners/${id}/reject`, {
-      method: "POST",
-      body: JSON.stringify({ reason: "Rejected by admin" }),
-    });
-    if (res.ok) setNewJoiners((prev) => prev.filter((j) => j.id !== id));
+    setActionError("");
+    setActioningId(id);
+    try {
+      const res = await authFetch(`/api/admin/new-joiners/${id}/reject`, {
+        method: "POST",
+        body: JSON.stringify({ reason: "Rejected by admin" }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setActionError(data?.error?.message || data?.error || `Rejection failed (${res.status})`);
+        return;
+      }
+      setNewJoiners((prev) => prev.filter((j) => j.id !== id));
+    } catch {
+      setActionError("Network error while rejecting. Please try again.");
+    } finally {
+      setActioningId(null);
+    }
   };
 
   const handleAddCleaner = async (e: React.FormEvent) => {
@@ -160,11 +187,21 @@ export default function AdminEmployeesPage() {
         </Button>
       </div>
 
+      {actionError && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 flex items-center justify-between">
+          <span>{actionError}</span>
+          <button onClick={() => setActionError("")} className="text-red-600 hover:text-red-800">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
       {successInfo && (
         <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 flex items-center justify-between">
           <span>
-            Cleaner account created. Paysheet code (their login username): <strong>{successInfo.paysheetCode}</strong>.
-            Login credentials were sent via WhatsApp/email where configured.
+            {successInfo.paysheetCode
+              ? <>Cleaner account active. Paysheet code (their login username): <strong>{successInfo.paysheetCode}</strong>. Login credentials were sent via WhatsApp/email where configured.</>
+              : "Done."}
           </span>
           <button onClick={() => setSuccessInfo(null)} className="text-emerald-600 hover:text-emerald-800">
             <X className="h-4 w-4" />
@@ -334,10 +371,10 @@ export default function AdminEmployeesPage() {
                   </div>
                   {tab === "new" ? (
                     <div className="flex items-center gap-2 shrink-0">
-                      <Button size="sm" variant="outline" className="h-8 gap-1 text-emerald-600 border-emerald-200 hover:bg-emerald-50" onClick={() => handleApprove(item.id)}>
-                        <CheckCircle2 className="h-3.5 w-3.5" /> Approve
+                      <Button size="sm" variant="outline" disabled={actioningId === item.id} className="h-8 gap-1 text-emerald-600 border-emerald-200 hover:bg-emerald-50" onClick={() => handleApprove(item.id)}>
+                        <CheckCircle2 className="h-3.5 w-3.5" /> {actioningId === item.id ? "..." : "Approve"}
                       </Button>
-                      <Button size="sm" variant="outline" className="h-8 gap-1 text-red-600 border-red-200 hover:bg-red-50" onClick={() => handleReject(item.id)}>
+                      <Button size="sm" variant="outline" disabled={actioningId === item.id} className="h-8 gap-1 text-red-600 border-red-200 hover:bg-red-50" onClick={() => handleReject(item.id)}>
                         <XCircle className="h-3.5 w-3.5" /> Reject
                       </Button>
                     </div>
