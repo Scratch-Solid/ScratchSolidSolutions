@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Sessions fetch error:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch sessions' },
+      { success: false, error: `Failed to fetch sessions: ${error instanceof Error ? error.message : 'Unknown error'}` },
       { status: 500 }
     );
   }
@@ -57,7 +57,7 @@ export async function DELETE(request: NextRequest) {
   } catch (error) {
     console.error('Session revoke error:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to revoke session' },
+      { success: false, error: `Failed to revoke session: ${error instanceof Error ? error.message : 'Unknown error'}` },
       { status: 500 }
     );
   }

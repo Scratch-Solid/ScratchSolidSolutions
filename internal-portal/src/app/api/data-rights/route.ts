@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     console.error('Data access error:', error);
-    const response = NextResponse.json({ error: 'Failed to retrieve data' }, { status: 500 });
+    const response = NextResponse.json({ error: `Failed to retrieve data: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }
@@ -121,7 +121,7 @@ export async function DELETE(request: NextRequest) {
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     console.error('Data deletion error:', error);
-    const response = NextResponse.json({ error: 'Failed to delete data' }, { status: 500 });
+    const response = NextResponse.json({ error: `Failed to delete data: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

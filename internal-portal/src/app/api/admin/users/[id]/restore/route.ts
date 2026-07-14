@@ -44,6 +44,6 @@ export async function POST(
     return NextResponse.json({ success: true, message: 'User restored' });
   } catch (error) {
     console.error('Restore user error:', error);
-    return NextResponse.json({ error: 'Failed to restore user' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to restore user: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }

@@ -69,6 +69,6 @@ export async function POST(request: NextRequest) {
     return withSecurityHeaders(NextResponse.json({ results }), traceId);
   } catch (error) {
     console.error('Bulk remind error:', error);
-    return withSecurityHeaders(NextResponse.json({ error: 'Failed to bulk remind' }, { status: 500 }), traceId);
+    return withSecurityHeaders(NextResponse.json({ error: `Failed to bulk remind: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 }), traceId);
   }
 }

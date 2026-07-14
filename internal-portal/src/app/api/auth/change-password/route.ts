@@ -78,6 +78,6 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     console.error('[CHANGE-PASSWORD] Error:', err);
     console.error('[CHANGE-PASSWORD] Error details:', JSON.stringify(err, Object.getOwnPropertyNames(err)));
-    return withSecurityHeaders(NextResponse.json({ error: 'Failed to change password' }, { status: 500 }), traceId);
+    return withSecurityHeaders(NextResponse.json({ error: `Failed to change password: ${err instanceof Error ? err.message : 'Unknown error'}` }, { status: 500 }), traceId);
   }
 }

@@ -27,6 +27,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('R2 upload error:', error);
-    return NextResponse.json({ error: 'Failed to upload PDF to R2' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to upload PDF to R2: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }

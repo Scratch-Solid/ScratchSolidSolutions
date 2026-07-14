@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(services.results || []);
   } catch (error) {
     console.error('Error fetching services:', error);
-    return NextResponse.json({ error: 'Failed to fetch services' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to fetch services: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ id: result.meta.last_row_id, success: true });
   } catch (error) {
     console.error('Error creating service:', error);
-    return NextResponse.json({ error: 'Failed to create service' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to create service: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -100,7 +100,7 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error updating service:', error);
-    return NextResponse.json({ error: 'Failed to update service' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to update service: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -128,6 +128,6 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting service:', error);
-    return NextResponse.json({ error: 'Failed to delete service' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to delete service: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }

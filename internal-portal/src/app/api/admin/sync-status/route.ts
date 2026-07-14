@@ -106,7 +106,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Sync status error:', error);
     return withSecurityHeaders(
-      NextResponse.json({ error: 'Failed to get sync status' }, { status: 500 }),
+      NextResponse.json({ error: `Failed to get sync status: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 }),
       traceId
     );
   }

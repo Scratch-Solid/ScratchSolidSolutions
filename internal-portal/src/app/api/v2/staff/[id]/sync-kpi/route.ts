@@ -95,7 +95,7 @@ export async function POST(
     });
   } catch (error) {
     console.error('KPI sync error:', error);
-    return NextResponse.json({ error: 'Failed to sync KPI' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to sync KPI: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 

@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     return withSecurityHeaders(NextResponse.json(bankingDetails || null), traceId);
   } catch (error) {
     console.error('Error fetching banking details:', error);
-    return withSecurityHeaders(NextResponse.json({ error: 'Failed to fetch banking details' }, { status: 500 }), traceId);
+    return withSecurityHeaders(NextResponse.json({ error: `Failed to fetch banking details: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 }), traceId);
   }
 }
 
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
     return withSecurityHeaders(NextResponse.json(result, { status: 201 }), traceId);
   } catch (error) {
     console.error('Error creating banking details:', error);
-    return withSecurityHeaders(NextResponse.json({ error: 'Failed to create banking details' }, { status: 500 }), traceId);
+    return withSecurityHeaders(NextResponse.json({ error: `Failed to create banking details: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 }), traceId);
   }
 }
 
@@ -80,6 +80,6 @@ export async function PUT(request: NextRequest) {
     return withSecurityHeaders(NextResponse.json(result), traceId);
   } catch (error) {
     console.error('Error updating banking details:', error);
-    return withSecurityHeaders(NextResponse.json({ error: 'Failed to update banking details' }, { status: 500 }), traceId);
+    return withSecurityHeaders(NextResponse.json({ error: `Failed to update banking details: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 }), traceId);
   }
 }

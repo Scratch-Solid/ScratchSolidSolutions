@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error distributing promo code:', error);
     return NextResponse.json(
-      { error: 'Failed to distribute promo code' },
+      { error: `Failed to distribute promo code: ${error instanceof Error ? error.message : 'Unknown error'}` },
       { status: 500 }
     );
   }
@@ -123,7 +123,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching distribution history:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch distribution history' },
+      { error: `Failed to fetch distribution history: ${error instanceof Error ? error.message : 'Unknown error'}` },
       { status: 500 }
     );
   }

@@ -45,9 +45,8 @@ export default function AdminTrainingPage() {
       try {
         const token = localStorage.getItem("authToken");
         const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
-        // These endpoints may be placeholder; gracefully handle missing ones
         const [modRes, progRes] = await Promise.allSettled([
-          fetch("/api/admin/training/modules", { headers }),
+          fetch("/api/training/modules", { headers }),
           fetch("/api/admin/training/progress", { headers }),
         ]);
         // Only a genuine 401 (invalid/expired token) logs the user out. A 403

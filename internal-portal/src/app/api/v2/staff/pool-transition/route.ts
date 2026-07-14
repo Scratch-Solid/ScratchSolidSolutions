@@ -39,6 +39,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, staff_id, from_pool: current.pool_type, to_pool: new_pool });
   } catch (error) {
     console.error('Pool transition error:', error);
-    return NextResponse.json({ error: 'Failed to update pool assignment' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to update pool assignment: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }

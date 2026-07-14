@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Seed user error:', error);
-    return NextResponse.json({ error: 'Failed to seed user' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to seed user: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 

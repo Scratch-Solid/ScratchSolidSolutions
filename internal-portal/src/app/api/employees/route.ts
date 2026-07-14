@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
 
     return withSecurityHeaders(NextResponse.json(employee, { status: 201 }), traceId);
   } catch (error) {
-    return withSecurityHeaders(NextResponse.json({ error: 'Failed to create employee' }, { status: 500 }), traceId);
+    return withSecurityHeaders(NextResponse.json({ error: `Failed to create employee: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 }), traceId);
   }
 }
 
@@ -61,6 +61,6 @@ export async function GET(request: NextRequest) {
     response.headers.set('Cache-Control', 'private, max-age=60');
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    return withSecurityHeaders(NextResponse.json({ error: 'Failed to fetch employees' }, { status: 500 }), traceId);
+    return withSecurityHeaders(NextResponse.json({ error: `Failed to fetch employees: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 }), traceId);
   }
 }

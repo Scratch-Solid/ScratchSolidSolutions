@@ -39,6 +39,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ history: history.results || [] });
   } catch (error) {
     console.error('Contract history error:', error);
-    return NextResponse.json({ error: 'Failed to get contract history' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to get contract history: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }

@@ -168,6 +168,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Sign contract error:', error);
-    return NextResponse.json({ error: 'Failed to sign contract' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to sign contract: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }

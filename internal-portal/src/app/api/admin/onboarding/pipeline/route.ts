@@ -31,6 +31,6 @@ export async function GET(request: NextRequest) {
     return withSecurityHeaders(NextResponse.json({ applicants: applicants.results || [] }), traceId);
   } catch (error) {
     console.error('Pipeline data error:', error);
-    return withSecurityHeaders(NextResponse.json({ error: 'Failed to get pipeline data' }, { status: 500 }), traceId);
+    return withSecurityHeaders(NextResponse.json({ error: `Failed to get pipeline data: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 }), traceId);
   }
 }

@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
     const response = NextResponse.json(bookings.results || []);
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    const response = NextResponse.json({ error: 'Failed to fetch bookings' }, { status: 500 });
+    const response = NextResponse.json({ error: `Failed to fetch bookings: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching training modules:', error);
     return withSecurityHeaders(
-      NextResponse.json({ error: 'Failed to fetch training modules' }, { status: 500 }),
+      NextResponse.json({ error: `Failed to fetch training modules: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 }),
       traceId
     );
   }

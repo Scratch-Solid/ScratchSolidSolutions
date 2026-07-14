@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(resultsWithDefaults);
   } catch (error) {
     console.error('Error fetching promo codes:', error);
-    return NextResponse.json({ error: 'Failed to fetch promo codes' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to fetch promo codes: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ id: result.meta.last_row_id, success: true });
   } catch (error) {
     console.error('Error creating promo code:', error);
-    return NextResponse.json({ error: 'Failed to create promo code' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to create promo code: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -210,7 +210,7 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error updating promo code:', error);
-    return NextResponse.json({ error: 'Failed to update promo code' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to update promo code: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -238,6 +238,6 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting promo code:', error);
-    return NextResponse.json({ error: 'Failed to delete promo code' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to delete promo code: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }

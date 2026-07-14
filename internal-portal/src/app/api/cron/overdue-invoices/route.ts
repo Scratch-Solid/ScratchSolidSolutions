@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Overdue invoice management error:', error);
     return NextResponse.json(
-      { error: 'Failed to process overdue invoices' },
+      { error: `Failed to process overdue invoices: ${error instanceof Error ? error.message : 'Unknown error'}` },
       { status: 500 }
     );
   }

@@ -34,6 +34,6 @@ export async function POST(request: NextRequest) {
     return withSecurityHeaders(NextResponse.json({ success: true }), traceId);
   } catch (error) {
     console.error('Update stage error:', error);
-    return withSecurityHeaders(NextResponse.json({ error: 'Failed to update stage' }, { status: 500 }), traceId);
+    return withSecurityHeaders(NextResponse.json({ error: `Failed to update stage: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 }), traceId);
   }
 }

@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     console.error('Audit log fetch error:', error);
-    const response = NextResponse.json({ error: 'Failed to fetch audit logs' }, { status: 500 });
+    const response = NextResponse.json({ error: `Failed to fetch audit logs: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json({ success: true });
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    const response = NextResponse.json({ error: 'Failed to create audit log' }, { status: 500 });
+    const response = NextResponse.json({ error: `Failed to create audit log: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

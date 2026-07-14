@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     logRequest(request, response, Date.now() - start, traceId);
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    const response = NextResponse.json({ error: 'Failed to process refund' }, { status: 500 });
+    const response = NextResponse.json({ error: `Failed to process refund: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

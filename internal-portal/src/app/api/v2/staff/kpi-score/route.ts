@@ -49,6 +49,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(payload);
   } catch (error) {
     console.error('KPI score error:', error);
-    return NextResponse.json({ error: 'Failed to fetch KPI score' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to fetch KPI score: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }

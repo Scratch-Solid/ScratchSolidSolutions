@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ preferences });
   } catch (error) {
     console.error('Get notification preferences error:', error);
-    return NextResponse.json({ error: 'Failed to get preferences' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to get preferences: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -61,6 +61,6 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ preferences: updatedPreferences });
   } catch (error) {
     console.error('Update notification preferences error:', error);
-    return NextResponse.json({ error: 'Failed to update preferences' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to update preferences: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }

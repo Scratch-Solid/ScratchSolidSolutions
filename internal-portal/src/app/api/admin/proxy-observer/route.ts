@@ -68,6 +68,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
   } catch (error) {
     console.error('Proxy observer error:', error);
-    return NextResponse.json({ error: 'Failed to process request' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to process request: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }

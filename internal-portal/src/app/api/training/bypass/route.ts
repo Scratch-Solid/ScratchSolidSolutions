@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Training bypass error:', error);
     return withSecurityHeaders(
-      NextResponse.json({ error: 'Failed to bypass training lock' }, { status: 500 }),
+      NextResponse.json({ error: `Failed to bypass training lock: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 }),
       traceId
     );
   }

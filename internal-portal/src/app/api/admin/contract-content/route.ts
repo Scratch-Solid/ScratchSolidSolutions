@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     return withSecurityHeaders(NextResponse.json(contractContent || null), traceId);
   } catch (error) {
     console.error('Error fetching contract content:', error);
-    return withSecurityHeaders(NextResponse.json({ error: 'Failed to fetch contract content' }, { status: 500 }), traceId);
+    return withSecurityHeaders(NextResponse.json({ error: `Failed to fetch contract content: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 }), traceId);
   }
 }
 
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
     return withSecurityHeaders(NextResponse.json({ id: result.meta.last_row_id }, { status: 201 }), traceId);
   } catch (error) {
     console.error('Error creating contract content:', error);
-    return withSecurityHeaders(NextResponse.json({ error: 'Failed to create contract content' }, { status: 500 }), traceId);
+    return withSecurityHeaders(NextResponse.json({ error: `Failed to create contract content: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 }), traceId);
   }
 }
 
@@ -99,6 +99,6 @@ export async function PUT(request: NextRequest) {
     return withSecurityHeaders(NextResponse.json({ success: true }), traceId);
   } catch (error) {
     console.error('Error updating contract content:', error);
-    return withSecurityHeaders(NextResponse.json({ error: 'Failed to update contract content' }, { status: 500 }), traceId);
+    return withSecurityHeaders(NextResponse.json({ error: `Failed to update contract content: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 }), traceId);
   }
 }

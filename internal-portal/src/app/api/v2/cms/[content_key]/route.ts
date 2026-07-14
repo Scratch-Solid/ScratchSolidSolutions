@@ -37,7 +37,7 @@ export async function GET(
     });
   } catch (error) {
     console.error('CMS content error:', error);
-    return NextResponse.json({ error: 'Failed to fetch content' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to fetch content: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -80,6 +80,6 @@ export async function PUT(
     return NextResponse.json({ success: true, message: 'Content updated successfully' });
   } catch (error) {
     console.error('CMS content update error:', error);
-    return NextResponse.json({ error: 'Failed to update content' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to update content: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }

@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     logRequest(request, response, Date.now() - start, traceId);
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    const response = NextResponse.json({ error: 'Failed to fetch bookings' }, { status: 500 });
+    const response = NextResponse.json({ error: `Failed to fetch bookings: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
     logRequest(request, response, Date.now() - start, traceId);
     return withSecurityHeaders(response, traceId);
   }
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
     logRequest(request, response, Date.now() - start, traceId);
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    const response = NextResponse.json({ error: 'Failed to create booking' }, { status: 500 });
+    const response = NextResponse.json({ error: `Failed to create booking: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
     logRequest(request, response, Date.now() - start, traceId);
     return withSecurityHeaders(response, traceId);
   }
@@ -109,7 +109,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     logRequest(request, response, Date.now() - start, traceId);
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    const response = NextResponse.json({ error: 'Failed to update booking' }, { status: 500 });
+    const response = NextResponse.json({ error: `Failed to update booking: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
     logRequest(request, response, Date.now() - start, traceId);
     return withSecurityHeaders(response, traceId);
   }

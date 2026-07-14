@@ -112,7 +112,7 @@ export async function POST(
     } catch (zohoError) {
       console.error('Zoho refund processing failed:', zohoError);
       return NextResponse.json(
-        { error: 'Failed to process refund in Zoho' },
+        { error: `Failed to process refund in Zoho: ${zohoError instanceof Error ? zohoError.message : 'Unknown error'}` },
         { status: 500 }
       );
     }
@@ -120,7 +120,7 @@ export async function POST(
   } catch (error) {
     console.error('Refund processing error:', error);
     return NextResponse.json(
-      { error: 'Failed to process refund' },
+      { error: `Failed to process refund: ${error instanceof Error ? error.message : 'Unknown error'}` },
       { status: 500 }
     );
   }

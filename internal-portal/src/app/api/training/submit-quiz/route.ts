@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Quiz submission error:', error);
     return withSecurityHeaders(
-      NextResponse.json({ error: 'Failed to submit quiz' }, { status: 500 }),
+      NextResponse.json({ error: `Failed to submit quiz: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 }),
       traceId
     );
   }

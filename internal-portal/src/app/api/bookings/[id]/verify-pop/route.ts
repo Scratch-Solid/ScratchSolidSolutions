@@ -69,7 +69,7 @@ export async function POST(
     } catch (zohoError) {
       console.error('Zoho POP verification failed:', zohoError);
       return NextResponse.json(
-        { error: 'Failed to verify POP in Zoho' },
+        { error: `Failed to verify POP in Zoho: ${zohoError instanceof Error ? zohoError.message : 'Unknown error'}` },
         { status: 500 }
       );
     }
@@ -77,7 +77,7 @@ export async function POST(
   } catch (error) {
     console.error('POP verification error:', error);
     return NextResponse.json(
-      { error: 'Failed to verify POP' },
+      { error: `Failed to verify POP: ${error instanceof Error ? error.message : 'Unknown error'}` },
       { status: 500 }
     );
   }

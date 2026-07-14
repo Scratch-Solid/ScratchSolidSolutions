@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     logRequest(request, response, Date.now() - start, traceId);
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    const response = NextResponse.json({ error: 'Failed to process chatbot request' }, { status: 500 });
+    const response = NextResponse.json({ error: `Failed to process chatbot request: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

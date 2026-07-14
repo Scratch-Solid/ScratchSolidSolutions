@@ -32,7 +32,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     logger.error('Error verifying photo', error as Error);
-    const response = NextResponse.json({ error: 'Failed to verify photo' }, { status: 500 });
+    const response = NextResponse.json({ error: `Failed to verify photo: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }
@@ -66,7 +66,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     logger.error('Error deleting photo', error as Error);
-    const response = NextResponse.json({ error: 'Failed to delete photo' }, { status: 500 });
+    const response = NextResponse.json({ error: `Failed to delete photo: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

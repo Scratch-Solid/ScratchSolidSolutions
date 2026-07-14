@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     response.headers.set('Cache-Control', 'private, max-age=10');
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    const response = NextResponse.json({ error: 'Failed to fetch cleaners' }, { status: 500 });
+    const response = NextResponse.json({ error: `Failed to fetch cleaners: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }
@@ -78,7 +78,7 @@ export async function PUT(request: NextRequest) {
     const response = NextResponse.json({ success: true });
     return withSecurityHeaders(response, traceId);
   } catch (error) {
-    const response = NextResponse.json({ error: 'Failed to update cleaner' }, { status: 500 });
+    const response = NextResponse.json({ error: `Failed to update cleaner: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

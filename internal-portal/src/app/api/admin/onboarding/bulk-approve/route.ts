@@ -74,6 +74,6 @@ export async function POST(request: NextRequest) {
     return withSecurityHeaders(NextResponse.json({ results }), traceId);
   } catch (error) {
     console.error('Bulk approve error:', error);
-    return withSecurityHeaders(NextResponse.json({ error: 'Failed to bulk approve' }, { status: 500 }), traceId);
+    return withSecurityHeaders(NextResponse.json({ error: `Failed to bulk approve: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 }), traceId);
   }
 }

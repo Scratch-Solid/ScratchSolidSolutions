@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(pricingMatrix);
   } catch (error) {
     console.error('Pricing matrix error:', error);
-    return NextResponse.json({ error: 'Failed to fetch pricing matrix' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to fetch pricing matrix: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -78,6 +78,6 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ success: true, message: 'Pricing updated successfully' });
   } catch (error) {
     console.error('Pricing update error:', error);
-    return NextResponse.json({ error: 'Failed to update pricing' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to update pricing: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }

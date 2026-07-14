@@ -125,6 +125,6 @@ export async function GET(request: NextRequest) {
     return withSecurityHeaders(NextResponse.json({ funnel, stageDurations, dropOffs, departmentComparison, timeOfDayAnalysis }), traceId);
   } catch (error) {
     console.error('Analytics error:', error);
-    return withSecurityHeaders(NextResponse.json({ error: 'Failed to get analytics' }, { status: 500 }), traceId);
+    return withSecurityHeaders(NextResponse.json({ error: `Failed to get analytics: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 }), traceId);
   }
 }

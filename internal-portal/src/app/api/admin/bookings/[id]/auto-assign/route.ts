@@ -54,6 +54,6 @@ export async function POST(
     return NextResponse.json(result);
   } catch (error) {
     console.error('Auto-assign booking error:', error);
-    return NextResponse.json({ error: 'Failed to auto-assign booking' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to auto-assign booking: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }

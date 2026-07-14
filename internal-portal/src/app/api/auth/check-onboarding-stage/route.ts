@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ currentStage, allowed: true });
   } catch (error) {
     console.error('Check onboarding stage error:', error);
-    return NextResponse.json({ error: 'Failed to check onboarding stage' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to check onboarding stage: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 

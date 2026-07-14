@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error creating quote:', error);
-    return NextResponse.json({ error: 'Failed to create quote' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to create quote: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -155,7 +155,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(quotes.results || []);
   } catch (error) {
     console.error('Error fetching quotes:', error);
-    return NextResponse.json({ error: 'Failed to fetch quotes' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to fetch quotes: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -191,6 +191,6 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error updating quote:', error);
-    return NextResponse.json({ error: 'Failed to update quote' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to update quote: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }

@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     logger.error('Error uploading photo', error as Error);
-    const response = NextResponse.json({ error: 'Failed to upload photo' }, { status: 500 });
+    const response = NextResponse.json({ error: `Failed to upload photo: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }
@@ -90,7 +90,7 @@ export async function GET(request: NextRequest) {
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     logger.error('Error fetching photos', error as Error);
-    const response = NextResponse.json({ error: 'Failed to fetch photos' }, { status: 500 });
+    const response = NextResponse.json({ error: `Failed to fetch photos: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

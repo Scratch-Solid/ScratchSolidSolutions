@@ -40,6 +40,6 @@ export async function GET(request: NextRequest) {
       rejection_reason: (contract as any).rejection_reason || null
     });
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to check contract' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to check contract: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }

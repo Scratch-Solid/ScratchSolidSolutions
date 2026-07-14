@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
       trace_id: traceId
     });
 
-    const response = NextResponse.json({ error: 'Failed to approve admin user' }, { status: 500 });
+    const response = NextResponse.json({ error: `Failed to approve admin user: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
     logRequest(request, response, Date.now() - startTime, traceId);
     return withSecurityHeaders(response, traceId);
   }

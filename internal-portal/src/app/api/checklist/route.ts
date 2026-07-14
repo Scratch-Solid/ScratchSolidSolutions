@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     logger.error('Error creating checklist', error as Error);
-    const response = NextResponse.json({ error: 'Failed to create checklist' }, { status: 500 });
+    const response = NextResponse.json({ error: `Failed to create checklist: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }
@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     logger.error('Error fetching checklists', error as Error);
-    const response = NextResponse.json({ error: 'Failed to fetch checklists' }, { status: 500 });
+    const response = NextResponse.json({ error: `Failed to fetch checklists: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

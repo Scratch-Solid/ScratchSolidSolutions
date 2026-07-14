@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     return withSecurityHeaders(NextResponse.json(consentForm || null), traceId);
   } catch (error) {
     console.error('Error fetching consent form:', error);
-    return withSecurityHeaders(NextResponse.json({ error: 'Failed to fetch consent form' }, { status: 500 }), traceId);
+    return withSecurityHeaders(NextResponse.json({ error: `Failed to fetch consent form: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 }), traceId);
   }
 }
 
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     return withSecurityHeaders(NextResponse.json({ id: result.meta.last_row_id }, { status: 201 }), traceId);
   } catch (error) {
     console.error('Error creating consent form:', error);
-    return withSecurityHeaders(NextResponse.json({ error: 'Failed to create consent form' }, { status: 500 }), traceId);
+    return withSecurityHeaders(NextResponse.json({ error: `Failed to create consent form: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 }), traceId);
   }
 }
 
@@ -99,6 +99,6 @@ export async function PUT(request: NextRequest) {
     return withSecurityHeaders(NextResponse.json({ success: true }), traceId);
   } catch (error) {
     console.error('Error updating consent form:', error);
-    return withSecurityHeaders(NextResponse.json({ error: 'Failed to update consent form' }, { status: 500 }), traceId);
+    return withSecurityHeaders(NextResponse.json({ error: `Failed to update consent form: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 }), traceId);
   }
 }

@@ -56,10 +56,10 @@ export default function AdminCleanersPage() {
 
   const toggleBlock = async (id: number, blocked: boolean) => {
     const token = localStorage.getItem("authToken");
-    const res = await fetch(`/api/admin/cleaners/${id}`, {
+    const res = await fetch(`/api/admin/cleaners`, {
       method: "PUT",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ blocked: !blocked }),
+      body: JSON.stringify({ cleaner_id: id, blocked: !blocked }),
     });
     if (res.ok) {
       setCleaners((prev) => prev.map((c) => (c.id === id ? { ...c, blocked: !blocked } : c)));

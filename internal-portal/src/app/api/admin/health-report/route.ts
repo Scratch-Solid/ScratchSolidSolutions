@@ -114,6 +114,6 @@ export async function POST(request: NextRequest) {
     }), traceId);
   } catch (error) {
     console.error('Health report generation error:', error);
-    return withSecurityHeaders(NextResponse.json({ error: 'Failed to generate health report' }, { status: 500 }), traceId);
+    return withSecurityHeaders(NextResponse.json({ error: `Failed to generate health report: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 }), traceId);
   }
 }
