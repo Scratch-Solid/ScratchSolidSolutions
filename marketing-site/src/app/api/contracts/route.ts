@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['business', 'admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
-  const { db } = authResult;
+  const { db, user } = authResult;
 
   // Rate limiting check
   const rateLimitResult = await withRateLimit(request, rateLimits.standard);
@@ -132,10 +132,10 @@ export async function GET(request: NextRequest) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['business', 'admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
-  const { db } = authResult;
+  const { db, user } = authResult;
 
   try {
-    
+
     const { searchParams } = new URL(request.url);
     const queryBusinessId = searchParams.get('business_id');
     const sessionRole: string = (user as any).role;
