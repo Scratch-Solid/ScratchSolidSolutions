@@ -90,6 +90,10 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
+  const traceId = withTracing(request);
+  const authResult = await withAuth(request, ['admin']);
+  if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
+
   try {
     const { searchParams } = new URL(request.url);
     const promoCodeId = searchParams.get('promoCodeId');

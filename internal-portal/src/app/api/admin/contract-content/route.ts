@@ -5,6 +5,9 @@ import { withAuth, withSecurityHeaders, withTracing } from '@/lib/middleware';
 
 export async function GET(request: NextRequest) {
   const traceId = withTracing(request);
+  const authResult = await withAuth(request);
+  if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
+
   const db = await getDb();
   if (!db) {
     return withSecurityHeaders(NextResponse.json({ error: 'Database unavailable' }, { status: 503 }), traceId);

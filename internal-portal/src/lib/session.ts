@@ -79,12 +79,15 @@ export function setAuthCookies(
   const isProduction = process.env.NODE_ENV === 'production';
   
   // Set access token cookie (httpOnly, secure, sameSite)
+  // maxAge must match generateAccessToken's 8h expiry - a shorter cookie
+  // maxAge deletes the cookie before the JWT inside it actually expires,
+  // producing a false "session expired" for anything relying on the cookie.
   response.cookies.set(COOKIE_NAME, accessToken, {
     httpOnly: true,
     secure: isProduction,
     sameSite: 'lax',
     path: '/',
-    maxAge: 15 * 60, // 15 minutes
+    maxAge: 8 * 60 * 60, // 8 hours
   });
 
   // Set refresh token cookie (httpOnly, secure, sameSite)

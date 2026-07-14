@@ -39,7 +39,11 @@ export async function POST(request: NextRequest) {
                request.headers.get('cf-connecting-ip') || 
                'unknown';
 
-    // Track based on event type
+    // Track based on event type. Deliberately does NOT increment
+    // promo_codes.used_count here - this endpoint is public and unauthenticated,
+    // so a client-reported "I applied this promo" event is not proof of an
+    // actual redemption. Real usage counting happens server-side in the
+    // booking/quote creation routes, atomically with the booking itself.
     if (eventType === 'page_view' && promoCode) {
       // Track page view with promo code
       await db.prepare(
@@ -53,11 +57,6 @@ export async function POST(request: NextRequest) {
         userAgent || '',
         ip
       ).run();
-    } else if (eventType === 'promo_applied' && promoCode) {
-      // Track promo code application
-      await db.prepare(
-        `UPDATE promo_codes SET used_count = used_count + 1 WHERE code = ?`
-      ).bind(promoCode).run();
     }
 
     return NextResponse.json({ success: true });

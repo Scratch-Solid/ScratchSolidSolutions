@@ -1,13 +1,20 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import { withRateLimit } from '@/lib/middleware';
+import { withAuth, withRateLimit, withCsrf, withSecurityHeaders, withTracing } from '@/lib/middleware';
 import { recordPayment } from '@/lib/zoho';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const traceId = withTracing(request);
+  const authResult = await withAuth(request, ['admin']);
+  if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
+
+  const csrfResult = await withCsrf(request);
+  if (csrfResult) return withSecurityHeaders(csrfResult, traceId);
+
   // Rate limiting
   const rateLimitResponse = await withRateLimit(request);
   if (rateLimitResponse) {

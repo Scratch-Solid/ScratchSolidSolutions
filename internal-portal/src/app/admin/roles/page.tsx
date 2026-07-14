@@ -131,12 +131,20 @@ function RolesManagementContent() {
           <h1 className="text-2xl font-bold text-stone-900 tracking-tight">Role Management</h1>
           <p className="text-sm text-stone-500 mt-1">Manage system roles and permissions</p>
         </div>
-          <button
-            onClick={() => setShowCreateForm(!showCreateForm)}
-            className="bg-[#2E1F16] hover:bg-[#241811] text-white px-4 py-2 rounded-lg"
-          >
-            {showCreateForm ? 'Cancel' : 'Create Role'}
-          </button>
+          <div className="flex gap-2">
+            <a
+              href="/admin/admin-approvals"
+              className="bg-white border border-stone-200 hover:bg-stone-50 text-stone-700 px-4 py-2 rounded-lg text-sm font-medium"
+            >
+              Pending admin approvals
+            </a>
+            <button
+              onClick={() => setShowCreateForm(!showCreateForm)}
+              className="bg-[#2E1F16] hover:bg-[#241811] text-white px-4 py-2 rounded-lg"
+            >
+              {showCreateForm ? 'Cancel' : 'Create Role'}
+            </button>
+          </div>
         </div>
 
         {message && (

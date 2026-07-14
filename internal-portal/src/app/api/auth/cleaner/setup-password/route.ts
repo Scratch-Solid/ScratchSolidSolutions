@@ -4,9 +4,8 @@ import { getDb } from '@/lib/db';
 import { withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { validatePasswordStrength, hashPassword } from '@/lib/auth';
 import { log } from '@/lib/logger';
-import { generateAccessToken } from '@/lib/auth';
 import crypto from 'crypto';
-import { generateRefreshToken, setAuthCookies } from '@/lib/session';
+import { generateAccessToken, generateRefreshToken, setAuthCookies } from '@/lib/session';
 
 export async function POST(request: NextRequest) {
   const traceId = withTracing(request);

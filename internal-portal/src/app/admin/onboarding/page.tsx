@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 interface Contract {
   id: number;
@@ -197,6 +198,17 @@ export default function AdminOnboardingPage() {
 
   return (
     <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-foreground">Onboarding</h1>
+          <div className="flex gap-2">
+            <Link href="/admin/onboarding/pipeline" className="text-sm font-medium text-accent-foreground bg-accent/15 hover:bg-accent/25 rounded-lg px-3 py-1.5 transition-colors">
+              Pipeline view
+            </Link>
+            <Link href="/admin/onboarding/analytics" className="text-sm font-medium text-accent-foreground bg-accent/15 hover:bg-accent/25 rounded-lg px-3 py-1.5 transition-colors">
+              Analytics
+            </Link>
+          </div>
+        </div>
 
         {message && (
           <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded">

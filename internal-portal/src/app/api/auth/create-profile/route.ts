@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, addOnboardingColumnsToStaff, createOrUpdateStaffRecord, addOnboardingStageToUsers, updateUserOnboardingStage, logOnboardingTransition, logNotification } from '@/lib/db';
 import bcrypt from 'bcryptjs';
-import { generateAccessToken } from '@/lib/auth';
+import { generateAccessToken } from '@/lib/session';
 import { notifyProfileCreated } from '@/lib/notifications';
 import { getExperimentAssignment, trackExperimentEvent } from '@/lib/ab-testing';
 import { encryptField } from '@/lib/encryption';

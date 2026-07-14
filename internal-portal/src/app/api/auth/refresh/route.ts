@@ -5,13 +5,12 @@ import crypto from 'crypto';
 import {
   verifyRefreshToken,
   verifyPassword,
-  generateAccessToken,
   hashPassword,
   logAuthEvent,
   getUserPermissions,
   isSuperuser,
 } from '@/lib/auth';
-import { setAuthCookies, verifyRefreshToken as verifySessionRefreshToken, generateRefreshToken as generateSessionRefreshToken } from '@/lib/session';
+import { setAuthCookies, generateAccessToken, verifyRefreshToken as verifySessionRefreshToken, generateRefreshToken as generateSessionRefreshToken } from '@/lib/session';
 import { applySecurityMiddleware } from '@/lib/security-middleware';
 
 /**
