@@ -1,19 +1,37 @@
-/* Explicitly rank the legacy glassmorphism stylesheet BELOW Tailwind's
-   layers. Without this, glass-theme.css's un-layered rules (plain `body`,
-   `h1`-`h5`, `textarea` selectors) would win the cascade over every Tailwind
-   utility/theme rule regardless of specificity or source order, since
-   un-layered CSS always beats layered CSS. */
-@layer legacy, base, components, utilities;
+/* @import rules must precede every other rule in the file (CSS spec) - a
+   bare @layer statement or anything else before them causes browsers/
+   bundlers to ignore the imports that follow. This project was using the
+   legacy `@tailwind base/components/utilities;` directives, which - unlike
+   `@import "tailwindcss";` - do NOT pull in Tailwind's own default theme
+   (default --spacing, default color ramps, etc). That silently broke every
+   utility class whose value depends on the spacing scale (p-*, m-*, gap-*,
+   inset-*, top/left/right/bottom-*, numeric w- and h- utilities) across the app -
+   confirmed present even before this session's changes. Switching to the
+   single @import restores the default theme. */
+@import "tailwindcss";
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Explicit @source: this is a monorepo (marketing-site, internal-portal,
+   backend-worker share one git root), and Tailwind v4's automatic content
+   detection - which walks up the tree and respects .gitignore to find the
+   project boundary - was silently failing to find any classes at all when
+   run through Next.js's webpack/postcss pipeline here (confirmed via direct
+   testing: the standalone Tailwind CLI generates every utility correctly
+   when given explicit --content paths, but the real Next.js build produces
+   almost no utilities without them). Telling it exactly where to look
+   removes the ambiguity entirely. */
+@source "./";
+@source "../components";
+@source "../lib";
 
 @import "./glass-theme.css" layer(legacy);
 
 @import "tw-animate-css";
 
 @import "shadcn/tailwind.css";
+
+/* Rank the legacy glassmorphism stylesheet BELOW Tailwind's layers by
+   naming it first (CSS gives earliest-named layers the lowest priority). */
+@layer legacy;
 
 @custom-variant dark (&:is(.dark *));
 
