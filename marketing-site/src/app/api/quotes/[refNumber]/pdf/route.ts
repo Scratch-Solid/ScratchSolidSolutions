@@ -83,7 +83,7 @@ export async function GET(
   } catch (error) {
     console.error('Error generating quote PDF:', error);
     return NextResponse.json(
-      { error: 'Failed to generate PDF' },
+      { error: `Failed to generate PDF: ${error instanceof Error ? error.message : 'Unknown error'}` },
       { status: 500 }
     );
   }

@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     logger.error('Error fetching cleaner details', error as Error);
-    const response = NextResponse.json({ error: 'Failed to fetch cleaner details' }, { status: 500 });
+    const response = NextResponse.json({ error: `Failed to fetch cleaner details: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

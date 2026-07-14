@@ -41,7 +41,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json(result);
   } catch (error) {
     logger.error('Error updating weekend request', error as Error);
-    return NextResponse.json({ error: 'Failed to update weekend request' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to update weekend request: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -79,7 +79,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     logger.error('Error cancelling weekend request', error as Error);
-    const response = NextResponse.json({ error: 'Failed to cancel weekend request' }, { status: 500 });
+    const response = NextResponse.json({ error: `Failed to cancel weekend request: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

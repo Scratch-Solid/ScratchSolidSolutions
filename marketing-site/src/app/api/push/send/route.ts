@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     logger.error('Error sending push notification', error as Error);
-    const response = NextResponse.json({ error: 'Failed to send push notification' }, { status: 500 });
+    const response = NextResponse.json({ error: `Failed to send push notification: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

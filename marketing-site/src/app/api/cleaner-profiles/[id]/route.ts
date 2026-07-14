@@ -21,7 +21,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json(profile);
   } catch (error) {
     logger.error('Error fetching cleaner profile', error as Error);
-    return NextResponse.json({ error: 'Failed to fetch cleaner profile' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to fetch cleaner profile: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -51,7 +51,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json(updated);
   } catch (error) {
     logger.error('Error updating cleaner profile', error as Error);
-    return NextResponse.json({ error: 'Failed to update cleaner profile' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to update cleaner profile: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -67,6 +67,6 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     return NextResponse.json({ message: 'Cleaner profile deleted' });
   } catch (error) {
     logger.error('Error deleting cleaner profile', error as Error);
-    return NextResponse.json({ error: 'Failed to delete cleaner profile' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to delete cleaner profile: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }

@@ -20,7 +20,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json(template);
   } catch (error) {
     logger.error('Error fetching template', error as Error);
-    return NextResponse.json({ error: 'Failed to fetch template' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to fetch template: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -65,7 +65,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json(result);
   } catch (error) {
     logger.error('Error updating template', error as Error);
-    return NextResponse.json({ error: 'Failed to update template' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to update template: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -81,6 +81,6 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     return NextResponse.json({ message: 'Template deleted' });
   } catch (error) {
     logger.error('Error deleting template', error as Error);
-    return NextResponse.json({ error: 'Failed to delete template' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to delete template: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }

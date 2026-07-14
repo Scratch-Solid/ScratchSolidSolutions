@@ -20,7 +20,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json(contract);
   } catch (error) {
     logger.error('Error fetching pending contract', error as Error);
-    return NextResponse.json({ error: 'Failed to fetch pending contract' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to fetch pending contract: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -67,7 +67,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json(result);
   } catch (error) {
     logger.error('Error updating pending contract', error as Error);
-    return NextResponse.json({ error: 'Failed to update pending contract' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to update pending contract: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -83,6 +83,6 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     return NextResponse.json({ message: 'Pending contract deleted' });
   } catch (error) {
     logger.error('Error deleting pending contract', error as Error);
-    return NextResponse.json({ error: 'Failed to delete pending contract' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to delete pending contract: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }

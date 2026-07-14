@@ -31,7 +31,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     console.error('Error submitting POP:', error);
-    const response = NextResponse.json({ error: 'Failed to submit proof of payment' }, { status: 500 });
+    const response = NextResponse.json({ error: `Failed to submit proof of payment: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

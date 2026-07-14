@@ -102,7 +102,7 @@ export async function POST(
   } catch (error) {
     console.error('Quote acceptance error:', error);
     return NextResponse.json(
-      { error: 'Failed to accept quote' },
+      { error: `Failed to accept quote: ${error instanceof Error ? error.message : 'Unknown error'}` },
       { status: 500 }
     );
   }

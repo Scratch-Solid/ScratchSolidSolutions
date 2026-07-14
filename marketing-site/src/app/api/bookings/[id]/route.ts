@@ -48,7 +48,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     logger.error('Error fetching booking', error as Error);
-    const response = NextResponse.json({ error: 'Failed to fetch booking' }, { status: 500 });
+    const response = NextResponse.json({ error: `Failed to fetch booking: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }
@@ -128,7 +128,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     logger.error('Error updating booking', error as Error);
-    const response = NextResponse.json({ error: 'Failed to update booking' }, { status: 500 });
+    const response = NextResponse.json({ error: `Failed to update booking: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }
@@ -153,7 +153,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     logger.error('Error deleting booking', error as Error);
-    const response = NextResponse.json({ error: 'Failed to delete booking' }, { status: 500 });
+    const response = NextResponse.json({ error: `Failed to delete booking: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

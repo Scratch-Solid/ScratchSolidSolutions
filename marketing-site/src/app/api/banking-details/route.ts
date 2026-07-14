@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(null);
   } catch (error) {
     console.error('Error fetching banking details:', error);
-    return NextResponse.json({ error: 'Failed to fetch banking details' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to fetch banking details: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 

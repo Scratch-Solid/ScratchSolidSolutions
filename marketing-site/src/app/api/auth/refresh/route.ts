@@ -78,6 +78,6 @@ export async function POST(request: NextRequest) {
     return response;
   } catch (error) {
     logger.error('Error during token refresh', error as Error);
-    return NextResponse.json({ error: 'Failed to refresh token' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to refresh token: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }

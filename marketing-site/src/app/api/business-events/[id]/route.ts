@@ -19,7 +19,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json(event);
   } catch (error) {
     logger.error('Error fetching business event', error as Error);
-    return NextResponse.json({ error: 'Failed to fetch business event' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to fetch business event: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -66,7 +66,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json(result);
   } catch (error) {
     logger.error('Error updating business event', error as Error);
-    return NextResponse.json({ error: 'Failed to update business event' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to update business event: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -82,6 +82,6 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     return NextResponse.json({ message: 'Business event deleted' });
   } catch (error) {
     logger.error('Error deleting business event', error as Error);
-    return NextResponse.json({ error: 'Failed to delete business event' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to delete business event: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }

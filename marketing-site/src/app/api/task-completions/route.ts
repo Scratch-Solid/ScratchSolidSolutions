@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(result.results || []);
   } catch (error) {
     logger.error('Error fetching task completions', error as Error);
-    return NextResponse.json({ error: 'Failed to fetch task completions' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to fetch task completions: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -65,6 +65,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(completion, { status: 201 });
   } catch (error) {
     logger.error('Error recording task completion', error as Error);
-    return NextResponse.json({ error: 'Failed to record task completion' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to record task completion: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }

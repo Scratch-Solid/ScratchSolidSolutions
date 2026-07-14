@@ -20,7 +20,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json(image);
   } catch (error) {
     logger.error('Error fetching background image', error as Error);
-    return NextResponse.json({ error: 'Failed to fetch background image' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to fetch background image: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -66,7 +66,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json(result);
   } catch (error) {
     logger.error('Error updating background image', error as Error);
-    return NextResponse.json({ error: 'Failed to update background image' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to update background image: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -82,6 +82,6 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     return NextResponse.json({ message: 'Background image deleted' });
   } catch (error) {
     logger.error('Error deleting background image', error as Error);
-    return NextResponse.json({ error: 'Failed to delete background image' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to delete background image: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }

@@ -42,7 +42,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     logger.error('Error fetching contract', error as Error);
-    const response = NextResponse.json({ error: 'Failed to fetch contract' }, { status: 500 });
+    const response = NextResponse.json({ error: `Failed to fetch contract: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }
@@ -164,7 +164,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     logger.error('Error updating contract', error as Error);
-    const response = NextResponse.json({ error: 'Failed to update contract' }, { status: 500 });
+    const response = NextResponse.json({ error: `Failed to update contract: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }
@@ -212,7 +212,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     logger.error('Error deleting contract', error as Error);
-    const response = NextResponse.json({ error: 'Failed to delete contract' }, { status: 500 });
+    const response = NextResponse.json({ error: `Failed to delete contract: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

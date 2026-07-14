@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(content.results || []);
   } catch (error) {
     console.error('Error fetching about content:', error);
-    return NextResponse.json({ error: 'Failed to fetch about content' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to fetch about content: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ id: result.meta.last_row_id, success: true });
   } catch (error) {
     console.error('Error creating about content:', error);
-    return NextResponse.json({ error: 'Failed to create about content' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to create about content: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -101,7 +101,7 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error updating about content:', error);
-    return NextResponse.json({ error: 'Failed to update about content' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to update about content: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -127,6 +127,6 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting about content:', error);
-    return NextResponse.json({ error: 'Failed to delete about content' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to delete about content: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }

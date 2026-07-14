@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     logger.error('Error fetching calendar events', error as Error);
-    const response = NextResponse.json({ error: 'Failed to fetch calendar events' }, { status: 500 });
+    const response = NextResponse.json({ error: `Failed to fetch calendar events: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }
@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     logger.error('Error rescheduling booking', error as Error);
-    const response = NextResponse.json({ error: 'Failed to reschedule booking' }, { status: 500 });
+    const response = NextResponse.json({ error: `Failed to reschedule booking: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

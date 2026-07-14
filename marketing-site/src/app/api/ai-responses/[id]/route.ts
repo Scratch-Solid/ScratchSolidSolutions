@@ -20,7 +20,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json(response);
   } catch (error) {
     logger.error('Error fetching AI response', error as Error);
-    return NextResponse.json({ error: 'Failed to fetch AI response' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to fetch AI response: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -63,7 +63,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json(result);
   } catch (error) {
     logger.error('Error updating AI response', error as Error);
-    return NextResponse.json({ error: 'Failed to update AI response' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to update AI response: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -79,6 +79,6 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     return NextResponse.json({ message: 'AI response deleted' });
   } catch (error) {
     logger.error('Error deleting AI response', error as Error);
-    return NextResponse.json({ error: 'Failed to delete AI response' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to delete AI response: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }

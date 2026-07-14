@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error tracking analytics event:', error);
     return NextResponse.json(
-      { error: 'Failed to track event' },
+      { error: `Failed to track event: ${error instanceof Error ? error.message : 'Unknown error'}` },
       { status: 500 }
     );
   }

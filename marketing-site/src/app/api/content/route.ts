@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
     }, { status: 404 });
   } catch (error) {
     logger.error('Error loading content from D1', error as Error);
-    return NextResponse.json({ error: 'Failed to load content' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to load content: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -133,6 +133,6 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ message: "Content updated successfully" });
   } catch (error) {
     logger.error('Error updating content in D1', error as Error);
-    return NextResponse.json({ error: 'Failed to update content' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to update content: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }

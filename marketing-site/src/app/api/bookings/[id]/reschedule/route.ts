@@ -100,7 +100,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   } catch (error) {
     logger.error('Error rescheduling booking', error as Error);
     return withSecurityHeaders(
-      NextResponse.json({ error: 'Failed to reschedule booking' }, { status: 500 }),
+      NextResponse.json({ error: `Failed to reschedule booking: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 }),
       traceId
     );
   }

@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     logger.error('Error fetching pricing', error as Error);
-    return NextResponse.json({ error: 'Failed to fetch pricing' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to fetch pricing: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -69,6 +69,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
     logger.error('Error creating pricing', error as Error);
-    return NextResponse.json({ error: 'Failed to create pricing' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to create pricing: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }

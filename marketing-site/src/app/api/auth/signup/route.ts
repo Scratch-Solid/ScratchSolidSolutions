@@ -217,6 +217,6 @@ export async function POST(request: NextRequest) {
     }, { status: 201 });
   } catch (error) {
     logger.error('Error creating user', error as Error);
-    return NextResponse.json({ error: 'An unexpected error occurred during signup. Please try again.' }, { status: 500 });
+    return NextResponse.json({ error: `An unexpected error occurred during signup. Please try again.: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }

@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     logger.error('Cleaner status proxy error', error as Error);
     return withSecurityHeaders(
-      NextResponse.json({ error: 'Failed to fetch cleaner status' }, { status: 500 }),
+      NextResponse.json({ error: `Failed to fetch cleaner status: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 }),
       traceId
     );
   }

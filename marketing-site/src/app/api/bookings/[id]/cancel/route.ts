@@ -123,7 +123,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   } catch (error) {
     logger.error('Error cancelling booking', error as Error);
     return withSecurityHeaders(
-      NextResponse.json({ error: 'Failed to cancel booking' }, { status: 500 }),
+      NextResponse.json({ error: `Failed to cancel booking: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 }),
       traceId
     );
   }

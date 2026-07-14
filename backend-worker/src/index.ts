@@ -635,7 +635,7 @@ router.post('/api/bookings', async (request: any, env: any) => {
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: 'Booking creation failed' }), {
+    return new Response(JSON.stringify({ error: `Booking creation failed: ${error instanceof Error ? error.message : 'Unknown error'}` }), {
       status: 500,
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
     });
@@ -722,7 +722,7 @@ router.post('/api/templates', async (request: any, env: any) => {
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: 'Template creation failed' }), {
+    return new Response(JSON.stringify({ error: `Template creation failed: ${error instanceof Error ? error.message : 'Unknown error'}` }), {
       status: 500,
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
     });
@@ -778,7 +778,7 @@ router.post('/api/contracts', async (request: any, env: any) => {
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: 'Contract creation failed' }), {
+    return new Response(JSON.stringify({ error: `Contract creation failed: ${error instanceof Error ? error.message : 'Unknown error'}` }), {
       status: 500,
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
     });
@@ -815,7 +815,7 @@ router.get('/api/contracts/:id', async (request: any, env: any) => {
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: 'Failed to fetch contract' }), {
+    return new Response(JSON.stringify({ error: `Failed to fetch contract: ${error instanceof Error ? error.message : 'Unknown error'}` }), {
       status: 500,
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
     });
@@ -845,7 +845,7 @@ router.put('/api/contracts/:id/rate', async (request: any, env: any) => {
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: 'Failed to update contract rate' }), {
+    return new Response(JSON.stringify({ error: `Failed to update contract rate: ${error instanceof Error ? error.message : 'Unknown error'}` }), {
       status: 500,
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
     });
@@ -895,7 +895,7 @@ router.get('/api/contracts/:id/export', async (request: any, env: any) => {
       headers: { 'Content-Type': 'text/plain', ...getCorsHeaders(request) }
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: 'Failed to export contract' }), {
+    return new Response(JSON.stringify({ error: `Failed to export contract: ${error instanceof Error ? error.message : 'Unknown error'}` }), {
       status: 500,
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
     });
@@ -939,7 +939,7 @@ router.post('/api/payments', async (request: any, env: any) => {
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: 'Payment recording failed' }), {
+    return new Response(JSON.stringify({ error: `Payment recording failed: ${error instanceof Error ? error.message : 'Unknown error'}` }), {
       status: 500,
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
     });
@@ -968,7 +968,7 @@ router.put('/api/payments/:id/confirm', async (request: any, env: any) => {
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: 'Failed to confirm payment' }), {
+    return new Response(JSON.stringify({ error: `Failed to confirm payment: ${error instanceof Error ? error.message : 'Unknown error'}` }), {
       status: 500,
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
     });
@@ -1556,7 +1556,7 @@ router.post('/api/weekend-requests', async (request: any, env: any) => {
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: 'Failed to create weekend request' }), {
+    return new Response(JSON.stringify({ error: `Failed to create weekend request: ${error instanceof Error ? error.message : 'Unknown error'}` }), {
       status: 500,
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
     });
@@ -1584,7 +1584,7 @@ router.get('/api/weekend-requests', async (request: any, env: any) => {
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: 'Failed to fetch weekend requests' }), {
+    return new Response(JSON.stringify({ error: `Failed to fetch weekend requests: ${error instanceof Error ? error.message : 'Unknown error'}` }), {
       status: 500,
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
     });
@@ -1619,7 +1619,7 @@ router.delete('/api/weekend-requests/:id', async (request: any, env: any) => {
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: 'Failed to cancel weekend request' }), {
+    return new Response(JSON.stringify({ error: `Failed to cancel weekend request: ${error instanceof Error ? error.message : 'Unknown error'}` }), {
       status: 500,
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
     });
@@ -1758,7 +1758,7 @@ router.put('/api/weekend-requests/:id/assign', async (request: any, env: any) =>
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: 'Failed to assign weekend request' }), {
+    return new Response(JSON.stringify({ error: `Failed to assign weekend request: ${error instanceof Error ? error.message : 'Unknown error'}` }), {
       status: 500,
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
     });
@@ -1917,7 +1917,7 @@ router.post('/api/business-events', async (request: any, env: any) => {
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: 'Failed to create business event' }), {
+    return new Response(JSON.stringify({ error: `Failed to create business event: ${error instanceof Error ? error.message : 'Unknown error'}` }), {
       status: 500,
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
     });
@@ -1945,7 +1945,7 @@ router.get('/api/business-events', async (request: any, env: any) => {
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: 'Failed to fetch business events' }), {
+    return new Response(JSON.stringify({ error: `Failed to fetch business events: ${error instanceof Error ? error.message : 'Unknown error'}` }), {
       status: 500,
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
     });
@@ -1962,7 +1962,7 @@ router.get('/api/pricing', async (request, env) => {
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: 'Failed to fetch pricing' }), {
+    return new Response(JSON.stringify({ error: `Failed to fetch pricing: ${error instanceof Error ? error.message : 'Unknown error'}` }), {
       status: 500,
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
     });
@@ -1994,7 +1994,7 @@ router.post('/api/pricing', async (request: any, env: any) => {
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: 'Failed to update pricing' }), {
+    return new Response(JSON.stringify({ error: `Failed to update pricing: ${error instanceof Error ? error.message : 'Unknown error'}` }), {
       status: 500,
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
     });

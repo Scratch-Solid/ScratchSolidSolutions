@@ -274,7 +274,7 @@ export async function POST(request: NextRequest) {
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     logger.error('Error creating booking', error as Error);
-    const response = NextResponse.json({ error: 'Failed to create booking' }, { status: 500 });
+    const response = NextResponse.json({ error: `Failed to create booking: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }
@@ -321,7 +321,7 @@ export async function GET(request: NextRequest) {
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     logger.error('Error fetching bookings', error as Error);
-    const response = NextResponse.json({ error: 'Failed to fetch bookings' }, { status: 500 });
+    const response = NextResponse.json({ error: `Failed to fetch bookings: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

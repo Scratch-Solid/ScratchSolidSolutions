@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(pricing.results || []);
   } catch (error) {
     console.error('Error fetching service pricing:', error);
-    return NextResponse.json({ error: 'Failed to fetch service pricing' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to fetch service pricing: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -103,6 +103,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ id: result.meta.last_row_id, success: true });
   } catch (error) {
     console.error('Error creating service pricing:', error);
-    return NextResponse.json({ error: 'Failed to create service pricing' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to create service pricing: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }

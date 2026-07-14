@@ -54,7 +54,7 @@ export async function GET(
   } catch (error) {
     console.error('Error generating QR code:', error);
     return NextResponse.json(
-      { error: 'Failed to generate QR code' },
+      { error: `Failed to generate QR code: ${error instanceof Error ? error.message : 'Unknown error'}` },
       { status: 500 }
     );
   }

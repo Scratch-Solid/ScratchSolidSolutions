@@ -80,7 +80,7 @@ Generated on: ${new Date().toISOString()}
     });
   } catch (error) {
     logger.error('Error exporting contract', error as Error);
-    const response = NextResponse.json({ error: 'Failed to export contract' }, { status: 500 });
+    const response = NextResponse.json({ error: `Failed to export contract: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

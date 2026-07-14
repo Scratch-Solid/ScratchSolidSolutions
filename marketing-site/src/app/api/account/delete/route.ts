@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     logger.error('Error deleting account', error as Error);
-    const response = NextResponse.json({ error: 'Failed to delete account' }, { status: 500 });
+    const response = NextResponse.json({ error: `Failed to delete account: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }
@@ -151,7 +151,7 @@ export async function PUT(request: NextRequest) {
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     logger.error('Error restoring account', error as Error);
-    const response = NextResponse.json({ error: 'Failed to restore account' }, { status: 500 });
+    const response = NextResponse.json({ error: `Failed to restore account: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

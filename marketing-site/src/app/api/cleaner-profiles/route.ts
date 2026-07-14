@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(profile);
   } catch (error) {
     logger.error('Error fetching cleaner profile', error as Error);
-    return NextResponse.json({ error: 'Failed to fetch cleaner profile' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to fetch cleaner profile: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -94,6 +94,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(profile, { status: 201 });
   } catch (error) {
     logger.error('Error creating cleaner profile', error as Error);
-    return NextResponse.json({ error: 'Failed to create cleaner profile' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to create cleaner profile: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }

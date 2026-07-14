@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error creating short URL:', error);
     return NextResponse.json(
-      { error: 'Failed to create short URL' },
+      { error: `Failed to create short URL: ${error instanceof Error ? error.message : 'Unknown error'}` },
       { status: 500 }
     );
   }

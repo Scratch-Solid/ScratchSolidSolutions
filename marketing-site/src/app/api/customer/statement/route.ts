@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
     } catch (zohoError) {
       console.error('Zoho statement PDF fetch failed:', zohoError);
       return NextResponse.json(
-        { error: 'Failed to retrieve statement PDF' },
+        { error: `Failed to retrieve statement PDF: ${zohoError instanceof Error ? zohoError.message : 'Unknown error'}` },
         { status: 500 }
       );
     }
@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Statement download error:', error);
     return NextResponse.json(
-      { error: 'Failed to download statement' },
+      { error: `Failed to download statement: ${error instanceof Error ? error.message : 'Unknown error'}` },
       { status: 500 }
     );
   }

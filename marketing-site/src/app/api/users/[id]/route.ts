@@ -48,7 +48,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     logger.error('Error fetching user', error as Error);
-    const response = NextResponse.json({ error: 'Failed to fetch user' }, { status: 500 });
+    const response = NextResponse.json({ error: `Failed to fetch user: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }
@@ -91,7 +91,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     logger.error('Error deleting user', error as Error);
-    const response = NextResponse.json({ error: 'Failed to delete user' }, { status: 500 });
+    const response = NextResponse.json({ error: `Failed to delete user: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

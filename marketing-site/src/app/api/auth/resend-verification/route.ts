@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Resend verification error:', error);
     return NextResponse.json({ 
-      error: 'An unexpected error occurred. Please try again.',
+      error: `An unexpected error occurred. Please try again.: ${error instanceof Error ? error.message : 'Unknown error'}`,
       debug: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }

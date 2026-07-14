@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(result.results || []);
   } catch (error) {
     logger.error('Error fetching role permissions', error as Error);
-    return NextResponse.json({ error: 'Failed to fetch role permissions' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to fetch role permissions: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -68,6 +68,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
     logger.error('Error creating role permission', error as Error);
-    return NextResponse.json({ error: 'Failed to create role permission' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to create role permission: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }

@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error sending promo email:', error);
     return withSecurityHeaders(NextResponse.json(
-      { error: 'Failed to send email' },
+      { error: `Failed to send email: ${error instanceof Error ? error.message : 'Unknown error'}` },
       { status: 500 }
     ), traceId);
   }

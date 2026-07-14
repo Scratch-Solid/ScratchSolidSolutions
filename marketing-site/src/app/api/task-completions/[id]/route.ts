@@ -20,7 +20,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json(completion);
   } catch (error) {
     logger.error('Error fetching task completion', error as Error);
-    return NextResponse.json({ error: 'Failed to fetch task completion' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to fetch task completion: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -55,7 +55,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json(result);
   } catch (error) {
     logger.error('Error updating task completion', error as Error);
-    return NextResponse.json({ error: 'Failed to update task completion' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to update task completion: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -71,6 +71,6 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     return NextResponse.json({ message: 'Task completion deleted' });
   } catch (error) {
     logger.error('Error deleting task completion', error as Error);
-    return NextResponse.json({ error: 'Failed to delete task completion' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to delete task completion: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }

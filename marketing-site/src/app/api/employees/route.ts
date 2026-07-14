@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(employees || []);
   } catch (error) {
     logger.error('Error fetching employees', error as Error);
-    return NextResponse.json({ error: 'Failed to fetch employees' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to fetch employees: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -63,6 +63,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(employee, { status: 201 });
   } catch (error) {
     logger.error('Error creating employee', error as Error);
-    return NextResponse.json({ error: 'Failed to create employee' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to create employee: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }

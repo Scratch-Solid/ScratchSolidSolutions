@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     logger.error('Error creating review', error as Error);
-    const response = NextResponse.json({ error: 'Review creation failed' }, { status: 500 });
+    const response = NextResponse.json({ error: `Review creation failed: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }
@@ -131,7 +131,7 @@ export async function PUT(request: NextRequest) {
     return withSecurityHeaders(NextResponse.json({ success: true }), traceId);
   } catch (error) {
     logger.error('Error updating review', error as Error);
-    return withSecurityHeaders(NextResponse.json({ error: 'Failed to update review' }, { status: 500 }), traceId);
+    return withSecurityHeaders(NextResponse.json({ error: `Failed to update review: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 }), traceId);
   }
 }
 
@@ -151,7 +151,7 @@ export async function DELETE(request: NextRequest) {
     return withSecurityHeaders(NextResponse.json({ success: true }), traceId);
   } catch (error) {
     logger.error('Error deleting review', error as Error);
-    return withSecurityHeaders(NextResponse.json({ error: 'Failed to delete review' }, { status: 500 }), traceId);
+    return withSecurityHeaders(NextResponse.json({ error: `Failed to delete review: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 }), traceId);
   }
 }
 
@@ -246,7 +246,7 @@ export async function GET(request: NextRequest) {
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     logger.error('Error fetching reviews', error as Error);
-    const response = NextResponse.json({ error: 'Failed to fetch reviews' }, { status: 500 });
+    const response = NextResponse.json({ error: `Failed to fetch reviews: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

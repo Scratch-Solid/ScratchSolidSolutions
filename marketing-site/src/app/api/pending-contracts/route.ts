@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(contracts.results || []);
   } catch (error) {
     logger.error('Error fetching pending contracts', error as Error);
-    return NextResponse.json({ error: 'Failed to fetch pending contracts' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to fetch pending contracts: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -78,6 +78,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(contract, { status: 201 });
   } catch (error) {
     logger.error('Error creating pending contract', error as Error);
-    return NextResponse.json({ error: 'Failed to create pending contract' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to create pending contract: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }

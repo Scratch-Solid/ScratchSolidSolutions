@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error sending quote email:', error);
     return NextResponse.json(
-      { error: 'Failed to send email' },
+      { error: `Failed to send email: ${error instanceof Error ? error.message : 'Unknown error'}` },
       { status: 500 }
     );
   }

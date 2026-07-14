@@ -21,7 +21,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json(employee);
   } catch (error) {
     logger.error('Error fetching employee', error as Error);
-    return NextResponse.json({ error: 'Failed to fetch employee' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to fetch employee: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -68,7 +68,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json(result);
   } catch (error) {
     logger.error('Error updating employee', error as Error);
-    return NextResponse.json({ error: 'Failed to update employee' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to update employee: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -84,6 +84,6 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     return NextResponse.json({ message: 'Employee deleted' });
   } catch (error) {
     logger.error('Error deleting employee', error as Error);
-    return NextResponse.json({ error: 'Failed to delete employee' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to delete employee: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }

@@ -107,6 +107,6 @@ export async function PATCH(
     });
   } catch (error) {
     console.error('Quote status update error:', error);
-    return NextResponse.json({ error: 'Failed to update quote' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to update quote: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }

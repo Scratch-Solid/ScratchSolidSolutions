@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(result.results || []);
   } catch (error) {
     logger.error('Error fetching background images', error as Error);
-    return NextResponse.json({ error: 'Failed to fetch background images' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to fetch background images: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -55,6 +55,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
     logger.error('Error creating background image', error as Error);
-    return NextResponse.json({ error: 'Failed to create background image' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to create background image: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }

@@ -32,7 +32,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json(result);
   } catch (error) {
     logger.error('Error updating notification', error as Error);
-    return NextResponse.json({ error: 'Failed to update notification' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to update notification: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -53,6 +53,6 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     return NextResponse.json({ message: 'Notification deleted' });
   } catch (error) {
     logger.error('Error deleting notification', error as Error);
-    return NextResponse.json({ error: 'Failed to delete notification' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to delete notification: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }

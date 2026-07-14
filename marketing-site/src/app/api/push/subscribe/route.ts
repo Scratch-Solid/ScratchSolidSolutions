@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     logger.error('Error registering push subscription', error as Error);
-    const response = NextResponse.json({ error: 'Failed to register subscription' }, { status: 500 });
+    const response = NextResponse.json({ error: `Failed to register subscription: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }

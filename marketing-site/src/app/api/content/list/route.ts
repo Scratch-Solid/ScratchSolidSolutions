@@ -39,6 +39,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ content: result.results });
   } catch (error) {
     logger.error('Error loading content list from D1', error as Error);
-    return NextResponse.json({ error: 'Failed to load content' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to load content: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }

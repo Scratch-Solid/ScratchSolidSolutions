@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(leaders.results || []);
   } catch (error) {
     console.error('Error fetching leaders:', error);
-    return NextResponse.json({ error: 'Failed to fetch leaders' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to fetch leaders: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ id: result.meta.last_row_id, success: true });
   } catch (error) {
     console.error('Error creating leader:', error);
-    return NextResponse.json({ error: 'Failed to create leader' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to create leader: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -112,7 +112,7 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error updating leader:', error);
-    return NextResponse.json({ error: 'Failed to update leader' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to update leader: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -138,6 +138,6 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting leader:', error);
-    return NextResponse.json({ error: 'Failed to delete leader' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to delete leader: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }

@@ -68,7 +68,7 @@ export async function GET(
     } catch (zohoError) {
       console.error('Zoho PDF fetch failed:', zohoError);
       return NextResponse.json(
-        { error: 'Failed to retrieve invoice PDF' },
+        { error: `Failed to retrieve invoice PDF: ${zohoError instanceof Error ? zohoError.message : 'Unknown error'}` },
         { status: 500 }
       );
     }
@@ -76,7 +76,7 @@ export async function GET(
   } catch (error) {
     console.error('Invoice download error:', error);
     return NextResponse.json(
-      { error: 'Failed to download invoice' },
+      { error: `Failed to download invoice: ${error instanceof Error ? error.message : 'Unknown error'}` },
       { status: 500 }
     );
   }

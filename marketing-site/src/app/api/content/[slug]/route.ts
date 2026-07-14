@@ -52,7 +52,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return response;
   } catch (error) {
     logger.error('Error loading page from D1', error as Error);
-    return NextResponse.json({ error: 'Failed to load page' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to load page: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -124,7 +124,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ message: "Content updated successfully" });
   } catch (error) {
     logger.error('Error updating content in D1', error as Error);
-    return NextResponse.json({ error: 'Failed to update content' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to update content: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -168,6 +168,6 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     return NextResponse.json({ message: "Content deleted successfully" });
   } catch (error) {
     logger.error('Error deleting content from D1', error as Error);
-    return NextResponse.json({ error: 'Failed to delete content' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to delete content: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }

@@ -23,7 +23,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     logger.error('Error fetching pricing', error as Error);
-    return NextResponse.json({ error: 'Failed to fetch pricing' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to fetch pricing: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -69,7 +69,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json(result);
   } catch (error) {
     logger.error('Error updating pricing', error as Error);
-    return NextResponse.json({ error: 'Failed to update pricing' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to update pricing: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 
@@ -85,6 +85,6 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     return NextResponse.json({ message: 'Pricing deleted' });
   } catch (error) {
     logger.error('Error deleting pricing', error as Error);
-    return NextResponse.json({ error: 'Failed to delete pricing' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to delete pricing: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }

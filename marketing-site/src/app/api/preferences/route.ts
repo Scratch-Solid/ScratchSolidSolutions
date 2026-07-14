@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     logger.error('Error fetching client preferences', error as Error);
-    const response = NextResponse.json({ error: 'Failed to fetch preferences' }, { status: 500 });
+    const response = NextResponse.json({ error: `Failed to fetch preferences: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }
@@ -102,7 +102,7 @@ export async function PUT(request: NextRequest) {
     return withSecurityHeaders(response, traceId);
   } catch (error) {
     logger.error('Error updating client preferences', error as Error);
-    const response = NextResponse.json({ error: 'Failed to update preferences' }, { status: 500 });
+    const response = NextResponse.json({ error: `Failed to update preferences: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
     return withSecurityHeaders(response, traceId);
   }
 }
