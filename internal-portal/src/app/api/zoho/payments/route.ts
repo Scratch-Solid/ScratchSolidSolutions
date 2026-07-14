@@ -93,7 +93,7 @@ export async function GET(request: NextRequest) {
       success: false,
       error: {
         code: 'INTERNAL_ERROR',
-        message: 'Failed to fetch payments from Zoho Books',
+        message: `Failed to fetch payments from Zoho Books: ${error instanceof Error ? error.message : 'Unknown error'}`,
         details: {
           error: error instanceof Error ? error.message : 'Unknown error'
         },

@@ -179,7 +179,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       success: false,
       error: {
         code: 'INTERNAL_ERROR',
-        message: 'Failed to update user profile',
+        message: `Failed to update user profile: ${error instanceof Error ? error.message : 'Unknown error'}`,
         details: {
           error: error instanceof Error ? error.message : 'Unknown error'
         },
@@ -252,7 +252,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       success: false,
       error: {
         code: 'INTERNAL_ERROR',
-        message: 'Failed to fetch user profile',
+        message: `Failed to fetch user profile: ${error instanceof Error ? error.message : 'Unknown error'}`,
         details: {
           error: error instanceof Error ? error.message : 'Unknown error'
         },

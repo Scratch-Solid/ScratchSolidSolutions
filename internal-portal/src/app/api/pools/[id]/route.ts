@@ -144,7 +144,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       success: false,
       error: {
         code: 'INTERNAL_ERROR',
-        message: 'Failed to update pool',
+        message: `Failed to update pool: ${error instanceof Error ? error.message : 'Unknown error'}`,
         details: {
           error: error instanceof Error ? error.message : 'Unknown error'
         },
@@ -211,7 +211,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       success: false,
       error: {
         code: 'INTERNAL_ERROR',
-        message: 'Failed to delete pool',
+        message: `Failed to delete pool: ${error instanceof Error ? error.message : 'Unknown error'}`,
         details: {
           error: error instanceof Error ? error.message : 'Unknown error'
         },

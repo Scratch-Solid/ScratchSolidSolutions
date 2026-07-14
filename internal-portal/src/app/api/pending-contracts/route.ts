@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
   const total = (countResult as any)?.total || 0;
 
   const response = NextResponse.json({
-    data: contracts,
+    data: contracts.results || [],
     pagination: {
       page,
       limit,

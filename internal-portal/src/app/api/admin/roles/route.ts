@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const roles = await db.prepare(`
-      SELECT r.*, 
+      SELECT r.*,
         GROUP_CONCAT(p.name) as permissions
       FROM roles r
       LEFT JOIN role_permissions rp ON r.id = rp.role_id
@@ -17,9 +17,18 @@ export async function GET(request: NextRequest) {
       GROUP BY r.id
     `).all();
 
-    return NextResponse.json(roles.results || []);
+    const permissions = await db.prepare('SELECT * FROM permissions ORDER BY resource, action').all();
+
+    // The admin Roles page expects { roles, permissions } - it used to get a
+    // bare array back, so `data.roles`/`data.permissions` were always
+    // undefined and `roles.map(...)` threw at render time (a full page
+    // crash), and the separate "System Permissions" panel never had data.
+    return NextResponse.json({
+      roles: roles.results || [],
+      permissions: permissions.results || [],
+    });
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch roles' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to fetch roles: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 

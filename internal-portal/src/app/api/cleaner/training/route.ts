@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
       success: false,
       error: {
         code: 'INTERNAL_ERROR',
-        message: 'Failed to fetch training modules',
+        message: `Failed to fetch training modules: ${error instanceof Error ? error.message : 'Unknown error'}`,
         details: {
           error: error instanceof Error ? error.message : 'Unknown error'
         },

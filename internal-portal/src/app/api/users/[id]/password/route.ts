@@ -186,7 +186,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       success: false,
       error: {
         code: 'INTERNAL_ERROR',
-        message: 'Failed to change password',
+        message: `Failed to change password: ${error instanceof Error ? error.message : 'Unknown error'}`,
         details: {
           error: error instanceof Error ? error.message : 'Unknown error'
         },

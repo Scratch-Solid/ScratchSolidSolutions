@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
       success: false,
       error: {
         code: 'INTERNAL_ERROR',
-        message: 'Failed to create new joiner',
+        message: `Failed to create new joiner: ${error instanceof Error ? error.message : 'Unknown error'}`,
         details: { error: error instanceof Error ? error.message : 'Unknown error' },
         suggestion: 'Please try again later or contact support if the issue persists'
       }

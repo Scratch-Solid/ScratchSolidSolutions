@@ -102,14 +102,18 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   } catch (error) {
     console.error('Application approval error:', error);
     log.error('Failed to approve application', error instanceof Error ? error : new Error(String(error)), { traceId, userId, joinerId: id });
-    
+
+    // The specific underlying error (a real DB/API failure reason) needs to
+    // actually reach the admin, not just a generic placeholder - otherwise
+    // every distinct failure looks identical and is undiagnosable from the UI.
+    const detail = error instanceof Error ? error.message : 'Unknown error';
     const response = NextResponse.json({
       success: false,
       error: {
         code: 'INTERNAL_ERROR',
-        message: 'Failed to approve application',
+        message: `Failed to approve application: ${detail}`,
         details: {
-          error: error instanceof Error ? error.message : 'Unknown error'
+          error: detail
         },
         suggestion: 'Please try again later or contact support if the issue persists'
       }

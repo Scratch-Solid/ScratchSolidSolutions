@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     const users = await db.prepare(query).bind(...params).all();
     return NextResponse.json(users.results || []);
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 });
+    return NextResponse.json({ error: `Failed to fetch users: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }
 

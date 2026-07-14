@@ -101,7 +101,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       success: false,
       error: {
         code: 'INTERNAL_ERROR',
-        message: 'Failed to complete module',
+        message: `Failed to complete module: ${error instanceof Error ? error.message : 'Unknown error'}`,
         details: {
           error: error instanceof Error ? error.message : 'Unknown error'
         },

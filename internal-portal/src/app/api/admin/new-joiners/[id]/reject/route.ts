@@ -88,7 +88,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       success: false,
       error: {
         code: 'INTERNAL_ERROR',
-        message: 'Failed to reject application',
+        message: `Failed to reject application: ${error instanceof Error ? error.message : 'Unknown error'}`,
         details: {
           error: error instanceof Error ? error.message : 'Unknown error'
         },
