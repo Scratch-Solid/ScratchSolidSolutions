@@ -590,11 +590,9 @@ router.post('/api/auth/login', async (request: any, env: any) => {
 
 // Get current user
 router.get('/api/auth/me', async (request: any, env: any) => {
-  const authHeader = request.headers.get('Authorization');
-  const token = authHeader?.substring(7) || 'none';
   const payload: any = await verifyToken(request, env);
   if (!payload) {
-    return new Response(JSON.stringify({ error: 'Unauthorized', debug: { tokenPrefix: token.slice(0, 20), secretSet: !!env.JWT_SECRET } }), {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
       headers: { 'Content-Type': 'application/json', ...getCorsHeaders(request) }
     });
