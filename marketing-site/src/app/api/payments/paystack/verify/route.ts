@@ -2,44 +2,85 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { logger } from '@/lib/logger';
+import { verifyTransaction } from '@/lib/paystack';
+import { sendBookingConfirmationEmail } from '@/lib/email';
 
-const BACKEND_API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.scratchsolidsolutions.org/api';
-
+// Implements Paystack verification directly against this app's own
+// bookings/payments tables (see lib/paystack.ts header comment for why this
+// was moved off backend-worker). Acts as a fallback/fast-path alongside the
+// webhook - the client polls this right after the Paystack redirect back,
+// so a customer sees "confirmed" immediately rather than waiting on the
+// webhook round trip.
 export async function GET(request: NextRequest) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['client', 'business', 'admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
+  const { db, user } = authResult;
+  const userId = (user as any).user_id;
 
   try {
     const { searchParams } = new URL(request.url);
     const reference = searchParams.get('reference');
 
     if (!reference) {
-      return withSecurityHeaders(
-        NextResponse.json({ error: 'reference is required' }, { status: 400 }),
-        traceId
-      );
+      return withSecurityHeaders(NextResponse.json({ error: 'reference is required' }, { status: 400 }), traceId);
     }
 
-    // Forward to backend-worker
-    const response = await fetch(`${BACKEND_API_URL}/payments/paystack/verify/${reference}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': request.headers.get('Authorization') || '',
-      },
-    });
+    const payment = await db.prepare('SELECT * FROM payments WHERE external_payment_id = ? AND user_id = ?')
+      .bind(reference, userId).first() as any;
 
-    const data = await response.json();
+    if (!payment) {
+      return withSecurityHeaders(NextResponse.json({ error: 'Payment not found' }, { status: 404 }), traceId);
+    }
 
+    // Already confirmed (e.g. webhook beat us to it) - short-circuit.
+    if (payment.status === 'completed') {
+      return withSecurityHeaders(NextResponse.json({ status: 'success', message: 'Payment already confirmed' }), traceId);
+    }
+
+    const verifyResult = await verifyTransaction(reference);
+
+    if (!verifyResult.status || !verifyResult.data || verifyResult.data.status !== 'success') {
+      return withSecurityHeaders(NextResponse.json({
+        status: 'failed',
+        message: verifyResult.data?.status ? `Payment ${verifyResult.data.status}` : (verifyResult.message || 'Payment not successful'),
+      }), traceId);
+    }
+
+    const metadata = payment.metadata ? JSON.parse(payment.metadata) : {};
+    metadata.paystack_event = 'verify.success';
+    metadata.paid_at = verifyResult.data.paid_at;
+    metadata.channel = verifyResult.data.channel;
+
+    await db.prepare(`
+      UPDATE payments SET status = 'completed', payment_date = datetime('now'), metadata = ?, updated_at = datetime('now') WHERE id = ?
+    `).bind(JSON.stringify(metadata), payment.id).run();
+
+    await db.prepare(`UPDATE bookings SET status = 'confirmed', updated_at = datetime('now') WHERE id = ?`)
+      .bind(payment.booking_id).run();
+
+    const booking = await db.prepare('SELECT * FROM bookings WHERE id = ?').bind(payment.booking_id).first() as any;
+    if (booking) {
+      try {
+        await sendBookingConfirmationEmail(
+          verifyResult.data.customer.email,
+          booking.client_name || 'Customer',
+          booking.booking_date,
+          booking.booking_time,
+          booking.location || '',
+          booking.service_type || 'standard'
+        );
+      } catch (emailError) {
+        logger.error('Failed to send payment confirmation email', emailError as Error);
+      }
+    }
+
+    const response = NextResponse.json({ status: 'success', message: 'Payment successful! Your booking has been confirmed.' });
+    return withSecurityHeaders(response, traceId);
+  } catch (error) {
+    logger.error('Paystack verify error', error as Error);
     return withSecurityHeaders(
-      NextResponse.json(data, { status: response.status }),
-      traceId
-    );
-  } catch (error: any) {
-    logger.error('Paystack verification error', error as Error);
-    return withSecurityHeaders(
-      NextResponse.json({ error: 'Paystack verification failed' }, { status: 500 }),
+      NextResponse.json({ error: `Payment verification failed: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 }),
       traceId
     );
   }

@@ -27,6 +27,7 @@ const PUBLIC_PATHS = [
   '/api/public',
   '/api/analytics/track',
   '/api/feedback',
+  '/api/webhooks',
 ];
 
 export function middleware(request: NextRequest) {
