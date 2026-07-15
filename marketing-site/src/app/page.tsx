@@ -163,48 +163,6 @@ export default function Home() {
             <p className="text-xs sm:text-sm text-blue-100 max-w-3xl text-center">
               Proudly partnered with trusted platforms to deliver verified cleaning services.
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
-              <a
-                href="https://www.bark.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 bg-white/10 px-4 py-3 rounded-full border border-white/20 shadow-sm hover:bg-white/20 transition-colors"
-              >
-                <img src="https://d18jakcjgoan9.cloudfront.net/s/img/images/barklogo-dark.png!d=KY4fXZ" alt="Bark.com logo" className="h-8 sm:h-10 object-contain" />
-                <span className="text-sm sm:text-base text-white font-semibold">Visit Bark</span>
-              </a>
-              <a
-                href="https://www.procompare.co.za"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 bg-white/10 px-4 py-3 rounded-full border border-white/20 shadow-sm hover:bg-white/20 transition-colors"
-              >
-                <img src="https://www.procompare.co.za/favicon.ico" alt="ProCompare logo" className="h-8 sm:h-10 object-contain" />
-                <span className="text-sm sm:text-base text-white font-semibold">Visit ProCompare</span>
-              </a>
-            </div>
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3 w-full max-w-xl">
-              <a
-                href="https://portal.scratchsolidsolutions.org/auth/login"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block rounded-full bg-white/10 border border-white/20 px-4 py-3 text-center text-sm sm:text-base font-semibold text-white hover:bg-white/20 transition-colors"
-              >
-                Career Login
-              </a>
-              <a
-                href="/terms"
-                className="block rounded-full bg-white/10 border border-white/20 px-4 py-3 text-center text-sm sm:text-base font-semibold text-white hover:bg-white/20 transition-colors"
-              >
-                Legal
-              </a>
-              <a
-                href="/contact"
-                className="block rounded-full bg-white/10 border border-white/20 px-4 py-3 text-center text-sm sm:text-base font-semibold text-white hover:bg-white/20 transition-colors"
-              >
-                Other Enquiries
-              </a>
-            </div>
           </div>
         </div>
       </section>
