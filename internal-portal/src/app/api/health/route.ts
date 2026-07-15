@@ -16,6 +16,7 @@ export async function GET() {
       meta_cloud_api: { status: 'unknown' as 'healthy' | 'unhealthy', message: '' },
       erpnext: { status: 'unknown' as 'healthy' | 'unhealthy', message: '' },
       zoho_oauth: { status: 'unknown' as 'healthy' | 'unhealthy', message: '' },
+      paystack: { status: 'unknown' as 'healthy' | 'unhealthy', message: '' },
     },
   };
 
@@ -101,8 +102,23 @@ export async function GET() {
     healthStatus.checks.zoho_oauth = { status: 'healthy', message: `Zoho check skipped: ${String(error)}` };
   }
 
+  // Check Paystack credentials (payment gateway)
+  try {
+    const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
+    const paystackSecret = (env as any)?.PAYSTACK_SECRET_KEY || getEnvVarOptional('PAYSTACK_SECRET_KEY');
+    if (paystackSecret) {
+      healthStatus.checks.paystack = { status: 'healthy', message: 'Paystack API key configured' };
+    } else {
+      healthStatus.checks.paystack = { status: 'unhealthy', message: 'PAYSTACK_SECRET_KEY missing' };
+      healthStatus.status = 'degraded';
+    }
+  } catch (error) {
+    healthStatus.checks.paystack = { status: 'unhealthy', message: `Paystack check skipped: ${String(error)}` };
+    healthStatus.status = 'degraded';
+  }
+
   // Determine overall status — only critical services affect go-live
-  const criticalChecks = ['database', 'resend'] as const;
+  const criticalChecks = ['database', 'resend', 'paystack'] as const;
   const criticalUnhealthy = criticalChecks.filter(k => healthStatus.checks[k as keyof typeof healthStatus.checks].status === 'unhealthy');
   if (criticalUnhealthy.length > 0) {
     healthStatus.status = 'degraded';

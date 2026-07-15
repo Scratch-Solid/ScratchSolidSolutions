@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { AlertCircle } from 'lucide-react';
 
 interface HealthStatus {
   status: 'healthy' | 'degraded' | 'unhealthy';

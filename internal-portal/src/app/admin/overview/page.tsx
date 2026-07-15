@@ -42,6 +42,7 @@ export default function AdminOverviewPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [health, setHealth] = useState<Record<string, { status: string }> | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -49,12 +50,18 @@ export default function AdminOverviewPage() {
         const token = typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
         const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
 
-        const [bookingsRes, employeesRes, newJoinersRes, approvalsRes] = await Promise.allSettled([
+        const [bookingsRes, employeesRes, newJoinersRes, approvalsRes, healthRes] = await Promise.allSettled([
           fetch("/api/admin/bookings", { headers }),
           fetch("/api/employees", { headers }),
           fetch("/api/admin/new-joiners", { headers }),
           fetch("/api/admin/pending-approvals", { headers }),
+          fetch("/api/health", { headers }),
         ]);
+
+        if (healthRes.status === "fulfilled" && healthRes.value.ok) {
+          const h = await healthRes.value.json();
+          setHealth(h.checks || null);
+        }
 
         let bookings: any[] = [];
         let employees: any[] = [];
@@ -397,11 +404,11 @@ export default function AdminOverviewPage() {
               <CardTitle className="text-sm font-semibold text-stone-900">System Health</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2.5">
-              <HealthRow label="Database" status="operational" />
-              <HealthRow label="Authentication" status="operational" />
-              <HealthRow label="Email Service" status="operational" />
-              <HealthRow label="Payment Gateway" status="degraded" />
-              <HealthRow label="ERPNext" status={ERP_ENABLED ? "operational" : "paused"} />
+              <HealthRow label="Database" status={healthRowStatus(health?.database?.status)} />
+              <HealthRow label="Authentication" status={healthRowStatus(health?.database?.status)} />
+              <HealthRow label="Email Service" status={healthRowStatus(health?.resend?.status)} />
+              <HealthRow label="Payment Gateway" status={healthRowStatus(health?.paystack?.status)} />
+              <HealthRow label="ERPNext" status={ERP_ENABLED ? healthRowStatus(health?.erpnext?.status) : "paused"} />
             </CardContent>
           </Card>
         </div>
@@ -626,6 +633,16 @@ function HealthRow({ label, status }: { label: string; status: "operational" | "
       </span>
     </div>
   );
+}
+
+// Maps the /api/health check shape (healthy/unhealthy/unknown) onto the
+// System Health card's display states. "unknown" (still loading, or the
+// health call failed) reads as paused rather than falsely claiming either
+// operational or degraded.
+function healthRowStatus(status: string | undefined): "operational" | "degraded" | "paused" | "down" {
+  if (status === "healthy") return "operational";
+  if (status === "unhealthy") return "degraded";
+  return "paused";
 }
 
 const ERP_ENABLED = (process.env.NEXT_PUBLIC_ERP_URL || "").length > 0;
