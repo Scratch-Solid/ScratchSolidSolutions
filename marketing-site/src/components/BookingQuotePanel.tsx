@@ -108,6 +108,17 @@ export default function BookingQuotePanel({
   const [success, setSuccess] = useState("");
   const [showPolicy, setShowPolicy] = useState(false);
 
+  // EFT payment step - shown after booking creation instead of immediate
+  // success when payment_method is "eft", since the client still needs to
+  // make the transfer and tell us the reference before we can confirm.
+  const [pendingEftBookingId, setPendingEftBookingId] = useState<number | null>(null);
+  const [bankingDetails, setBankingDetails] = useState<{ bank_name: string; account_number: string; account_holder: string; branch_code: string; account_type: string } | null>(null);
+  const [bankingLoading, setBankingLoading] = useState(false);
+  const [popReference, setPopReference] = useState("");
+  const [popFile, setPopFile] = useState<File | null>(null);
+  const [popSubmitting, setPopSubmitting] = useState(false);
+  const [popError, setPopError] = useState("");
+
   // Same-day area clustering suggestion - lets a cleaner reach 2+ jobs a day
   // in one area instead of one job spread across separate days. Always
   // just a suggestion: accepting updates bookingDate, declining keeps the
@@ -303,18 +314,107 @@ export default function BookingQuotePanel({
         }),
       });
 
-      const data = await res.json();
-      if (!res.ok) {
+      const data = await res.json() as { id?: number; error?: string };
+      if (!res.ok || !data.id) {
         setError(data.error || "Booking failed. Please try again.");
         return;
       }
 
+      if (paymentMethod === "card") {
+        const userEmail = localStorage.getItem("userEmail") || "";
+        const callbackUrl = `${window.location.origin}/payment/verify`;
+
+        const paystackRes = await authFetch("/api/payments/paystack/initialize", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            booking_id: data.id,
+            email: userEmail,
+            amount: calc.finalPrice,
+            callback_url: callbackUrl,
+          }),
+        });
+
+        const paystackData = await paystackRes.json() as { authorization_url?: string; error?: string };
+        if (!paystackRes.ok || !paystackData.authorization_url) {
+          setError(paystackData.error || "Payment initialization failed. Your booking is saved as pending - please contact support to complete payment.");
+          return;
+        }
+
+        window.location.href = paystackData.authorization_url;
+        return; // Navigating away - leave loading true
+      }
+
+      if (paymentMethod === "eft") {
+        setPendingEftBookingId(data.id);
+        setBankingLoading(true);
+        try {
+          const bankRes = await authFetch("/api/banking-details");
+          if (bankRes.ok) {
+            const bankData = await bankRes.json() as { bank_name: string; account_number: string; account_holder: string; branch_code: string; account_type: string } | null;
+            setBankingDetails(bankData);
+          }
+        } finally {
+          setBankingLoading(false);
+        }
+        return;
+      }
+
+      // Cash: paid on-site, nothing more to collect upfront.
       setSuccess("Booking confirmed! You will receive a confirmation email shortly.");
       onSuccess?.(data.id, calc.finalPrice);
     } catch {
       setError("Network error. Please try again.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleEftProofUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) setPopFile(file);
+  };
+
+  const handleEftSubmit = async () => {
+    if (!pendingEftBookingId) return;
+    setPopError("");
+    if (!popReference.trim()) {
+      setPopError("Please enter the payment reference from your EFT.");
+      return;
+    }
+
+    setPopSubmitting(true);
+    try {
+      let popUrl = "";
+      if (popFile) {
+        const formData = new FormData();
+        formData.append("file", popFile);
+        formData.append("folder", "payment-proofs");
+        const uploadRes = await authFetch("/api/upload", { method: "POST", body: formData });
+        if (uploadRes.ok) {
+          const uploadData = await uploadRes.json() as { publicUrl: string };
+          popUrl = uploadData.publicUrl;
+        }
+      }
+
+      const res = await authFetch(`/api/pop-verification`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ booking_id: pendingEftBookingId, pop_reference: popReference.trim(), pop_upload_url: popUrl || undefined }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({})) as { error?: string };
+        setPopError(data.error || "Failed to submit payment details. Please try again.");
+        return;
+      }
+
+      setSuccess("Payment details submitted! We'll confirm your booking once the transfer is verified (usually within 1 business day).");
+      onSuccess?.(pendingEftBookingId, calc?.finalPrice || 0);
+    } catch {
+      setPopError("Network error. Please try again.");
+    } finally {
+      setPopSubmitting(false);
     }
   };
 
@@ -329,6 +429,75 @@ export default function BookingQuotePanel({
           className="mt-4 rounded-full bg-blue-600 px-8 py-3 text-white font-semibold hover:bg-blue-700 transition-colors"
         >
           Back to Dashboard
+        </button>
+      </div>
+    );
+  }
+
+  if (pendingEftBookingId) {
+    return (
+      <div className="rounded-2xl border border-gray-200 bg-white p-6 space-y-5">
+        <div className="text-center space-y-1">
+          <div className="text-4xl">🏦</div>
+          <h3 className="text-xl font-bold text-gray-800">Complete Your EFT Payment</h3>
+          <p className="text-sm text-gray-500">Your booking is reserved - transfer the amount below, then tell us the payment reference.</p>
+        </div>
+
+        {popError && (
+          <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3">
+            <p className="text-sm font-semibold text-red-700">{popError}</p>
+          </div>
+        )}
+
+        <div className="rounded-xl bg-gray-50 border border-gray-200 p-4 space-y-2">
+          {bankingLoading ? (
+            <p className="text-sm text-gray-500">Loading banking details…</p>
+          ) : bankingDetails ? (
+            <>
+              <div className="flex justify-between text-sm"><span className="text-gray-500">Bank</span><span className="font-semibold text-gray-800">{bankingDetails.bank_name}</span></div>
+              <div className="flex justify-between text-sm"><span className="text-gray-500">Account Holder</span><span className="font-semibold text-gray-800">{bankingDetails.account_holder}</span></div>
+              <div className="flex justify-between text-sm"><span className="text-gray-500">Account Number</span><span className="font-semibold text-gray-800">{bankingDetails.account_number}</span></div>
+              <div className="flex justify-between text-sm"><span className="text-gray-500">Branch Code</span><span className="font-semibold text-gray-800">{bankingDetails.branch_code}</span></div>
+              <div className="flex justify-between text-sm"><span className="text-gray-500">Account Type</span><span className="font-semibold text-gray-800 capitalize">{bankingDetails.account_type}</span></div>
+              {calc && <div className="flex justify-between text-sm pt-2 border-t border-gray-200"><span className="text-gray-500">Amount Due</span><span className="font-bold text-blue-700">R{calc.finalPrice.toFixed(2)}</span></div>}
+            </>
+          ) : (
+            <p className="text-sm text-red-600">Unable to load banking details. Please contact support to arrange payment.</p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Payment Reference <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            value={popReference}
+            onChange={(e) => setPopReference(e.target.value)}
+            placeholder="e.g. the reference shown on your EFT confirmation"
+            className="w-full rounded-xl border-2 border-gray-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Proof of Payment (optional)
+          </label>
+          <input
+            type="file"
+            accept="image/*,.pdf"
+            onChange={handleEftProofUpload}
+            className="w-full text-sm text-gray-600 file:mr-3 file:rounded-full file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-blue-700 hover:file:bg-blue-100"
+          />
+          {popFile && <p className="text-xs text-gray-500 mt-1">Selected: {popFile.name}</p>}
+        </div>
+
+        <button
+          onClick={handleEftSubmit}
+          disabled={popSubmitting || !popReference.trim()}
+          className="w-full rounded-full bg-blue-600 px-8 py-3 text-white font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50"
+        >
+          {popSubmitting ? "Submitting…" : "Submit Payment Details"}
         </button>
       </div>
     );

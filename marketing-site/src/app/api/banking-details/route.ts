@@ -1,44 +1,39 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
+import { logger } from '@/lib/logger';
 
+const INTERNAL_PORTAL_URL = process.env.NEXT_PUBLIC_INTERNAL_PORTAL_URL || 'https://portal.scratchsolidsolutions.org';
+
+// Proxies to internal-portal's public banking-details endpoint (the real,
+// admin-managed banking_details table) for the EFT payment step. This used
+// to read from a local banking_details table that never existed in this
+// app's own database - the route always 500'd. Unmasked deliberately: a
+// client needs the full account number/branch code to actually complete an
+// EFT transfer, not a partially-hidden display value.
 export async function GET(request: NextRequest) {
+  const traceId = withTracing(request);
+  const authResult = await withAuth(request, ['client', 'business', 'admin']);
+  if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
+
   try {
-    const db = await getDb();
-    if (!db) {
-      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+    const response = await fetch(`${INTERNAL_PORTAL_URL}/api/public/banking-details`, {
+      method: 'GET',
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      logger.error('Internal portal banking-details error', new Error(`status ${response.status}`));
+      return withSecurityHeaders(NextResponse.json({ error: 'Failed to fetch banking details' }, { status: response.status }), traceId);
     }
-    
-    const bankingDetails = await db.prepare(
-      'SELECT * FROM banking_details WHERE is_active = 1 ORDER BY id DESC LIMIT 1'
-    ).first();
-    
-    // Mask sensitive information for public display
-    if (bankingDetails) {
-      const masked = {
-        bank_name: (bankingDetails as any).bank_name,
-        account_number: maskAccountNumber((bankingDetails as any).account_number),
-        account_holder: (bankingDetails as any).account_holder,
-        branch_code: maskBranchCode((bankingDetails as any).branch_code),
-        account_type: (bankingDetails as any).account_type
-      };
-      return NextResponse.json(masked);
-    }
-    
-    return NextResponse.json(null);
+
+    const data = await response.json();
+    return withSecurityHeaders(NextResponse.json(data), traceId);
   } catch (error) {
-    console.error('Error fetching banking details:', error);
-    return NextResponse.json({ error: `Failed to fetch banking details: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
+    logger.error('Banking details proxy error', error as Error);
+    return withSecurityHeaders(
+      NextResponse.json({ error: `Failed to fetch banking details: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 }),
+      traceId
+    );
   }
-}
-
-function maskAccountNumber(accountNumber: string): string {
-  if (!accountNumber || accountNumber.length < 4) return accountNumber;
-  const lastFour = accountNumber.slice(-4);
-  return 'XXXX XXXX XXXX ' + lastFour;
-}
-
-function maskBranchCode(branchCode: string): string {
-  if (!branchCode || branchCode.length < 2) return branchCode;
-  return 'XX' + branchCode.slice(-2);
 }

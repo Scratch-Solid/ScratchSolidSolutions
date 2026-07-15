@@ -15,8 +15,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const body = await request.json() as { pop_url?: string; pop_reference?: string };
     const { pop_url, pop_reference } = body;
 
-    if (!pop_url) {
-      const response = NextResponse.json({ error: 'Proof of payment URL is required' }, { status: 400 });
+    if (!pop_url && !pop_reference) {
+      const response = NextResponse.json({ error: 'A payment reference or proof-of-payment file is required' }, { status: 400 });
       return withSecurityHeaders(response, traceId);
     }
 
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       `UPDATE bookings 
        SET pop_url = ?, pop_reference = ?, pop_submitted_at = CURRENT_TIMESTAMP, status = 'pending_verification'
        WHERE id = ?`
-    ).bind(pop_url, pop_reference || null, bookingId).run();
+    ).bind(pop_url || null, pop_reference || null, bookingId).run();
 
     const response = NextResponse.json({ message: 'Proof of payment submitted successfully' });
     return withSecurityHeaders(response, traceId);
