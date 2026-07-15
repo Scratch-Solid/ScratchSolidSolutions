@@ -994,9 +994,11 @@ router.post('/api/payments/paystack/initialize', async (request: any, env: any) 
     }
 
     // Verify booking exists and belongs to user
+    // (bookings has no user_id column - the client FK is client_id; the JWT
+    // payload has no `sub` claim either, the user id is on `id`)
     const db = getReadSession(env);
-    const booking = await db.prepare('SELECT * FROM bookings WHERE id = ? AND user_id = ?')
-      .bind(booking_id, payload.sub).first();
+    const booking = await db.prepare('SELECT * FROM bookings WHERE id = ? AND client_id = ?')
+      .bind(booking_id, payload.id).first();
 
     if (!booking) {
       return new Response(JSON.stringify({ error: 'Booking not found' }), {
@@ -1029,7 +1031,7 @@ router.post('/api/payments/paystack/initialize', async (request: any, env: any) 
       callback_url,
       metadata: {
         booking_id: String(booking_id),
-        user_id: payload.sub,
+        user_id: payload.id,
         service_type: (booking as any).cleaning_type || 'cleaning',
       },
     });
@@ -1045,14 +1047,17 @@ router.post('/api/payments/paystack/initialize', async (request: any, env: any) 
     }
 
     // Record payment intent in database
+    // (payments has no currency column - this platform is ZAR-only, tracked
+    // in metadata instead)
     await env.scratchsolid_db.prepare(`
-      INSERT INTO payments (booking_id, amount, currency, status, external_payment_id, gateway, metadata, created_at)
-      VALUES (?, ?, 'ZAR', 'pending', ?, 'paystack', ?, datetime('now'))
+      INSERT INTO payments (user_id, booking_id, amount, status, external_payment_id, gateway, metadata, created_at)
+      VALUES (?, ?, ?, 'pending', ?, 'paystack', ?, datetime('now'))
     `).bind(
+      payload.id,
       booking_id,
       amount,
       reference,
-      JSON.stringify({ authorization_url: initResult.data.authorization_url, email })
+      JSON.stringify({ authorization_url: initResult.data.authorization_url, email, currency: 'ZAR' })
     ).run();
 
     // Update booking status to awaiting_payment
