@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
   const { db, user } = authResult;
 
   try {
-    const userId = (user as any).id;
+    const userId = (user as any).user_id;
     const userEmail = (user as any).email;
 
     // Create data deletion request
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
   const { db, user } = authResult;
 
   try {
-    const userId = (user as any).id;
+    const userId = (user as any).user_id;
 
     // Check if user has a pending deletion request
     const request = await db.prepare(

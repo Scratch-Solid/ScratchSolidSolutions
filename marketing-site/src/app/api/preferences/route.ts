@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
   const { db, user } = authResult;
 
   try {
-    const userId = (user as any).id;
+    const userId = (user as any).user_id;
 
     const preferences = await db.prepare(
       'SELECT * FROM client_preferences_extended WHERE user_id = ?'
@@ -42,7 +42,7 @@ export async function PUT(request: NextRequest) {
       language_preference?: string;
       access_notes?: string;
     };
-    const userId = (user as any).id;
+    const userId = (user as any).user_id;
 
     // Check if preferences exist
     const existing = await db.prepare(

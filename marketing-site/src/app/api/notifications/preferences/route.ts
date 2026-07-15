@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   try {
     const prefs = await db.prepare(
       'SELECT * FROM client_preferences WHERE client_id = ?'
-    ).bind((user as any).id).first();
+    ).bind((user as any).user_id).first();
 
     const response = NextResponse.json(prefs || {
       whatsapp_opt_in: false,
@@ -50,13 +50,13 @@ export async function POST(request: NextRequest) {
       const formattedPhone = formatPhoneNumber(phone);
       await db.prepare(
         'UPDATE users SET phone = ? WHERE id = ?'
-      ).bind(formattedPhone, (user as any).id).run();
+      ).bind(formattedPhone, (user as any).user_id).run();
     }
 
     // Update or insert notification preferences
     const existingPrefs = await db.prepare(
       'SELECT * FROM client_preferences WHERE client_id = ?'
-    ).bind((user as any).id).first();
+    ).bind((user as any).user_id).first();
 
     let result;
     if (existingPrefs) {
@@ -67,12 +67,12 @@ export async function POST(request: NextRequest) {
              email_opt_in = COALESCE(?, email_opt_in),
              updated_at = datetime('now')
          WHERE client_id = ? RETURNING *`
-      ).bind(whatsapp_opt_in, sms_opt_in, email_opt_in, (user as any).id).first();
+      ).bind(whatsapp_opt_in, sms_opt_in, email_opt_in, (user as any).user_id).first();
     } else {
       result = await db.prepare(
         `INSERT INTO client_preferences (client_id, whatsapp_opt_in, sms_opt_in, email_opt_in, created_at, updated_at)
          VALUES (?, COALESCE(?, 0), COALESCE(?, 0), COALESCE(?, 0), datetime('now'), datetime('now')) RETURNING *`
-      ).bind((user as any).id, whatsapp_opt_in, sms_opt_in, email_opt_in).first();
+      ).bind((user as any).user_id, whatsapp_opt_in, sms_opt_in, email_opt_in).first();
     }
 
     const response = NextResponse.json(result, { status: 200 });

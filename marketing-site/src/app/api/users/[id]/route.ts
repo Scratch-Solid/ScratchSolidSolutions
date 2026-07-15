@@ -36,7 +36,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // user - `.id` on that object is the session row's own primary key, not
     // the user's id. `.user_id` is the actual FK to users(id) and must be
     // checked first, or this comparison almost never matches the real user.
-    const requestingUserId = (user as any).user_id || (user as any).userId || (user as any).id;
+    const requestingUserId = (user as any).user_id;
     const requestingUserRole = (user as any).role;
 
     if (requestingUserRole !== 'admin' && requestingUserId !== userId) {
@@ -85,7 +85,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   try {
     const { id } = await params;
     const sessionRole: string = (user as any).role;
-    const sessionId: number = (user as any).id;
+    const sessionId: number = (user as any).user_id;
     if (sessionRole !== 'admin' && sessionId !== parseInt(id)) {
       const response = NextResponse.json({ error: 'Forbidden: you can only delete your own account' }, { status: 403 });
       return withSecurityHeaders(response, traceId);

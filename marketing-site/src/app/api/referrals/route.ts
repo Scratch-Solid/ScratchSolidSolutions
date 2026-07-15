@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
   const { db, user } = authResult;
 
   try {
-    const userId = (user as any).id;
+    const userId = (user as any).user_id;
 
     // Generate unique referral code
     const referralCode = generateReferralCode(userId);
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
   const { db, user } = authResult;
 
   try {
-    const userId = (user as any).id;
+    const userId = (user as any).user_id;
 
     // Get user's referrals
     const referrals = await db.prepare(

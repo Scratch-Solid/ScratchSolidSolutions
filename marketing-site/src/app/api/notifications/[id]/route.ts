@@ -20,7 +20,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   }
 
   try {
-    const notification = await db.prepare('SELECT * FROM notifications WHERE id = ? AND user_id = ?').bind(parseInt(id), (user as any).id).first();
+    const notification = await db.prepare('SELECT * FROM notifications WHERE id = ? AND user_id = ?').bind(parseInt(id), (user as any).user_id).first();
     if (!notification) {
       return NextResponse.json({ error: 'Notification not found' }, { status: 404 });
     }
@@ -44,7 +44,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   const { id } = await params;
 
   try {
-    const notification = await db.prepare('SELECT * FROM notifications WHERE id = ? AND user_id = ?').bind(parseInt(id), (user as any).id).first();
+    const notification = await db.prepare('SELECT * FROM notifications WHERE id = ? AND user_id = ?').bind(parseInt(id), (user as any).user_id).first();
     if (!notification) {
       return NextResponse.json({ error: 'Notification not found' }, { status: 404 });
     }

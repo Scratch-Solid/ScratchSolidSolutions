@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
       };
     };
     const { subscription } = body;
-    const userId = (user as any).id;
+    const userId = (user as any).user_id;
 
     if (!subscription || !subscription.endpoint) {
       const response = NextResponse.json({ error: 'Invalid subscription data' }, { status: 400 });

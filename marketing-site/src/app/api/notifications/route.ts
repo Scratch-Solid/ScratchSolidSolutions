@@ -72,7 +72,9 @@ export async function POST(request: NextRequest) {
       status
     } = body;
     const sessionRole: string = (user as any).role;
-    const user_id: number = sessionRole === 'admin' && target_user_id ? target_user_id : (user as any).id;
+    // validateSession() returns the raw sessions row (s.*) - `.id` there is
+    // the session row's own primary key, not the user's id.
+    const user_id: number = sessionRole === 'admin' && target_user_id ? target_user_id : (user as any).user_id;
 
     if (!booking_id || !type || !message) {
       const response = NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -177,11 +179,11 @@ export async function GET(request: NextRequest) {
     if (type) {
       result = await db.prepare(
         'SELECT * FROM notifications WHERE user_id = ? AND type = ? ORDER BY created_at DESC'
-      ).bind((user as any).id, type).all();
+      ).bind((user as any).user_id, type).all();
     } else {
       result = await db.prepare(
         'SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC'
-      ).bind((user as any).id).all();
+      ).bind((user as any).user_id).all();
     }
 
     const response = NextResponse.json(result.results || []);

@@ -34,7 +34,9 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const queryBusinessId = searchParams.get('business_id');
     const sessionRole: string = (user as any).role;
-    const sessionId: number = (user as any).id;
+    // validateSession() returns the raw sessions row (s.*) - `.id` there is
+    // the session row's own primary key, not the user's id.
+    const sessionId: number = (user as any).user_id;
     let results;
 
     if (sessionRole === 'admin') {
@@ -96,7 +98,7 @@ export async function POST(request: NextRequest) {
     };
     const { business_id, event_type, requested_date, special_instructions } = body;
     const sessionRole: string = (user as any).role;
-    const effectiveBusinessId = sessionRole === 'admin' && business_id ? business_id : (user as any).id;
+    const effectiveBusinessId = sessionRole === 'admin' && business_id ? business_id : (user as any).user_id;
 
     if (!effectiveBusinessId || !event_type) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });

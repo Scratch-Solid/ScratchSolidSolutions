@@ -46,9 +46,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'You must confirm account deletion' }, { status: 400 });
     }
 
+    // validateSession() returns the raw sessions row (s.*) - `.id` there is
+    // the session row's own primary key, not the user's id, hence `.user_id`
+    // everywhere below.
     // Verify password before allowing deletion
     if (password) {
-      const userRecord = await db.prepare('SELECT password_hash FROM users WHERE id = ?').bind((user as any).id).first();
+      const userRecord = await db.prepare('SELECT password_hash FROM users WHERE id = ?').bind((user as any).user_id).first();
       if (!userRecord) {
         return NextResponse.json({ error: 'User not found' }, { status: 404 });
       }
@@ -71,16 +74,16 @@ export async function POST(request: NextRequest) {
           email = email || '-deleted-' || id,
           phone = phone || '-deleted-' || id
       WHERE id = ?
-    `).bind((user as any).id).run();
+    `).bind((user as any).user_id).run();
 
     // Log audit
     await db.prepare(`
       INSERT INTO audit_logs (admin_id, action, resource_type, resource_id, details)
       VALUES (?, 'soft_delete_account', 'user', ?, ?)
-    `).bind((user as any).id, (user as any).id, JSON.stringify({ grace_period_end: gracePeriodEnd.toISOString() })).run();
+    `).bind((user as any).user_id, (user as any).user_id, JSON.stringify({ grace_period_end: gracePeriodEnd.toISOString() })).run();
 
     // Clear user's session
-    await db.prepare('DELETE FROM sessions WHERE user_id = ?').bind((user as any).id).run();
+    await db.prepare('DELETE FROM sessions WHERE user_id = ?').bind((user as any).user_id).run();
 
     const response = NextResponse.json({ 
       message: 'Account marked for deletion. You can restore your account within 30 days.',
@@ -112,7 +115,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Check if account is within grace period
-    const userRecord = await db.prepare('SELECT soft_delete_at FROM users WHERE id = ?').bind((user as any).id).first();
+    const userRecord = await db.prepare('SELECT soft_delete_at FROM users WHERE id = ?').bind((user as any).user_id).first();
     if (!userRecord) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
@@ -139,13 +142,13 @@ export async function PUT(request: NextRequest) {
           phone = REPLACE(phone, '-deleted-' || id, ''),
           updated_at = datetime('now')
       WHERE id = ?
-    `).bind((user as any).id).run();
+    `).bind((user as any).user_id).run();
 
     // Log audit
     await db.prepare(`
       INSERT INTO audit_logs (admin_id, action, resource_type, resource_id, details)
       VALUES (?, 'restore_account', 'user', ?, ?)
-    `).bind((user as any).id, (user as any).id, JSON.stringify({ days_since_deletion: daysSinceDeletion })).run();
+    `).bind((user as any).user_id, (user as any).user_id, JSON.stringify({ days_since_deletion: daysSinceDeletion })).run();
 
     const response = NextResponse.json({ message: 'Account restored successfully' }, { status: 200 });
     return withSecurityHeaders(response, traceId);

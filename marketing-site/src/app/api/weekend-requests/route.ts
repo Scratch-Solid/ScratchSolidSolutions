@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const queryBusinessId = searchParams.get('business_id');
     const sessionRole: string = (user as any).role;
-    const sessionId: number = (user as any).id;
+    const sessionId: number = (user as any).user_id;
     const businessId = sessionRole === 'admin'
       ? queryBusinessId || sessionId.toString()
       : sessionId.toString();
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     };
     const { requested_date, special_instructions } = body;
     const sessionRole: string = (user as any).role;
-    const business_id: number = sessionRole === 'admin' && body.business_id ? body.business_id : (user as any).id;
+    const business_id: number = sessionRole === 'admin' && body.business_id ? body.business_id : (user as any).user_id;
 
     // Validate required fields
     const businessIdValidation = validateNumber(business_id, 'business_id');

@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const sessionRole: string = (user as any).role;
-  const sessionCustomerId = `CUST-${(user as any).id}`;
+  const sessionCustomerId = `CUST-${(user as any).user_id}`;
   const requestedCustomerId = searchParams.get('customer_id');
   const customerId = sessionRole === 'admin' ? (requestedCustomerId || sessionCustomerId) : sessionCustomerId;
 
