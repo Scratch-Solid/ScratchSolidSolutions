@@ -98,6 +98,15 @@ export function translateSql(sql: string): string {
     }
   }
 
+  // D1 auto-populates meta.last_row_id for AUTOINCREMENT inserts without
+  // needing an explicit RETURNING clause; Postgres does not. Every table in
+  // this schema uses `id INTEGER PRIMARY KEY AUTOINCREMENT`, so append
+  // RETURNING id to any INSERT that doesn't already request one, so run()
+  // has a row to read the new id back from instead of always returning null.
+  if (/^\s*INSERT\s+INTO/i.test(out) && !/RETURNING/i.test(out)) {
+    out = `${out.trimEnd().replace(/;?\s*$/, '')} RETURNING id`;
+  }
+
   return out;
 }
 
