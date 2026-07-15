@@ -29,9 +29,11 @@ export default function PaymentVerifyContent() {
         if (response.ok && data.status === "success") {
           setStatus("success");
           setMessage("Payment successful! Your booking has been confirmed.");
-          // Redirect to booking details after 3 seconds
+          // Redirect to the client dashboard after 3 seconds - /bookings
+          // isn't a real route in this app, the booking list lives on the
+          // dashboard.
           setTimeout(() => {
-            router.push("/bookings");
+            router.push("/client-dashboard");
           }, 3000);
         } else {
           setStatus("failed");
