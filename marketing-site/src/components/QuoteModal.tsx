@@ -3,7 +3,6 @@ import { useState, useEffect, useCallback } from "react";
 import LogoWatermark from '@/components/LogoWatermark';
 import {
   calculateQuote,
-  getAvailableAreas,
   type QuoteRequest,
   type QuoteResult as PricingQuoteResult
 } from '@/lib/pricing-engine';
@@ -97,7 +96,18 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
   const [quoteDeclined, setQuoteDeclined] = useState(false);
   const [pricingCalculation, setPricingCalculation] = useState<PricingQuoteResult | null>(null);
   const [loyaltyPoints, setLoyaltyPoints] = useState(0);
-  const availableAreas = getAvailableAreas();
+  const [areas, setAreas] = useState<{ id: number; name: string; transport_fee: number }[]>([]);
+
+  useEffect(() => {
+    fetch('/api/areas')
+      .then((res) => (res.ok ? res.json() : { areas: [] }))
+      .then((data) => {
+        const areaList = data.areas || [];
+        setAreas(areaList);
+        if (areaList.length > 0) setArea((prev) => (areaList.some((a: any) => a.name === prev) ? prev : areaList[0].name));
+      })
+      .catch(() => {});
+  }, []);
   
   // VAT registration state for business users
   const [vatRegistered, setVatRegistered] = useState(false);
@@ -172,7 +182,8 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
       } : undefined;
 
       try {
-        const result = calculateQuote(request, specialPricing, promoData, loyaltyPoints, baseServicePrice, unitPrice);
+        const areaFee = areas.find((a) => a.name === area)?.transport_fee;
+        const result = calculateQuote(request, specialPricing, promoData, loyaltyPoints, baseServicePrice, unitPrice, areaFee);
         setPricingCalculation(result);
       } catch (error) {
         setPricingCalculation(null);
@@ -180,7 +191,7 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
     } else {
       setPricingCalculation(null);
     }
-  }, [selectedServiceId, propertyType, area, quantity, promoResult, promoInput, loyaltyPoints, userEmail, userId, getActivePricingRow]);
+  }, [selectedServiceId, propertyType, area, quantity, promoResult, promoInput, loyaltyPoints, userEmail, userId, getActivePricingRow, areas]);
 
   // Fetch quote history when modal opens and user is authenticated
   useEffect(() => {
@@ -670,18 +681,11 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
                     onChange={(e) => setArea(e.target.value)}
                     className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
                   >
-                    <option value="Durbanville">Durbanville (Transport: R50)</option>
-                    <option value="Bellville">Bellville (Transport: R45)</option>
-                    <option value="Brackenfell">Brackenfell (Transport: R55)</option>
-                    <option value="Plattekloof">Plattekloof (Transport: R50)</option>
-                    <option value="Tygervalley">Tygervalley (Transport: R45)</option>
-                    <option value="Parow">Parow (Transport: R40)</option>
-                    <option value="Goodwood">Goodwood (Transport: R40)</option>
-                    <option value="Kuils River">Kuils River (Transport: R60)</option>
-                    <option value="Kraaifontein">Kraaifontein (Transport: R65)</option>
-                    <option value="Stellenbosch">Stellenbosch (Transport: R70)</option>
-                    <option value="Paarl">Paarl (Transport: R80)</option>
-                    <option value="Wellington">Wellington (Transport: R85)</option>
+                    {areas.map((a) => (
+                      <option key={a.id} value={a.name}>
+                        {a.name} (Transport: R{a.transport_fee})
+                      </option>
+                    ))}
                   </select>
                 </div>
 

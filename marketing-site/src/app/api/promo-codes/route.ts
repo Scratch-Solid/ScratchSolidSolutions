@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import { withAuth, withRateLimit, rateLimits } from '@/lib/middleware';
+import { withAdminOrServiceAuth, withRateLimit, rateLimits } from '@/lib/middleware';
 import { logAuditEvent } from '@/lib/audit';
 
 export async function GET(request: NextRequest) {
@@ -14,9 +14,14 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const code = searchParams.get('code');
 
-    // Require code parameter - removed "list all" functionality for security
+    // No code param = admin listing, gated behind auth (not the open,
+    // unauthenticated "list all" that was removed for security previously).
     if (!code) {
-      return NextResponse.json({ error: 'Code parameter is required' }, { status: 400 });
+      const authResult = await withAdminOrServiceAuth(request);
+      if (authResult instanceof NextResponse) return authResult;
+
+      const promos = await db.prepare(`SELECT * FROM promo_codes ORDER BY created_at DESC`).all();
+      return NextResponse.json(promos.results || []);
     }
 
     // Validate a specific promo code
@@ -74,7 +79,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Authentication - require admin role
-  const authResult = await withAuth(request, ['admin']);
+  const authResult = await withAdminOrServiceAuth(request);
   if (authResult instanceof NextResponse) return authResult;
   const { db, user } = authResult;
 
@@ -173,7 +178,7 @@ export async function PUT(request: NextRequest) {
   }
 
   // Authentication - require admin role
-  const authResult = await withAuth(request, ['admin']);
+  const authResult = await withAdminOrServiceAuth(request);
   if (authResult instanceof NextResponse) return authResult;
   const { db, user } = authResult;
 
@@ -266,7 +271,7 @@ export async function DELETE(request: NextRequest) {
   }
 
   // Authentication - require admin role
-  const authResult = await withAuth(request, ['admin']);
+  const authResult = await withAdminOrServiceAuth(request);
   if (authResult instanceof NextResponse) return authResult;
   const { db, user } = authResult;
 

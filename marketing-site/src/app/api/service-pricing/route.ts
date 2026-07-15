@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
+import { withAdminOrServiceAuth } from '@/lib/middleware';
 
 export async function GET(request: NextRequest) {
   try {
@@ -8,15 +9,15 @@ export async function GET(request: NextRequest) {
     if (!db) {
       return NextResponse.json({ error: 'Database not available' }, { status: 500 });
     }
-    
+
     const { searchParams } = new URL(request.url);
     const serviceId = searchParams.get('service_id');
     const clientType = searchParams.get('client_type');
-    
+
     let query = `SELECT sp.*, s.name as service_name FROM service_pricing sp LEFT JOIN services s ON sp.service_id = s.id`;
     const conditions: string[] = [];
     const params: unknown[] = [];
-    
+
     if (serviceId) {
       conditions.push(`sp.service_id = ?`);
       params.push(serviceId);
@@ -28,11 +29,11 @@ export async function GET(request: NextRequest) {
     if (conditions.length > 0) {
       query += ` WHERE ` + conditions.join(' AND ');
     }
-    
+
     query += ` ORDER BY sp.client_type ASC, sp.min_quantity ASC`;
-    
+
     const pricing = await db.prepare(query).bind(...params).all();
-    
+
     return NextResponse.json(pricing.results || []);
   } catch (error) {
     console.error('Error fetching service pricing:', error);
@@ -41,6 +42,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const authResult = await withAdminOrServiceAuth(request);
+  if (authResult instanceof NextResponse) return authResult;
+
   try {
     const db = await getDb();
     if (!db) {
@@ -59,50 +63,152 @@ export async function POST(request: NextRequest) {
       special_valid_from?: string | null;
       special_valid_until?: string | null;
     };
-    
-    const { 
-      service_id, 
-      min_quantity, 
-      max_quantity, 
-      price, 
-      unit, 
+
+    const {
+      service_id,
+      min_quantity,
+      max_quantity,
+      price,
+      unit,
       client_type,
-      special_price, 
-      special_label, 
-      special_valid_from, 
-      special_valid_until 
+      special_price,
+      special_label,
+      special_valid_from,
+      special_valid_until
     } = body;
-    
+
     if (!service_id || !price) {
       return NextResponse.json({ error: 'Service ID and price are required' }, { status: 400 });
     }
-    
+
     const validTypes = ['individual', 'business', 'all'];
     if (client_type && !validTypes.includes(client_type)) {
       return NextResponse.json({ error: 'client_type must be individual, business, or all' }, { status: 400 });
     }
-    
+
     const result = await db.prepare(
       `INSERT INTO service_pricing
         (service_id, min_quantity, max_quantity, price, unit, client_type,
          special_price, special_label, special_valid_from, special_valid_until, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
     ).bind(
-      service_id, 
-      min_quantity || null, 
-      max_quantity || null, 
-      price, 
+      service_id,
+      min_quantity || null,
+      max_quantity || null,
+      price,
       unit || null,
-      client_type || 'all', 
-      special_price ?? null, 
+      client_type || 'all',
+      special_price ?? null,
       special_label || '',
-      special_valid_from || null, 
+      special_valid_from || null,
       special_valid_until || null
     ).run();
-    
+
     return NextResponse.json({ id: result.meta.last_row_id, success: true });
   } catch (error) {
     console.error('Error creating service pricing:', error);
     return NextResponse.json({ error: `Failed to create service pricing: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  const authResult = await withAdminOrServiceAuth(request);
+  if (authResult instanceof NextResponse) return authResult;
+
+  try {
+    const db = await getDb();
+    if (!db) {
+      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+    }
+
+    const body = await request.json() as {
+      id?: number;
+      service_id?: number;
+      min_quantity?: number;
+      max_quantity?: number | null;
+      price?: number;
+      unit?: string;
+      client_type?: string;
+      special_price?: number | null;
+      special_label?: string;
+      special_valid_from?: string | null;
+      special_valid_until?: string | null;
+    };
+
+    const {
+      id,
+      service_id,
+      min_quantity,
+      max_quantity,
+      price,
+      unit,
+      client_type,
+      special_price,
+      special_label,
+      special_valid_from,
+      special_valid_until
+    } = body;
+
+    if (!id || !service_id || !price) {
+      return NextResponse.json({ error: 'ID, Service ID and price are required' }, { status: 400 });
+    }
+
+    const result = await db.prepare(
+      `UPDATE service_pricing
+       SET service_id = ?, min_quantity = ?, max_quantity = ?, price = ?, unit = ?, client_type = ?,
+           special_price = ?, special_label = ?, special_valid_from = ?, special_valid_until = ?, updated_at = datetime('now')
+       WHERE id = ?`
+    ).bind(
+      service_id,
+      min_quantity || null,
+      max_quantity || null,
+      price,
+      unit || null,
+      client_type || 'all',
+      special_price ?? null,
+      special_label || '',
+      special_valid_from || null,
+      special_valid_until || null,
+      id
+    ).run();
+
+    if (result.meta.changes === 0) {
+      return NextResponse.json({ error: 'Pricing not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error updating service pricing:', error);
+    return NextResponse.json({ error: `Failed to update service pricing: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  const authResult = await withAdminOrServiceAuth(request);
+  if (authResult instanceof NextResponse) return authResult;
+
+  try {
+    const db = await getDb();
+    if (!db) {
+      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ error: 'Pricing ID is required' }, { status: 400 });
+    }
+
+    const result = await db.prepare(`DELETE FROM service_pricing WHERE id = ?`).bind(parseInt(id)).run();
+
+    if (result.meta.changes === 0) {
+      return NextResponse.json({ error: 'Pricing not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting service pricing:', error);
+    return NextResponse.json({ error: `Failed to delete service pricing: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
   }
 }

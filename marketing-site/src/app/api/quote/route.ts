@@ -6,7 +6,7 @@ import { sanitizeText, sanitizeEmail, sanitizePhone } from '@/lib/sanitization';
 import { validateEmail } from '@/lib/validation';
 import { logAuditEvent } from '@/lib/audit';
 import { findOrCreateContact, createEstimate } from '@/lib/zoho';
-import { calculateQuote, getAvailableAreas } from '@/lib/pricing-engine';
+import { calculateQuote } from '@/lib/pricing-engine';
 
 export async function POST(request: NextRequest) {
   // CSRF protection disabled for public quote endpoint
@@ -142,8 +142,12 @@ export async function POST(request: NextRequest) {
     // baseline and final price always equal what the customer was shown. Previously the
     // server re-derived baseline as (base_price * quantity * room_multiplier), which did
     // not match the additive (base + extra-unit) preview and caused the price to jump.
-    const validAreas = getAvailableAreas();
-    const safeArea = area && validAreas.includes(area) ? area : validAreas[0];
+    const activeAreas = await db.prepare(
+      'SELECT name, transport_fee FROM service_areas WHERE is_active = 1 ORDER BY name'
+    ).all<{ name: string; transport_fee: number }>();
+    const areaRows = activeAreas.results || [];
+    const safeArea = area && areaRows.some(r => r.name === area) ? area : (areaRows[0]?.name || area || 'Durbanville');
+    const areaFee = areaRows.find(r => r.name === safeArea)?.transport_fee;
     const allowedPropertyTypes = ['residential', 'office', 'commercial', 'post-construction', 'short-term-stay'];
     const safePropertyType = (property_type && allowedPropertyTypes.includes(property_type)
       ? property_type
@@ -172,7 +176,8 @@ export async function POST(request: NextRequest) {
       promoData,
       0,
       (pricingRow.price as number) || 0,
-      (pricingRow.unit_price as number) || 0
+      (pricingRow.unit_price as number) || 0,
+      areaFee
     );
 
     const baseline_price = Math.round(quoteCalc.basePrice * 100) / 100;

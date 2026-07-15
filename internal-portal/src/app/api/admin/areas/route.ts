@@ -2,17 +2,9 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 
-// Proxies to marketing-site, which owns the services catalog actually read by
-// the customer-facing booking form (BookingQuotePanel.tsx / QuoteModal.tsx
-// fetch marketing-site's own /api/services same-origin). This used to be a
-// disconnected local copy in internal-portal's own database - editing it here
-// had zero effect on what customers saw. Same cross-app pattern as
-// /api/admin/areas and /api/promo-codes.
-//
-// Note the schema is genuinely different from the old local table: marketing-
-// site's services row is just catalog info (name/description/icon/
-// display_order/is_active) - price now lives in the separate service_pricing
-// table (see /api/admin/service-pricing), not on the service itself.
+// Proxies to marketing-site, which owns the service_areas table (it's the
+// data consumed by the booking form's area dropdown) - same cross-app
+// pattern as /api/marketing/content.
 const apiBase = process.env.MARKETING_SITE_URL || 'https://scratchsolidsolutions.org';
 
 function upstreamHeaders() {
@@ -33,7 +25,7 @@ export async function GET(request: NextRequest) {
   const auth = await withAuth(request, ['admin']);
   if (auth instanceof NextResponse) return withSecurityHeaders(auth, traceId);
 
-  const resp = await proxy(`${apiBase}/api/services`, { method: 'GET', headers: upstreamHeaders() });
+  const resp = await proxy(`${apiBase}/api/areas`, { method: 'GET', headers: upstreamHeaders() });
   return withSecurityHeaders(resp, traceId);
 }
 
@@ -43,22 +35,8 @@ export async function POST(request: NextRequest) {
   if (auth instanceof NextResponse) return withSecurityHeaders(auth, traceId);
 
   const body = await request.json();
-  const resp = await proxy(`${apiBase}/api/services`, {
+  const resp = await proxy(`${apiBase}/api/areas`, {
     method: 'POST',
-    headers: upstreamHeaders(),
-    body: JSON.stringify(body),
-  });
-  return withSecurityHeaders(resp, traceId);
-}
-
-export async function PUT(request: NextRequest) {
-  const traceId = withTracing(request);
-  const auth = await withAuth(request, ['admin']);
-  if (auth instanceof NextResponse) return withSecurityHeaders(auth, traceId);
-
-  const body = await request.json();
-  const resp = await proxy(`${apiBase}/api/services`, {
-    method: 'PUT',
     headers: upstreamHeaders(),
     body: JSON.stringify(body),
   });
@@ -70,7 +48,7 @@ export async function DELETE(request: NextRequest) {
   const auth = await withAuth(request, ['admin']);
   if (auth instanceof NextResponse) return withSecurityHeaders(auth, traceId);
 
-  const target = `${apiBase}/api/services${request.nextUrl.search}`;
+  const target = `${apiBase}/api/areas${request.nextUrl.search}`;
   const resp = await proxy(target, { method: 'DELETE', headers: upstreamHeaders() });
   return withSecurityHeaders(resp, traceId);
 }

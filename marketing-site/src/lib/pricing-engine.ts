@@ -346,7 +346,8 @@ export function calculateQuote(
   },
   loyaltyPoints?: number,
   baseServicePrice?: number, // Use database price instead of hardcoded values
-  unitPrice?: number // Use database unit price for quantity-based pricing
+  unitPrice?: number, // Use database unit price for quantity-based pricing
+  transportFeeOverride?: number // Use database transport fee instead of the hardcoded TRANSPORT_FEES map
 ): QuoteResult {
   // Determine service type from property type (needed for after-hours surcharge)
   const serviceTypeMap: Record<string, string> = {
@@ -380,8 +381,11 @@ export function calculateQuote(
     basePrice += LAUNDRY_FEE;
   }
 
-  // Calculate transport fee
-  const transportFee = calculateTransportFee(request.area);
+  // Calculate transport fee - prefer the database-backed value (admin-managed
+  // service areas) over the hardcoded fallback map, same pattern as basePrice above.
+  const transportFee = transportFeeOverride !== undefined
+    ? transportFeeOverride
+    : calculateTransportFee(request.area);
 
   // Calculate subtotal before discounts and surcharges
   let subtotal = basePrice + transportFee;

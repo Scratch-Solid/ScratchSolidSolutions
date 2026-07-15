@@ -2,7 +2,6 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   calculateQuote,
-  getAvailableAreas,
   type QuoteRequest,
   type QuoteResult,
 } from "@/lib/pricing-engine";
@@ -49,8 +48,6 @@ interface BookingQuotePanelProps {
   onCancel?: () => void;
 }
 
-const AREA_OPTIONS = getAvailableAreas();
-
 const PROPERTY_TYPES = [
   { value: "residential", label: "🏠 Residential" },
   { value: "office", label: "🏢 Office" },
@@ -82,6 +79,7 @@ export default function BookingQuotePanel({
   // Data
   const [services, setServices] = useState<Service[]>([]);
   const [pricing, setPricing] = useState<ServicePricing[]>([]);
+  const [areas, setAreas] = useState<{ id: number; name: string; transport_fee: number }[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
 
   // Booking config
@@ -141,18 +139,25 @@ export default function BookingQuotePanel({
 
   const isResidential = propertyType === "residential" || propertyType === "short-term-stay";
 
-  // Fetch services + pricing once
+  // Fetch services + pricing + areas once
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [sRes, pRes] = await Promise.all([
+        const [sRes, pRes, aRes] = await Promise.all([
           fetch("/api/services"),
           fetch("/api/service-pricing"),
+          fetch("/api/areas"),
         ]);
         const sData: Service[] = sRes.ok ? await sRes.json() : [];
         const pData: ServicePricing[] = pRes.ok ? await pRes.json() : [];
         setServices(sData.filter((s) => s.is_active !== 0));
         setPricing(pData);
+        if (aRes.ok) {
+          const aData = await aRes.json();
+          const areaList = aData.areas || [];
+          setAreas(areaList);
+          if (areaList.length > 0) setArea(areaList[0].name);
+        }
       } catch {
         // silently fall back
       } finally {
@@ -220,19 +225,21 @@ export default function BookingQuotePanel({
         }
       : undefined;
     try {
+      const areaFee = areas.find((a) => a.name === area)?.transport_fee;
       const result = calculateQuote(
         request,
         specialPricing,
         promoData,
         0,
         row?.price || 0,
-        row?.unit_price || 0
+        row?.unit_price || 0,
+        areaFee
       );
       setCalc(result);
     } catch {
       setCalc(null);
     }
-  }, [selectedServiceId, propertyType, area, quantity, promoResult, promoInput, bookingDate, getPricingRow]);
+  }, [selectedServiceId, propertyType, area, quantity, promoResult, promoInput, bookingDate, getPricingRow, areas]);
 
   const handleApplyPromo = async () => {
     if (!promoInput.trim()) return;
@@ -372,9 +379,9 @@ export default function BookingQuotePanel({
             onChange={(e) => setArea(e.target.value)}
             className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
           >
-            {AREA_OPTIONS.map((a) => (
-              <option key={a} value={a}>
-                {a}
+            {areas.map((a) => (
+              <option key={a.id} value={a.name}>
+                {a.name}
               </option>
             ))}
           </select>
