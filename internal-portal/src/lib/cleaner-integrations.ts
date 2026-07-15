@@ -260,12 +260,32 @@ async function generateUniquePaysheetCode(db: D1Database, name: string): Promise
   return `${firstNameBase}${randomUpper}${fallbackSuffix}`;
 }
 
+function generateTempPassword(): string {
+  // Cross-runtime random bytes helper (Cloudflare Workers crypto vs Node.js crypto)
+  const arr = new Uint8Array(18);
+  if (typeof crypto !== 'undefined' && 'getRandomValues' in crypto) {
+    crypto.getRandomValues(arr);
+  } else {
+    const nodeCrypto = require('crypto');
+    const buf = nodeCrypto.randomBytes(18);
+    arr.set(buf);
+  }
+  return Array.from(arr).map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
 /**
  * Single entry point for turning a person (self-applied or admin-entered) into
  * a fully active cleaner account: user + cleaner_profile + training record +
  * onboarding_stage + ERPNext registration + welcome notification. Used by both
  * the application-approval route and the admin "add cleaner" route so there is
  * exactly one place this logic lives.
+ *
+ * Idempotent: if a prior call already created the `users` row but failed
+ * before finishing (e.g. the cleaner_profiles insert or a later step threw),
+ * retrying with the same email reuses that row instead of hitting the email
+ * UNIQUE constraint and failing forever. A fresh temp password is issued on
+ * every call so a recovered retry always ends with valid, deliverable
+ * credentials, even if the original notification never went out.
  */
 export async function activateCleanerAccount(
   db: D1Database,
@@ -281,52 +301,73 @@ export async function activateCleanerAccount(
 ) {
   const bcrypt = require('bcryptjs');
 
-  const paysheetCode = await generateUniquePaysheetCode(db, data.name);
-
-  // Cross-runtime random bytes helper (Cloudflare Workers crypto vs Node.js crypto)
-  const tempPasswordBytes = (() => {
-    const arr = new Uint8Array(18);
-    if (typeof crypto !== 'undefined' && 'getRandomValues' in crypto) {
-      crypto.getRandomValues(arr);
-    } else {
-      const nodeCrypto = require('crypto');
-      const buf = nodeCrypto.randomBytes(18);
-      arr.set(buf);
-    }
-    return arr;
-  })();
-  const tempPassword = Array.from(tempPasswordBytes)
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
+  const tempPassword = generateTempPassword();
   const passwordHash = await bcrypt.hash(tempPassword, 12);
-
   const firstName = data.name.split(' ')[0] || data.name;
   const lastName = data.name.split(' ').slice(1).join(' ');
 
-  // Account is activated straight to consent_approved: approving/adding a
-  // cleaner is now a single step, not "approve" here + a second "approve"
-  // click on a different admin page before they can proceed.
-  const insertResult = await db.prepare(
-    `INSERT INTO users (name, email, password_hash, role, phone, password_needs_reset, email_verified, onboarding_stage, created_at)
-     VALUES (?, ?, ?, 'cleaner', ?, 1, 1, 'consent_approved', datetime('now'))`
-  ).bind(data.name, data.email, passwordHash, data.phone).run();
+  const existingUser = await db.prepare(
+    'SELECT id FROM users WHERE email = ?'
+  ).bind(data.email).first<{ id: number }>();
 
-  const newUserId = insertResult.meta.last_row_id as number;
+  let newUserId: number;
+  let paysheetCode: string;
 
-  await db.prepare(
-    `INSERT INTO cleaner_profiles (user_id, username, paysheet_code, first_name, last_name, cellphone, emergency_contact, emergency_phone, id_number, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
-  ).bind(
-    newUserId,
-    paysheetCode,
-    paysheetCode,
-    firstName,
-    lastName,
-    data.phone,
-    data.emergencyContact || '',
-    data.phone,
-    data.idNumber || ''
-  ).run();
+  if (existingUser) {
+    newUserId = existingUser.id;
+    await db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').bind(passwordHash, newUserId).run();
+
+    const existingProfile = await db.prepare(
+      'SELECT paysheet_code FROM cleaner_profiles WHERE user_id = ?'
+    ).bind(newUserId).first<{ paysheet_code: string }>();
+
+    if (existingProfile) {
+      paysheetCode = existingProfile.paysheet_code;
+    } else {
+      paysheetCode = await generateUniquePaysheetCode(db, data.name);
+      await db.prepare(
+        `INSERT INTO cleaner_profiles (user_id, username, paysheet_code, first_name, last_name, cellphone, emergency_contact, emergency_phone, id_number, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
+      ).bind(
+        newUserId,
+        paysheetCode,
+        paysheetCode,
+        firstName,
+        lastName,
+        data.phone,
+        data.emergencyContact || '',
+        data.phone,
+        data.idNumber || ''
+      ).run();
+    }
+  } else {
+    paysheetCode = await generateUniquePaysheetCode(db, data.name);
+
+    // Account is activated straight to consent_approved: approving/adding a
+    // cleaner is now a single step, not "approve" here + a second "approve"
+    // click on a different admin page before they can proceed.
+    const insertResult = await db.prepare(
+      `INSERT INTO users (name, email, password_hash, role, phone, password_needs_reset, email_verified, onboarding_stage, created_at)
+       VALUES (?, ?, ?, 'cleaner', ?, 1, 1, 'consent_approved', datetime('now'))`
+    ).bind(data.name, data.email, passwordHash, data.phone).run();
+
+    newUserId = insertResult.meta.last_row_id as number;
+
+    await db.prepare(
+      `INSERT INTO cleaner_profiles (user_id, username, paysheet_code, first_name, last_name, cellphone, emergency_contact, emergency_phone, id_number, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
+    ).bind(
+      newUserId,
+      paysheetCode,
+      paysheetCode,
+      firstName,
+      lastName,
+      data.phone,
+      data.emergencyContact || '',
+      data.phone,
+      data.idNumber || ''
+    ).run();
+  }
 
   await ensureCleanerTrainingProgress(db, paysheetCode);
   await setCleanerOnboardingStage(db, newUserId, 'consent_approved');
