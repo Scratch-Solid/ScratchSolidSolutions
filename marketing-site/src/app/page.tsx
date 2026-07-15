@@ -78,8 +78,8 @@ export default function Home() {
               <p className="text-sm sm:text-base text-gray-600">Our Standard Clean includes 3 hours of active cleaning in a 4-hour window. No rushed jobs, ever.</p>
             </div>
             <div className="bg-white rounded-xl p-5 sm:p-6 shadow-md border border-blue-100">
-              <h3 className="font-bold text-blue-700 mb-2 text-base sm:text-lg">Secure & Verified</h3>
-              <p className="text-sm sm:text-base text-gray-600">We are POPIA compliant and secured by Cloudflare, ensuring your data and your home are in safe hands.</p>
+              <h3 className="font-bold text-blue-700 mb-2 text-base sm:text-lg">Secure, Trusted & Compliant</h3>
+              <p className="text-sm sm:text-base text-gray-600">We are POPIA compliant, a B-BBEE Level 1 contributor, and secured by Cloudflare—your data and your home are in safe hands.</p>
             </div>
             <div className="bg-white rounded-xl p-5 sm:p-6 shadow-md border border-blue-100">
               <h3 className="font-bold text-blue-700 mb-2 text-base sm:text-lg">The Signature Finish</h3>
@@ -158,6 +158,19 @@ export default function Home() {
             <a href="https://instagram.com/ScratchSolidSolutions" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:underline">
               <span className="font-semibold">Social:</span> @ScratchSolidSolutions
             </a>
+          </div>
+          <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:gap-4">
+            <p className="text-xs sm:text-sm text-blue-100 max-w-3xl text-center">
+              Proudly partnered with trusted platforms to deliver verified cleaning services.
+            </p>
+            <div className="flex items-center justify-center gap-4 sm:gap-8">
+              <div className="flex items-center gap-2 bg-white/10 px-3 py-2 rounded-full border border-white/20 shadow-sm">
+                <img src="https://d18jakcjgoan9.cloudfront.net/s/img/images/barklogo-dark.png!d=KY4fXZ" alt="Bark.com logo" className="h-8 sm:h-10 object-contain" />
+              </div>
+              <div className="flex items-center gap-2 bg-white/10 px-3 py-2 rounded-full border border-white/20 shadow-sm">
+                <img src="https://www.procompare.co.za/favicon.ico" alt="ProCompare logo" className="h-8 sm:h-10 object-contain" />
+              </div>
+            </div>
           </div>
         </div>
       </section>
