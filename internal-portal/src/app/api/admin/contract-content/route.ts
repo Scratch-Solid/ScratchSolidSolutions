@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
       contract_text,
       terms,
       company_name || 'Scratch Solid Solutions',
-      (user as any).id
+      (user as any).user_id
     ).run();
 
     return withSecurityHeaders(NextResponse.json({ id: result.meta.last_row_id }, { status: 201 }), traceId);
@@ -90,7 +90,7 @@ export async function PUT(request: NextRequest) {
            updated_by = ?,
            updated_at = datetime('now')
        WHERE id = ?`
-    ).bind(title, contract_text, terms, company_name, (user as any).id, id).run();
+    ).bind(title, contract_text, terms, company_name, (user as any).user_id, id).run();
 
     if (result.meta.rows_written === 0) {
       return withSecurityHeaders(NextResponse.json({ error: 'Contract content not found' }, { status: 404 }), traceId);

@@ -220,11 +220,11 @@ export async function PUT(request: NextRequest) {
           const user = await db.prepare('SELECT id FROM users WHERE username = ?').bind(generatedUsername).first();
           if (user) {
             // Update user onboarding stage to consent_approved
-            await updateUserOnboardingStage(db, (user as any).id, 'consent_approved');
+            await updateUserOnboardingStage(db, (user as any).user_id, 'consent_approved');
             
             // Log the stage transition
             await logOnboardingTransition(db, {
-              user_id: (user as any).id,
+              user_id: (user as any).user_id,
               from_stage: 'consent_pending',
               to_stage: 'consent_approved',
               event_type: 'consent_approved',
@@ -239,7 +239,7 @@ export async function PUT(request: NextRequest) {
             if (contactNumber) {
               const notifyResult = await notifyAdminApproved(contactNumber, fullName, undefined, db);
               await logNotification(db, {
-                user_id: (user as any).id,
+                user_id: (user as any).user_id,
                 phone_number: contactNumber,
                 notification_type: 'admin_approved',
                 channel: 'whatsapp',
@@ -255,7 +255,7 @@ export async function PUT(request: NextRequest) {
       }
 
       await logAuditEvent(db, {
-        user_id: (user as any).id,
+        user_id: (user as any).user_id,
         action: 'approve_contract',
         resource: 'pending_contract',
         resource_id: String(id),
@@ -282,11 +282,11 @@ export async function PUT(request: NextRequest) {
       if (generatedUsername) {
         const user = await db.prepare('SELECT id FROM users WHERE username = ?').bind(generatedUsername).first();
         if (user) {
-          await updateUserOnboardingStage(db, (user as any).id, 'rejected');
+          await updateUserOnboardingStage(db, (user as any).user_id, 'rejected');
           
           // Log the stage transition
           await logOnboardingTransition(db, {
-            user_id: (user as any).id,
+            user_id: (user as any).user_id,
             from_stage: 'consent_pending',
             to_stage: 'rejected',
             event_type: 'consent_rejected',
@@ -301,7 +301,7 @@ export async function PUT(request: NextRequest) {
           if (contactNumber) {
             const notifyResult = await notifyAdminRejected(contactNumber, fullName, sanitizedData.rejection_reason, undefined, db);
             await logNotification(db, {
-              user_id: (user as any).id,
+              user_id: (user as any).user_id,
               phone_number: contactNumber,
               notification_type: 'admin_rejected',
               channel: 'whatsapp',
@@ -316,7 +316,7 @@ export async function PUT(request: NextRequest) {
       }
 
       await logAuditEvent(db, {
-        user_id: (user as any).id,
+        user_id: (user as any).user_id,
         action: 'reject_contract',
         resource: 'pending_contract',
         resource_id: String(id),
@@ -331,7 +331,7 @@ export async function PUT(request: NextRequest) {
     const updated = await updatePendingContractStatus(db, parseInt(id), sanitizedData.status);
     if (updated) {
       await logAuditEvent(db, {
-        user_id: (user as any).id,
+        user_id: (user as any).user_id,
         action: 'update_contract_status',
         resource: 'pending_contract',
         resource_id: String(id),
@@ -358,7 +358,7 @@ export async function DELETE(request: NextRequest) {
   if (id) {
     await deletePendingContract(db, parseInt(id));
     await logAuditEvent(db, {
-      user_id: (user as any).id,
+      user_id: (user as any).user_id,
       action: 'delete_contract',
       resource: 'pending_contract',
       resource_id: String(id),

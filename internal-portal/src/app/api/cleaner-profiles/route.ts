@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
   const { db, user } = authResult;
 
   try {
-    const profile = await db.prepare('SELECT * FROM cleaner_profiles WHERE user_id = ?').bind((user as any).id).first();
+    const profile = await db.prepare('SELECT * FROM cleaner_profiles WHERE user_id = ?').bind((user as any).user_id).first();
     const response = NextResponse.json(profile || null);
     return withSecurityHeaders(response, traceId);
   } catch (error) {

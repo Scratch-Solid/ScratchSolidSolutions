@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
       background_checks,
       acknowledgments,
       witness_name || 'Xolani Jason Tshaka',
-      (user as any).id
+      (user as any).user_id
     ).run();
 
     return withSecurityHeaders(NextResponse.json({ id: result.meta.last_row_id }, { status: 201 }), traceId);
@@ -90,7 +90,7 @@ export async function PUT(request: NextRequest) {
            updated_by = ?,
            updated_at = datetime('now')
        WHERE id = ?`
-    ).bind(title, consent_text, background_checks, acknowledgments, witness_name, (user as any).id, id).run();
+    ).bind(title, consent_text, background_checks, acknowledgments, witness_name, (user as any).user_id, id).run();
 
     if (result.meta.rows_written === 0) {
       return withSecurityHeaders(NextResponse.json({ error: 'Consent form not found' }, { status: 404 }), traceId);

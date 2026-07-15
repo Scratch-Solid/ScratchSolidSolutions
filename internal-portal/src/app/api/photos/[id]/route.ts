@@ -18,7 +18,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       verified?: boolean;
     };
     const { verified } = body;
-    const adminId = (user as any).id;
+    const adminId = (user as any).user_id;
 
     await db.prepare(
       `UPDATE cleaning_photos 
@@ -46,7 +46,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   try {
   const { id } = await params;
     const photoId = parseInt(id);
-    const userId = (user as any).id;
+    const userId = (user as any).user_id;
     const userRole = (user as any).role;
 
     // Check ownership

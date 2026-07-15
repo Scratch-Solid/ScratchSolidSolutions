@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
       description?: string;
     };
     const { booking_id, photo_url, photo_type, description } = body;
-    const cleanerId = (user as any).id;
+    const cleanerId = (user as any).user_id;
 
     if (!booking_id || !photo_url || !photo_type) {
       const response = NextResponse.json({ error: 'Missing required fields' }, { status: 400 });

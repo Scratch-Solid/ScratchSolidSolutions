@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
       transcribed_text?: string;
     };
     const { booking_id, audio_url, duration_seconds, transcribed_text } = body;
-    const senderId = (user as any).id;
+    const senderId = (user as any).user_id;
 
     if (!booking_id || !audio_url) {
       const response = NextResponse.json({ error: 'Missing required fields' }, { status: 400 });

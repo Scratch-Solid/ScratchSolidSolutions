@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
     // Update existing profile
     const updated = await updateCleanerProfile(db, data.username, data);
     if (updated) {
-      await logAuditEvent(db, { user_id: (user as any).id, action: 'update_cleaner_profile', resource: 'cleaner_profile', resource_id: String((updated as any).id), details: JSON.stringify({ username: data.username }), ip_address: request.headers.get('x-forwarded-for') || '' });
+      await logAuditEvent(db, { user_id: (user as any).user_id, action: 'update_cleaner_profile', resource: 'cleaner_profile', resource_id: String((updated as any).id), details: JSON.stringify({ username: data.username }), ip_address: request.headers.get('x-forwarded-for') || '' });
       const response = NextResponse.json(updated, { status: 200 });
       return withSecurityHeaders(response, traceId);
     }
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
     ).bind(data.username, data.username, data.department || 'cleaning', data.first_name || '', data.last_name || '').first();
     
     if (result) {
-      await logAuditEvent(db, { user_id: (user as any).id, action: 'create_cleaner_profile', resource: 'cleaner_profile', resource_id: String((result as any).id), details: JSON.stringify({ username: data.username }), ip_address: request.headers.get('x-forwarded-for') || '' });
+      await logAuditEvent(db, { user_id: (user as any).user_id, action: 'create_cleaner_profile', resource: 'cleaner_profile', resource_id: String((result as any).id), details: JSON.stringify({ username: data.username }), ip_address: request.headers.get('x-forwarded-for') || '' });
       const response = NextResponse.json(result, { status: 201 });
       return withSecurityHeaders(response, traceId);
     }
@@ -106,7 +106,7 @@ export async function PUT(request: NextRequest) {
   const updated = await updateCleanerProfile(db, username, data);
   if (updated) {
     if ((user as any).role === 'admin') {
-      await logAuditEvent(db, { user_id: (user as any).id, action: 'update_cleaner_profile', resource: 'cleaner_profile', resource_id: String((updated as any).id), details: JSON.stringify({ username }), ip_address: request.headers.get('x-forwarded-for') || '' });
+      await logAuditEvent(db, { user_id: (user as any).user_id, action: 'update_cleaner_profile', resource: 'cleaner_profile', resource_id: String((updated as any).id), details: JSON.stringify({ username }), ip_address: request.headers.get('x-forwarded-for') || '' });
     }
     const response = NextResponse.json(updated);
     return withSecurityHeaders(response, traceId);

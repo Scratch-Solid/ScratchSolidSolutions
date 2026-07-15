@@ -53,11 +53,11 @@ export async function POST(request: NextRequest) {
     const { userId, notes } = sanitized as { userId: number; notes?: string };
 
     // Reject the admin user
-    await rejectAdminUser(db, userId, (session as any).id, notes);
+    await rejectAdminUser(db, userId, (session as any).user_id, notes);
 
     // Log the rejection
     await logAuditEvent(db, {
-      user_id: (session as any).id,
+      user_id: (session as any).user_id,
       action: 'ADMIN_REJECTED',
       resource: 'user',
       resource_id: userId.toString(),

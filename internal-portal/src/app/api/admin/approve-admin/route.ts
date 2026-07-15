@@ -53,11 +53,11 @@ export async function POST(request: NextRequest) {
     const { userId, notes } = sanitized as { userId: number; notes?: string };
 
     // Approve the admin user
-    await approveAdminUser(db, userId, (session as any).id, notes);
+    await approveAdminUser(db, userId, (session as any).user_id, notes);
 
     // Log the approval
     await logAuditEvent(db, {
-      user_id: (session as any).id,
+      user_id: (session as any).user_id,
       action: 'ADMIN_APPROVED',
       resource: 'user',
       resource_id: userId.toString(),

@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user permissions to check if they can manage roles
-    const userPermissions = await getUserPermissions(db, (session as any).id);
+    const userPermissions = await getUserPermissions(db, (session as any).user_id);
     if (!canManageSystem(userPermissions)) {
       const response = NextResponse.json({ error: 'Insufficient permissions to manage roles' }, { status: 403 });
       logRequest(request, response, Date.now() - startTime, traceId);
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
 
     // Log role creation
     await logAuditEvent(db, {
-      user_id: (session as any).id,
+      user_id: (session as any).user_id,
       action: 'ROLE_CREATED',
       resource: 'roles',
       resource_id: newRole.id.toString(),

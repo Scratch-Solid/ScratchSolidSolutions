@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
     const updated = await updateCleanerProfile(db, data.username, data);
     if (updated) {
       await logAuditEvent(db, {
-        user_id: (user as any).id,
+        user_id: (user as any).user_id,
         action: 'update_cleaner_profile',
         resource: 'cleaner_profile',
         resource_id: String((updated as any).id),
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
     
     if (result) {
       await logAuditEvent(db, {
-        user_id: (user as any).id,
+        user_id: (user as any).user_id,
         action: 'create_cleaner_profile',
         resource: 'cleaner_profile',
         resource_id: String((result as any).id),
@@ -147,7 +147,7 @@ export async function PUT(request: NextRequest) {
   if (updated) {
     if ((user as any).role === 'admin') {
       await logAuditEvent(db, {
-        user_id: (user as any).id,
+        user_id: (user as any).user_id,
         action: 'update_cleaner_profile',
         resource: 'cleaner_profile',
         resource_id: String((updated as any).id),

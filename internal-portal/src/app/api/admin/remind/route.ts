@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
         status: notifyResult.success ? 'sent' : notifyResult.skipped ? 'skipped' : 'failed',
         message_id: notifyResult.messageId,
         error_message: notifyResult.error || notifyResult.skipReason,
-        metadata: { message, triggered_by: (user as any).id }
+        metadata: { message, triggered_by: (user as any).user_id }
       });
 
       results.push({

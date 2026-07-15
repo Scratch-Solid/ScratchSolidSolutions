@@ -16,7 +16,9 @@ export async function POST(request: NextRequest) {
   const authResult = await withAuth(request, ['admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db, user } = authResult;
-  const adminUserId = (user as any).id || (user as any).userId || (user as any).user_id;
+  // validateSession() returns the raw sessions row (s.*) - `.id` there is
+  // the session row's own primary key, not the user's id.
+  const adminUserId = (user as any).user_id || (user as any).userId || (user as any).id;
 
   const csrfResponse = await withCsrf(request);
   if (csrfResponse) return withSecurityHeaders(csrfResponse, traceId);

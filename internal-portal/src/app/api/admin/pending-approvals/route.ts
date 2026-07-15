@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
 
     // Log the access
     await logAuditEvent(db, {
-      user_id: (session as any).id,
+      user_id: (session as any).user_id,
       action: 'PENDING_APPROVALS_VIEWED',
       resource: 'admin_approval',
       ip_address: getClientIP(request),

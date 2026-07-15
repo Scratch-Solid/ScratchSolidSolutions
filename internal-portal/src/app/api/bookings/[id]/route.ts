@@ -86,7 +86,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     // If cleaner role, verify they own this booking
     const userRole = (user as any).role;
-    const userId = (user as any).id;
+    const userId = (user as any).user_id;
     if (userRole === 'cleaner') {
       const booking = await db.prepare('SELECT cleaner_id FROM bookings WHERE id = ?').bind(id).first();
       if (!booking) {

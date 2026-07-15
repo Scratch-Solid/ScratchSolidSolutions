@@ -66,11 +66,11 @@ export async function GET(request: NextRequest) {
 
       const syncStatuses = [];
       for (const user of (users.results || [])) {
-        const staff = staffMap.get((user as any).id);
-        const trainingProgress = await trainingDb.prepare('SELECT training_status, certificate_url FROM employee_training_progress WHERE user_id = ?').bind(String((user as any).id)).first();
+        const staff = staffMap.get((user as any).user_id);
+        const trainingProgress = await trainingDb.prepare('SELECT training_status, certificate_url FROM employee_training_progress WHERE user_id = ?').bind(String((user as any).user_id)).first();
         
         syncStatuses.push({
-          userId: (user as any).id,
+          userId: (user as any).user_id,
           mainDb: {
             onboarding_stage: (user as any).onboarding_stage,
             staff_training_completed: staff ? staff.training_completed : null,
