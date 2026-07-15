@@ -57,7 +57,10 @@ export async function authFetch(
   if (token) {
     headers.set('Authorization', `Bearer ${token}`);
   }
-  if (!headers.has('Content-Type') && options.body) {
+  // FormData needs the browser to set its own multipart Content-Type with
+  // the boundary param - setting application/json here breaks file uploads
+  // (the server can't parse the body as either format).
+  if (!headers.has('Content-Type') && options.body && !(options.body instanceof FormData)) {
     headers.set('Content-Type', 'application/json');
   }
 
@@ -75,7 +78,7 @@ export async function authFetch(
       // Retry the original request with the new token
       const retryHeaders = new Headers(options.headers || {});
       retryHeaders.set('Authorization', `Bearer ${newToken}`);
-      if (!retryHeaders.has('Content-Type') && options.body) {
+      if (!retryHeaders.has('Content-Type') && options.body && !(options.body instanceof FormData)) {
         retryHeaders.set('Content-Type', 'application/json');
       }
 
