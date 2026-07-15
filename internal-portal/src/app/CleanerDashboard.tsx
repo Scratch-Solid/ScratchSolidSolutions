@@ -1308,7 +1308,40 @@ export default function CleanerDashboard() {
         </div>
       )}
 
-      {activeTile === "shifts" && (
+      {activeTile === "shifts" && (() => {
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const todaysShifts = upcomingShifts.filter((s: any) => s.booking_date === todayStr);
+        const suburbCounts: Record<string, number> = {};
+        todaysShifts.forEach((s: any) => { if (s.suburb) suburbCounts[s.suburb] = (suburbCounts[s.suburb] || 0) + 1; });
+        const clusterSuburb = Object.entries(suburbCounts).find(([, count]) => count >= 2)?.[0];
+
+        return (
+        <>
+        {todaysShifts.length > 0 && (
+          <div className="glass-card p-6 mb-4">
+            <h3 className="font-bold text-lg mb-1" style={{ color: 'var(--text-h)' }}>Today's Route</h3>
+            {clusterSuburb ? (
+              <p className="text-sm mb-4" style={{ color: 'var(--success)' }}>
+                🎯 You've got {suburbCounts[clusterSuburb]} jobs in {clusterSuburb} today — less driving, more jobs done!
+              </p>
+            ) : (
+              <p className="text-sm mb-4" style={{ color: 'var(--text-light)' }}>
+                {todaysShifts.length} job{todaysShifts.length > 1 ? 's' : ''} scheduled today.
+              </p>
+            )}
+            <div className="space-y-2">
+              {[...todaysShifts].sort((a: any, b: any) => (a.time_slot || '').localeCompare(b.time_slot || '')).map((shift: any, i: number) => (
+                <div key={shift.id} className="flex items-center gap-3 bg-white/5 rounded-lg p-3">
+                  <div className="h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: 'var(--accent, #2E1F16)', color: 'white' }}>{i + 1}</div>
+                  <div className="flex-1">
+                    <div className="text-sm font-semibold" style={{ color: 'var(--text-h)' }}>{shift.time_slot || 'TBD'} — {shift.location || 'Assignment'}</div>
+                    {shift.suburb && <div className="text-xs" style={{ color: 'var(--text-light)' }}>{shift.suburb}</div>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         <div className="glass-card p-6">
           <h3 className="font-bold text-lg mb-4" style={{ color: 'var(--text-h)' }}>Upcoming Shifts</h3>
           {upcomingShifts.length === 0 ? (
@@ -1325,11 +1358,12 @@ export default function CleanerDashboard() {
                         {shift.client_name || shift.location || 'Assignment'}
                       </div>
                       <div className="text-sm" style={{ color: 'var(--text-light)' }}>
-                        {shift.shift_date || shift.date || new Date().toLocaleDateString()} &bull; {shift.time_slot || shift.time || 'TBD'}
+                        {shift.booking_date || new Date().toLocaleDateString()} &bull; {shift.time_slot || 'TBD'}
+                        {shift.suburb ? ` • ${shift.suburb}` : ''}
                       </div>
-                      {shift.address && (
+                      {shift.location && (
                         <div className="text-sm mt-1" style={{ color: 'var(--text-light)' }}>
-                          {shift.address}
+                          {shift.location}
                         </div>
                       )}
                     </div>
@@ -1348,7 +1382,9 @@ export default function CleanerDashboard() {
             </div>
           )}
         </div>
-      )}
+        </>
+        );
+      })()}
 
       {activeTile === "payslips" && (
         <div className="glass-card p-6">

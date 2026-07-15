@@ -110,6 +110,35 @@ export default function BookingQuotePanel({
   const [success, setSuccess] = useState("");
   const [showPolicy, setShowPolicy] = useState(false);
 
+  // Same-day area clustering suggestion - lets a cleaner reach 2+ jobs a day
+  // in one area instead of one job spread across separate days. Always
+  // just a suggestion: accepting updates bookingDate, declining keeps the
+  // client's own choice with no other effect.
+  const [clusterSuggestion, setClusterSuggestion] = useState<{ suggestedDate: string; existingBookingsCount: number } | null>(null);
+  const [clusterSuggestionDismissed, setClusterSuggestionDismissed] = useState(false);
+
+  useEffect(() => {
+    setClusterSuggestion(null);
+    setClusterSuggestionDismissed(false);
+    if (!area || !bookingDate) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await authFetch(`/api/bookings/suggest-cluster?suburb=${encodeURIComponent(area)}&date=${encodeURIComponent(bookingDate)}`);
+        if (cancelled || !res.ok) return;
+        const data = await res.json();
+        if (data.hasSuggestion && !data.isPreferredDate) {
+          setClusterSuggestion({ suggestedDate: data.suggestedDate, existingBookingsCount: data.existingBookingsCount });
+        }
+      } catch {
+        // Suggestion is a nice-to-have - silently skip on any failure
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [area, bookingDate]);
+
   const isResidential = propertyType === "residential" || propertyType === "short-term-stay";
 
   // Fetch services + pricing once
@@ -246,6 +275,7 @@ export default function BookingQuotePanel({
           client_id: parseInt(userId || "0"),
           client_name: userName,
           location: location || localStorage.getItem("userAddress") || "",
+          suburb: area,
           service_type: selectedService?.name || selectedServiceId.toString(),
           booking_date: bookingDate,
           booking_time: timeSlot.split("-")[0],
@@ -512,6 +542,39 @@ export default function BookingQuotePanel({
             </select>
           </div>
         </div>
+
+        {clusterSuggestion && !clusterSuggestionDismissed && (
+          <div className="rounded-xl border-2 border-blue-200 bg-blue-50 p-4 flex items-start gap-3">
+            <span className="text-2xl">📍</span>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-blue-800">
+                We already have a cleaner booked in {area} on {new Date(`${clusterSuggestion.suggestedDate}T00:00:00`).toLocaleDateString("en-ZA", { weekday: "long", day: "numeric", month: "long" })}
+              </p>
+              <p className="text-xs text-blue-700 mt-0.5">
+                Booking the same day usually means faster, more reliable service since your cleaner is already working nearby. Totally up to you.
+              </p>
+              <div className="flex gap-2 mt-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBookingDate(clusterSuggestion.suggestedDate);
+                    setClusterSuggestionDismissed(true);
+                  }}
+                  className="rounded-full bg-blue-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 transition-colors"
+                >
+                  Book this day instead
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setClusterSuggestionDismissed(true)}
+                  className="rounded-full border border-blue-300 px-4 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
+                >
+                  Keep my date
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Booking type */}
         <div>

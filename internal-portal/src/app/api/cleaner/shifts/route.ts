@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   try {
     // Get cleaner profile
     const cleanerProfile = await db.prepare(
-      'SELECT cp.paysheet_code FROM cleaner_profiles cp WHERE cp.user_id = ?'
+      'SELECT cp.id, cp.paysheet_code FROM cleaner_profiles cp WHERE cp.user_id = ?'
     ).bind(userId).first();
 
     if (!cleanerProfile) {
@@ -38,35 +38,37 @@ export async function GET(request: NextRequest) {
       limit: searchParams.get('limit')
     });
 
-    // Get upcoming shifts
+    // Get upcoming shifts. booking_assignments.cleaner_id is cleaner_profiles.id
+    // (an integer), not the paysheet_code string - and bookings has no
+    // scheduled_date/address/city columns, it's booking_date/location/suburb.
     const shiftsQuery = `
-      SELECT 
+      SELECT
         b.id,
-        b.scheduled_date,
+        b.booking_date,
         b.time_slot,
         b.status,
         b.client_id,
-        b.address,
-        b.city,
-        b.type,
+        b.location,
+        b.suburb,
+        b.service_type,
         ba.assigned_at
       FROM booking_assignments ba
       JOIN bookings b ON ba.booking_id = b.id
-      WHERE ba.cleaner_id = ? AND b.scheduled_date >= date('now') AND b.status != 'cancelled'
-      ORDER BY b.scheduled_date ASC, b.time_slot ASC
+      WHERE ba.cleaner_id = ? AND b.booking_date >= date('now') AND b.status != 'cancelled'
+      ORDER BY b.booking_date ASC, b.time_slot ASC
     `;
 
     // Get total count
     const countResult = await db.prepare(
-      `SELECT COUNT(*) as count FROM booking_assignments ba 
-       JOIN bookings b ON ba.booking_id = b.id 
-       WHERE ba.cleaner_id = ? AND b.scheduled_date >= date('now') AND b.status != 'cancelled'`
-    ).bind(cleaner.paysheet_code).first();
+      `SELECT COUNT(*) as count FROM booking_assignments ba
+       JOIN bookings b ON ba.booking_id = b.id
+       WHERE ba.cleaner_id = ? AND b.booking_date >= date('now') AND b.status != 'cancelled'`
+    ).bind(cleaner.id).first();
     const total = (countResult as any)?.count || 0;
 
     // Get paginated results
     const shifts = await db.prepare(shiftsQuery + ' LIMIT ? OFFSET ?')
-      .bind(cleaner.paysheet_code, limit, offset)
+      .bind(cleaner.id, limit, offset)
       .all();
 
     const response = NextResponse.json({

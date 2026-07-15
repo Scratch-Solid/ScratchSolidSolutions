@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json() as any;
     const {
       service_id, user_id, cleaner_id, booking_date, booking_time,
-      notes, service_type, time_slot, location, client_name
+      notes, service_type, time_slot, location, client_name, suburb
     } = body;
 
     if (!booking_date || !booking_time) {
@@ -125,15 +125,15 @@ export async function POST(request: NextRequest) {
       INSERT INTO bookings (
         user_id, cleaner_id, booking_date, booking_time,
         status, special_instructions, service_type, time_slot, pool_type,
-        location, assignment_status, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, 'pending', datetime('now'), datetime('now'))
+        location, suburb, assignment_status, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, 'pending', datetime('now'), datetime('now'))
       RETURNING *
     `).bind(
       user_id || null, cleaner_id || null,
       booking_date, booking_time,
       notes || body.special_instructions || null,
       resolvedServiceType, resolvedSlot || null, poolType,
-      location || null
+      location || null, suburb || null
     ).first();
 
     // Auto-assign for AUTO pool bookings immediately; MANUAL pool bookings
@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
       try {
         const trainingDb = await getTrainingDb();
         if (trainingDb) {
-          await autoAssignBooking(db, trainingDb, (booking as any).id, booking_date, resolvedSlot || null);
+          await autoAssignBooking(db, trainingDb, (booking as any).id, booking_date, resolvedSlot || null, suburb);
         }
       } catch (assignErr) {
         // Log but don't fail the booking creation — admin can assign manually

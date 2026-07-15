@@ -37,12 +37,15 @@ export async function POST(
       return NextResponse.json({ error: 'Training database not available' }, { status: 500 });
     }
 
+    const bookingRow = await db.prepare('SELECT suburb FROM bookings WHERE id = ?').bind(bookingId).first<{ suburb: string | null }>();
+
     const result = await autoAssignBooking(
       db,
       trainingDb,
       bookingId,
       assignmentDate,
-      (timeSlot || null) as any
+      (timeSlot || null) as any,
+      bookingRow?.suburb
     );
 
     return NextResponse.json(result);

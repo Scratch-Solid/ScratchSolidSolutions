@@ -16,6 +16,7 @@ export default function AdminPoolsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState<"all" | "AUTO" | "MANUAL">("all");
+  const [clusters, setClusters] = useState<{ clustered: { suburb: string; booking_count: number }[]; singles: { suburb: string; booking_count: number }[] } | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -29,6 +30,9 @@ export default function AdminPoolsPage() {
           return;
         }
         if (res.ok) setCleaners(await res.json());
+
+        const clusterRes = await fetch("/api/admin/pools/today-clusters", { headers });
+        if (clusterRes.ok) setClusters(await clusterRes.json());
       } catch {
         setError("Unable to load pool data. Please check your connection and try again.");
       } finally {
@@ -114,6 +118,32 @@ export default function AdminPoolsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {clusters && (clusters.clustered.length > 0 || clusters.singles.length > 0) && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-semibold">Today's Area Clusters</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {clusters.clustered.map((c) => (
+              <div key={c.suburb} className="flex items-center justify-between text-sm">
+                <span className="text-stone-700">{c.suburb}</span>
+                <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-0">
+                  {c.booking_count} jobs clustered — less travel today
+                </Badge>
+              </div>
+            ))}
+            {clusters.singles.map((c) => (
+              <div key={c.suburb} className="flex items-center justify-between text-sm">
+                <span className="text-stone-500">{c.suburb}</span>
+                <Badge variant="outline" className="text-stone-500">
+                  Only 1 booking — room to fill this day/area
+                </Badge>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       <div className="flex gap-2">
         {(["all", "AUTO", "MANUAL"] as const).map((f) => (

@@ -366,6 +366,7 @@ export async function createBooking(db: D1Database, data: {
   client_id: number;
   client_name: string;
   location: string;
+  suburb?: string;
   service_type: string;
   booking_date: string;
   booking_time: string;
@@ -383,12 +384,13 @@ export async function createBooking(db: D1Database, data: {
   const trackingToken = generateTrackingToken();
 
   const result = await db.prepare(
-    `INSERT INTO bookings (client_id, client_name, location, service_type, booking_date, booking_time, special_instructions, booking_type, cleaning_type, payment_method, loyalty_discount, cleaner_id, status, tracking_token, promo_code, discount_amount)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`
+    `INSERT INTO bookings (client_id, client_name, location, suburb, service_type, booking_date, booking_time, special_instructions, booking_type, cleaning_type, payment_method, loyalty_discount, cleaner_id, status, tracking_token, promo_code, discount_amount)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`
   ).bind(
     data.client_id,
     data.client_name,
     data.location,
+    data.suburb || null,
     data.service_type,
     data.booking_date,
     data.booking_time,

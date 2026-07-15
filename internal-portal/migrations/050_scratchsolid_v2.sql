@@ -27,8 +27,8 @@ CREATE TABLE IF NOT EXISTS jobs (
   erpnext_shift_id TEXT,
   total_amount_cents INTEGER,
   payment_status TEXT DEFAULT 'pending',
-  created_at TEXT DEFAULT datetime('now'),
-  updated_at TEXT DEFAULT datetime('now')
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ─── JOB CHECKLISTS: Room-by-room task tracking ───
@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS job_checklists (
   completed_by INTEGER,
   qa_photo_url TEXT,
   notes TEXT,
-  created_at TEXT DEFAULT datetime('now')
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ─── JOB TRACKING: GPS breadcrumbs (15s interval while en_route) ───
@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS job_tracking (
   longitude REAL NOT NULL,
   accuracy_meters REAL,
   speed_kmh REAL,
-  recorded_at TEXT DEFAULT datetime('now'),
+  recorded_at TEXT DEFAULT CURRENT_TIMESTAMP,
   source TEXT DEFAULT 'supervisor_app'
 );
 
@@ -71,7 +71,7 @@ CREATE TABLE IF NOT EXISTS whatsapp_sessions (
   message_count_outbound INTEGER DEFAULT 0,
   window_status TEXT DEFAULT 'closed',
   fallback_email_sent INTEGER DEFAULT 0,
-  created_at TEXT DEFAULT datetime('now')
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ─── PROPERTY TEMPLATES: Seed data for checklist generation ───
@@ -82,7 +82,7 @@ CREATE TABLE IF NOT EXISTS property_templates (
   estimated_duration_minutes INTEGER,
   rooms_json TEXT NOT NULL,
   is_active INTEGER DEFAULT 1,
-  created_at TEXT DEFAULT datetime('now')
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ─── JOB PHOTOS: Completion/QA evidence (R2/S3, 90-day TTL) ───
@@ -95,7 +95,7 @@ CREATE TABLE IF NOT EXISTS job_photos (
   storage_path TEXT NOT NULL,
   public_url TEXT,
   uploaded_by INTEGER NOT NULL,
-  uploaded_at TEXT DEFAULT datetime('now'),
+  uploaded_at TEXT DEFAULT CURRENT_TIMESTAMP,
   expires_at TEXT
 );
 

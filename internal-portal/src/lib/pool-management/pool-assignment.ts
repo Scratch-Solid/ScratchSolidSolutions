@@ -44,16 +44,25 @@ export function getAvailableTimeSlots(assignmentDate: string): TimeSlot[] {
   return slots;
 }
 
+// A cleaner already booked in the same suburb that day is strongly preferred
+// (delivers the travel-reduction goal even when the client keeps their own
+// chosen date), but capped so jobs don't stack indefinitely onto one person.
+const SAME_SUBURB_BONUS = 50;
+const MAX_SAME_DAY_ASSIGNMENTS = 2;
+
 /**
  * Scores AUTO-pool candidates for a single-cleaner assignment. Only cleaners
- * with assignment_pool = 'AUTO', not already booked at this slot, and with
- * completed training are eligible.
+ * with assignment_pool = 'AUTO', not already booked at this slot, under the
+ * same-day assignment cap, and with completed training are eligible. Passing
+ * `suburb` prefers a cleaner who already has a job in the same area that day,
+ * so they can complete more than one job without excess travel between them.
  */
 export async function scoreAssignmentCandidates(
   db: D1Database,
   trainingDb: D1Database,
   assignmentDate: string,
-  timeSlot: TimeSlot
+  timeSlot: TimeSlot,
+  suburb?: string | null
 ): Promise<AssignmentCandidate[]> {
   const cleanersResult = await db.prepare(`
     SELECT cp.id, cp.first_name, cp.last_name
@@ -66,30 +75,45 @@ export async function scoreAssignmentCandidates(
   const candidates: AssignmentCandidate[] = [];
 
   for (const c of cleaners) {
-    const existingAssignment = await db.prepare(`
+    const sameSlot = await db.prepare(`
       SELECT COUNT(*) as count
       FROM booking_assignments
       WHERE cleaner_id = ? AND assignment_date = ? AND time_slot = ? AND status != 'cancelled'
     `).bind(c.id, assignmentDate, timeSlot).first<{ count: number }>();
 
-    if (existingAssignment?.count === 0) {
-      const trainingProgress = await trainingDb.prepare(
-        'SELECT training_status FROM employee_training_progress WHERE user_id = ?'
-      ).bind(c.id.toString()).first<{ training_status: string }>();
+    if (sameSlot?.count !== 0) continue;
 
-      if (!trainingProgress || trainingProgress.training_status !== 'Completed') {
-        continue;
-      }
+    const sameDay = await db.prepare(`
+      SELECT COUNT(*) as count, GROUP_CONCAT(DISTINCT b.suburb) as suburbs
+      FROM booking_assignments ba
+      JOIN bookings b ON b.id = ba.booking_id
+      WHERE ba.cleaner_id = ? AND ba.assignment_date = ? AND ba.status != 'cancelled'
+    `).bind(c.id, assignmentDate).first<{ count: number; suburbs: string | null }>();
 
-      candidates.push({
-        cleanerId: c.id,
-        cleanerName: `${c.first_name} ${c.last_name}`,
-        score: 100,
-        availableSlots: getAvailableTimeSlots(assignmentDate),
-      });
+    // Daily cap - don't keep stacking jobs onto one cleaner past the target.
+    if ((sameDay?.count ?? 0) >= MAX_SAME_DAY_ASSIGNMENTS) continue;
+
+    const trainingProgress = await trainingDb.prepare(
+      'SELECT training_status FROM employee_training_progress WHERE user_id = ?'
+    ).bind(c.id.toString()).first<{ training_status: string }>();
+
+    if (!trainingProgress || trainingProgress.training_status !== 'Completed') {
+      continue;
     }
+
+    const hasSameSuburbToday = Boolean(
+      suburb && sameDay?.suburbs && sameDay.suburbs.split(',').includes(suburb)
+    );
+
+    candidates.push({
+      cleanerId: c.id,
+      cleanerName: `${c.first_name} ${c.last_name}`,
+      score: hasSameSuburbToday ? 100 + SAME_SUBURB_BONUS : 100,
+      availableSlots: getAvailableTimeSlots(assignmentDate),
+    });
   }
 
+  candidates.sort((a, b) => b.score - a.score);
   return candidates;
 }
 
@@ -101,9 +125,10 @@ export async function autoAssignBooking(
   trainingDb: D1Database,
   bookingId: number,
   assignmentDate: string,
-  timeSlot: TimeSlot
+  timeSlot: TimeSlot,
+  suburb?: string | null
 ): Promise<{ success: boolean; assignedCleanerId?: number; message: string }> {
-  const candidates = await scoreAssignmentCandidates(db, trainingDb, assignmentDate, timeSlot);
+  const candidates = await scoreAssignmentCandidates(db, trainingDb, assignmentDate, timeSlot, suburb);
 
   if (candidates.length === 0) {
     return { success: false, message: 'No available AUTO-pool cleaners found for this booking' };

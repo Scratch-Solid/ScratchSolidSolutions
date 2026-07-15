@@ -44,6 +44,7 @@ export async function POST(request: NextRequest) {
       client_id?: number;
       client_name?: string;
       location?: string;
+      suburb?: string;
       service_type?: string;
       booking_date?: string;
       booking_time?: string;
@@ -60,6 +61,7 @@ export async function POST(request: NextRequest) {
       client_id,
       client_name,
       location,
+      suburb,
       service_type,
       booking_date,
       booking_time,
@@ -188,6 +190,7 @@ export async function POST(request: NextRequest) {
       client_id: effectiveClientId,
       client_name: client_name || 'Unknown',
       location: location || '',
+      suburb: suburb || undefined,
       service_type: service_type || 'standard',
       booking_date,
       booking_time,
@@ -217,6 +220,7 @@ export async function POST(request: NextRequest) {
         bookingDate: booking_date,
         bookingTime: booking_time,
         location: location || undefined,
+        suburb: suburb || undefined,
         specialInstructions: special_instructions || undefined,
         marketingBookingId: bookingId,
       });

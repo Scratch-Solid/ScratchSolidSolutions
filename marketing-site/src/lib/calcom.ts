@@ -38,6 +38,7 @@ export interface CalcomBookingInput {
   bookingDate: string; // YYYY-MM-DD
   bookingTime: string; // "08:00" or "08:00-12:00"
   location?: string;
+  suburb?: string;
   specialInstructions?: string;
   // Free-form reference back to the local marketing booking row.
   marketingBookingId?: number | string;
@@ -161,6 +162,7 @@ export async function createCalcomBooking(input: CalcomBookingInput): Promise<Ca
   // match what the n8n transform reads (address, notes, unit-name, access-code).
   const bookingFieldsResponses: Record<string, string> = {};
   if (input.location) bookingFieldsResponses.address = input.location;
+  if (input.suburb) bookingFieldsResponses.suburb = input.suburb;
   if (input.specialInstructions) bookingFieldsResponses.notes = input.specialInstructions;
 
   const body: Record<string, unknown> = {

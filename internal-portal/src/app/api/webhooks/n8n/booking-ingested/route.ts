@@ -33,6 +33,7 @@ interface BookingPayload {
     access_code?: string;
     unit_name?: string;
     special_requests?: string;
+    suburb?: string;
   };
 }
 
@@ -179,8 +180,8 @@ export async function POST(request: NextRequest) {
         `INSERT INTO jobs (
           id, calcom_uid, client_email, client_name, client_phone,
           property_type, property_address, property_access_code, property_unit_name,
-          special_requests, service_type, scheduled_at, duration_minutes, status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          special_requests, service_type, scheduled_at, duration_minutes, status, suburb
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .bind(
         jobId,
@@ -196,7 +197,8 @@ export async function POST(request: NextRequest) {
         body.service.type,
         body.service.scheduled_at,
         body.service.duration_minutes || 120,
-        'scheduled'
+        'scheduled',
+        body.property.suburb || null
       )
       .run();
 
@@ -229,11 +231,21 @@ export async function POST(request: NextRequest) {
       try {
         const trainingDb = await getTrainingDb();
         if (trainingDb) {
+          // Note: this scorer's same-day/same-suburb clustering check only
+          // sees bookings_assignments/bookings (the direct marketing-site
+          // booking path) - it can't see other jobs already assigned via
+          // this Cal.com/n8n `jobs` table pathway, since the two are
+          // separate systems. Passing suburb still gives a partial benefit
+          // (preferring a cleaner who has a `bookings`-side job in the same
+          // area that day) even though full cross-system clustering would
+          // need unifying the two booking systems, which is a larger,
+          // separate change.
           const candidates = await scoreAssignmentCandidates(
             db,
             trainingDb,
             jobDate,
-            timeSlot as any
+            timeSlot as any,
+            body.property.suburb
           );
 
           if (candidates.length > 0) {
