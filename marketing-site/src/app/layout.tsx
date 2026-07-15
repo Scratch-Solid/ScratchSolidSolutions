@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import CookieConsent from "@/components/CookieConsent";
@@ -90,7 +91,18 @@ export default async function RootLayout({
       <body className="min-h-full flex flex-col" style={backgroundStyle}>
         {children}
         <footer className="w-full py-4 text-center text-white/70 text-sm bg-black/20 backdrop-blur-sm">
-          © {new Date().getFullYear()} Scratch Solid Solutions. All rights reserved.
+          <div>© {new Date().getFullYear()} Scratch Solid Solutions. All rights reserved.</div>
+          <div className="mt-2 flex flex-wrap justify-center gap-4 text-xs sm:text-sm text-white/80">
+            <Link href="https://portal.scratchsolidsolutions.org/auth/login" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+              Career
+            </Link>
+            <Link href="/terms" className="hover:text-white transition-colors">
+              Legal
+            </Link>
+            <Link href="/contact" className="hover:text-white transition-colors">
+              Other enquiries
+            </Link>
+          </div>
         </footer>
         <CookieConsent />
       </body>
