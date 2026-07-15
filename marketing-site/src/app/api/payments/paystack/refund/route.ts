@@ -2,49 +2,50 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { logger } from '@/lib/logger';
+import { processRefund } from '@/lib/paystack';
 
-const BACKEND_API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.scratchsolidsolutions.org/api';
-
+// Implements the refund directly against this app's own payments/bookings
+// tables - previously proxied to backend-worker, which looks up payments in
+// its own separate, disconnected database (see lib/paystack.ts header
+// comment). Real payments live here since the initialize/verify fix, so a
+// refund request for one of them would have 404'd against backend-worker's
+// copy.
 export async function POST(request: NextRequest) {
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
+  const { db } = authResult;
 
   try {
-    const body = await request.json() as {
-      reference: string;
-      amount?: number;
-      reason?: string;
-    };
-
+    const body = await request.json() as { reference?: string; amount?: number; reason?: string };
     const { reference, amount, reason } = body;
 
     if (!reference) {
+      return withSecurityHeaders(NextResponse.json({ error: 'reference is required' }, { status: 400 }), traceId);
+    }
+
+    const result = await processRefund(db, { reference, amount, reason });
+
+    if (!result.ok) {
+      if (result.status >= 500 || result.status === 502) {
+        logger.error('Paystack refund rejected', new Error(result.detail || result.error));
+      }
       return withSecurityHeaders(
-        NextResponse.json({ error: 'reference is required' }, { status: 400 }),
+        NextResponse.json({ error: result.error, detail: 'detail' in result ? result.detail : undefined }, { status: result.status }),
         traceId
       );
     }
 
-    const response = await fetch(`${BACKEND_API_URL}/payments/paystack/refund`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': request.headers.get('Authorization') || '',
-      },
-      body: JSON.stringify({ reference, amount, reason }),
+    const response = NextResponse.json({
+      status: 'success',
+      refund: result.data,
+      message: 'Refund processed successfully',
     });
-
-    const data = await response.json();
-
-    return withSecurityHeaders(
-      NextResponse.json(data, { status: response.status }),
-      traceId
-    );
+    return withSecurityHeaders(response, traceId);
   } catch (error) {
-    logger.error('Paystack refund proxy error', error as Error);
+    logger.error('Paystack refund error', error as Error);
     return withSecurityHeaders(
-      NextResponse.json({ error: 'Refund failed' }, { status: 500 }),
+      NextResponse.json({ error: `Refund failed: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 }),
       traceId
     );
   }

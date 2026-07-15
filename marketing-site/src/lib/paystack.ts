@@ -125,3 +125,85 @@ export function generatePaystackReference(bookingId: string | number): string {
   const random = Math.random().toString(36).substring(2, 8).toUpperCase();
   return `SSS-${bookingId}-${timestamp}-${random}`;
 }
+
+/** Refund a Paystack transaction (full or partial). https://api.paystack.co/refund */
+export async function refundTransaction(params: {
+  reference: string;
+  amount?: number; // in kobo; omit for full refund
+  reason?: string;
+}): Promise<{
+  status: boolean;
+  message: string;
+  data?: {
+    transaction: { id: number; reference: string };
+    amount: number;
+    currency: string;
+  };
+}> {
+  const secretKey = await getPaystackSecretKey();
+
+  const body: Record<string, any> = { transaction: params.reference };
+  if (params.amount) body.amount = params.amount;
+  if (params.reason) body.merchant_note = params.reason;
+
+  const response = await fetch('https://api.paystack.co/refund', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${secretKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+
+  return response.json();
+}
+
+/**
+ * Full refund flow against this app's own database: find the payment by
+ * reference, call Paystack, update payments + bookings. Shared by the
+ * standalone refund route and the booking-cancellation flow, so cancelling
+ * a paid booking doesn't need a self-HTTP round trip.
+ */
+export async function processRefund(
+  db: D1Database,
+  params: { reference: string; amount?: number; reason?: string }
+): Promise<
+  | { ok: true; data: { transaction: { id: number; reference: string }; amount: number; currency: string } | undefined }
+  | { ok: false; status: number; error: string; detail?: string }
+> {
+  const payment = await db.prepare('SELECT * FROM payments WHERE external_payment_id = ?')
+    .bind(params.reference).first() as any;
+
+  if (!payment) {
+    return { ok: false, status: 404, error: 'Payment not found' };
+  }
+  if (payment.status === 'refunded') {
+    return { ok: false, status: 409, error: 'Payment already refunded' };
+  }
+
+  const refundResult = await refundTransaction({
+    reference: params.reference,
+    amount: params.amount ? Math.round(params.amount * 100) : undefined, // ZAR to kobo
+    reason: params.reason || 'Customer cancellation',
+  });
+
+  if (!refundResult.status) {
+    return { ok: false, status: 502, error: 'Paystack refund failed', detail: refundResult.message };
+  }
+
+  const refundAmount = params.amount || payment.amount;
+  await db.prepare(`
+    UPDATE payments SET status = 'refunded', refunded_amount = ?, refund_reference = ?, refund_reason = ?, refunded_at = datetime('now'), updated_at = datetime('now')
+    WHERE id = ?
+  `).bind(
+    refundAmount,
+    refundResult.data?.transaction?.reference || params.reference,
+    params.reason || 'Customer cancellation',
+    payment.id
+  ).run();
+
+  await db.prepare(`UPDATE bookings SET status = 'cancelled', updated_at = datetime('now') WHERE id = ?`)
+    .bind(payment.booking_id).run();
+
+  return { ok: true, data: refundResult.data };
+}

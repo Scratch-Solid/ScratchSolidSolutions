@@ -3,8 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { withAuth, withTracing, withSecurityHeaders, withCsrf } from '@/lib/middleware';
 import { logger } from '@/lib/logger';
-
-const BACKEND_API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.scratchsolidsolutions.org/api';
+import { processRefund } from '@/lib/paystack';
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const traceId = withTracing(request);
@@ -72,7 +71,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       WHERE id = ?
     `).bind(reason, userRole, parseInt(id)).run();
 
-    // If refund eligible and there's a Paystack payment, trigger refund via backend
+    // If refund eligible and there's a Paystack payment, process the refund
+    // directly against our own DB (previously round-tripped through
+    // backend-worker's disconnected database - see lib/paystack.ts).
     let refundResult = null;
     if (refundEligible && refundAmount > 0) {
       const payment = await db.prepare(
@@ -81,19 +82,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
       if (payment && (payment as any).external_payment_id) {
         try {
-          const refundRes = await fetch(`${BACKEND_API_URL}/payments/paystack/refund`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': request.headers.get('Authorization') || '',
-            },
-            body: JSON.stringify({
-              reference: (payment as any).external_payment_id,
-              amount: refundAmount,
-              reason,
-            }),
+          const result = await processRefund(db, {
+            reference: (payment as any).external_payment_id,
+            amount: refundAmount,
+            reason,
           });
-          refundResult = await refundRes.json();
+          refundResult = result.ok
+            ? { status: 'success', refund: result.data }
+            : { error: result.error, detail: 'detail' in result ? result.detail : undefined };
         } catch (refundError) {
           logger.error('Paystack refund failed during cancellation', refundError as Error);
           // Booking is still cancelled — refund will be retried manually
