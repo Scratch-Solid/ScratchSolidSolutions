@@ -15,7 +15,10 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const startDate = searchParams.get('start_date');
     const endDate = searchParams.get('end_date');
-    const userId = (user as any).id;
+    // validateSession() returns the raw sessions row (s.*) - `.id` there is
+    // the session row's own primary key, not the user's id. `.user_id` is
+    // the actual FK to users(id).
+    const userId = (user as any).user_id;
 
     let query = `
       SELECT 
@@ -80,7 +83,10 @@ export async function POST(request: NextRequest) {
       new_time?: string;
     };
     const { booking_id, new_date, new_time } = body;
-    const userId = (user as any).id;
+    // validateSession() returns the raw sessions row (s.*) - `.id` there is
+    // the session row's own primary key, not the user's id. `.user_id` is
+    // the actual FK to users(id).
+    const userId = (user as any).user_id;
 
     if (!booking_id || !new_date || !new_time) {
       const response = NextResponse.json({ error: 'Missing required fields' }, { status: 400 });

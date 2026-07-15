@@ -13,7 +13,11 @@ export async function POST(request: NextRequest) {
   const authResult = await withAuth(request, ['client', 'business', 'admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db, user } = authResult;
-  const requestingUserId = (user as any).id || (user as any).userId || (user as any).user_id;
+  // validateSession() returns the raw sessions row (s.*) joined with the
+  // user - `.id` on that object is the session row's own primary key, not
+  // the user's id. `.user_id` is the actual FK to users(id) and must be
+  // checked first, or this comparison almost never matches the real user.
+  const requestingUserId = (user as any).user_id || (user as any).userId || (user as any).id;
   const requestingUserRole = (user as any).role;
 
   // CSRF protection
@@ -296,7 +300,11 @@ export async function GET(request: NextRequest) {
     const date = searchParams.get('date');
 
     const requestingUserRole = (user as any).role;
-    const requestingUserId = (user as any).id || (user as any).userId || (user as any).user_id;
+    // validateSession() returns the raw sessions row (s.*) joined with the
+  // user - `.id` on that object is the session row's own primary key, not
+  // the user's id. `.user_id` is the actual FK to users(id) and must be
+  // checked first, or this comparison almost never matches the real user.
+  const requestingUserId = (user as any).user_id || (user as any).userId || (user as any).id;
     let bookings;
 
     if (cleanerId) {

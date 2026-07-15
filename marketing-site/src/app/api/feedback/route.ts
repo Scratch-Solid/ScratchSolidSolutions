@@ -23,7 +23,10 @@ export async function POST(request: NextRequest) {
       message?: string;
     };
     const { booking_id, feedback_type, rating, message } = body;
-    const userId = (user as any).id;
+    // validateSession() returns the raw sessions row (s.*) - `.id` there is
+    // the session row's own primary key, not the user's id. `.user_id` is
+    // the actual FK to users(id).
+    const userId = (user as any).user_id;
 
     if (!booking_id || !feedback_type) {
       const response = NextResponse.json({ error: 'Missing required fields' }, { status: 400 });

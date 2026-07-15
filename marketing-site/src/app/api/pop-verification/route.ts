@@ -64,7 +64,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
     }
 
-    if ((booking as any).client_id !== (authResult as any).user.id) {
+    // validateSession() returns the raw sessions row (s.*) - `.id` there is
+    // the session row's own primary key, not the user's id. `.user_id` is
+    // the actual FK to users(id).
+    if ((booking as any).client_id !== (authResult as any).user.user_id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
