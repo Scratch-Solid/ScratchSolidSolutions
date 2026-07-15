@@ -163,6 +163,30 @@ export default function Home() {
             <p className="text-xs sm:text-sm text-blue-100 max-w-3xl text-center">
               Proudly partnered with trusted platforms to deliver verified cleaning services.
             </p>
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-2xl">
+              <a
+                href="https://www.bark.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-2xl bg-white p-5 shadow-lg border border-blue-100 hover:border-blue-300 transition-all"
+              >
+                <p className="text-xs uppercase tracking-[0.25em] text-blue-700 font-semibold mb-2">
+                  In partnership with
+                </p>
+                <p className="text-xl font-bold text-slate-900">Bark.com</p>
+              </a>
+              <a
+                href="https://www.procompare.co.za"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-2xl bg-white p-5 shadow-lg border border-blue-100 hover:border-blue-300 transition-all"
+              >
+                <p className="text-xs uppercase tracking-[0.25em] text-blue-700 font-semibold mb-2">
+                  In partnership with
+                </p>
+                <p className="text-xl font-bold text-slate-900">ProCompare</p>
+              </a>
+            </div>
           </div>
         </div>
       </section>
