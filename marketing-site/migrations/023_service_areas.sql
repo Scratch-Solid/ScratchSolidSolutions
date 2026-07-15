@@ -3,15 +3,18 @@
 -- when no database row matches - see calculateQuote's transportFeeOverride).
 -- Seeded from the exact values that were hardcoded, so nothing changes for
 -- existing areas; new ones can now be added from the admin dashboard.
-CREATE TABLE IF NOT EXISTS service_areas (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  name TEXT NOT NULL UNIQUE,
-  transport_fee REAL NOT NULL DEFAULT 0,
-  is_active INTEGER NOT NULL DEFAULT 1,
-  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-);
+--
+-- A service_areas table already exists in both staging and production from
+-- an earlier, apparently abandoned feature (id, name, description,
+-- coverage_area, base_price_modifier, is_active, created_at, updated_at -
+-- zero rows in either environment). Rather than collide with that table
+-- name, this extends it in place with the transport_fee column this feature
+-- actually needs. D1/SQLite has no ALTER TABLE ADD COLUMN IF NOT EXISTS, so
+-- this assumes the table already exists in that old shape - true in every
+-- environment this has been checked against.
+ALTER TABLE service_areas ADD COLUMN transport_fee REAL NOT NULL DEFAULT 0;
 
+CREATE UNIQUE INDEX IF NOT EXISTS idx_service_areas_name_unique ON service_areas(name);
 CREATE INDEX IF NOT EXISTS idx_service_areas_active ON service_areas(is_active);
 
 INSERT OR IGNORE INTO service_areas (name, transport_fee) VALUES
