@@ -73,7 +73,13 @@ export default function CleanerDashboard() {
   const [currentLocation, setCurrentLocation] = useState<{lat: number, lng: number} | null>(null);
   const [lastLocationPing, setLastLocationPing] = useState<Date | null>(null);
   const [kpiScore, setKpiScore] = useState(0);
-  const [kpiBreakdown, setKpiBreakdown] = useState<{ punctuality: number; quality: number; communication: number } | null>(null);
+  const [kpiBreakdown, setKpiBreakdown] = useState<{ client: number; system: number; admin: number } | null>(null);
+  const [kpiBonus, setKpiBonus] = useState<{
+    kpi5pt: number;
+    bonusPercentage: number;
+    estimatedBonusAmount: number | null;
+    annualSummary: { year: number; kpi5pt: number; bonusPercentage: number; increasePercentage: number } | null;
+  } | null>(null);
   const [salaryData, setSalaryData] = useState<{ grossEarnings: number; uifDeductions: number; takeHomePay: number; payPeriod: string } | null>(null);
   const [salaryLoading, setSalaryLoading] = useState(false);
 
@@ -175,9 +181,15 @@ export default function CleanerDashboard() {
             const kpiData = await kpiRes.json() as any;
             setKpiScore(Math.round((kpiData.averageScore ?? 0) * 10)); // convert 0-10 → 0-100
             setKpiBreakdown({
-              punctuality:   Math.round((kpiData.punctuality   ?? 0) * 10),
-              quality:       Math.round((kpiData.quality       ?? 0) * 10),
-              communication: Math.round((kpiData.communication ?? 0) * 10),
+              client: Math.round((kpiData.kpi?.clientComponent ?? 0) * 10),
+              system: Math.round((kpiData.kpi?.systemComponent ?? 0) * 10),
+              admin:  Math.round((kpiData.kpi?.adminComponent  ?? 0) * 10),
+            });
+            setKpiBonus({
+              kpi5pt: kpiData.kpi?.kpi5pt ?? 0,
+              bonusPercentage: kpiData.kpi?.bonusPercentage ?? 0,
+              estimatedBonusAmount: kpiData.estimatedBonusAmount ?? null,
+              annualSummary: kpiData.annualSummary ?? null,
             });
           }
 
@@ -1036,36 +1048,45 @@ export default function CleanerDashboard() {
               </div>
               {kpiBreakdown && (
                 <div className="responsive-grid grid-cols-3 text-xs">
-                  {(['punctuality', 'quality', 'communication'] as const).map(key => (
-                    <div key={key} className="text-center">
-                      <div style={{ color: 'var(--text-light)', textTransform: 'capitalize' }}>{key}</div>
-                      <div className="font-semibold" style={{ color: 'var(--text-h)' }}>{kpiBreakdown[key]}/100</div>
-                    </div>
-                  ))}
+                  <div className="text-center">
+                    <div style={{ color: 'var(--text-light)' }}>Client rating (50%)</div>
+                    <div className="font-semibold" style={{ color: 'var(--text-h)' }}>{kpiBreakdown.client}/100</div>
+                  </div>
+                  <div className="text-center">
+                    <div style={{ color: 'var(--text-light)' }}>System / GPS (25%)</div>
+                    <div className="font-semibold" style={{ color: 'var(--text-h)' }}>{kpiBreakdown.system}/100</div>
+                  </div>
+                  <div className="text-center">
+                    <div style={{ color: 'var(--text-light)' }}>Admin review (25%)</div>
+                    <div className="font-semibold" style={{ color: 'var(--text-h)' }}>{kpiBreakdown.admin}/100</div>
+                  </div>
                 </div>
               )}
             </div>
 
-            {/* 13th Check Eligibility */}
-            <div className={`glass-card ${
-              kpiScore >= 80
-                ? 'border-green-500/40'
-                : 'border-yellow-500/40'
-            }`}>
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">{kpiScore >= 80 ? '🏆' : '📈'}</span>
-                <div>
-                  <div className="font-semibold" style={{ color: kpiScore >= 80 ? 'var(--success)' : 'var(--warning)' }}>
-                    {kpiScore >= 80 ? 'Eligible for 13th Cheque Bonus' : 'Not yet eligible for 13th Cheque'}
-                  </div>
-                  <div className="text-sm" style={{ color: kpiScore >= 80 ? 'var(--success)' : 'var(--warning)', opacity: 0.8 }}>
-                    {kpiScore >= 80
-                      ? 'Your KPI score qualifies you for the annual performance bonus.'
-                      : `Reach a score of 80/100 to qualify. Current: ${kpiScore}/100.`}
+            {/* Bonus / annual increase */}
+            {kpiBonus && (
+              <div className={`glass-card ${kpiBonus.bonusPercentage >= 80 ? 'border-green-500/40' : 'border-yellow-500/40'}`}>
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">{kpiBonus.bonusPercentage >= 80 ? '🏆' : '📈'}</span>
+                  <div>
+                    <div className="font-semibold" style={{ color: 'var(--text-h)' }}>
+                      KPI {kpiBonus.kpi5pt.toFixed(1)}/5 — {kpiBonus.bonusPercentage}% bonus &amp; annual increase
+                    </div>
+                    <div className="text-sm" style={{ color: 'var(--text-light)' }}>
+                      {kpiBonus.estimatedBonusAmount !== null
+                        ? `Estimated bonus based on your current KPI: R${kpiBonus.estimatedBonusAmount.toLocaleString('en-ZA', { minimumFractionDigits: 2 })} (estimate, not a final figure)`
+                        : 'Keep your rating up to grow your February bonus and salary increase.'}
+                    </div>
+                    {kpiBonus.annualSummary && (
+                      <div className="text-xs mt-1" style={{ color: 'var(--text-light)', opacity: 0.8 }}>
+                        Last finalized: {kpiBonus.annualSummary.year} — KPI {kpiBonus.annualSummary.kpi5pt}/5, {kpiBonus.annualSummary.bonusPercentage}% bonus
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Job counts */}
             <div className="responsive-grid grid-cols-2">

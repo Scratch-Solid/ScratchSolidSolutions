@@ -13,7 +13,7 @@ import { Star, TrendingUp, Info } from "lucide-react";
 export default function StaffReviews() {
   const [cleaners, setCleaners] = useState<any[]>([]);
   const [selected, setSelected] = useState<any | null>(null);
-  const [form, setForm] = useState({ attendance_score: 5, company_values_score: 5, client_rating: 4, punctuality_score: 7, quality_score: 7, communication_score: 7, notes: '' });
+  const [form, setForm] = useState({ attendance_score: 5, company_values_score: 5, quality_score: 7, communication_score: 7, notes: '' });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -41,7 +41,7 @@ export default function StaffReviews() {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` },
         });
-        setForm({ attendance_score: 5, company_values_score: 5, client_rating: 4, punctuality_score: 7, quality_score: 7, communication_score: 7, notes: '' });
+        setForm({ attendance_score: 5, company_values_score: 5, quality_score: 7, communication_score: 7, notes: '' });
         setSelected(null);
         setTimeout(() => setMessage(''), 4000);
       } else {
@@ -81,9 +81,12 @@ export default function StaffReviews() {
 
       <Alert>
         <Info className="h-4 w-4" />
-        <AlertTitle>KPI Integration</AlertTitle>
+        <AlertTitle>25% of this cleaner's KPI</AlertTitle>
         <AlertDescription>
-          Scores feed the KPI engine and determine 13th cheque eligibility. Submitting a review automatically triggers KPI recalculation.
+          These four scores make up the admin-review quarter of the KPI formula. The other three
+          quarters are automatic: 50% comes from the client's actual rating of the job, and 25%
+          from the system (real GPS-based punctuality). Submitting a review automatically triggers
+          KPI recalculation.
         </AlertDescription>
       </Alert>
 
@@ -121,13 +124,16 @@ export default function StaffReviews() {
                 <h3 className="text-lg font-semibold text-stone-900">Review for {selected.first_name} {selected.last_name}</h3>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <ScoreInput label="Client Rating (1–5 stars)" field="client_rating" min={1} max={5} />
                   <ScoreInput label="Attendance Score (0–10)" field="attendance_score" />
                   <ScoreInput label="Company Values Score (0–10)" field="company_values_score" />
-                  <ScoreInput label="Punctuality Score (0–10)" field="punctuality_score" />
                   <ScoreInput label="Quality Score (0–10)" field="quality_score" />
                   <ScoreInput label="Communication Score (0–10)" field="communication_score" />
                 </div>
+                <p className="text-xs text-stone-500">
+                  Client rating and punctuality aren't entered here anymore — client rating comes
+                  from the customer's own rating of the job, and punctuality from real GPS
+                  check-in data, so re-typing a guess for either would just double-count them.
+                </p>
 
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-stone-700">Notes</label>

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/middleware';
-import { autoAssignBooking, determinePoolFromServiceType, isValidTimeSlot } from '@/lib/pool-management/pool-assignment';
+import { autoAssignBooking, isValidTimeSlot } from '@/lib/pool-management/pool-assignment';
 import { getTrainingDb } from '@/lib/db';
 
 export async function POST(
@@ -18,17 +18,12 @@ export async function POST(
   }
 
   try {
-    const body = await request.json() as { serviceType: string; assignmentDate: string; timeSlot?: string };
-    const { serviceType, assignmentDate, timeSlot } = body;
+    const body = await request.json() as { assignmentDate: string; timeSlot?: string };
+    const { assignmentDate, timeSlot } = body;
 
     // Validate input
-    if (!serviceType || !assignmentDate) {
-      return NextResponse.json({ error: 'Missing required fields: serviceType, assignmentDate' }, { status: 400 });
-    }
-
-    const validServiceTypes = ['RESIDENTIAL', 'LEKKESLAAP', 'POST_CONSTRUCTION', 'OFFICE', 'COMMERCIAL'];
-    if (!validServiceTypes.includes(serviceType)) {
-      return NextResponse.json({ error: 'Invalid service type' }, { status: 400 });
+    if (!assignmentDate) {
+      return NextResponse.json({ error: 'Missing required field: assignmentDate' }, { status: 400 });
     }
 
     if (timeSlot && !isValidTimeSlot(timeSlot)) {
@@ -46,7 +41,6 @@ export async function POST(
       db,
       trainingDb,
       bookingId,
-      serviceType as any,
       assignmentDate,
       (timeSlot || null) as any
     );

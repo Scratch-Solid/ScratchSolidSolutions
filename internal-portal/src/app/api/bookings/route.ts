@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb, getTrainingDb } from '@/lib/db';
 import { withAuth, withTracing, withSecurityHeaders, withCsrf } from '@/lib/middleware';
 import { horizonScoper, suburbExtractor } from '@/lib/horizon/scoping';
-import { autoAssignBooking, determinePoolFromServiceType, isValidTimeSlot } from '@/lib/pool-management/pool-assignment';
+import { autoAssignBooking, resolveAssignmentPool, isValidTimeSlot } from '@/lib/pool-management/pool-assignment';
 
 const VALID_TIME_SLOTS = ['08:00', '11:00', '12:00', '14:00'];
 
@@ -117,9 +117,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Determine pool type from service type
+    // Determine AUTO/MANUAL pool from the actual service booked (services.requires_manual_pool)
     const resolvedServiceType = service_type || 'RESIDENTIAL';
-    const poolType = determinePoolFromServiceType(resolvedServiceType);
+    const poolType = await resolveAssignmentPool(db, service_type);
 
     const booking = await db.prepare(`
       INSERT INTO bookings (
@@ -136,12 +136,14 @@ export async function POST(request: NextRequest) {
       location || null
     ).first();
 
-    // Auto-assign for INDIVIDUAL pool bookings immediately
-    if (poolType === 'INDIVIDUAL' && booking) {
+    // Auto-assign for AUTO pool bookings immediately; MANUAL pool bookings
+    // (deep clean, commercial, move-in/out) wait for the admin to assign
+    // one or more cleaners by hand via assignMultipleCleaners().
+    if (poolType === 'AUTO' && booking) {
       try {
         const trainingDb = await getTrainingDb();
         if (trainingDb) {
-          await autoAssignBooking(db, trainingDb, (booking as any).id, resolvedServiceType, booking_date, resolvedSlot || null);
+          await autoAssignBooking(db, trainingDb, (booking as any).id, booking_date, resolvedSlot || null);
         }
       } catch (assignErr) {
         // Log but don't fail the booking creation — admin can assign manually

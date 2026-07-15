@@ -60,6 +60,23 @@ export const CLEANER_TRAINING_MODULES: CleanerTrainingModule[] = [
       'via the ERPNext integration.',
     duration_minutes: 30,
   },
+  {
+    id: 'module-7',
+    title: 'Your Pool, Your KPI, Your Bonus — How Your Pay Grows',
+    description:
+      'This module explains exactly how your day-to-day work turns into your annual bonus and salary increase, so you can start growing it from day one. ' +
+      'Every cleaner is placed in one of two pools by the admin team. If you\'re in the AUTO pool, the system assigns you automatically to standard and maintenance cleans - jobs one person can finish inside a normal booking window. ' +
+      'If you\'re in the MANUAL pool, the admin team assigns you by hand, usually together with one or more other cleaners, to bigger jobs like deep cleans, post-construction clean-ups, commercial sites, and move-in/move-out cleans - jobs that need more than one person to finish properly in the time given. ' +
+      'Being in either pool is not a reward or a punishment - it\'s about matching the right team size to the right job, and you can ask your admin which pool you\'re in and why at any time. ' +
+      'Once a month, your performance is scored out of 5, made up of three parts that always add up to 100%. Fifty percent comes from your client rating - the actual rating your client gives the job after it\'s done, real customer feedback rather than anyone\'s guess, so the way you treat clients and the quality you leave behind directly moves half your score. ' +
+      'Twenty-five percent comes from the system score, calculated automatically from your GPS check-in against your scheduled start time - arriving on time or early keeps this score high, and it drops the later you check in, coming straight from your check-in rather than being typed in by anyone. ' +
+      'The last twenty-five percent comes from your monthly admin review, where an admin rates your attendance, how well you live the company\'s values, the quality of your work, and how you communicate - this is where things that aren\'t captured automatically, like teamwork, attitude, and following procedure, get recognised. ' +
+      'On a MANUAL-pool job with more than one cleaner assigned, everyone on that job shares the same client rating since there\'s only one client experience to rate, but your system score and admin score are still yours alone, so your own punctuality and your own admin review always affect your own KPI, even on a shared job. ' +
+      'Your monthly scores are averaged across the year, and that average is your annual KPI, used every February to work out your bonus and salary increase for the year ahead: a KPI of 5 out of 5 pays 100% of your bonus amount and 100% of that year\'s increase budget, 4 out of 5 pays 80%, 3 out of 5 pays 60%, 2 out of 5 pays 40%, and 1 out of 5 pays 20%. ' +
+      'You can check your current KPI, its three components, and an estimate of your bonus at any time on your dashboard - it updates as new ratings and reviews come in, so you always know where you stand and what to focus on. ' +
+      'From day one: show up on time or early for every job to protect your system score, do careful thorough work and treat every client well to protect your client score, and follow the standards from Modules 1 through 6 and communicate professionally to protect your admin score - all three together are what grow your bonus and your increase every year.',
+    duration_minutes: 40,
+  },
 ];
 
 export type NormalizedCleanerTrainingProgress = {

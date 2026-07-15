@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb, getTrainingDb } from '@/lib/db';
 import { getCloudflareContext } from '@/lib/runtime-context';
 import {
-  determinePoolFromServiceType,
+  resolveAssignmentPool,
   scoreAssignmentCandidates,
 } from '@/lib/pool-management/pool-assignment';
 
@@ -214,38 +214,36 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // ─── Auto-assign cleaners for INDIVIDUAL pool jobs ───
+    // ─── Auto-assign cleaners for AUTO-pool jobs ───
+    // MANUAL-pool jobs (deep clean, commercial, move-in/out) are intentionally
+    // left unassigned here - the admin assigns 2+ cleaners by hand via the
+    // Pool Management page, since a single system pick isn't appropriate for
+    // jobs that need multiple people in the booking window.
     let assignedCleaners: string[] = [];
-    const serviceType = (body.service.type || 'RESIDENTIAL').toUpperCase() as any;
-    const poolType = determinePoolFromServiceType(serviceType);
+    const serviceType = (body.service.type || 'RESIDENTIAL').toUpperCase();
+    const poolType = await resolveAssignmentPool(db, body.service.type);
     const jobDate = body.service.scheduled_at.split('T')[0];
     const timeSlot = body.service.scheduled_at.split('T')[1]?.slice(0, 5) || null;
 
-    if (poolType === 'INDIVIDUAL') {
+    if (poolType === 'AUTO') {
       try {
         const trainingDb = await getTrainingDb();
         if (trainingDb) {
           const candidates = await scoreAssignmentCandidates(
             db,
             trainingDb,
-            poolType,
-            serviceType,
             jobDate,
             timeSlot as any
           );
 
           if (candidates.length > 0) {
-            // Get paysheet codes for the best candidate(s)
-            const staffIds = candidates.slice(0, 2).map((c) => c.staffId);
-            const placeholders = staffIds.map(() => '?').join(',');
+            const cleanerIds = candidates.slice(0, 1).map((c) => c.cleanerId);
+            const placeholders = cleanerIds.map(() => '?').join(',');
             const paysheetResult = await db
               .prepare(
-                `SELECT cp.paysheet_code
-                 FROM cleaner_profiles cp
-                 JOIN staff s ON s.user_id = cp.user_id
-                 WHERE s.id IN (${placeholders})`
+                `SELECT paysheet_code FROM cleaner_profiles WHERE id IN (${placeholders})`
               )
-              .bind(...staffIds)
+              .bind(...cleanerIds)
               .all<{ paysheet_code: string }>();
 
             assignedCleaners = (paysheetResult.results || [])

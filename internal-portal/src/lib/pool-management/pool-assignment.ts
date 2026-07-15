@@ -1,316 +1,268 @@
 // Pool-Based Assignment Logic
-// Phase 3: Pool-Based Assignment Logic & Time Slot Implementation
+//
+// AUTO pool: cleaners eligible for automatic, system-driven assignment to
+// smaller jobs (standard/maintenance cleans) a single cleaner can complete
+// within the booking window.
+// MANUAL pool: cleaners the admin assigns by hand, usually multiple to one
+// booking, for bigger jobs (deep clean, commercial, move-in/move-out) that
+// don't fit in a single cleaner's window.
+//
+// Which pool a booking needs is a property of the *service* booked
+// (`services.requires_manual_pool`), not something inferred from a
+// free-text service type string - see migration 054 for why.
 
-export type PoolType = 'INDIVIDUAL' | 'BUSINESS';
-export type ServiceType = 'RESIDENTIAL' | 'LEKKESLAAP' | 'POST_CONSTRUCTION' | 'OFFICE' | 'COMMERCIAL';
+export type AssignmentPool = 'AUTO' | 'MANUAL';
 export type TimeSlot = '08:00' | '11:00' | '12:00' | '14:00' | null;
 export type AssignmentStatus = 'assigned' | 'on_way' | 'arrived' | 'completed' | 'cancelled';
 
-export interface PoolAssignment {
-  poolType: PoolType;
-  serviceType: ServiceType;
-  reason: string;
-}
-
 export interface AssignmentCandidate {
-  staffId: number;
-  staffName: string;
+  cleanerId: number;
+  cleanerName: string;
   score: number;
-  poolType: PoolType;
-  serviceType: ServiceType;
   availableSlots: TimeSlot[];
 }
 
 /**
- * Determines the appropriate pool type based on service type
+ * Looks up whether a booking's service requires the MANUAL pool. Falls back
+ * to AUTO (the common case) if the service can't be resolved, rather than
+ * failing the booking outright.
  */
-export function determinePoolFromServiceType(serviceType: ServiceType): PoolType {
-  if (serviceType === 'OFFICE' || serviceType === 'COMMERCIAL') {
-    return 'BUSINESS';
-  }
-  return 'INDIVIDUAL';
+export async function resolveAssignmentPool(db: D1Database, serviceName: string | null | undefined): Promise<AssignmentPool> {
+  if (!serviceName) return 'AUTO';
+  const service = await db.prepare(
+    'SELECT requires_manual_pool FROM services WHERE name = ?'
+  ).bind(serviceName).first<{ requires_manual_pool: number }>();
+  return service?.requires_manual_pool ? 'MANUAL' : 'AUTO';
 }
 
-/**
- * Validates if a time slot is valid
- */
 export function isValidTimeSlot(slot: string): slot is TimeSlot {
   return ['08:00', '11:00', '12:00', '14:00'].includes(slot);
 }
 
-/**
- * Gets available time slots for a given date
- */
 export function getAvailableTimeSlots(assignmentDate: string): TimeSlot[] {
   const slots: TimeSlot[] = ['08:00', '11:00', '12:00', '14:00'];
-  // In a real implementation, you would check existing assignments to filter out taken slots
   return slots;
 }
 
 /**
- * Calculates pool capacity for a given pool type and date
- */
-export async function calculatePoolCapacity(
-  db: D1Database,
-  poolType: PoolType,
-  assignmentDate: string
-): Promise<number> {
-  const result = await db.prepare(`
-    SELECT COUNT(*) as count
-    FROM staff
-    WHERE pool_type = ? AND is_active = 1 AND training_completed = 1
-  `).bind(poolType).first<{ count: number }>();
-  
-  return result?.count || 0;
-}
-
-/**
- * Scores assignment candidates based on various factors
+ * Scores AUTO-pool candidates for a single-cleaner assignment. Only cleaners
+ * with assignment_pool = 'AUTO', not already booked at this slot, and with
+ * completed training are eligible.
  */
 export async function scoreAssignmentCandidates(
   db: D1Database,
   trainingDb: D1Database,
-  poolType: PoolType,
-  serviceType: ServiceType,
   assignmentDate: string,
   timeSlot: TimeSlot
 ): Promise<AssignmentCandidate[]> {
-  // Get staff in the appropriate pool
-  const staffResult = await db.prepare(`
-    SELECT s.id, s.first_name, s.last_name, s.pool_type, s.service_type
-    FROM staff s
-    WHERE s.pool_type = ? AND s.is_active = 1
-  `).bind(poolType).all<{ id: number; first_name: string; last_name: string; pool_type: PoolType; service_type: ServiceType }>();
-  
-  const staff = staffResult.results || [];
-  
+  const cleanersResult = await db.prepare(`
+    SELECT cp.id, cp.first_name, cp.last_name
+    FROM cleaner_profiles cp
+    JOIN users u ON cp.user_id = u.id
+    WHERE cp.assignment_pool = 'AUTO' AND cp.status != 'blocked' AND u.deleted = 0
+  `).all<{ id: number; first_name: string; last_name: string }>();
+
+  const cleaners = cleanersResult.results || [];
   const candidates: AssignmentCandidate[] = [];
-  
-  for (const s of staff) {
-    // Check if staff is already assigned at this time slot
+
+  for (const c of cleaners) {
     const existingAssignment = await db.prepare(`
       SELECT COUNT(*) as count
       FROM booking_assignments
-      WHERE staff_id = ? AND assignment_date = ? AND time_slot = ? AND status != 'cancelled'
-    `).bind(s.id, assignmentDate, timeSlot).first<{ count: number }>();
-    
+      WHERE cleaner_id = ? AND assignment_date = ? AND time_slot = ? AND status != 'cancelled'
+    `).bind(c.id, assignmentDate, timeSlot).first<{ count: number }>();
+
     if (existingAssignment?.count === 0) {
-      // Check training status - only staff with completed training are eligible
-      const trainingProgress = await trainingDb.prepare(`
-        SELECT training_status FROM employee_training_progress WHERE user_id = ?
-      `).bind(s.id.toString()).first<{ training_status: string }>();
-      
-      // Skip staff who haven't completed training
+      const trainingProgress = await trainingDb.prepare(
+        'SELECT training_status FROM employee_training_progress WHERE user_id = ?'
+      ).bind(c.id.toString()).first<{ training_status: string }>();
+
       if (!trainingProgress || trainingProgress.training_status !== 'Completed') {
         continue;
       }
-      
-      // Calculate score based on service type match, performance, etc.
-      let score = 0;
-      
-      // Service type match bonus
-      if (s.service_type === serviceType) {
-        score += 50;
-      }
-      
-      // Pool type match bonus
-      if (s.pool_type === poolType) {
-        score += 30;
-      }
-      
+
       candidates.push({
-        staffId: s.id,
-        staffName: `${s.first_name} ${s.last_name}`,
-        score,
-        poolType: s.pool_type,
-        serviceType: s.service_type,
-        availableSlots: getAvailableTimeSlots(assignmentDate)
+        cleanerId: c.id,
+        cleanerName: `${c.first_name} ${c.last_name}`,
+        score: 100,
+        availableSlots: getAvailableTimeSlots(assignmentDate),
       });
     }
   }
-  
-  // Sort by score descending
-  candidates.sort((a, b) => b.score - a.score);
-  
+
   return candidates;
 }
 
 /**
- * Automatically assigns a booking to the best available staff
+ * Automatically assigns an AUTO-pool booking to the best available cleaner.
  */
 export async function autoAssignBooking(
   db: D1Database,
   trainingDb: D1Database,
   bookingId: number,
-  serviceType: ServiceType,
   assignmentDate: string,
   timeSlot: TimeSlot
-): Promise<{ success: boolean; assignedStaffId?: number; message: string }> {
-  const poolType = determinePoolFromServiceType(serviceType);
-  
-  // Get available candidates
-  const candidates = await scoreAssignmentCandidates(db, trainingDb, poolType, serviceType, assignmentDate, timeSlot);
-  
+): Promise<{ success: boolean; assignedCleanerId?: number; message: string }> {
+  const candidates = await scoreAssignmentCandidates(db, trainingDb, assignmentDate, timeSlot);
+
   if (candidates.length === 0) {
-    return {
-      success: false,
-      message: 'No available staff found for this booking'
-    };
+    return { success: false, message: 'No available AUTO-pool cleaners found for this booking' };
   }
-  
-  // Assign to the best candidate
-  const bestCandidate = candidates[0];
-  
-  // Create booking assignment
+
+  const best = candidates[0];
+
   await db.prepare(`
-    INSERT INTO booking_assignments (booking_id, staff_id, pool_type, service_type, time_slot, assignment_date, status, assigned_at, reason)
-    VALUES (?, ?, ?, ?, ?, ?, 'assigned', CURRENT_TIMESTAMP, 'Auto-assigned by system')
-  `).bind(bookingId, bestCandidate.staffId, poolType, serviceType, timeSlot, assignmentDate).run();
-  
-  // Update booking
+    INSERT INTO booking_assignments (booking_id, cleaner_id, time_slot, assignment_date, status, assignment_status, assigned_at, reason, role)
+    VALUES (?, ?, ?, ?, 'assigned', 'assigned', CURRENT_TIMESTAMP, 'Auto-assigned by system', 'primary')
+  `).bind(bookingId, best.cleanerId, timeSlot, assignmentDate).run();
+
   await db.prepare(`
-    UPDATE bookings
-    SET assigned_staff_id = ?, assignment_status = 'assigned', assigned_at = CURRENT_TIMESTAMP
-    WHERE id = ?
-  `).bind(bestCandidate.staffId, bookingId).run();
-  
-  return {
-    success: true,
-    assignedStaffId: bestCandidate.staffId,
-    message: `Successfully assigned to ${bestCandidate.staffName}`
-  };
+    UPDATE bookings SET cleaner_id = ?, assignment_status = 'assigned', assigned_at = CURRENT_TIMESTAMP WHERE id = ?
+  `).bind(best.cleanerId, bookingId).run();
+
+  return { success: true, assignedCleanerId: best.cleanerId, message: `Successfully assigned to ${best.cleanerName}` };
 }
 
 /**
- * Manually assigns a booking to a specific staff member
+ * Manually assigns one cleaner to a booking (AUTO or MANUAL pool). For a
+ * MANUAL-pool job needing multiple cleaners, call this once per cleaner -
+ * booking_assignments has no unique constraint on booking_id, so multiple
+ * rows for the same booking is expected and supported.
  */
 export async function manualAssignBooking(
   db: D1Database,
   trainingDb: D1Database,
   bookingId: number,
-  staffId: number,
-  poolType: PoolType,
-  serviceType: ServiceType,
+  cleanerId: number,
   assignmentDate: string,
   timeSlot: TimeSlot,
-  assignedBy: string,
+  assignedBy: number,
+  role: 'primary' | 'support' = 'primary',
   overrideTraining: boolean = false
 ): Promise<{ success: boolean; message: string }> {
-  // Check if staff is available at this time slot
   const existingAssignment = await db.prepare(`
     SELECT COUNT(*) as count
     FROM booking_assignments
-    WHERE staff_id = ? AND assignment_date = ? AND time_slot = ? AND status != 'cancelled'
-  `).bind(staffId, assignmentDate, timeSlot).first<{ count: number }>();
-  
+    WHERE cleaner_id = ? AND assignment_date = ? AND time_slot = ? AND status != 'cancelled'
+  `).bind(cleanerId, assignmentDate, timeSlot).first<{ count: number }>();
+
   if (existingAssignment?.count && existingAssignment.count > 0) {
-    return {
-      success: false,
-      message: 'Staff is already assigned at this time slot'
-    };
+    return { success: false, message: 'Cleaner is already assigned at this time slot' };
   }
-  
-  // Check training status - only staff with completed training are eligible unless override is set
+
   if (!overrideTraining) {
-    const trainingProgress = await trainingDb.prepare(`
-      SELECT training_status FROM employee_training_progress WHERE user_id = ?
-    `).bind(staffId.toString()).first<{ training_status: string }>();
-    
+    const trainingProgress = await trainingDb.prepare(
+      'SELECT training_status FROM employee_training_progress WHERE user_id = ?'
+    ).bind(cleanerId.toString()).first<{ training_status: string }>();
+
     if (!trainingProgress || trainingProgress.training_status !== 'Completed') {
-      return {
-        success: false,
-        message: 'Staff has not completed training. Use override to assign anyway.'
-      };
+      return { success: false, message: 'Cleaner has not completed training. Use override to assign anyway.' };
     }
   }
-  
-  // Create booking assignment
+
   await db.prepare(`
-    INSERT INTO booking_assignments (booking_id, staff_id, pool_type, service_type, time_slot, assignment_date, status, assigned_at, reason)
-    VALUES (?, ?, ?, ?, ?, ?, 'assigned', CURRENT_TIMESTAMP, 'Manually assigned by ' || ? || ?)
-  `).bind(bookingId, staffId, poolType, serviceType, timeSlot, assignmentDate, assignedBy, overrideTraining ? ' (training override)' : '').run();
-  
-  // Update booking
-  await db.prepare(`
-    UPDATE bookings
-    SET assigned_staff_id = ?, assignment_status = 'assigned', assigned_at = CURRENT_TIMESTAMP
-    WHERE id = ?
-  `).bind(staffId, bookingId).run();
-  
+    INSERT INTO booking_assignments (booking_id, cleaner_id, time_slot, assignment_date, status, assignment_status, assigned_at, assigned_by, reason, role)
+    VALUES (?, ?, ?, ?, 'assigned', 'assigned', CURRENT_TIMESTAMP, ?, ?, ?)
+  `).bind(
+    bookingId, cleanerId, timeSlot, assignmentDate, assignedBy,
+    `Manually assigned by admin${overrideTraining ? ' (training override)' : ''}`,
+    role
+  ).run();
+
+  // Keep bookings.cleaner_id pointing at the primary cleaner for anything
+  // that only reads a single assignee; the full list always lives in
+  // booking_assignments.
+  if (role === 'primary') {
+    await db.prepare(`
+      UPDATE bookings SET cleaner_id = ?, assignment_status = 'assigned', assigned_at = CURRENT_TIMESTAMP WHERE id = ?
+    `).bind(cleanerId, bookingId).run();
+  }
+
+  return { success: true, message: 'Successfully assigned booking to cleaner' };
+}
+
+/**
+ * Assigns multiple cleaners to one MANUAL-pool booking in a single call -
+ * the first is 'primary', the rest 'support'. Used when a job needs 2+
+ * people to finish inside the booking window.
+ */
+export async function assignMultipleCleaners(
+  db: D1Database,
+  trainingDb: D1Database,
+  bookingId: number,
+  cleanerIds: number[],
+  assignmentDate: string,
+  timeSlot: TimeSlot,
+  assignedBy: number,
+  overrideTraining: boolean = false
+): Promise<{ success: boolean; message: string; results: { cleanerId: number; success: boolean; message: string }[] }> {
+  const results: { cleanerId: number; success: boolean; message: string }[] = [];
+
+  for (let i = 0; i < cleanerIds.length; i++) {
+    const role = i === 0 ? 'primary' : 'support';
+    const result = await manualAssignBooking(
+      db, trainingDb, bookingId, cleanerIds[i], assignmentDate, timeSlot, assignedBy, role, overrideTraining
+    );
+    results.push({ cleanerId: cleanerIds[i], success: result.success, message: result.message });
+  }
+
+  const allSucceeded = results.every(r => r.success);
   return {
-    success: true,
-    message: 'Successfully assigned booking to staff'
+    success: allSucceeded,
+    message: allSucceeded
+      ? `Successfully assigned ${cleanerIds.length} cleaner(s) to booking`
+      : 'Some cleaners could not be assigned - see results for details',
+    results,
   };
 }
 
 /**
- * Transitions a staff member between pools
+ * Moves a cleaner between the AUTO and MANUAL pools, recording the change.
  */
-export async function transitionStaffPool(
+export async function transitionCleanerPool(
   db: D1Database,
-  staffId: number,
-  fromPool: PoolType,
-  toPool: PoolType,
+  cleanerId: number,
+  toPool: AssignmentPool,
   reason: string,
-  transitionedBy: string
+  transitionedBy: number
 ): Promise<{ success: boolean; message: string }> {
-  // Get current pool
-  const staff = await db.prepare(`
-    SELECT pool_type FROM staff WHERE id = ?
-  `).bind(staffId).first<{ pool_type: PoolType }>();
-  
-  if (!staff) {
-    return {
-      success: false,
-      message: 'Staff not found'
-    };
+  const cleaner = await db.prepare(
+    'SELECT assignment_pool FROM cleaner_profiles WHERE id = ?'
+  ).bind(cleanerId).first<{ assignment_pool: AssignmentPool }>();
+
+  if (!cleaner) {
+    return { success: false, message: 'Cleaner not found' };
   }
-  
-  // Record transition
+
   await db.prepare(`
     INSERT INTO staff_pool_transitions (staff_id, from_pool, to_pool, reason, transitioned_by, transitioned_at)
     VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-  `).bind(staffId, staff.pool_type, toPool, reason, transitionedBy).run();
-  
-  // Update staff pool
-  await db.prepare(`
-    UPDATE staff SET pool_type = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
-  `).bind(toPool, staffId).run();
-  
-  return {
-    success: true,
-    message: `Successfully transitioned staff from ${staff.pool_type} to ${toPool}`
-  };
+  `).bind(cleanerId, cleaner.assignment_pool, toPool, reason, transitionedBy).run();
+
+  await db.prepare(
+    'UPDATE cleaner_profiles SET assignment_pool = ?, updated_at = datetime(\'now\') WHERE id = ?'
+  ).bind(toPool, cleanerId).run();
+
+  return { success: true, message: `Successfully moved cleaner from ${cleaner.assignment_pool} to ${toPool}` };
 }
 
 /**
- * Gets pool capacity information
+ * Pool headcount/capacity summary for the admin Pool Management page.
  */
-export async function getPoolCapacity(
-  db: D1Database,
-  poolType?: PoolType
-): Promise<{ poolType: PoolType; totalStaff: number; activeStaff: number; availableStaff: number; trainedStaff: number }[]> {
-  let query = `
-    SELECT pool_type, 
-           COUNT(*) as total_staff,
-           SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active_staff,
-           SUM(CASE WHEN training_completed = 1 THEN 1 ELSE 0 END) as trained_staff
-    FROM staff
-  `;
-  
-  if (poolType) {
-    query += ` WHERE pool_type = ?`;
-  }
-  
-  query += ` GROUP BY pool_type`;
-  
-  const results = await db.prepare(query).bind(poolType || null).all<{ pool_type: PoolType; total_staff: number; active_staff: number; trained_staff: number }>();
-  
+export async function getPoolCapacity(db: D1Database): Promise<{ pool: AssignmentPool; totalCleaners: number; activeCleaners: number }[]> {
+  const results = await db.prepare(`
+    SELECT cp.assignment_pool as pool,
+           COUNT(*) as total_cleaners,
+           SUM(CASE WHEN cp.status != 'blocked' THEN 1 ELSE 0 END) as active_cleaners
+    FROM cleaner_profiles cp
+    JOIN users u ON cp.user_id = u.id
+    WHERE u.deleted = 0
+    GROUP BY cp.assignment_pool
+  `).all<{ pool: AssignmentPool; total_cleaners: number; active_cleaners: number }>();
+
   return (results.results || []).map(r => ({
-    poolType: r.pool_type,
-    totalStaff: r.total_staff,
-    activeStaff: r.active_staff || 0,
-    trainedStaff: r.trained_staff || 0,
-    availableStaff: r.trained_staff || 0 // Only trained staff are available for assignment
+    pool: r.pool,
+    totalCleaners: r.total_cleaners,
+    activeCleaners: r.active_cleaners || 0,
   }));
 }

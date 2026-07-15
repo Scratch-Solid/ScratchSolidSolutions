@@ -21,7 +21,7 @@ jest.mock('@/lib/runtime-context', () => ({
 }));
 
 jest.mock('@/lib/pool-management/pool-assignment', () => ({
-  determinePoolFromServiceType: jest.fn(() => 'INDIVIDUAL'),
+  resolveAssignmentPool: jest.fn(() => Promise.resolve('AUTO')),
   scoreAssignmentCandidates: jest.fn(() => Promise.resolve([])),
 }));
 

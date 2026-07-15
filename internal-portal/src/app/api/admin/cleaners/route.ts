@@ -43,8 +43,8 @@ export async function PUT(request: NextRequest) {
   const { db } = authResult;
 
   try {
-    const body = await request.json() as { cleaner_id?: number; blocked?: boolean; status?: string };
-    const { cleaner_id, blocked, status } = body;
+    const body = await request.json() as { cleaner_id?: number; blocked?: boolean; status?: string; assignment_pool?: string };
+    const { cleaner_id, blocked, status, assignment_pool } = body;
 
     if (!cleaner_id) {
       const response = NextResponse.json({ error: 'Missing cleaner_id' }, { status: 400 });
@@ -61,6 +61,14 @@ export async function PUT(request: NextRequest) {
     if (status) {
       updates.push('status = ?');
       values.push(status);
+    }
+    if (assignment_pool) {
+      if (assignment_pool !== 'AUTO' && assignment_pool !== 'MANUAL') {
+        const response = NextResponse.json({ error: 'assignment_pool must be AUTO or MANUAL' }, { status: 400 });
+        return withSecurityHeaders(response, traceId);
+      }
+      updates.push('assignment_pool = ?');
+      values.push(assignment_pool);
     }
 
     if (updates.length === 0) {
