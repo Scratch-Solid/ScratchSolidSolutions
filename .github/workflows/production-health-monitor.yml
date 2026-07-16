@@ -1,0 +1,142 @@
+name: Production Health Monitor
+
+# Frequent synthetic monitoring of live production endpoints, independent of
+# the deeper Playwright/Selenium suites (which run every 6h / nightly). This
+# exists to catch a live outage within minutes, not hours - alerts by opening
+# (or commenting on) a GitHub issue immediately on any failure.
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+jobs:
+  health-check:
+    name: Check production endpoints
+    runs-on: ubuntu-latest
+    outputs:
+      failures: ${{ steps.summarize.outputs.failures }}
+    steps:
+      - name: Check marketing-site health
+        id: marketing_health
+        run: |
+          code=$(curl -s -o /tmp/marketing_health.json -w "%{http_code}" --max-time 15 https://scratchsolidsolutions.org/api/health || echo "000")
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          cat /tmp/marketing_health.json 2>/dev/null || true
+
+      - name: Check internal-portal health
+        id: portal_health
+        run: |
+          code=$(curl -s -o /tmp/portal_health.json -w "%{http_code}" --max-time 15 https://portal.scratchsolidsolutions.org/api/health || echo "000")
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          cat /tmp/portal_health.json 2>/dev/null || true
+
+      - name: Check backend-worker health
+        id: backend_health
+        run: |
+          code=$(curl -s -o /tmp/backend_health.json -w "%{http_code}" --max-time 15 https://api.scratchsolidsolutions.org/api/health || echo "000")
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          cat /tmp/backend_health.json 2>/dev/null || true
+
+      - name: Check homepage loads
+        id: homepage
+        run: |
+          code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 https://scratchsolidsolutions.org/ || echo "000")
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+
+      - name: Check public services API (real booking data)
+        id: services_api
+        run: |
+          body=$(curl -s --max-time 15 https://scratchsolidsolutions.org/api/services || echo "[]")
+          code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 https://scratchsolidsolutions.org/api/services || echo "000")
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          # Must return a non-empty JSON array - an empty/malformed response means
+          # the booking form's service list would be broken for every visitor.
+          is_array=$(echo "$body" | node -e "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{try{const j=JSON.parse(d);console.log(Array.isArray(j)&&j.length>0?'yes':'no')}catch(e){console.log('no')}})")
+          echo "has_data=$is_array" >> "$GITHUB_OUTPUT"
+
+      - name: Check areas API (booking form dropdown)
+        id: areas_api
+        run: |
+          code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 https://scratchsolidsolutions.org/api/areas || echo "000")
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+
+      - name: Check Transparency Policy tracker (should 404 cleanly, not 500)
+        id: tracker
+        run: |
+          code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 https://scratchsolidsolutions.org/api/public/tracking/health-check-nonexistent-token || echo "000")
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+
+      - name: Check portal login page loads
+        id: portal_login
+        run: |
+          code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 https://portal.scratchsolidsolutions.org/auth/login || echo "000")
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+
+      - name: Summarize failures
+        id: summarize
+        run: |
+          failures=""
+          [ "${{ steps.marketing_health.outputs.code }}" = "200" ] || failures="${failures}- marketing-site /api/health returned ${{ steps.marketing_health.outputs.code }} (expected 200)\n"
+          [ "${{ steps.portal_health.outputs.code }}" = "200" ] || failures="${failures}- internal-portal /api/health returned ${{ steps.portal_health.outputs.code }} (expected 200)\n"
+          [ "${{ steps.backend_health.outputs.code }}" = "200" ] || failures="${failures}- backend-worker /api/health returned ${{ steps.backend_health.outputs.code }} (expected 200)\n"
+          [ "${{ steps.homepage.outputs.code }}" = "200" ] || failures="${failures}- Homepage returned ${{ steps.homepage.outputs.code }} (expected 200)\n"
+          [ "${{ steps.services_api.outputs.code }}" = "200" ] || failures="${failures}- /api/services returned ${{ steps.services_api.outputs.code }} (expected 200)\n"
+          [ "${{ steps.services_api.outputs.has_data }}" = "yes" ] || failures="${failures}- /api/services returned no service data - booking form would be broken\n"
+          [ "${{ steps.areas_api.outputs.code }}" = "200" ] || failures="${failures}- /api/areas returned ${{ steps.areas_api.outputs.code }} (expected 200)\n"
+          [ "${{ steps.tracker.outputs.code }}" = "404" ] || failures="${failures}- Transparency Policy tracker returned ${{ steps.tracker.outputs.code }} for an invalid token (expected 404 - a 500 means the tracker itself is broken)\n"
+          [ "${{ steps.portal_login.outputs.code }}" = "200" ] || failures="${failures}- internal-portal login page returned ${{ steps.portal_login.outputs.code }} (expected 200)\n"
+          if [ -n "$failures" ]; then
+            echo "failures<<EOF" >> "$GITHUB_OUTPUT"
+            echo -e "$failures" >> "$GITHUB_OUTPUT"
+            echo "EOF" >> "$GITHUB_OUTPUT"
+            echo -e "$failures"
+            exit 1
+          fi
+          echo "All health checks passed."
+
+  alert-on-failure:
+    name: Alert on Failure
+    runs-on: ubuntu-latest
+    needs: [health-check]
+    if: failure()
+    permissions:
+      issues: write
+    steps:
+      - name: Create or update production alert issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          FAILURES: ${{ needs.health-check.outputs.failures }}
+        run: |
+          EXISTING=$(gh issue list --repo "$GITHUB_REPOSITORY" --label "production-alert" --state open --search "Production health check failed" --json number --jq '.[0].number')
+          BODY="Production health check failed.
+
+          $FAILURES
+
+          Run: $RUN_URL
+          Time: $(date -u +"%Y-%m-%d %H:%M UTC")"
+          if [ -n "$EXISTING" ] && [ "$EXISTING" != "null" ]; then
+            gh issue comment "$EXISTING" --repo "$GITHUB_REPOSITORY" --body "$BODY"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "🔴 Production health check failed" --body "$BODY" --label "production-alert"
+          fi
+
+  close-alert-on-recovery:
+    name: Close Alert on Recovery
+    runs-on: ubuntu-latest
+    needs: [health-check]
+    if: success()
+    permissions:
+      issues: write
+    steps:
+      - name: Close open production alert issues if health has recovered
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for label in "production-alert"; do
+            for number in $(gh issue list --repo "$GITHUB_REPOSITORY" --label "$label" --state open --search "Production health check failed" --json number --jq '.[].number'); do
+              gh issue comment "$number" --repo "$GITHUB_REPOSITORY" --body "Health checks are passing again as of $(date -u +"%Y-%m-%d %H:%M UTC")."
+              gh issue close "$number" --repo "$GITHUB_REPOSITORY"
+            done
+          done
