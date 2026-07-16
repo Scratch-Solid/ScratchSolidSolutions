@@ -1,6 +1,9 @@
 import { test, expect } from '@playwright/test';
 
-const BASE_URL = process.env.CI ? 'https://scratchsolidsolutions.org' : 'http://localhost:3000';
+// This hardcoded production whenever CI was set, ignoring BASE_URL
+// entirely - every run of this file hit real production, unlike every
+// other test file in this suite which reads BASE_URL.
+const BASE_URL = process.env.BASE_URL || (process.env.CI ? 'https://staging.scratchsolidsolutions.org' : 'http://localhost:3000');
 
 const uniqueId = () => `test-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
 
