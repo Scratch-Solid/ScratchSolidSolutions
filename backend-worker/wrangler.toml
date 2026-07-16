@@ -52,13 +52,13 @@ database_id = "67e66542-486a-442b-bbf6-9c3d4a503f4c"
 
 [[env.staging.d1_databases]]
 binding = "portal_db"
-database_name = "scratchsolid-portal-db"
-database_id = "a08f16f5-9d75-47f9-973c-35bade106b47"
+database_name = "scratchsolid-db-portal-staging"
+database_id = "cc0bb727-585b-40c9-8afa-77947e725813"
 
 [[env.staging.d1_databases]]
 binding = "training_db"
-database_name = "scratchsolid-training-db"
-database_id = "030e033d-0f97-42bf-9309-6583ceeb33ed"
+database_name = "scratchsolid-training-db-staging"
+database_id = "9c20d391-ad3b-486d-a8d7-19b7ea37ff6f"
 
 [[env.staging.kv_namespaces]]
 binding = "RATE_LIMIT_KV"

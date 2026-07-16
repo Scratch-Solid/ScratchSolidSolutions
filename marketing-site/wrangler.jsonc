@@ -64,15 +64,15 @@
 			"kv_namespaces": [
 				{
 					"binding": "RATE_LIMIT_KV",
-					"id": "7555bd20132346a8a9bf3cf67ea9a949"
+					"id": "01f8fb941e1c4cdda900a7e829eabf94"
 				},
 				{
 					"binding": "GPS_KV",
-					"id": "1cada668d188498eb560ad5c8b9e368c"
+					"id": "67ce06736dd942f6850903872e9d1751"
 				},
 				{
 					"binding": "PUSH_KV",
-					"id": "ced0052698894bccbf023cff381d6175"
+					"id": "732c2b73026f4f639b5ddc42b5421bd2"
 				}
 			],
 			"r2_buckets": [
