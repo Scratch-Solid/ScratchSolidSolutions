@@ -94,7 +94,11 @@ export default function CleanerSignup() {
     <div className="min-h-screen bg-gradient-to-br from-[#F7F2EA] to-[#F0E6D6] flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full p-8">
         <h1 className="text-3xl font-bold text-center text-stone-800 mb-2">Cleaner Application</h1>
-        <p className="text-center text-stone-600 mb-8">Submit your application to join our cleaning team</p>
+        <p className="text-center text-stone-600 mb-2">Submit your application to join our cleaning team</p>
+        <p className="text-center text-sm mb-8">
+          Already have an account?{' '}
+          <a href="/auth/login" className="text-[#2E1F16] underline">Back to Login</a>
+        </p>
 
         {success && (
           <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-6">

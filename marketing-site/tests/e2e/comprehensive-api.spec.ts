@@ -87,57 +87,15 @@ test.describe('🌐 Public API Endpoints', () => {
     expectStatus(res, 401);
   });
 
-  test('GET /api/content/[slug] — privacy policy content', async ({ request }) => {
-    const res = await request.get(`${BASE_URL}/api/content/privacy`);
-    skipOn429(res);
-    if (res.status() !== 404) {
-      expectStatusOk(res);
-      const body = await res.json();
-      expect(body).toHaveProperty('slug');
-      expect(body.slug).toBe('privacy');
-    }
-  });
-
-  test('GET /api/content/[slug] — terms content', async ({ request }) => {
-    const res = await request.get(`${BASE_URL}/api/content/terms`);
-    skipOn429(res);
-    if (res.status() !== 404) {
-      expectStatusOk(res);
-      const body = await res.json();
-      expect(body).toHaveProperty('slug');
-      expect(body.slug).toBe('terms');
-    }
-  });
-
-  test('GET /api/content/[slug] — about content', async ({ request }) => {
-    const res = await request.get(`${BASE_URL}/api/content/about`);
-    skipOn429(res);
-    if (res.status() !== 404) {
-      expectStatusOk(res);
-    }
-  });
-
-  test('GET /api/content/[slug] — indemnity content', async ({ request }) => {
-    const res = await request.get(`${BASE_URL}/api/content/indemnity`);
-    skipOn429(res);
-    if (res.status() !== 404) {
-      expectStatusOk(res);
-    }
-  });
-
-  test('GET /api/content/[slug] — contact content', async ({ request }) => {
-    const res = await request.get(`${BASE_URL}/api/content/contact`);
-    skipOn429(res);
-    if (res.status() !== 404) {
-      expectStatusOk(res);
-    }
-  });
-
-  test('GET /api/content/[slug] — services content', async ({ request }) => {
-    const res = await request.get(`${BASE_URL}/api/content/services`);
-    skipOn429(res);
-    if (res.status() !== 404) {
-      expectStatusOk(res);
+  test('GET /api/content/[slug] — admin-only, requires authentication', async ({ request }) => {
+    // Like /api/content/list above, withAuth(['admin']) runs unconditionally
+    // for every slug on this route (it's the CMS single-item lookup, no
+    // frontend page calls it - public pages use /api/content?type=X
+    // instead). Anonymous access must be rejected for every slug.
+    for (const slug of ['privacy', 'terms', 'about', 'indemnity', 'contact', 'services']) {
+      const res = await request.get(`${BASE_URL}/api/content/${slug}`);
+      skipOn429(res);
+      expectStatus(res, 401);
     }
   });
 

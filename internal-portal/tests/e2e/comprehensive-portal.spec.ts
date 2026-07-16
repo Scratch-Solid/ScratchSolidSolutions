@@ -214,7 +214,7 @@ test.describe('🔗 Navigation — All Links & Buttons', () => {
 
   test('Cleaner signup page has Back to Login link', async ({ page }) => {
     await goTo(page, '/signup/cleaner');
-    await expect(page.locator('a[href="/auth/login"], text=Back to Login')).toBeVisible();
+    await expect(page.locator('a[href="/auth/login"]')).toBeVisible();
   });
 
   test('Logo on login page links to marketing site', async ({ page }) => {

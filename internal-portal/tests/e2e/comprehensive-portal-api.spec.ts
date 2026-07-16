@@ -70,12 +70,11 @@ test.describe('🌐 Public API Endpoints', () => {
     expect(res.status()).toBe(401);
   });
 
-  test('GET /api/employees — returns employees', async ({ request }) => {
+  test('GET /api/employees — requires admin authentication', async ({ request }) => {
+    // withAuth(['admin']) - anonymous access must be rejected.
     const res = await request.get(`${BASE_URL}/api/employees`);
     skipOn429(res);
-    expectStatusOk(res);
-    const body = await res.json();
-    expect(Array.isArray(body)).toBe(true);
+    expect(res.status()).toBe(401);
   });
 });
 

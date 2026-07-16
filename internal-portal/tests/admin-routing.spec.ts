@@ -10,26 +10,26 @@ const PAGE_TIMEOUT = isProd ? 60000 : 30000;
  */
 
 test.describe('Portal Routing & Navigation', () => {
+  // These pages redirect client-side in a useEffect (checking localStorage
+  // then router.replace), so the URL isn't guaranteed to have changed yet
+  // right after domcontentloaded - wait for it explicitly instead of
+  // reading page.url() immediately.
   test('/admin redirects unauthenticated to login', async ({ page }) => {
     test.setTimeout(PAGE_TIMEOUT);
     await page.goto(`${BASE_URL}/admin`, { waitUntil: 'domcontentloaded', timeout: PAGE_TIMEOUT });
-    const url = page.url();
-    expect(url.includes('/login')).toBe(true);
+    await page.waitForURL(/\/login/, { timeout: PAGE_TIMEOUT });
   });
 
   test('/admin/content redirects unauthenticated to login', async ({ page }) => {
     test.setTimeout(PAGE_TIMEOUT);
     await page.goto(`${BASE_URL}/admin/content`, { waitUntil: 'domcontentloaded', timeout: PAGE_TIMEOUT });
-    // Unauthenticated users are redirected to login
-    const url = page.url();
-    expect(url.includes('/login')).toBe(true);
+    await page.waitForURL(/\/login/, { timeout: PAGE_TIMEOUT });
   });
 
   test('/admin-dashboard redirects unauthenticated to login', async ({ page }) => {
     test.setTimeout(PAGE_TIMEOUT);
     await page.goto(`${BASE_URL}/admin-dashboard`, { waitUntil: 'domcontentloaded', timeout: PAGE_TIMEOUT });
-    const url = page.url();
-    expect(url.includes('/login')).toBe(true);
+    await page.waitForURL(/\/login/, { timeout: PAGE_TIMEOUT });
   });
 
   test('Cleaner dashboard redirects unauthenticated to login', async ({ page }) => {
@@ -37,15 +37,14 @@ test.describe('Portal Routing & Navigation', () => {
     await page.goto(`${BASE_URL}/cleaner-dashboard`, { waitUntil: 'domcontentloaded', timeout: PAGE_TIMEOUT });
     // Cleaners have their own dedicated /auth/cleaner-login page (distinct
     // from /auth/login), so match "login" generically rather than "/login".
-    const url = page.url();
-    expect(url.includes('login')).toBe(true);
+    await page.waitForURL(/login/, { timeout: PAGE_TIMEOUT });
   });
 
   test('Login page loads with correct routing', async ({ page }) => {
     test.setTimeout(PAGE_TIMEOUT);
     await page.goto(`${BASE_URL}/auth/login`, { waitUntil: 'domcontentloaded', timeout: PAGE_TIMEOUT });
-    expect(await page.locator('body').innerText()).toContain('Login');
-    expect(await page.locator('body').innerText()).toContain('Username');
+    expect(await page.locator('body').innerText()).toContain('Sign in');
+    expect(await page.locator('body').innerText()).toContain('Paysheet code or email');
   });
 
   test('Cleaner signup page is publicly accessible', async ({ page }) => {
