@@ -386,12 +386,11 @@ test.describe('🖼️ Background Images API', () => {
 // AUDIT LOGS API
 // ─────────────────────────────────────────────
 test.describe('📋 Audit Logs API', () => {
-  test('GET /api/audit-logs — returns logs', async ({ request }) => {
+  test('GET /api/audit-logs — requires admin auth', async ({ request }) => {
+    // Route requires withAuth(['admin']) - no anonymous access.
     const res = await request.get(`${BASE_URL}/api/audit-logs`);
     skipOn429(res);
-    expectStatusOk(res);
-    const body = await res.json();
-    expect(Array.isArray(body)).toBe(true);
+    expectStatus(res, 401);
   });
 });
 
@@ -399,18 +398,18 @@ test.describe('📋 Audit Logs API', () => {
 // CUSTOMER API
 // ─────────────────────────────────────────────
 test.describe('💳 Customer API', () => {
-  test('GET /api/customer/quotes — returns quotes', async ({ request }) => {
+  test('GET /api/customer/quotes — requires auth', async ({ request }) => {
+    // Route manually checks for a Bearer token - no anonymous access.
     const res = await request.get(`${BASE_URL}/api/customer/quotes`);
     skipOn429(res);
-    expectStatusOk(res);
-    const body = await res.json();
-    expect(Array.isArray(body)).toBe(true);
+    expectStatus(res, 401);
   });
 
-  test('GET /api/customer/statement — returns statement', async ({ request }) => {
+  test('GET /api/customer/statement — requires auth', async ({ request }) => {
+    // Route requires withAuth(request) - no anonymous access.
     const res = await request.get(`${BASE_URL}/api/customer/statement`);
     skipOn429(res);
-    expectStatusOk(res);
+    expectStatus(res, 401);
   });
 });
 
@@ -418,10 +417,11 @@ test.describe('💳 Customer API', () => {
 // ETA API
 // ─────────────────────────────────────────────
 test.describe('⏱️ ETA API', () => {
-  test('GET /api/eta — returns ETA data', async ({ request }) => {
+  test('GET /api/eta — requires auth', async ({ request }) => {
+    // Route requires withAuth(request) - no anonymous access.
     const res = await request.get(`${BASE_URL}/api/eta`);
     skipOn429(res);
-    expectStatusOk(res);
+    expectStatus(res, 401);
   });
 });
 
@@ -429,11 +429,12 @@ test.describe('⏱️ ETA API', () => {
 // DATA DELETION API
 // ─────────────────────────────────────────────
 test.describe('🗑️ Data Deletion API', () => {
-  test('POST /api/data-deletion — accepts deletion request', async ({ request }) => {
+  test('POST /api/data-deletion — requires auth', async ({ request }) => {
+    // Route requires withAuth(request) - no anonymous access.
     const res = await request.post(`${BASE_URL}/api/data-deletion`, {
       data: { email: 'test@example.com', reason: 'testing' }
     });
     skipOn429(res);
-    expect([200, 400]).toContain(res.status());
+    expectStatus(res, 401);
   });
 });
