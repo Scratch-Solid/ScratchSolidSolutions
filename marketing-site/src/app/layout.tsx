@@ -74,13 +74,13 @@ export default async function RootLayout({
   const optimizedBackground = cdn(backgroundUrl);
   const backgroundStyle = backgroundUrl
     ? {
-        backgroundImage: `linear-gradient(135deg, rgba(10,17,40,0.65), rgba(12,36,80,0.55)), url(${optimizedBackground || backgroundUrl})`,
+        backgroundImage: `linear-gradient(135deg, rgba(46,31,22,0.65), rgba(58,40,26,0.55)), url(${optimizedBackground || backgroundUrl})`,
         backgroundSize: 'cover',
         backgroundAttachment: 'fixed',
         backgroundPosition: 'center',
       }
     : {
-        backgroundImage: 'linear-gradient(135deg, #0b1a3a, #0f274f, #123366)',
+        backgroundImage: 'linear-gradient(135deg, #2E1F16, #3a281a, #2E1F16)',
       };
 
   return (

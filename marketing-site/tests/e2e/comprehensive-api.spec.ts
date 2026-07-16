@@ -292,12 +292,11 @@ test.describe('📅 Booking API', () => {
 // CONTRACT API
 // ─────────────────────────────────────────────
 test.describe('📄 Contract API', () => {
-  test('GET /api/contracts — returns contracts', async ({ request }) => {
+  test('GET /api/contracts — requires authentication', async ({ request }) => {
+    // withAuth(['business', 'admin']) - anonymous access must be rejected.
     const res = await request.get(`${BASE_URL}/api/contracts`);
     skipOn429(res);
-    expectStatusOk(res);
-    const body = await res.json();
-    expect(Array.isArray(body)).toBe(true);
+    expect(res.status()).toBe(401);
   });
 });
 
