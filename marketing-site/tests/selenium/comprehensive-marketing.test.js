@@ -214,7 +214,9 @@ async function testAuthForms() {
     await driver.findElement(By.css('button[type="submit"]')).click();
     await delay(2000);
     const body = await driver.findElement(By.css('body')).getText();
-    expect(body).toMatch(/invalid|error|failed|wrong/i);
+    // "Too many login attempts" is the rate limiter correctly kicking in
+    // (frequent CI re-runs against the same IP) - also a valid outcome here.
+    expect(body).toMatch(/invalid|error|failed|wrong|too many/i);
   });
   if (result2.passed) passed++; else failed++;
 
@@ -281,6 +283,7 @@ async function testBookingForm() {
     // Redesigned homepage's primary CTA is "Book a clean", not "Get a Quick Quote".
     await driver.get(`${BASE_URL}/`);
     await delay();
+    await dismissCookieBanner(driver);
     const btn = await driver.findElement(By.xpath('//button[contains(text(),"Book a clean")]'));
     await btn.click();
     await delay();
