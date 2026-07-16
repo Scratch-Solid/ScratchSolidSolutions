@@ -2,10 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { logger } from '@/lib/logger';
+import { getCloudflareContext } from '@/lib/runtime-context';
 
 export const dynamic = "force-dynamic";
-
-const INTERNAL_PORTAL_URL = process.env.INTERNAL_PORTAL_URL || 'https://portal.scratchsolidsolutions.org';
 
 // Real jobs go: marketing-site booking -> Cal.com -> n8n -> internal-portal's
 // `jobs` table, correlated by calcom_uid (set on this booking row once the
@@ -14,18 +13,28 @@ const INTERNAL_PORTAL_URL = process.env.INTERNAL_PORTAL_URL || 'https://portal.s
 // WhatsApp) live entirely in internal-portal's database, so this route asks
 // internal-portal for the real status instead of reading this app's own
 // booking row, which never gets a cleaner/status assigned to it directly.
+//
+// Uses the PORTAL service binding (Worker-to-Worker RPC) rather than a plain
+// fetch() to the public hostname - same-zone Worker-to-Worker calls over the
+// public network were unreliable (522s) in testing.
 async function fetchJobStatus(calcomUid: string) {
-  const url = `${INTERNAL_PORTAL_URL}/api/public/job-tracking?calcom_uid=${encodeURIComponent(calcomUid)}`;
   try {
-    const res = await fetch(url, { headers: { 'Content-Type': 'application/json' } });
-    if (!res.ok) {
-      return { __debug: { url, status: res.status, ok: false } };
+    const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
+    const portal = env?.PORTAL;
+    if (!portal) {
+      logger.error('PORTAL service binding not available', new Error('missing binding'));
+      return null;
     }
+    const res = await portal.fetch(
+      `https://internal-portal/api/public/job-tracking?calcom_uid=${encodeURIComponent(calcomUid)}`,
+      { headers: { 'Content-Type': 'application/json' } }
+    );
+    if (!res.ok) return null;
     const data = await res.json() as { found: boolean; [key: string]: any };
-    if (!data.found) return { __debug: { url, status: res.status, found: false } };
-    return data;
+    return data.found ? data : null;
   } catch (error) {
-    return { __debug: { url, error: error instanceof Error ? error.message : String(error) } };
+    logger.error('Error fetching job status from internal-portal', error as Error);
+    return null;
   }
 }
 
@@ -72,14 +81,13 @@ export async function GET(
       },
       // Real, timestamped status from internal-portal's jobs table - the
       // actual source of truth for the Transparency Policy tracker.
-      tracking: jobStatus && !jobStatus.__debug ? {
+      tracking: jobStatus ? {
         status: jobStatus.status,
         started_at: jobStatus.started_at,
         arrived_at: jobStatus.arrived_at,
         completed_at: jobStatus.completed_at,
         location: jobStatus.location,
       } : null,
-      __debug: jobStatus?.__debug || { calcom_uid: booking.calcom_uid, internal_portal_url: INTERNAL_PORTAL_URL },
     };
 
     const response = NextResponse.json(responseData);

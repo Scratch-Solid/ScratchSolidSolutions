@@ -38,6 +38,18 @@
 			"bucket_name": "scratchsolid-uploads"
 		}
 	],
+	// Service binding to internal-portal - a direct Worker-to-Worker RPC call
+	// that bypasses the public network entirely. Plain fetch() to
+	// portal.scratchsolidsolutions.org from within this Worker was
+	// unreliable (522s) - same-zone Worker-to-Worker calls over a public
+	// hostname are a known rough edge on Cloudflare, and this is the
+	// documented, robust way to do it.
+	"services": [
+		{
+			"binding": "PORTAL",
+			"service": "scratchsolid-portal"
+		}
+	],
 	"routes": [
 		{
 			"pattern": "scratchsolidsolutions.org/*",
@@ -80,6 +92,12 @@
 				{
 					"binding": "UPLOADS_BUCKET",
 					"bucket_name": "marketing-uploads-staging"
+				}
+			],
+			"services": [
+				{
+					"binding": "PORTAL",
+					"service": "scratchsolid-portal-staging"
 				}
 			],
 			"routes": [
