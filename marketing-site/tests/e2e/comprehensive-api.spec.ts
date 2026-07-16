@@ -321,8 +321,10 @@ test.describe('👤 Employee API', () => {
 // ─────────────────────────────────────────────
 test.describe('📊 Analytics API', () => {
   test('POST /api/analytics/track — tracks event', async ({ request }) => {
+    // The route requires eventType (400s with "Missing eventType" otherwise) -
+    // event/page were never real field names for this endpoint.
     const res = await request.post(`${BASE_URL}/api/analytics/track`, {
-      data: { event: 'test_event', page: '/test' }
+      data: { eventType: 'page_view', url: '/test' }
     });
     skipOn429(res);
     expectStatusOk(res);
