@@ -21,9 +21,11 @@ test.describe('Authentication Flow', () => {
   test('Sign contract page requires auth and redirects to login', async ({ page }) => {
     test.setTimeout(PAGE_TIMEOUT);
     await page.goto('/auth/sign-contract', { waitUntil: 'domcontentloaded', timeout: PAGE_TIMEOUT });
-    // Without auth token, page redirects to login
-    const url = page.url();
-    expect(url.includes('/login')).toBe(true);
+    // The redirect happens client-side in a useEffect (router.push after
+    // checking localStorage), so it isn't necessarily done by the time
+    // domcontentloaded fires - wait for the URL to actually change instead
+    // of reading page.url() immediately.
+    await page.waitForURL(/\/login/, { timeout: PAGE_TIMEOUT });
   });
 
   test('Unauthenticated user is redirected or protected', async ({ page }) => {

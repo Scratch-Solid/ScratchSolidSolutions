@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface Applicant {
   id: number;
@@ -23,6 +24,7 @@ const STAGES = [
 ];
 
 export default function OnboardingPipeline() {
+  const router = useRouter();
   const [applicants, setApplicants] = useState<Applicant[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
@@ -33,12 +35,24 @@ export default function OnboardingPipeline() {
   const [showDetails, setShowDetails] = useState(false);
 
   useEffect(() => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+    if (!token) {
+      router.replace('/auth/login');
+      return;
+    }
     fetchApplicants();
-  }, []);
+  }, [router]);
+
+  const authHeaders = () => ({
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${localStorage.getItem('authToken')}`,
+  });
 
   const fetchApplicants = async () => {
     try {
-      const response = await fetch('/api/admin/onboarding/pipeline');
+      const response = await fetch('/api/admin/onboarding/pipeline', {
+        headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` },
+      });
       const data = await response.json() as { applicants: Applicant[] };
       setApplicants(data.applicants || []);
     } catch (error) {
@@ -73,7 +87,7 @@ export default function OnboardingPipeline() {
     try {
       const response = await fetch('/api/admin/onboarding/bulk-approve', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(),
         body: JSON.stringify({ userIds: selectedApplicants }),
       });
       if (response.ok) {
@@ -93,7 +107,7 @@ export default function OnboardingPipeline() {
     try {
       const response = await fetch('/api/admin/onboarding/bulk-remind', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(),
         body: JSON.stringify({ userIds: selectedApplicants, message: 'Please complete your onboarding process.' }),
       });
       if (response.ok) {
@@ -132,7 +146,7 @@ export default function OnboardingPipeline() {
     try {
       const response = await fetch('/api/admin/onboarding/update-stage', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(),
         body: JSON.stringify({ userId: applicantId, newStage: targetStage }),
       });
       if (response.ok) {

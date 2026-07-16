@@ -258,7 +258,7 @@ export default function CleanerSignup() {
                 />
                 <span className="text-sm text-stone-600">
                   I consent to Scratch Solid Solutions collecting and processing my personal information in accordance with the
-                  {' '}<a href="/privacy-policy" target="_blank" className="text-[#2E1F16] hover:underline">POPIA Privacy Policy</a>.
+                  {' '}<a href="/privacy-policy" target="_blank" className="text-[#2E1F16] underline">POPIA Privacy Policy</a>.
                   I understand my data will be stored securely and I may request deletion at any time.
                 </span>
               </label>

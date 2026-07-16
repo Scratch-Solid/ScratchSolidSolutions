@@ -48,13 +48,13 @@ test.describe('🏠 Public Pages — Load & Content', () => {
     const res = await goTo(page, '/auth/login');
     expect(res?.status()).toBeLessThan(500);
     await assertNo500(page);
-    await expect(page.locator('text=Staff Login')).toBeVisible();
-    await expect(page.locator('text=Become part of the team')).toBeVisible();
-    await expect(page.locator('text=Apply Now')).toBeVisible();
+    await expect(page.locator('text=Internal Portal')).toBeVisible();
+    await expect(page.locator('text=Join the cleaning team')).toBeVisible();
+    await expect(page.locator('text=Apply now')).toBeVisible();
     await expect(page.locator('input#username')).toBeVisible();
     await expect(page.locator('input#password')).toBeVisible();
     await expect(page.locator('button[type="submit"]')).toBeVisible();
-    await expect(page.locator('text=Forgot Password?')).toBeVisible();
+    await expect(page.locator('text=Forgot password?')).toBeVisible();
   });
 
   test('Auth login has correct form attributes', async ({ page }) => {

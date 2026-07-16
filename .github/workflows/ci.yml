@@ -103,6 +103,13 @@ jobs:
       run: npx playwright test --project=chromium
       env:
         CI: true
+        # Without this, tests/*.spec.ts each fall back to their own
+        # 'http://localhost:3000' default (no dev server runs in CI, since
+        # playwright.config.ts disables webServer when CI is set) and every
+        # test fails with ERR_CONNECTION_REFUSED instead of exercising real
+        # code. Point at staging, matching playwright.config.ts's own CI
+        # default baseURL.
+        PORTAL_URL: https://portal-staging.scratchsolidsolutions.org
     
     - name: Build
       working-directory: ./internal-portal

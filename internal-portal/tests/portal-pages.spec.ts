@@ -81,10 +81,10 @@ test.describe('Portal Pages - Content Verification', () => {
     await expect(page.locator('button[type="submit"]')).toBeVisible();
   });
 
-  test('Login page has "Become part of the team" CTA', async ({ page }) => {
+  test('Login page has "Join the cleaning team" CTA', async ({ page }) => {
     await page.goto(`${PORTAL_URL}/auth/login`);
-    await expect(page.locator('text=Become part of the team')).toBeVisible();
-    await expect(page.locator('text=Apply Now')).toBeVisible();
+    await expect(page.locator('text=Join the cleaning team')).toBeVisible();
+    await expect(page.locator('text=Apply now')).toBeVisible();
   });
 
   test('Signup/cleaner page has POPIA consent checkboxes', async ({ page }) => {

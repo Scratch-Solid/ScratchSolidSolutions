@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface FunnelData {
   stage: string;
@@ -30,6 +31,7 @@ interface TimeOfDayAnalysis {
 }
 
 export default function OnboardingAnalytics() {
+  const router = useRouter();
   const [funnelData, setFunnelData] = useState<FunnelData[]>([]);
   const [stageDurations, setStageDurations] = useState<StageDuration[]>([]);
   const [dropOffs, setDropOffs] = useState<DropOff[]>([]);
@@ -38,12 +40,20 @@ export default function OnboardingAnalytics() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+    if (!token) {
+      router.replace('/auth/login');
+      return;
+    }
     fetchAnalytics();
-  }, []);
+  }, [router]);
 
   const fetchAnalytics = async () => {
     try {
-      const response = await fetch('/api/admin/onboarding/analytics');
+      const token = localStorage.getItem('authToken');
+      const response = await fetch('/api/admin/onboarding/analytics', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       const data = await response.json() as { funnel?: FunnelData[]; stageDurations?: StageDuration[]; dropOffs?: DropOff[]; departmentComparison?: DepartmentComparison; timeOfDayAnalysis?: TimeOfDayAnalysis[] };
       setFunnelData(data.funnel || []);
       setStageDurations(data.stageDurations || []);
@@ -59,7 +69,10 @@ export default function OnboardingAnalytics() {
 
   const handleExport = async (format: string) => {
     try {
-      const response = await fetch(`/api/admin/onboarding/export?format=${format}`);
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`/api/admin/onboarding/export?format=${format}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (format === 'csv') {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);

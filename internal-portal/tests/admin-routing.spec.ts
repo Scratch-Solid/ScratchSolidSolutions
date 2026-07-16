@@ -35,8 +35,10 @@ test.describe('Portal Routing & Navigation', () => {
   test('Cleaner dashboard redirects unauthenticated to login', async ({ page }) => {
     test.setTimeout(PAGE_TIMEOUT);
     await page.goto(`${BASE_URL}/cleaner-dashboard`, { waitUntil: 'domcontentloaded', timeout: PAGE_TIMEOUT });
+    // Cleaners have their own dedicated /auth/cleaner-login page (distinct
+    // from /auth/login), so match "login" generically rather than "/login".
     const url = page.url();
-    expect(url.includes('/login')).toBe(true);
+    expect(url.includes('login')).toBe(true);
   });
 
   test('Login page loads with correct routing', async ({ page }) => {

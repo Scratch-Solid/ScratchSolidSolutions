@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { AlertCircle } from 'lucide-react';
 
 interface HealthStatus {
@@ -14,6 +15,7 @@ interface HealthStatus {
 }
 
 export default function MonitoringDashboard() {
+  const router = useRouter();
   const [healthStatus, setHealthStatus] = useState<HealthStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -32,10 +34,15 @@ export default function MonitoringDashboard() {
   };
 
   useEffect(() => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+    if (!token) {
+      router.replace('/auth/login');
+      return;
+    }
     fetchHealthStatus();
     const interval = setInterval(fetchHealthStatus, 30000); // Refresh every 30 seconds
     return () => clearInterval(interval);
-  }, []);
+  }, [router]);
 
   const getStatusColor = (status: string) => {
     switch (status) {

@@ -78,15 +78,13 @@ test.describe('🌐 Public API Endpoints', () => {
     expect(Array.isArray(body)).toBe(true);
   });
 
-  test('GET /api/content/list — returns content list or 404', async ({ request }) => {
+  test('GET /api/content/list — admin-only, requires authentication', async ({ request }) => {
+    // This is the CMS content-editor listing endpoint (withAuth(['admin'])),
+    // distinct from the public /api/content read endpoint above. Anonymous
+    // access must be rejected, not return the content list.
     const res = await request.get(`${BASE_URL}/api/content/list`);
     skipOn429(res);
-    if (res.status() === 404) {
-      test.skip(true, '/api/content/list not yet implemented (404)');
-    }
-    expectStatusOk(res);
-    const body = await res.json();
-    expect(Array.isArray(body)).toBe(true);
+    expectStatus(res, 401);
   });
 
   test('GET /api/content/[slug] — privacy policy content', async ({ request }) => {

@@ -62,12 +62,12 @@ test.describe('🌐 Public API Endpoints', () => {
     expect([200, 400, 404]).toContain(res.status());
   });
 
-  test('GET /api/cleaner/pre-dashboard — returns redirect data', async ({ request }) => {
+  test('GET /api/cleaner/pre-dashboard — requires cleaner authentication', async ({ request }) => {
+    // withAuth(['cleaner']) - anonymous access must be rejected, this is not
+    // actually a public endpoint despite living in this describe block.
     const res = await request.get(`${BASE_URL}/api/cleaner/pre-dashboard`);
     skipOn429(res);
-    expectStatusOk(res);
-    const body = await res.json();
-    expect(body).toHaveProperty('data');
+    expect(res.status()).toBe(401);
   });
 
   test('GET /api/employees — returns employees', async ({ request }) => {
