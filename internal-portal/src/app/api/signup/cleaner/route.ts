@@ -138,6 +138,13 @@ export async function POST(request: NextRequest) {
       return withSecurityHeaders(response, traceId);
     }
 
+    // Ensure consent/hash columns exist (backward-compatible migration) — must run
+    // before any query below references them, otherwise a fresh new_joiners table
+    // (which has none of these columns) throws on the id_number_hash lookup.
+    await db.prepare(`ALTER TABLE new_joiners ADD COLUMN popia_consent INTEGER DEFAULT 0`).run().catch(() => {});
+    await db.prepare(`ALTER TABLE new_joiners ADD COLUMN background_check_consent INTEGER DEFAULT 0`).run().catch(() => {});
+    await db.prepare(`ALTER TABLE new_joiners ADD COLUMN id_number_hash TEXT`).run().catch(() => {});
+
     // Check if email already exists in new_joiners
     const existingEmail = await db.prepare(
       'SELECT id FROM new_joiners WHERE email = ?'
@@ -163,6 +170,19 @@ export async function POST(request: NextRequest) {
           code: 'VALIDATION_ERROR',
           message: 'POPIA consent required',
           details: { errors: ['You must consent to the POPIA privacy policy to proceed'] }
+        }
+      }, { status: 400 });
+      return withSecurityHeaders(response, traceId);
+    }
+
+    // Validate background check consent (mandatory)
+    if (!background_check_consent) {
+      const response = NextResponse.json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Background check consent required',
+          details: { errors: ['You must consent to a background check to proceed'] }
         }
       }, { status: 400 });
       return withSecurityHeaders(response, traceId);
@@ -203,11 +223,6 @@ export async function POST(request: NextRequest) {
     // TODO: Integrate with DocuSign for e-signature
     // For now, generate a placeholder signature ID
     const { signatureId, integration } = await createSignupSignatureReference(traceId);
-
-    // Ensure consent columns exist (backward-compatible migration)
-    await db.prepare(`ALTER TABLE new_joiners ADD COLUMN popia_consent INTEGER DEFAULT 0`).run().catch(() => {});
-    await db.prepare(`ALTER TABLE new_joiners ADD COLUMN background_check_consent INTEGER DEFAULT 0`).run().catch(() => {});
-    await db.prepare(`ALTER TABLE new_joiners ADD COLUMN id_number_hash TEXT`).run().catch(() => {});
 
     // Insert into new_joiners table
     await db.prepare(

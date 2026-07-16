@@ -277,8 +277,7 @@ export default function CleanerSignup() {
                 />
                 <span className="text-sm text-stone-600">
                   I consent to a background check (criminal record, credit, and reference verification) being conducted
-                  should my application proceed to the final stage. I understand this is optional at application time and
-                  may be requested later.
+                  should my application proceed to the final stage.
                 </span>
               </label>
             </div>
