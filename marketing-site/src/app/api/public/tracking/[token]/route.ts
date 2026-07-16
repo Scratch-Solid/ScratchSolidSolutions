@@ -15,17 +15,17 @@ const INTERNAL_PORTAL_URL = process.env.INTERNAL_PORTAL_URL || 'https://portal.s
 // internal-portal for the real status instead of reading this app's own
 // booking row, which never gets a cleaner/status assigned to it directly.
 async function fetchJobStatus(calcomUid: string) {
+  const url = `${INTERNAL_PORTAL_URL}/api/public/job-tracking?calcom_uid=${encodeURIComponent(calcomUid)}`;
   try {
-    const res = await fetch(
-      `${INTERNAL_PORTAL_URL}/api/public/job-tracking?calcom_uid=${encodeURIComponent(calcomUid)}`,
-      { headers: { 'Content-Type': 'application/json' } }
-    );
-    if (!res.ok) return null;
+    const res = await fetch(url, { headers: { 'Content-Type': 'application/json' } });
+    if (!res.ok) {
+      return { __debug: { url, status: res.status, ok: false } };
+    }
     const data = await res.json() as { found: boolean; [key: string]: any };
-    return data.found ? data : null;
+    if (!data.found) return { __debug: { url, status: res.status, found: false } };
+    return data;
   } catch (error) {
-    logger.error('Error fetching job status from internal-portal', error as Error);
-    return null;
+    return { __debug: { url, error: error instanceof Error ? error.message : String(error) } };
   }
 }
 
@@ -72,13 +72,14 @@ export async function GET(
       },
       // Real, timestamped status from internal-portal's jobs table - the
       // actual source of truth for the Transparency Policy tracker.
-      tracking: jobStatus ? {
+      tracking: jobStatus && !jobStatus.__debug ? {
         status: jobStatus.status,
         started_at: jobStatus.started_at,
         arrived_at: jobStatus.arrived_at,
         completed_at: jobStatus.completed_at,
         location: jobStatus.location,
       } : null,
+      __debug: jobStatus?.__debug || { calcom_uid: booking.calcom_uid, internal_portal_url: INTERNAL_PORTAL_URL },
     };
 
     const response = NextResponse.json(responseData);
