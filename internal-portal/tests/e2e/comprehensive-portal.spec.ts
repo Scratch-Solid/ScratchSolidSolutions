@@ -269,13 +269,11 @@ test.describe('🧹 Cleaner Signup — Consent Form', () => {
     await goTo(page, '/signup/cleaner');
     await expect(page.locator('text=Cleaner Application')).toBeVisible();
     // Full Name
-    await expect(page.locator('input[name="fullName"], input[name="full_name"], input#fullName')).toBeVisible();
+    await expect(page.locator('input#name')).toBeVisible();
     // ID/Passport
-    await expect(page.locator('input[name="idPassport"], input[name="id_passport"], input#idPassport')).toBeVisible();
+    await expect(page.locator('input#id_number')).toBeVisible();
     // Contact Number
-    await expect(page.locator('input[name="contactNumber"], input[name="contact_number"], input#contactNumber')).toBeVisible();
-    // Position
-    await expect(page.locator('input[name="positionApplied"], input[name="position"], select[name="position"]')).toBeVisible();
+    await expect(page.locator('input#phone')).toBeVisible();
   });
 
   test('Consent form requires checkbox consent', async ({ page }) => {

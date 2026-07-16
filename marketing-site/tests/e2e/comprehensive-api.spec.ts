@@ -134,12 +134,11 @@ test.describe('🌐 Public API Endpoints', () => {
     expect(res.status()).toBe(401);
   });
 
-  test('GET /api/feedback — returns feedback', async ({ request }) => {
+  test('GET /api/feedback — requires authentication', async ({ request }) => {
+    // withAuth(['client', 'admin']) - anonymous access must be rejected.
     const res = await request.get(`${BASE_URL}/api/feedback`);
     skipOn429(res);
-    expectStatusOk(res);
-    const body = await res.json();
-    expect(Array.isArray(body)).toBe(true);
+    expect(res.status()).toBe(401);
   });
 
   test('POST /api/chatbot — responds to query', async ({ request }) => {
