@@ -272,12 +272,11 @@ test.describe('🔐 Auth API Endpoints', () => {
 // BOOKING API
 // ─────────────────────────────────────────────
 test.describe('📅 Booking API', () => {
-  test('GET /api/bookings — returns bookings array', async ({ request }) => {
+  test('GET /api/bookings — requires authentication', async ({ request }) => {
+    // withAuth(['client', 'business', 'admin']) - anonymous access must be rejected.
     const res = await request.get(`${BASE_URL}/api/bookings`);
     skipOn429(res);
-    expectStatusOk(res);
-    const body = await res.json();
-    expect(Array.isArray(body)).toBe(true);
+    expect(res.status()).toBe(401);
   });
 
   test('POST /api/bookings — requires authentication', async ({ request }) => {
