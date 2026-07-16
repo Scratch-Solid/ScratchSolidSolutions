@@ -13,11 +13,18 @@ export const phoneSchema = z.string().regex(/^[+]?[\d\s-()]{10,20}$/).optional()
 export const idSchema = z.string().uuid().or(z.number().int().positive());
 
 // User validation schemas
+//
+// 'admin' is deliberately excluded - admin accounts must only be created via
+// the invite flow (/api/admin/invite -> /api/auth/accept-invite), which sets
+// admin_approval_status = 'approved'. Allowing self-signup with role=admin
+// was a critical privilege-escalation hole (fixed 2026-07-16): anyone could
+// POST role="admin" here and get a fully-functional admin account, since
+// withAuth's role check never looked at admin_approval_status.
 export const userSignupSchema = z.object({
   name: nameSchema,
   email: emailSchema,
   password: passwordSchema,
-  role: z.enum(['admin', 'cleaner', 'digital', 'transport', 'client']),
+  role: z.enum(['cleaner', 'digital', 'transport', 'client']),
   phone: phoneSchema,
   address: z.string().max(500).optional(),
   business_name: z.string().max(255).optional(),

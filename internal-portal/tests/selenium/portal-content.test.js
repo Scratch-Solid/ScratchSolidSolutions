@@ -2,10 +2,18 @@ const { Builder, By, until } = require('selenium-webdriver');
 const chrome = require('selenium-webdriver/chrome');
 
 const PORTAL_URL = process.env.PORTAL_URL || 'https://portal.scratchsolidsolutions.org';
-const isProd = PORTAL_URL.includes('scratchsolidsolutions.org');
+const isProd = PORTAL_URL.includes('scratchsolidsolutions.org') && !PORTAL_URL.includes('staging');
 const PAGE_TIMEOUT = isProd ? 60000 : 30000;
-const DELAY = isProd ? 3000 : 500;
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+// Admin accounts can no longer be created via public signup (role=admin was
+// removed there 2026-07-16 - it was a privilege-escalation hole this test was
+// unintentionally exploiting against production every run). This test needs
+// a pre-provisioned admin account's credentials, and is skipped entirely
+// against production.
+const E2E_ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL;
+const E2E_ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD;
+const canTestAdmin = !isProd && E2E_ADMIN_EMAIL && E2E_ADMIN_PASSWORD;
 
 /**
  * Selenium Tests for Internal Portal
@@ -96,33 +104,14 @@ describe('Internal Portal Selenium Tests', () => {
     }
   }, PAGE_TIMEOUT + 20000);
 
-  test('Content upload page has form elements for authenticated admin', async () => {
-    // First login via API to get token
-    const uniqueEmail = `test-admin-sel-${Date.now()}@example.com`;
-
-    // Signup
-    const signupRes = await fetch(`${PORTAL_URL}/api/auth/signup`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: 'Test Admin Selenium',
-        email: uniqueEmail,
-        password: 'TestPass123!',
-        role: 'admin',
-        phone: '+27123456789'
-      })
-    });
-    if (signupRes.status === 429) { console.log('Rate limited, skipping'); return; }
-
-    await sleep(DELAY);
-
-    // Login
+  (canTestAdmin ? test : test.skip)('Content upload page has form elements for authenticated admin', async () => {
+    // Login as a pre-provisioned admin account.
     const loginRes = await fetch(`${PORTAL_URL}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        identifier: uniqueEmail,
-        password: 'TestPass123!'
+        identifier: E2E_ADMIN_EMAIL,
+        password: E2E_ADMIN_PASSWORD
       })
     });
     if (loginRes.status === 429) { console.log('Rate limited, skipping'); return; }

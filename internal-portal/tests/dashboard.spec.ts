@@ -1,29 +1,20 @@
 import { test, expect } from '@playwright/test';
 
 const BASE_URL = process.env.PORTAL_URL || 'http://localhost:3000';
-const isProd = (process.env.PORTAL_URL || '').includes('scratchsolidsolutions.org');
+const isProd = (process.env.PORTAL_URL || '').includes('scratchsolidsolutions.org') && !(process.env.PORTAL_URL || '').includes('staging');
 const PAGE_TIMEOUT = isProd ? 60000 : 30000;
-const DELAY = isProd ? 3000 : 500;
-const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+// Admin accounts can no longer be created via public signup (role=admin was
+// removed there 2026-07-16 - it was a privilege-escalation hole this test was
+// unintentionally exploiting against production every run). These tests need
+// a pre-provisioned admin account's credentials, and are skipped entirely
+// against production.
+const E2E_ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL;
+const E2E_ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD;
 
 async function loginAsAdmin(page: any, request: any) {
-  const uniqueEmail = `test-admin-${Date.now()}@example.com`;
-  const signupRes = await request.post(`${BASE_URL}/api/auth/signup`, {
-    data: {
-      name: 'Test Admin',
-      email: uniqueEmail,
-      password: 'TestPass123!',
-      role: 'admin',
-      phone: '+27123456789'
-    },
-    headers: { 'Content-Type': 'application/json' }
-  });
-  if (signupRes.status() === 429) { test.skip(true, 'Rate limited'); return null; }
-
-  await sleep(DELAY);
-
   const loginRes = await request.post(`${BASE_URL}/api/auth/login`, {
-    data: { identifier: uniqueEmail, password: 'TestPass123!' },
+    data: { identifier: E2E_ADMIN_EMAIL, password: E2E_ADMIN_PASSWORD },
     headers: { 'Content-Type': 'application/json' }
   });
   if (loginRes.status() === 429) { test.skip(true, 'Rate limited'); return null; }
@@ -41,6 +32,11 @@ async function loginAsAdmin(page: any, request: any) {
 }
 
 test.describe('Admin Dashboard Tests', () => {
+  test.beforeEach(() => {
+    test.skip(isProd, 'Admin-authenticated flows are not exercised against production');
+    test.skip(!E2E_ADMIN_EMAIL || !E2E_ADMIN_PASSWORD, 'E2E_ADMIN_EMAIL/E2E_ADMIN_PASSWORD not configured');
+  });
+
   test('Pipeline page loads with applicants', async ({ page, request }) => {
     test.setTimeout(PAGE_TIMEOUT + 20000);
     await loginAsAdmin(page, request);

@@ -1,10 +1,20 @@
 import { test, expect } from '@playwright/test';
 
 const BASE_URL = process.env.PORTAL_URL || 'http://localhost:3000';
-const isProd = BASE_URL.includes('scratchsolidsolutions.org');
+const isProd = BASE_URL.includes('scratchsolidsolutions.org') && !BASE_URL.includes('staging');
 const PAGE_TIMEOUT = isProd ? 60000 : 30000;
 const DELAY = isProd ? 3000 : 500;
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+// Admin accounts can no longer be created via public signup (role=admin was
+// removed there 2026-07-16 - it was a privilege-escalation hole this test
+// itself was unintentionally exploiting against production every run). The
+// two admin-authenticated tests below need a pre-provisioned admin account's
+// credentials instead. They're skipped entirely against production - testing
+// privileged write flows against a live production database isn't worth the
+// operational risk regardless of how the account is obtained.
+const E2E_ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL;
+const E2E_ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD;
 
 /**
  * Internal Portal Button & Interaction Tests
@@ -51,27 +61,12 @@ test.describe.serial('Admin Page Buttons & Flows', () => {
   });
 
   test('Admin onboarding pipeline page has expected buttons', async ({ page, request }) => {
+    test.skip(isProd, 'Admin-authenticated flows are not exercised against production');
+    test.skip(!E2E_ADMIN_EMAIL || !E2E_ADMIN_PASSWORD, 'E2E_ADMIN_EMAIL/E2E_ADMIN_PASSWORD not configured');
     test.setTimeout(PAGE_TIMEOUT + 20000);
 
-    // Create and authenticate admin user
-    const uniqueEmail = `test-admin-${Date.now()}@example.com`;
-    const signupRes = await request.post(`${BASE_URL}/api/auth/signup`, {
-      data: {
-        name: 'Test Admin',
-        email: uniqueEmail,
-        password: 'TestPass123!',
-        role: 'admin',
-        phone: '+27123456789'
-      },
-      headers: { 'Content-Type': 'application/json' }
-    });
-    if (signupRes.status() === 429) { test.skip(true, 'Rate limited'); return; }
-    expect([200, 201, 409]).toContain(signupRes.status());
-
-    await sleep(DELAY);
-
     const loginRes = await request.post(`${BASE_URL}/api/auth/login`, {
-      data: { identifier: uniqueEmail, password: 'TestPass123!' },
+      data: { identifier: E2E_ADMIN_EMAIL, password: E2E_ADMIN_PASSWORD },
       headers: { 'Content-Type': 'application/json' }
     });
     if (loginRes.status() === 429) { test.skip(true, 'Rate limited'); return; }
@@ -92,28 +87,12 @@ test.describe.serial('Admin Page Buttons & Flows', () => {
   });
 
   test('Content upload page form fields are interactive', async ({ page, request }) => {
+    test.skip(isProd, 'Admin-authenticated flows are not exercised against production');
+    test.skip(!E2E_ADMIN_EMAIL || !E2E_ADMIN_PASSWORD, 'E2E_ADMIN_EMAIL/E2E_ADMIN_PASSWORD not configured');
     test.setTimeout(PAGE_TIMEOUT + 20000);
 
-    // Create admin user
-    const uniqueEmail = `test-admin-${Date.now()}@example.com`;
-    const signupRes = await request.post(`${BASE_URL}/api/auth/signup`, {
-      data: {
-        name: 'Test Admin',
-        email: uniqueEmail,
-        password: 'TestPass123!',
-        role: 'admin',
-        phone: '+27123456789'
-      },
-      headers: { 'Content-Type': 'application/json' }
-    });
-    if (signupRes.status() === 429) { test.skip(true, 'Rate limited'); return; }
-    expect([200, 201, 409]).toContain(signupRes.status());
-
-    await sleep(DELAY);
-
-    // Login
     const loginRes = await request.post(`${BASE_URL}/api/auth/login`, {
-      data: { identifier: uniqueEmail, password: 'TestPass123!' },
+      data: { identifier: E2E_ADMIN_EMAIL, password: E2E_ADMIN_PASSWORD },
       headers: { 'Content-Type': 'application/json' }
     });
     if (loginRes.status() === 429) { test.skip(true, 'Rate limited'); return; }

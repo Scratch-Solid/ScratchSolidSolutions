@@ -1,10 +1,18 @@
 import { test, expect } from '@playwright/test';
 
 const BASE_URL = process.env.PORTAL_URL || 'http://localhost:3000';
-const isProd = BASE_URL.includes('scratchsolidsolutions.org');
+const isProd = BASE_URL.includes('scratchsolidsolutions.org') && !BASE_URL.includes('staging');
 const PAGE_TIMEOUT = isProd ? 60000 : 30000;
 const DELAY = isProd ? 3000 : 500;
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+// Admin accounts can no longer be created via public signup (role=admin was
+// removed there 2026-07-16 - it was a privilege-escalation hole these tests
+// were unintentionally exploiting against production every run). These tests
+// need a pre-provisioned admin account's credentials, and are skipped
+// entirely against production.
+const E2E_ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL;
+const E2E_ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD;
 
 /**
  * Internal Portal Admin Content CRUD Tests
@@ -21,33 +29,18 @@ test.describe.serial('Admin Content Management', () => {
   });
 
   test('Admin can login and access content upload page', async ({ page, request }) => {
+    test.skip(isProd, 'Admin-authenticated flows are not exercised against production');
+    test.skip(!E2E_ADMIN_EMAIL || !E2E_ADMIN_PASSWORD, 'E2E_ADMIN_EMAIL/E2E_ADMIN_PASSWORD not configured');
     test.setTimeout(PAGE_TIMEOUT + 20000);
 
-    // First, create a test admin user via signup if not exists (or use existing)
-    const uniqueEmail = `test-admin-${Date.now()}@example.com`;
-
-    // Signup as admin
-    const signupRes = await request.post(`${BASE_URL}/api/auth/signup`, {
-      data: {
-        name: 'Test Admin',
-        email: uniqueEmail,
-        password: 'TestPass123!',
-        role: 'admin',
-        phone: '+27123456789'
-      },
-      headers: { 'Content-Type': 'application/json' }
-    });
-
-    if (signupRes.status() === 429) { test.skip(true, 'Rate limited'); return; }
-    expect([200, 201, 409]).toContain(signupRes.status());
-
-    await sleep(DELAY);
-
-    // Login
+    // Login as a pre-provisioned admin account. Admin accounts can no longer
+    // be created via public signup (role=admin was removed there 2026-07-16
+    // - it was a privilege-escalation hole this test was unintentionally
+    // exploiting against production every run).
     const loginRes = await request.post(`${BASE_URL}/api/auth/login`, {
       data: {
-        identifier: uniqueEmail,
-        password: 'TestPass123!'
+        identifier: E2E_ADMIN_EMAIL,
+        password: E2E_ADMIN_PASSWORD
       },
       headers: { 'Content-Type': 'application/json' }
     });
@@ -80,29 +73,13 @@ test.describe.serial('Admin Content Management', () => {
   });
 
   test('Admin can load and update privacy policy content', async ({ page, request }) => {
+    test.skip(isProd, 'Admin-authenticated flows are not exercised against production');
+    test.skip(!E2E_ADMIN_EMAIL || !E2E_ADMIN_PASSWORD, 'E2E_ADMIN_EMAIL/E2E_ADMIN_PASSWORD not configured');
     test.setTimeout(PAGE_TIMEOUT + 20000);
 
-    const uniqueEmail = `test-admin-${Date.now()}@example.com`;
-
-    // Signup
-    const signupRes = await request.post(`${BASE_URL}/api/auth/signup`, {
-      data: {
-        name: 'Test Admin',
-        email: uniqueEmail,
-        password: 'TestPass123!',
-        role: 'admin',
-        phone: '+27123456789'
-      },
-      headers: { 'Content-Type': 'application/json' }
-    });
-    if (signupRes.status() === 429) { test.skip(true, 'Rate limited'); return; }
-    expect([200, 201, 409]).toContain(signupRes.status());
-
-    await sleep(DELAY);
-
-    // Login
+    // Login as a pre-provisioned admin account.
     const loginRes = await request.post(`${BASE_URL}/api/auth/login`, {
-      data: { identifier: uniqueEmail, password: 'TestPass123!' },
+      data: { identifier: E2E_ADMIN_EMAIL, password: E2E_ADMIN_PASSWORD },
       headers: { 'Content-Type': 'application/json' }
     });
     if (loginRes.status() === 429) { test.skip(true, 'Rate limited'); return; }

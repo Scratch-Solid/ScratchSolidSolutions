@@ -50,8 +50,10 @@ export async function POST(request: NextRequest) {
 
     const { name, email, password, role, phone, address, business_name, business_info } = validationResult.data;
 
-    // Validate role - default to 'client' if not provided or invalid
-    const validRoles = ['admin', 'client', 'cleaner', 'digital', 'transport'];
+    // Validate role - default to 'client' if not provided or invalid.
+    // 'admin' is intentionally excluded: admin accounts must only be created
+    // via the invite flow (/api/admin/invite), never public self-signup.
+    const validRoles = ['client', 'cleaner', 'digital', 'transport'];
     const userRole = (role && validRoles.includes(role)) ? role : 'client';
 
     // Hash password

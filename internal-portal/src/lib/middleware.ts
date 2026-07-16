@@ -12,10 +12,21 @@ import { isAdminEmailDomain } from './auth';
  *  - Exact role match always passes.
  *  - `super_admin` inherits everything `admin` can do.
  *  - Users on the admin email domain are treated as admins.
+ *
+ * Defense in depth: an `admin`-role user must also have
+ * admin_approval_status = 'approved' (set only by the invite-accept flow).
+ * Public signup no longer accepts role=admin at all, but this closes the
+ * gap for any admin-role row that reaches here by some other path - a role
+ * column alone was previously sufficient, which is how a signup validation
+ * gap became a full privilege-escalation bug (fixed 2026-07-16).
  */
-export function roleSatisfies(user: { role?: string; email?: string } | null | undefined, allowedRoles?: string[]): boolean {
+export function roleSatisfies(
+  user: { role?: string; email?: string; admin_approval_status?: string | null } | null | undefined,
+  allowedRoles?: string[]
+): boolean {
   if (!allowedRoles || allowedRoles.length === 0) return true;
   const role = (user?.role || '').toString();
+  if (role === 'admin' && user?.admin_approval_status !== 'approved') return false;
   if (allowedRoles.includes(role)) return true;
   const wantsAdmin = allowedRoles.includes('admin');
   if (wantsAdmin && role === 'super_admin') return true;
@@ -445,7 +456,7 @@ export async function withAuth(request: NextRequest, allowedRoles?: string[]): P
   if (jwtPayload) {
     // Fetch user from database to get fresh data
     const user = await db.prepare(
-      'SELECT id, email, role, name, phone, password_hash FROM users WHERE id = ?'
+      'SELECT id, email, role, name, phone, password_hash, admin_approval_status FROM users WHERE id = ?'
     ).bind(jwtPayload.userId).first();
 
     if (user) {
