@@ -270,7 +270,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
                           !showLabel && "lg:justify-center lg:px-0",
                         )}
                       >
-                        <Icon className={cn("h-4.5 w-4.5 shrink-0", active && "text-accent-foreground")} style={active ? { color: "#B08A5E" } : undefined} />
+                        <Icon className={cn("h-4.5 w-4.5 shrink-0", active && "text-accent")} />
                         {showLabel && <span className="truncate">{item.label}</span>}
                       </Link>
                     </li>
