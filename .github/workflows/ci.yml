@@ -5,6 +5,13 @@ on:
     branches: [ main, staging, develop ]
   pull_request:
     branches: [ main, staging, develop ]
+  schedule:
+    # Run the full suite daily even with no pushes, so a day with no code
+    # changes still gets a thorough pass (this is what actually exercises
+    # the mutating payment-flow test in tests/e2e/payment-and-tracking.spec.ts,
+    # against staging's test-mode Paystack keys).
+    - cron: '0 5 * * *'
+  workflow_dispatch:
 
 jobs:
   marketing-site:
@@ -28,6 +35,12 @@ jobs:
     
     - name: Run linter
       working-directory: ./marketing-site
+      # Not build-blocking: ~493 pre-existing lint errors (mostly
+      # no-explicit-any) were deliberately deferred as a separate cleanup
+      # effort on 2026-07-16, not new breakage. Blocking on lint here would
+      # make CI permanently red and drown out real alerts. Playwright/
+      # Selenium/unit tests below are NOT given this treatment - those
+      # reflect actual functional correctness.
       run: npm run lint || true
     
     - name: Run unit tests
@@ -40,13 +53,13 @@ jobs:
 
     - name: Run Playwright E2E tests
       working-directory: ./marketing-site
-      run: npx playwright test --project=chromium || true
+      run: npx playwright test --project=chromium
       env:
         CI: true
 
     - name: Run Selenium tests
       working-directory: ./marketing-site
-      run: npm run test:selenium || true
+      run: npm run test:selenium
       env:
         CI: true
     
@@ -87,7 +100,7 @@ jobs:
 
     - name: Run Playwright E2E tests
       working-directory: ./internal-portal
-      run: npx playwright test --project=chromium || true
+      run: npx playwright test --project=chromium
       env:
         CI: true
     
@@ -121,3 +134,27 @@ jobs:
     - name: Security audit
       working-directory: ./backend-worker
       run: npm audit --audit-level=high
+
+  alert-on-scheduled-failure:
+    name: Alert on Daily Scheduled Failure
+    runs-on: ubuntu-latest
+    needs: [marketing-site, internal-portal, backend-worker]
+    if: failure() && github.event_name == 'schedule'
+    permissions:
+      issues: write
+    steps:
+      - name: Create or update production alert issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          EXISTING=$(gh issue list --repo "$GITHUB_REPOSITORY" --label "production-alert" --state open --search "Daily CI suite failed" --json number --jq '.[0].number')
+          BODY="Daily scheduled CI suite failed (lint, unit tests, Playwright/Selenium against staging, build, security audit).
+
+          Run: $RUN_URL
+          Time: $(date -u +"%Y-%m-%d %H:%M UTC")"
+          if [ -n "$EXISTING" ] && [ "$EXISTING" != "null" ]; then
+            gh issue comment "$EXISTING" --repo "$GITHUB_REPOSITORY" --body "$BODY"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "🔴 Daily CI suite failed" --body "$BODY" --label "production-alert"
+          fi
