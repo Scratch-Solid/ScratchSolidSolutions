@@ -59,8 +59,7 @@
 	"vars": {
 		"NEXT_PUBLIC_BASE_URL": "https://scratchsolidsolutions.org",
 		"NEXT_PUBLIC_API_URL": "https://api.scratchsolidsolutions.org/api",
-		"R2_PUBLIC_BASE": "https://uploads.scratchsolidsolutions.org",
-		"INTERNAL_PORTAL_URL": "https://portal.scratchsolidsolutions.org"
+		"R2_PUBLIC_BASE": "https://uploads.scratchsolidsolutions.org"
 	},
 	"observability": {
 		"enabled": true
@@ -110,8 +109,7 @@
 				"NEXT_PUBLIC_BASE_URL": "https://staging.scratchsolidsolutions.org",
 				"NEXT_PUBLIC_API_URL": "https://api-staging.scratchsolidsolutions.org/api",
 				"R2_PUBLIC_BASE": "https://uploads-staging.scratchsolidsolutions.org",
-				"NODE_ENV": "staging",
-				"INTERNAL_PORTAL_URL": "https://portal-staging.scratchsolidsolutions.org"
+				"NODE_ENV": "staging"
 			}
 		}
 	}

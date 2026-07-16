@@ -2,8 +2,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { logger } from '@/lib/logger';
-
-const INTERNAL_PORTAL_URL = process.env.INTERNAL_PORTAL_URL || 'https://portal.scratchsolidsolutions.org';
+import { getCloudflareContext } from '@/lib/runtime-context';
 
 export async function GET(request: NextRequest) {
   const traceId = withTracing(request);
@@ -19,18 +18,26 @@ export async function GET(request: NextRequest) {
       return withSecurityHeaders(NextResponse.json({ error: 'cleaner_id required' }, { status: 400 }), traceId);
     }
 
-    // Forward request to internal portal
-    const internalUrl = `${INTERNAL_PORTAL_URL}/api/cleaner-status?cleaner_id=${cleanerId}`;
-    
-    const response = await fetch(internalUrl, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        // Forward the authorization token from the current session
-        'Authorization': `Bearer ${(user as any).token || request.headers.get('authorization')?.replace('Bearer ', '')}`
-      },
-      cache: 'no-store'
-    });
+    // Forward to internal-portal via the PORTAL service binding (Worker-to-Worker
+    // RPC) rather than a plain fetch() to the public hostname - same-zone
+    // Worker-to-Worker calls over the public network were unreliable (522s).
+    const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
+    const portal = env?.PORTAL;
+    if (!portal) {
+      logger.error('PORTAL service binding not available', new Error('missing binding'));
+      return withSecurityHeaders(NextResponse.json({ error: 'Internal portal unavailable' }, { status: 503 }), traceId);
+    }
+
+    const response = await portal.fetch(
+      `https://internal-portal/api/cleaner-status?cleaner_id=${cleanerId}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${(user as any).token || request.headers.get('authorization')?.replace('Bearer ', '')}`
+        },
+      }
+    );
 
     if (!response.ok) {
       const errorText = await response.text();
