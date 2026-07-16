@@ -28,6 +28,8 @@ const PUBLIC_PATHS = [
   '/api/analytics/track',
   '/api/feedback',
   '/api/webhooks',
+  '/api/data-deletion/request',
+  '/api/data-deletion/confirm',
 ];
 
 export function proxy(request: NextRequest) {
