@@ -25,6 +25,7 @@ import {
   ChevronRight,
   Sparkles,
   GraduationCap,
+  MapPin,
 } from "lucide-react";
 
 const ERP_ENABLED = (process.env.NEXT_PUBLIC_ERP_URL || "").length > 0;
@@ -56,6 +57,7 @@ const APP_NAV_GROUPS: NavGroup[] = [
     label: "Workforce",
     items: [
       { href: "/admin/cleaners", label: "Cleaners", icon: Sparkles },
+      { href: "/admin/job-tracking", label: "Job Tracking", icon: MapPin },
       { href: "/admin/pools", label: "Pool Management", icon: Users },
       { href: "/admin/training", label: "Training", icon: GraduationCap },
       { href: "/admin/reviews", label: "Staff Reviews", icon: ClipboardList },

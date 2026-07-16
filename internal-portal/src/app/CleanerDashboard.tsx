@@ -3,7 +3,7 @@
 
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import { useTokenRefresh } from "@/hooks/useTokenRefresh";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -72,6 +72,8 @@ export default function CleanerDashboard() {
   const [geolocationEnabled, setGeolocationEnabled] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<{lat: number, lng: number} | null>(null);
   const [lastLocationPing, setLastLocationPing] = useState<Date | null>(null);
+  const [gpsConfirmation, setGpsConfirmation] = useState<string | null>(null);
+  const geoWatchId = useRef<number | null>(null);
   const [kpiScore, setKpiScore] = useState(0);
   const [kpiBreakdown, setKpiBreakdown] = useState<{ client: number; system: number; admin: number } | null>(null);
   const [kpiBonus, setKpiBonus] = useState<{
@@ -97,6 +99,14 @@ export default function CleanerDashboard() {
     if (urlParams.get('training_required') === 'true') {
       setShowTrainingPrompt(true);
     }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (geoWatchId.current !== null) {
+        navigator.geolocation.clearWatch(geoWatchId.current);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -1257,22 +1267,48 @@ export default function CleanerDashboard() {
               </div>
               <button
                 onClick={() => {
-                  setGeolocationEnabled(!geolocationEnabled);
                   if (!geolocationEnabled) {
-                    if (navigator.geolocation) {
-                      navigator.geolocation.getCurrentPosition(
-                        (position) => {
-                          setCurrentLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
-                          setLastLocationPing(new Date());
-                        },
-                        (error) => {
-                          alert('Unable to retrieve location');
-                        }
-                      );
+                    if (!navigator.geolocation) {
+                      alert('Location is not available on this device');
+                      return;
                     }
+                    geoWatchId.current = navigator.geolocation.watchPosition(
+                      (position) => {
+                        const lat = position.coords.latitude;
+                        const lng = position.coords.longitude;
+                        setCurrentLocation({ lat, lng });
+                        setLastLocationPing(new Date());
+                        const token = localStorage.getItem('authToken');
+                        fetch('/api/cleaner/gps-ping', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                          body: JSON.stringify({ lat, long: lng }),
+                        })
+                          .then((res) => res.json())
+                          .then((data: { confirmed?: boolean; event?: string }) => {
+                            if (data.confirmed && data.event === 'arrived') {
+                              setGpsConfirmation('Arrival confirmed via GPS');
+                            } else if (data.confirmed && data.event === 'completed') {
+                              setGpsConfirmation('Completion confirmed via GPS');
+                            }
+                          })
+                          .catch(() => {});
+                      },
+                      () => {
+                        alert('Unable to retrieve location');
+                      },
+                      { enableHighAccuracy: true, maximumAge: 15000, timeout: 10000 }
+                    );
+                    setGeolocationEnabled(true);
                   } else {
+                    if (geoWatchId.current !== null) {
+                      navigator.geolocation.clearWatch(geoWatchId.current);
+                      geoWatchId.current = null;
+                    }
+                    setGeolocationEnabled(false);
                     setCurrentLocation(null);
                     setLastLocationPing(null);
+                    setGpsConfirmation(null);
                   }
                 }}
                 className={`px-4 py-2 rounded-lg transition-all ${geolocationEnabled ? 'bg-red-500/20 text-red-200' : 'bg-green-500/20 text-green-200'}`}
@@ -1289,6 +1325,11 @@ export default function CleanerDashboard() {
                 {lastLocationPing && (
                   <div className="mt-1 text-sm" style={{ color: 'var(--text)', opacity: 0.6 }}>
                     Last ping: {lastLocationPing.toLocaleTimeString()}
+                  </div>
+                )}
+                {gpsConfirmation && (
+                  <div className="mt-2 text-sm font-medium" style={{ color: '#3f6b2e' }}>
+                    {gpsConfirmation}
                   </div>
                 )}
               </div>

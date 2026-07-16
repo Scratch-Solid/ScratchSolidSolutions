@@ -6,6 +6,7 @@ import {
   downloadMediaFromMeta,
 } from '@/lib/whatsapp/meta-cloud';
 import { getCloudflareContext } from '@/lib/runtime-context';
+import { resolveStaff, findActiveAssignment } from '@/lib/active-assignment';
 
 /**
  * Meta Cloud API WhatsApp Webhook
@@ -105,87 +106,6 @@ function extractStatusKeyword(text: string): string | null {
   return null;
 }
 
-// ─── Resolve staff by phone ───
-async function resolveStaff(db: any, phone: string): Promise<{ id: number; first_name: string; paysheet_code?: string } | null> {
-  const normalizedPhone = phone.replace(/\s+/g, '');
-
-  const staff = await db
-    .prepare(
-      `SELECT s.id, s.first_name, cp.paysheet_code
-       FROM staff s
-       LEFT JOIN cleaner_profiles cp ON cp.user_id = s.user_id
-       WHERE REPLACE(s.cellphone, ' ', '') = ? AND s.is_active = 1
-       LIMIT 1`
-    )
-    .bind(normalizedPhone)
-    .first() as { id: number; first_name: string; paysheet_code: string | null } | null;
-
-  if (staff) return { ...staff, paysheet_code: staff.paysheet_code || undefined };
-
-  const profile = await db
-    .prepare(
-      `SELECT user_id AS id, first_name, paysheet_code
-       FROM cleaner_profiles
-       WHERE REPLACE(cellphone, ' ', '') = ?
-       LIMIT 1`
-    )
-    .bind(normalizedPhone)
-    .first() as { id: number; first_name: string; paysheet_code: string } | null;
-
-  return profile || null;
-}
-
-// ─── Find active assignment (bookings OR jobs) ───
-async function findActiveAssignment(
-  db: any,
-  staffId: number,
-  paysheetCode: string | undefined
-) {
-  const today = new Date().toISOString().split('T')[0];
-
-  // 1. Try bookings table first
-  const bookingAssignment = await db
-    .prepare(
-      `SELECT ba.id AS assignment_id, ba.booking_id AS entity_id,
-              'booking' AS entity_type, b.booking_time AS time_slot
-       FROM booking_assignments ba
-       JOIN bookings b ON b.id = ba.booking_id
-       WHERE ba.staff_id = ?
-         AND b.booking_date = ?
-         AND ba.assignment_status NOT IN ('completed', 'cancelled')
-       ORDER BY b.booking_time ASC
-       LIMIT 1`
-    )
-    .bind(staffId, today)
-    .first();
-
-  if (bookingAssignment) return bookingAssignment;
-
-  // 2. Fall back to jobs table (Cal.com bookings)
-  if (paysheetCode) {
-    // Defensively escape any double quotes in paysheetCode before building LIKE pattern
-    const safeCode = paysheetCode.replace(/"/g, '""');
-    const pattern = `%"${safeCode}"%`;
-    const jobAssignment = await db
-      .prepare(
-        `SELECT j.id AS entity_id, 'job' AS entity_type,
-                j.scheduled_at AS time_slot
-         FROM jobs j
-         WHERE j.team_members LIKE ?
-           AND date(j.scheduled_at) = ?
-           AND j.status NOT IN ('completed', 'cancelled')
-         ORDER BY j.scheduled_at ASC
-         LIMIT 1`
-      )
-      .bind(pattern, today)
-      .first();
-
-    if (jobAssignment) return jobAssignment;
-  }
-
-  return null;
-}
-
 // ─── Handle status keyword (START/HERE/DONE) ───
 async function handleStatusKeyword(db: any, phone: string, body: string) {
   const keyword = extractStatusKeyword(body);
@@ -232,19 +152,23 @@ async function handleStatusKeyword(db: any, phone: string, body: string) {
       `UPDATE bookings SET assignment_status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
     ).bind(newStatus, assignment.entity_id).run();
   } else {
-    // Update jobs table
+    // Update jobs table. arrived_at/completed_at are the canonical,
+    // client-facing timestamps - COALESCE so whichever source (WhatsApp or
+    // GPS) reports first keeps its timestamp; the *_whatsapp column always
+    // records this source's own report for the admin comparison view,
+    // regardless of which one won the canonical slot.
     const nowIso = new Date().toISOString();
     if (newStatus === 'completed') {
       await db.prepare(
-        `UPDATE jobs SET status = ?, completed_at = ?, updated_at = ? WHERE id = ?`
-      ).bind(newStatus, nowIso, nowIso, assignment.entity_id).run();
+        `UPDATE jobs SET status = ?, completed_at = COALESCE(completed_at, ?), completed_at_whatsapp = ?, updated_at = ? WHERE id = ?`
+      ).bind(newStatus, nowIso, nowIso, nowIso, assignment.entity_id).run();
     } else if (newStatus === 'arrived') {
       await db.prepare(
-        `UPDATE jobs SET status = ?, arrived_at = ?, updated_at = ? WHERE id = ?`
-      ).bind(newStatus, nowIso, nowIso, assignment.entity_id).run();
+        `UPDATE jobs SET status = ?, arrived_at = COALESCE(arrived_at, ?), arrived_at_whatsapp = ?, updated_at = ? WHERE id = ?`
+      ).bind(newStatus, nowIso, nowIso, nowIso, assignment.entity_id).run();
     } else {
       await db.prepare(
-        `UPDATE jobs SET status = ?, started_at = ?, updated_at = ? WHERE id = ?`
+        `UPDATE jobs SET status = ?, started_at = COALESCE(started_at, ?), updated_at = ? WHERE id = ?`
       ).bind(newStatus, nowIso, nowIso, assignment.entity_id).run();
     }
   }

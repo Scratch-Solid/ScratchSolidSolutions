@@ -25,6 +25,10 @@ jest.mock('@/lib/pool-management/pool-assignment', () => ({
   scoreAssignmentCandidates: jest.fn(() => Promise.resolve([])),
 }));
 
+jest.mock('@/lib/geocoding', () => ({
+  geocodeAddress: jest.fn(() => Promise.resolve(null)),
+}));
+
 function createRequest(body: object, authHeader?: string): NextRequest {
   return new NextRequest('http://localhost/api/webhooks/n8n/booking-ingested', {
     method: 'POST',

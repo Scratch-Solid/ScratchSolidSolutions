@@ -5,6 +5,7 @@ import {
   resolveAssignmentPool,
   scoreAssignmentCandidates,
 } from '@/lib/pool-management/pool-assignment';
+import { geocodeAddress } from '@/lib/geocoding';
 
 /**
  * n8n → Internal Portal: Booking Ingestion Webhook
@@ -174,14 +175,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Geocode the real address for precise GPS arrival confirmation later.
+    // Best-effort - a booking with no geocode falls back to suburb-level
+    // matching (see lib/geofence.ts) rather than blocking ingestion.
+    const geocoded = await geocodeAddress(
+      body.property.suburb ? `${body.property.address}, ${body.property.suburb}` : body.property.address
+    );
+
     // ─── Insert job ───
     await db
       .prepare(
         `INSERT INTO jobs (
           id, calcom_uid, client_email, client_name, client_phone,
           property_type, property_address, property_access_code, property_unit_name,
-          special_requests, service_type, scheduled_at, duration_minutes, status, suburb
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          special_requests, service_type, scheduled_at, duration_minutes, status, suburb,
+          geocoded_lat, geocoded_long, geocoded_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .bind(
         jobId,
@@ -198,7 +207,10 @@ export async function POST(request: NextRequest) {
         body.service.scheduled_at,
         body.service.duration_minutes || 120,
         'scheduled',
-        body.property.suburb || null
+        body.property.suburb || null,
+        geocoded?.lat ?? null,
+        geocoded?.long ?? null,
+        geocoded ? new Date().toISOString() : null
       )
       .run();
 

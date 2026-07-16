@@ -41,6 +41,13 @@ export async function GET(request: NextRequest) {
         j.zoho_invoice_id,
         j.payment_status,
         j.erpnext_shift_id,
+        j.started_at,
+        j.arrived_at,
+        j.arrived_at_whatsapp,
+        j.arrived_at_gps,
+        j.completed_at,
+        j.completed_at_whatsapp,
+        j.completed_at_gps,
         j.created_at,
         j.updated_at
       FROM jobs j
