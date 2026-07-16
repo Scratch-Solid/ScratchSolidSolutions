@@ -190,9 +190,13 @@ test.describe('🔐 Auth API Endpoints', () => {
     skipOn429(res);
     expect([200, 201, 400, 409]).toContain(res.status());
     if (res.status() === 200 || res.status() === 201) {
+      // Signup never issues a token itself (that's /api/auth/login's job) -
+      // it returns the created account, plus a message that varies
+      // depending on whether the verification email could actually be
+      // sent. Both are real, valid outcomes.
       const body = await res.json();
-      expect(body).toHaveProperty('token');
       expect(body).toHaveProperty('role');
+      expect(body).toHaveProperty('email');
     }
   });
 
