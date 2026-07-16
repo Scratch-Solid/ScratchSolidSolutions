@@ -29,6 +29,19 @@ async function assertNo500(driver) {
   }
 }
 
+// The fixed-bottom cookie banner can overlap page content in the headless
+// browser's small default viewport, intercepting clicks meant for whatever
+// is underneath it - dismiss it first wherever a test clicks near the fold.
+async function dismissCookieBanner(driver) {
+  try {
+    const acceptBtn = await driver.findElement(By.xpath('//button[contains(text(),"Accept")]'));
+    await acceptBtn.click();
+    await delay(300);
+  } catch {
+    // Banner already dismissed or not present - nothing to do.
+  }
+}
+
 async function runTest(name, testFn) {
   const driver = await createDriver();
   let passed = false;
@@ -119,10 +132,10 @@ async function testNavigation() {
   });
   if (result2.passed) passed++; else failed++;
 
-  const result3 = await runTest('Overlay menu opens and privacy link works', async (driver) => {
+  const result3 = await runTest('Footer privacy link works', async (driver) => {
+    // The redesigned SiteNav has no overlay/hamburger menu - it's direct
+    // links plus a footer legal bar with the Privacy link instead.
     await driver.get(`${BASE_URL}/`);
-    await delay();
-    await driver.findElement(By.css('button[aria-label="Open menu"]')).click();
     await delay();
     await driver.findElement(By.css('a[href="/privacy"]')).click();
     await delay();
@@ -143,6 +156,10 @@ async function testNavigation() {
 
   const result5 = await runTest('Auth page Individual/Business tabs work', async (driver) => {
     await driver.get(`${BASE_URL}/auth`);
+    await delay();
+    // "Business Name" is a signup-only field - the Individual/Business tab
+    // toggle only reveals it once switched out of the default Sign In mode.
+    await driver.findElement(By.xpath('//*[contains(text(),"Sign Up")]')).click();
     await delay();
     await driver.findElement(By.xpath('//*[contains(text(),"Business")]')).click();
     await delay();
@@ -179,6 +196,7 @@ async function testAuthForms() {
   const result = await runTest('Login form validation — empty fields', async (driver) => {
     await driver.get(`${BASE_URL}/auth`);
     await delay();
+    await dismissCookieBanner(driver);
     const submit = await driver.findElement(By.css('button[type="submit"]'));
     await submit.click();
     await delay();
@@ -190,6 +208,7 @@ async function testAuthForms() {
   const result2 = await runTest('Login form — invalid credentials', async (driver) => {
     await driver.get(`${BASE_URL}/auth`);
     await delay();
+    await dismissCookieBanner(driver);
     await driver.findElement(By.css('input[name="phone"], input[name="identifier"], input[name="email"]')).sendKeys('0000000000');
     await driver.findElement(By.css('input[name="password"]')).sendKeys('wrongpassword');
     await driver.findElement(By.css('button[type="submit"]')).click();
@@ -258,10 +277,11 @@ async function testBookingForm() {
   });
   if (result3.passed) passed++; else failed++;
 
-  const result4 = await runTest('Homepage "Get a Quick Quote" routes to auth when not logged in', async (driver) => {
+  const result4 = await runTest('Homepage "Book a clean" routes to auth when not logged in', async (driver) => {
+    // Redesigned homepage's primary CTA is "Book a clean", not "Get a Quick Quote".
     await driver.get(`${BASE_URL}/`);
     await delay();
-    const btn = await driver.findElement(By.xpath('//button[contains(text(),"Get a Quick Quote")]'));
+    const btn = await driver.findElement(By.xpath('//button[contains(text(),"Book a clean")]'));
     await btn.click();
     await delay();
     const url = await driver.getCurrentUrl();
