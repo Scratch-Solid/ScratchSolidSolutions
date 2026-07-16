@@ -212,12 +212,11 @@ test.describe('📅 Booking API', () => {
 // MARKETING CONTENT PROXY
 // ─────────────────────────────────────────────
 test.describe('🔗 Marketing Content Proxy', () => {
-  test('GET /api/marketing/content — proxies to marketing site', async ({ request }) => {
+  test('GET /api/marketing/content — requires admin authentication', async ({ request }) => {
+    // withAuth(['admin']) - anonymous access must be rejected.
     const res = await request.get(`${BASE_URL}/api/marketing/content`);
     skipOn429(res);
-    expectStatusOk(res);
-    const body = await res.json();
-    expect(Array.isArray(body)).toBe(true);
+    expect(res.status()).toBe(401);
   });
 
   test('PUT /api/marketing/content — requires auth', async ({ request }) => {

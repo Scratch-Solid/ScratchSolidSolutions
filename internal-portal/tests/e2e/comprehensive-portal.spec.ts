@@ -267,7 +267,7 @@ test.describe('🔐 Auth Forms — Login', () => {
 test.describe('🧹 Cleaner Signup — Consent Form', () => {
   test('Consent form has all required fields', async ({ page }) => {
     await goTo(page, '/signup/cleaner');
-    await expect(page.locator('text=Consent Form')).toBeVisible();
+    await expect(page.locator('text=Cleaner Application')).toBeVisible();
     // Full Name
     await expect(page.locator('input[name="fullName"], input[name="full_name"], input#fullName')).toBeVisible();
     // ID/Passport

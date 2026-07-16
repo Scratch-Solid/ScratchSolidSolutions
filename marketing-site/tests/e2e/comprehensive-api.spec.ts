@@ -127,12 +127,11 @@ test.describe('🌐 Public API Endpoints', () => {
     expect(res.status()).toBe(401);
   });
 
-  test('GET /api/calendar — returns calendar data', async ({ request }) => {
+  test('GET /api/calendar — requires authentication', async ({ request }) => {
+    // withAuth(['client', 'admin']) - anonymous access must be rejected.
     const res = await request.get(`${BASE_URL}/api/calendar`);
     skipOn429(res);
-    if (res.status() !== 404) {
-      expectStatusOk(res);
-    }
+    expect(res.status()).toBe(401);
   });
 
   test('GET /api/feedback — returns feedback', async ({ request }) => {
