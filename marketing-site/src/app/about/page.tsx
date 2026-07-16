@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import SiteNav from "@/components/SiteNav";
+import SiteFooter from "@/components/SiteFooter";
 
 interface Statistics {
   clients_serviced: number;
@@ -229,6 +230,7 @@ export default function AboutPage() {
         </div>
       </div>
     </div>
+    <SiteFooter />
     </>
   );
 }

@@ -101,7 +101,7 @@ export async function sendPasswordResetEmail(email: string, resetLink: string) {
           <p>If you did not request this password reset, please ignore this email.</p>
         </div>
         <div class="footer">
-          <p>&copy; 2024 Scratch Solid Solutions. All rights reserved.</p>
+          <p>&copy; ${new Date().getFullYear()} Scratch Solid Solutions. All rights reserved.</p>
         </div>
       </div>
     </body>
@@ -148,7 +148,7 @@ export async function sendBookingConfirmationEmail(email: string, clientName: st
           <p>If you need to reschedule or cancel, please contact us at least 24 hours in advance.</p>
         </div>
         <div class="footer">
-          <p>&copy; 2024 Scratch Solid Solutions. All rights reserved.</p>
+          <p>&copy; ${new Date().getFullYear()} Scratch Solid Solutions. All rights reserved.</p>
         </div>
       </div>
     </body>
@@ -195,7 +195,7 @@ export async function sendPaymentReceiptEmail(email: string, clientName: string,
           <p>Thank you for your payment. Please keep this receipt for your records.</p>
         </div>
         <div class="footer">
-          <p>&copy; 2024 Scratch Solid Solutions. All rights reserved.</p>
+          <p>&copy; ${new Date().getFullYear()} Scratch Solid Solutions. All rights reserved.</p>
         </div>
       </div>
     </body>
@@ -243,7 +243,7 @@ export async function sendAdminAlertEmail(clientName: string, bookingDate: strin
           <p>Please review and confirm this booking in the admin dashboard.</p>
         </div>
         <div class="footer">
-          <p>&copy; 2024 Scratch Solid Solutions. All rights reserved.</p>
+          <p>&copy; ${new Date().getFullYear()} Scratch Solid Solutions. All rights reserved.</p>
         </div>
       </div>
     </body>
@@ -288,7 +288,7 @@ export async function sendDataDeletionConfirmationEmail(email: string, confirmLi
           <p>Once confirmed, our team will process your request within 30 days. If you did not request this, please ignore this email - no action will be taken without confirmation.</p>
         </div>
         <div class="footer">
-          <p>&copy; 2024 Scratch Solid Solutions. All rights reserved.</p>
+          <p>&copy; ${new Date().getFullYear()} Scratch Solid Solutions. All rights reserved.</p>
         </div>
       </div>
     </body>

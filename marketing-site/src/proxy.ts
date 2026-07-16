@@ -30,7 +30,7 @@ const PUBLIC_PATHS = [
   '/api/webhooks',
 ];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Skip public paths - allow access without auth

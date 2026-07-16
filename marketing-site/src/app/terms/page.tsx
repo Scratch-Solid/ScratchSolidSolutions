@@ -2,10 +2,14 @@
 
 import Link from "next/link";
 import LogoWatermark from '@/components/LogoWatermark';
+import SiteNav from "@/components/SiteNav";
+import SiteFooter from "@/components/SiteFooter";
 
 export default function TermsPage() {
   return (
-    <div className="min-h-screen py-8 sm:py-16 px-2 sm:px-4 font-sans">
+    <>
+    <SiteNav />
+    <div className="min-h-screen py-8 sm:py-16 px-2 sm:px-4 font-sans pt-24 sm:pt-32">
       <div className="max-w-2xl mx-auto bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20 p-6 sm:p-10 relative overflow-hidden">
         <LogoWatermark size="lg" />
         <h1 className="text-3xl sm:text-4xl font-extrabold text-blue-700 mb-4 sm:mb-6 text-center drop-shadow-lg">Terms of Service</h1>
@@ -68,5 +72,7 @@ export default function TermsPage() {
         </div>
       </div>
     </div>
+    <SiteFooter />
+    </>
   );
 }

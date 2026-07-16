@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import QuoteModal from "@/components/QuoteModal";
 import SiteNav from "@/components/SiteNav";
+import SiteFooter from "@/components/SiteFooter";
 
 interface Service {
   id: number;
@@ -381,6 +382,7 @@ export default function ServicesContent() {
           </div>
         </div>
       </div>
+      <SiteFooter />
     </>
   );
 }

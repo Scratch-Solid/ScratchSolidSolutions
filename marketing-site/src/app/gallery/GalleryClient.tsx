@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import SiteNav from "@/components/SiteNav";
+import SiteFooter from "@/components/SiteFooter";
 
 interface Review {
   id: number;
@@ -343,6 +344,7 @@ export default function GalleryClient() {
           </div>
         </div>
       )}
+      <SiteFooter />
     </div>
   );
 }

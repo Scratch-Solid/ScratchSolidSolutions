@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import LogoWatermark from '@/components/LogoWatermark';
+import BrandHomeLink from '@/components/BrandHomeLink';
 
 export default function DataDeletionPage() {
   const [email, setEmail] = useState("");
@@ -44,6 +45,7 @@ export default function DataDeletionPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white py-8 sm:py-16 px-2 sm:px-4 font-sans">
+      <BrandHomeLink />
       <div className="max-w-md mx-auto">
         <h1 className="text-3xl sm:text-4xl font-bold text-center text-blue-700 mb-2">
           Delete My Data

@@ -5,7 +5,8 @@
       "name": "marketing-site-dev",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "--prefix", "marketing-site"],
-      "port": 3000
+      "port": 3000,
+      "autoPort": true
     }
   ]
 }
