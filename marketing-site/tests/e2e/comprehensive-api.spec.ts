@@ -260,7 +260,11 @@ test.describe('🔐 Auth API Endpoints', () => {
       data: { email: testEmail }
     });
     skipOn429(res);
-    expect([200, 400]).toContain(res.status());
+    // 404 is a legitimate response here (no account found) - matches the
+    // sibling forgot-password test above, and covers the case where an
+    // earlier test in this serial run was itself rate-limited/skipped and
+    // never actually created testEmail's account.
+    expect([200, 400, 404]).toContain(res.status());
   });
 });
 
