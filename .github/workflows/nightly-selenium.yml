@@ -87,3 +87,20 @@ jobs:
           else
             gh issue create --repo "$GITHUB_REPOSITORY" --title "🔴 Nightly Selenium Regression failed" --body "$BODY" --label "production-alert"
           fi
+
+  close-alert-on-recovery:
+    name: Close Alert on Recovery
+    runs-on: ubuntu-latest
+    needs: [marketing-selenium]
+    if: success()
+    permissions:
+      issues: write
+    steps:
+      - name: Close open nightly Selenium alert issues if tests have recovered
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for number in $(gh issue list --repo "$GITHUB_REPOSITORY" --label "production-alert" --state open --search "Nightly Selenium Regression failed" --json number --jq '.[].number'); do
+            gh issue comment "$number" --repo "$GITHUB_REPOSITORY" --body "Nightly Selenium Regression is passing again as of $(date -u +"%Y-%m-%d %H:%M UTC")."
+            gh issue close "$number" --repo "$GITHUB_REPOSITORY"
+          done
