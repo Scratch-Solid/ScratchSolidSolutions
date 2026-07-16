@@ -143,12 +143,12 @@ test.describe('🌐 Public API Endpoints', () => {
 
   test('POST /api/chatbot — responds to query', async ({ request }) => {
     const res = await request.post(`${BASE_URL}/api/chatbot`, {
-      data: { message: 'hello' }
+      data: { question: 'What cleaning services do you offer' }
     });
     skipOn429(res);
     expectStatusOk(res);
     const body = await res.json();
-    expect(body).toHaveProperty('response');
+    expect(body).toHaveProperty('answer');
   });
 
   test('GET /api/health — health check', async ({ request }) => {

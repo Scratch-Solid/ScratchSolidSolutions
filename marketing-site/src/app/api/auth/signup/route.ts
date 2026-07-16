@@ -168,10 +168,18 @@ export async function POST(request: NextRequest) {
       const verifyLink = `${baseUrl}/api/auth/verify-email?token=${verifyToken}`;
       
       const emailResult = await sendEmailVerificationEmailDirect((user as any).email, (user as any).name || 'there', verifyLink);
-      
+
       if (!emailResult.success) {
-        console.error('Failed to send verification email:', emailResult.error);
-        return NextResponse.json({ error: 'Account created but failed to send verification email. Please contact support.' }, { status: 500 });
+        // Same reasoning as the individual signup path below - the account
+        // was created, so this must not be a 500.
+        logger.error('Failed to send verification email', new Error(emailResult.error || 'Unknown email error'));
+        return NextResponse.json({
+          id: (user as any).id,
+          email: (user as any).email,
+          role: (user as any).role,
+          name: (user as any).name,
+          message: 'Business account created successfully, but the verification email could not be sent. You can request it again from the login page.'
+        }, { status: 201 });
       }
 
       return NextResponse.json({
@@ -202,10 +210,22 @@ export async function POST(request: NextRequest) {
     const verifyLink = `${baseUrl}/api/auth/verify-email?token=${verifyToken}`;
     
     const emailResult = await sendEmailVerificationEmailDirect((user as any).email, (user as any).name || 'there', verifyLink);
-    
+
     if (!emailResult.success) {
-      console.error('Failed to send verification email:', emailResult.error);
-      return NextResponse.json({ error: 'Account created but failed to send verification email. Please contact support.' }, { status: 500 });
+      // The account itself was created successfully - a transient email
+      // delivery failure shouldn't fail the whole signup with a 500, which
+      // reads to the client as "nothing happened" when in fact the account
+      // exists (a retry would then hit 409 "already exists" and confuse the
+      // user). Verification email can be requested again via
+      // /api/auth/resend-verification.
+      logger.error('Failed to send verification email', new Error(emailResult.error || 'Unknown email error'));
+      return NextResponse.json({
+        id: (user as any).id,
+        email: (user as any).email,
+        role: (user as any).role,
+        name: (user as any).name,
+        message: 'Account created successfully, but the verification email could not be sent. You can request it again from the login page.'
+      }, { status: 201 });
     }
 
     return NextResponse.json({

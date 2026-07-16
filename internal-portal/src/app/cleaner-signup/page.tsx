@@ -270,6 +270,7 @@ export default function CleanerSignup() {
               <label className="flex items-start gap-3 cursor-pointer">
                 <input
                   type="checkbox"
+                  required
                   checked={formData.background_check_consent}
                   onChange={(e) => setFormData({ ...formData, background_check_consent: e.target.checked })}
                   className="mt-1 h-4 w-4 text-[#2E1F16] border-stone-300 rounded focus:ring-[#B08A5E]"
