@@ -119,12 +119,12 @@ test.describe('🌐 Public API Endpoints', () => {
     }
   });
 
-  test('GET /api/cleaners — returns cleaners list', async ({ request }) => {
+  test('GET /api/cleaners — requires authentication', async ({ request }) => {
+    // withAuth(request) with no roles still requires a valid token for any
+    // authenticated user - anonymous access must be rejected.
     const res = await request.get(`${BASE_URL}/api/cleaners`);
     skipOn429(res);
-    expectStatusOk(res);
-    const body = await res.json();
-    expect(Array.isArray(body)).toBe(true);
+    expect(res.status()).toBe(401);
   });
 
   test('GET /api/calendar — returns calendar data', async ({ request }) => {

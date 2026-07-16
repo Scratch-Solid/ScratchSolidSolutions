@@ -250,7 +250,7 @@ test.describe('🔐 Auth Forms — Login', () => {
     // This test verifies the login flow structure
     await goTo(page, '/auth/login');
     // Verify the login button is present and the form structure is correct
-    await expect(page.locator('button[type="submit"]')).toContainText('Login');
+    await expect(page.locator('button[type="submit"]')).toContainText('Sign in');
     await expect(page.locator('input#username')).toBeVisible();
     await expect(page.locator('input#password')).toBeVisible();
   });

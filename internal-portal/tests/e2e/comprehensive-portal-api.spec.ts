@@ -191,12 +191,12 @@ test.describe('🧹 Cleaner API', () => {
 // BOOKING API
 // ─────────────────────────────────────────────
 test.describe('📅 Booking API', () => {
-  test('GET /api/bookings — returns bookings', async ({ request }) => {
+  test('GET /api/bookings — requires authentication', async ({ request }) => {
+    // withAuth(request) with no roles still requires a valid token for any
+    // authenticated user - anonymous access must be rejected.
     const res = await request.get(`${BASE_URL}/api/bookings`);
     skipOn429(res);
-    expectStatusOk(res);
-    const body = await res.json();
-    expect(Array.isArray(body)).toBe(true);
+    expect(res.status()).toBe(401);
   });
 
   test('PUT /api/bookings/1 — requires auth to assign cleaner', async ({ request }) => {
