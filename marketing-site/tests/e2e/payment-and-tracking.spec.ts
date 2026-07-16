@@ -64,6 +64,9 @@ test.describe('Payment initialization (Paystack)', () => {
     const { token } = await loginRes.json() as { token: string };
     expect(token).toBeTruthy();
 
+    const csrfRes = await request.get(`${BASE_URL}/api/csrf-token`);
+    const { csrfToken } = await csrfRes.json() as { csrfToken: string };
+
     const bookingRes = await request.post(`${BASE_URL}/api/bookings`, {
       data: {
         client_name: 'Payment Regression Test',
@@ -75,7 +78,7 @@ test.describe('Payment initialization (Paystack)', () => {
         payment_method: 'card',
         price: 350,
       },
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`, 'X-CSRF-Token': csrfToken },
     });
     expect([200, 201]).toContain(bookingRes.status());
     const booking = await bookingRes.json() as { id: number; booking?: { id: number } };

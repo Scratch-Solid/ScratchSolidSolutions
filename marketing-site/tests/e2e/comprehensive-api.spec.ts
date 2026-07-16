@@ -335,12 +335,11 @@ test.describe('📊 Analytics API', () => {
 // CLEANER PROFILES API
 // ─────────────────────────────────────────────
 test.describe('🧹 Cleaner Profiles API', () => {
-  test('GET /api/cleaner-profiles — returns profiles', async ({ request }) => {
+  test('GET /api/cleaner-profiles — requires auth', async ({ request }) => {
+    // Route requires withAuth(['admin', 'cleaner']) - no anonymous access.
     const res = await request.get(`${BASE_URL}/api/cleaner-profiles`);
     skipOn429(res);
-    expectStatusOk(res);
-    const body = await res.json();
-    expect(Array.isArray(body)).toBe(true);
+    expectStatus(res, 401);
   });
 });
 
