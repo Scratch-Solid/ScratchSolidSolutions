@@ -1,6 +1,0 @@
-﻿/about
-/contact
-/gallery
-/privacy
-/services
-/terms

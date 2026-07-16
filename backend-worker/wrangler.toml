@@ -78,12 +78,11 @@ pattern = "api-staging.scratchsolidsolutions.org/*"
 zone_name = "scratchsolidsolutions.org"
 
 # Secrets (must be set via: wrangler secret put <SECRET_NAME>)
-# Required secrets:
-# - JWT_SECRET
-# - CSRF_SECRET
+# Required secrets (only used by /api/health and the scheduled data-retention
+# jobs now - the JWT/CSRF/Paystack secrets this worker used to need were
+# removed with its dead shadow API on 2026-07-16):
 # - RESEND_API_KEY
+# - ZOHO_CLIENT_ID
 # - ZOHO_CLIENT_SECRET
 # - ZOHO_ORG_ID
 # - ZOHO_REFRESH_TOKEN
-# - PAYSTACK_SECRET_KEY
-# - PAYSTACK_PUBLIC_KEY (optional, exposed to frontend)
