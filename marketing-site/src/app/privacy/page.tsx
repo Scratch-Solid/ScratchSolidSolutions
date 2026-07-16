@@ -68,7 +68,7 @@ export default function PrivacyPage() {
             </p>
             <ul className="text-base sm:text-lg text-zinc-800 list-disc list-inside space-y-2">
               <li>Request access to the personal information we hold about you.</li>
-              <li>Request the correction or deletion of your data.</li>
+              <li>Request the correction or <Link href="/data-deletion" className="text-blue-600 hover:underline">deletion of your data</Link>.</li>
               <li>Object to the processing of your data for marketing purposes.</li>
             </ul>
           </div>
