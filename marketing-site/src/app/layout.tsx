@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import CookieConsent from "@/components/CookieConsent";
+import GlobalFooter from "@/components/GlobalFooter";
+import FloatingActions from "@/components/FloatingActions";
+import MaintenanceBanner from "@/components/MaintenanceBanner";
 import { getDb } from "@/lib/db";
+import { getMaintenanceBanner } from "@/lib/maintenance";
 
 // Read the active background image directly from the database. A server-side
 // relative fetch (e.g. fetch('/api/content?...')) does not work under the
@@ -71,6 +74,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const backgroundUrl = await getBackgroundUrl();
+  const banner = await getMaintenanceBanner();
   const optimizedBackground = cdn(backgroundUrl);
   const backgroundStyle = backgroundUrl
     ? {
@@ -90,21 +94,12 @@ export default async function RootLayout({
     >
       <body className="min-h-full flex flex-col" style={backgroundStyle}>
         {children}
-        <footer className="w-full py-4 text-center text-white/70 text-sm bg-black/20 backdrop-blur-sm">
-          <div>© {new Date().getFullYear()} Scratch Solid Solutions. All rights reserved.</div>
-          <div className="mt-2 flex flex-wrap justify-center gap-4 text-xs sm:text-sm text-white/80">
-            <Link href="https://portal.scratchsolidsolutions.org/auth/login" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
-              Career
-            </Link>
-            <Link href="/terms" className="hover:text-white transition-colors">
-              Legal
-            </Link>
-            <Link href="/contact" className="hover:text-white transition-colors">
-              Other enquiries
-            </Link>
-          </div>
-        </footer>
-        <CookieConsent />
+        <GlobalFooter />
+        <FloatingActions />
+        <div className="fixed inset-x-0 bottom-0 z-50 flex flex-col">
+          {banner && <MaintenanceBanner message={banner.message} until={banner.until} />}
+          <CookieConsent />
+        </div>
       </body>
     </html>
   );

@@ -27,8 +27,8 @@ export default function CookieConsent() {
   if (!isVisible) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-gray-900 text-white p-4 z-50 shadow-lg pointer-events-none">
-      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 pointer-events-auto">
+    <div className="w-full bg-gray-900 text-white p-4 shadow-lg">
+      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex-1 text-sm">
           <p className="mb-1">
             <strong>Cookie Notice:</strong> We use essential cookies for authentication and session management. 

@@ -129,30 +129,30 @@ export default function AIAssistant() {
       {/* AI Assistant Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-14 h-14 bg-purple-600 rounded-full shadow-2xl hover:bg-purple-700 transition-colors flex items-center justify-center border-2 border-white animate-bounce-slow"
+        className="w-14 h-14 bg-[#B08A5E] rounded-full shadow-lg hover:bg-[#8a6a45] transition-colors flex items-center justify-center border-2 border-white/70"
         aria-label="AI Assistant"
         title="Ask our AI Assistant"
       >
-        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-6 h-6 text-[#2E1F16]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
         </svg>
       </button>
 
       {/* AI Chat Window */}
       {isOpen && (
-        <div className="absolute bottom-16 right-0 w-80 sm:w-96 h-[28rem] bg-white rounded-2xl shadow-2xl border-2 border-purple-200 flex flex-col relative overflow-hidden">
+        <div className="absolute bottom-16 right-0 w-80 sm:w-96 h-[28rem] bg-[#FBF8F3] rounded-2xl shadow-2xl border border-[rgba(176,138,94,0.35)] flex flex-col relative overflow-hidden">
           <LogoWatermark size="md" />
           {/* Header */}
-          <div className="bg-purple-600 text-white p-4 rounded-t-2xl flex-shrink-0">
+          <div className="bg-[#2E1F16] text-[#F7F2EA] p-4 rounded-t-2xl flex-shrink-0">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                <h3 className="font-semibold">AI Assistant</h3>
+                <div className="w-2 h-2 bg-[#B08A5E] rounded-full animate-pulse"></div>
+                <h3 className="font-semibold" style={{ fontFamily: "Georgia, serif" }}>AI Assistant</h3>
               </div>
               <div className="flex items-center space-x-1">
                 <button
                   onClick={clearChat}
-                  className="text-white hover:bg-purple-700 rounded p-1"
+                  className="text-[#F7F2EA] hover:bg-white/10 rounded p-1"
                   title="Clear chat"
                   aria-label="Clear chat"
                 >
@@ -162,7 +162,7 @@ export default function AIAssistant() {
                 </button>
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="text-white hover:bg-purple-700 rounded p-1"
+                  className="text-[#F7F2EA] hover:bg-white/10 rounded p-1"
                   title="Close chat"
                   aria-label="Close chat"
                 >
@@ -172,7 +172,7 @@ export default function AIAssistant() {
                 </button>
               </div>
             </div>
-            <p className="text-xs text-purple-200 mt-1">Ask me about services, pricing, tracking, and more</p>
+            <p className="text-xs text-[#d8c4a8] mt-1">Ask me about services, pricing, tracking, and more</p>
           </div>
 
           {/* Messages */}
@@ -185,17 +185,17 @@ export default function AIAssistant() {
                 <div
                   className={`max-w-[85%] p-3 rounded-lg whitespace-pre-line text-sm ${
                     message.role === "user"
-                      ? "bg-purple-600 text-white"
+                      ? "bg-[#2E1F16] text-[#F7F2EA]"
                       : message.matched === false
-                      ? "bg-yellow-50 text-gray-800 border border-yellow-200"
-                      : "bg-gray-100 text-gray-800"
+                      ? "bg-[rgba(176,138,94,0.12)] text-[#3f342a] border border-[rgba(176,138,94,0.35)]"
+                      : "bg-white text-[#3f342a] border border-[rgba(176,138,94,0.2)]"
                   }`}
                 >
                   {message.content}
                   {message.role === "assistant" && message.matched === false && (
                     <button
                       onClick={handleWhatsAppClick}
-                      className="mt-2 flex items-center space-x-1 text-green-600 hover:text-green-700 font-medium text-xs"
+                      className="mt-2 flex items-center space-x-1 text-[#8a6a45] hover:text-[#2E1F16] font-medium text-xs"
                     >
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.521.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.521-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.521.074-.794.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
@@ -208,9 +208,9 @@ export default function AIAssistant() {
             ))}
             {isLoading && (
               <div className="flex justify-start">
-                <div className="bg-gray-100 text-gray-800 p-3 rounded-lg">
+                <div className="bg-white text-[#3f342a] border border-[rgba(176,138,94,0.2)] p-3 rounded-lg">
                   <div className="flex items-center space-x-2">
-                    <div className="animate-spin rounded-full border-2 border-purple-600 border-t-transparent w-4 h-4"></div>
+                    <div className="animate-spin rounded-full border-2 border-[#B08A5E] border-t-transparent w-4 h-4"></div>
                     <span className="text-sm">Thinking...</span>
                   </div>
                 </div>
@@ -227,7 +227,7 @@ export default function AIAssistant() {
                   key={topic.label}
                   onClick={() => handleSend(topic.query)}
                   disabled={isLoading}
-                  className="text-xs px-2 py-1 bg-purple-50 text-purple-700 rounded-full border border-purple-200 hover:bg-purple-100 transition-colors disabled:opacity-50"
+                  className="text-xs px-2 py-1 bg-[rgba(176,138,94,0.12)] text-[#8a6a45] rounded-full border border-[rgba(176,138,94,0.35)] hover:bg-[rgba(176,138,94,0.2)] transition-colors disabled:opacity-50"
                 >
                   {topic.label}
                 </button>
@@ -238,14 +238,14 @@ export default function AIAssistant() {
           {/* Suggested Questions (only show on first load or after clear) */}
           {messages.length <= 1 && !isLoading && (
             <div className="px-4 pb-2 flex-shrink-0">
-              <p className="text-xs text-gray-500 mb-1">Popular questions:</p>
+              <p className="text-xs text-[#8a7a68] mb-1">Popular questions:</p>
               <div className="flex flex-wrap gap-1">
                 {SUGGESTED_QUESTIONS.map((q) => (
                   <button
                     key={q}
                     onClick={() => handleSend(q)}
                     disabled={isLoading}
-                    className="text-xs px-2 py-1 bg-gray-50 text-gray-700 rounded-full border border-gray-200 hover:bg-gray-100 transition-colors disabled:opacity-50 text-left"
+                    className="text-xs px-2 py-1 bg-white text-[#3f342a] rounded-full border border-[rgba(176,138,94,0.25)] hover:bg-[rgba(176,138,94,0.1)] transition-colors disabled:opacity-50 text-left"
                   >
                     {q}
                   </button>
@@ -255,7 +255,7 @@ export default function AIAssistant() {
           )}
 
           {/* Input */}
-          <div className="p-4 border-t border-gray-200 flex-shrink-0">
+          <div className="p-4 border-t border-[rgba(176,138,94,0.25)] flex-shrink-0">
             <div className="flex space-x-2">
               <input
                 ref={inputRef}
@@ -264,13 +264,13 @@ export default function AIAssistant() {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Ask me anything..."
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                className="flex-1 px-3 py-2 border border-[rgba(176,138,94,0.35)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B08A5E]/40 focus:border-[#B08A5E] text-sm text-[#2E1F16]"
                 disabled={isLoading}
               />
               <button
                 onClick={() => handleSend()}
                 disabled={isLoading || !input.trim()}
-                className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-[#2E1F16] text-[#F7F2EA] px-4 py-2 rounded-lg hover:bg-[#241811] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="Send"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

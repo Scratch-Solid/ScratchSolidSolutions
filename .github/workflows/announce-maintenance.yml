@@ -1,0 +1,45 @@
+name: Announce Maintenance
+
+# Manually triggered ahead of a planned production deploy - sets the
+# production maintenance banner (see src/lib/maintenance.ts) so visitors get
+# advance notice. Trigger this whenever you know a deploy is coming (e.g.
+# ~2 hours before), then deploy-production.yml will extend the window to
+# cover at least 2 hours after the deploy itself runs.
+on:
+  workflow_dispatch:
+    inputs:
+      message:
+        description: 'Banner message shown to visitors'
+        required: false
+        default: 'Scheduled maintenance in progress. Some features may be briefly unavailable.'
+      hours_visible:
+        description: 'How many hours from now the banner should remain visible'
+        required: false
+        default: '2'
+
+jobs:
+  set-banner:
+    name: Set maintenance banner (production)
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Generate banner SQL
+      working-directory: ./marketing-site
+      run: node scripts/generate-maintenance-banner-sql.js maintenance-banner.sql
+      env:
+        BANNER_MESSAGE: ${{ github.event.inputs.message }}
+        HOURS_AFTER: ${{ github.event.inputs.hours_visible }}
+
+    - name: Apply banner to production D1
+      uses: cloudflare/wrangler-action@v3
+      with:
+        apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        workingDirectory: marketing-site
+        wranglerVersion: 4.93.0
+        command: d1 execute scratchsolid-marketing-db --remote --file=maintenance-banner.sql
+      env:
+        CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

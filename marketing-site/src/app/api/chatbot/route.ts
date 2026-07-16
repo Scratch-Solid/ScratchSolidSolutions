@@ -13,15 +13,33 @@ const fallbackKB: {
 }[] = [
   {
     question: "Who is Scratch Solid Solutions",
-    response: "We are a professional cleaning service based in the Northern Suburbs of Cape Town. We deliver spotless cleaning for homes, offices, and short-term rentals. Our slogan is 'Scratch-Free, Solidly Clean'.",
-    keywords: "about,who,company,scratch solid,solutions,mission,vision,values,story",
+    response: "We're a Cape Town-based company built around three connected divisions: Scratch Solid Cleaning (residential & commercial cleaning across the Northern Suburbs), Scratch Solid Transportation (personal & corporate transport, launching soon), and Scratch Solid Digital (our in-house software studio, which builds the booking and live-tracking systems the other divisions run on). Our slogan is 'Scratch-Free, Solidly Clean'.",
+    keywords: "about,who,company,scratch solid,solutions,mission,vision,values,story,divisions,departments,cleaning transportation digital",
     category: "About Us"
+  },
+  {
+    question: "What services does Scratch Solid Solutions offer",
+    response: "We operate three divisions: 1) Cleaning — residential, commercial, deep cleans, move-in/out, and short-term rental turnovers. 2) Transportation — personal and corporate transport, launching soon. 3) Digital — websites, apps and booking systems, built in-house by Scratch Solid Digital. Ask me about any of the three and I'll go into detail!",
+    keywords: "what do you do,divisions,departments,overview,three divisions,lines of business,cleaning transportation digital,what does scratch solid do",
+    category: "General FAQ"
   },
   {
     question: "What cleaning services do you offer",
     response: "We offer Residential Cleaning, Office & Commercial Cleaning, Deep Cleaning, Move-In/Move-Out Cleaning, and Short-Term Rental Turnovers.",
-    keywords: "services,offer,what do you do,cleaning types,residential,office,commercial,deep clean",
+    keywords: "cleaning services,cleaning types,residential,office,commercial,deep clean,move in,move out",
     category: "Services & Pricing"
+  },
+  {
+    question: "Do you offer transportation services",
+    response: "Scratch Solid Transportation is launching soon! It will cover Personal transport (airport runs, appointments, everyday trips) and Corporate transport (staff shuttling and executive transport, billed on account like a cleaning contract). WhatsApp us at +27 69 673 5947 and we'll notify you the moment it launches.",
+    keywords: "transportation,ride,lift,shuttle,driver,cab,launching,coming soon,when transport,do you have transport",
+    category: "Transportation"
+  },
+  {
+    question: "Do you build websites and apps",
+    response: "Yes! Scratch Solid Digital is our in-house software studio — we design and build websites, apps, and booking systems. We built our own live cleaner-tracking system first, and now take on projects for other businesses too. Start a project via customerservice@scratchsolidsolutions.org or WhatsApp us at +27 69 673 5947.",
+    keywords: "website,app,build,develop,software,digital,web design,app development,scratch solid digital,programming,developer,booking system",
+    category: "Digital Services"
   },
   {
     question: "How much do your cleaning services cost",
