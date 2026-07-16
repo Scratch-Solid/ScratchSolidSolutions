@@ -4,8 +4,6 @@ import {
   validateEmail,
   validatePassword,
   validatePhone,
-  validateSaIdNumber,
-  validateSaPassport,
   validateLength
 } from '../validation';
 

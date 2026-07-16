@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
 import { withAuth, withTracing, withSecurityHeaders, withCsrf } from '@/lib/middleware';
 import { bonusPercentageForKpi } from '@/lib/kpi';
 import { getErpNextCreds } from '@/lib/cleaner-integrations';

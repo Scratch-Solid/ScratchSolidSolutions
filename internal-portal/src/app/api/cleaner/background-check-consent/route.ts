@@ -1,6 +1,5 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
 import { createOnboardingSignatureReference, notifyCleanerConsent } from '@/lib/cleaner-integrations';
 import { setCleanerOnboardingStage } from '@/lib/cleaner-training';
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';

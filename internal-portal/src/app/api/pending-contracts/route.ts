@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
-import { getDb, getPendingContracts, createPendingContract, updatePendingContractStatus, deletePendingContract, logAuditEvent, addOnboardingStageToUsers, updateUserOnboardingStage, logOnboardingTransition, logNotification } from "../../../lib/db";
+import { getDb, createPendingContract, updatePendingContractStatus, deletePendingContract, logAuditEvent, addOnboardingStageToUsers, updateUserOnboardingStage, logOnboardingTransition, logNotification } from "../../../lib/db";
 import { withAuth, withSecurityHeaders, withTracing, withRateLimit, withCsrf } from "../../../lib/middleware";
 import { validatePhone, validateSaIdNumber, validateSaPassport } from "../../../lib/validation";
 import { sanitizeRequestBody } from '@/lib/sanitization';

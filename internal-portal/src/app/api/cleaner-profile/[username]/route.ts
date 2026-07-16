@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
-import { getDb, getCleanerProfileByUsername, updateCleanerProfile, logAuditEvent } from "@/lib/db";
+import { getCleanerProfileByUsername, updateCleanerProfile, logAuditEvent } from "@/lib/db";
 import { withAuth, withTracing, withSecurityHeaders, withCsrf } from "@/lib/middleware";
 
 export async function GET(request: NextRequest) {

@@ -12,7 +12,6 @@
  * - Secure token generation with JWT
  */
 
-import { getDb } from './db';
 import bcrypt from 'bcryptjs';
 import { SignJWT, jwtVerify } from 'jose';
 import { authenticator } from 'otplib';

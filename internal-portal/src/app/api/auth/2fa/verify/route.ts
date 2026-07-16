@@ -2,7 +2,6 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { verifyAccessToken, verifyTOTP, logAuthEvent } from '@/lib/auth';
-import crypto from 'crypto';
 
 /**
  * Verify 2FA Endpoint

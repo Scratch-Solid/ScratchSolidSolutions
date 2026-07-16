@@ -1,10 +1,9 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { logger } from '@/lib/logger';
 import { storeGPSCoordinates } from '@/lib/gps-kv';
-import { isInsideGeofence, checkAutoArrival } from '@/lib/geofence';
+import { checkAutoArrival } from '@/lib/geofence';
 
 const VALID_STATUSES = ['idle', 'on_way', 'arrived', 'completed'];
 

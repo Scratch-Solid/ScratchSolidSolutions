@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { getCloudflareContext } from '@/lib/runtime-context';
-import { sendWhatsAppMessage, sendWhatsAppTemplate, isConversationWindowOpen } from '@/lib/whatsapp/meta-cloud';
+import { sendWhatsAppMessage, isConversationWindowOpen } from '@/lib/whatsapp/meta-cloud';
 import { sendEmail } from '@/lib/notifications';
 
 /**

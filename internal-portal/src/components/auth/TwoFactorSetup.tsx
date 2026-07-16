@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import QRCode from 'qrcode';
 
 interface TwoFactorSetupProps {
   onSuccess?: () => void;

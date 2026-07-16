@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
-import { validateRequestBodyLengths, sanitizeInput } from '@/lib/validation';
+import { sanitizeInput } from '@/lib/validation';
 import { log } from '@/lib/logger';
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {

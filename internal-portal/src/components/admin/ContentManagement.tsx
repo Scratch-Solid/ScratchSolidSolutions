@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, Users, Bot, Image, MessageSquare, Upload, Trash2, Edit, Check, X } from "lucide-react";
+import { FileText, Users, Bot, Image, MessageSquare, Trash2, Edit, Check, X } from "lucide-react";
 
 export default function ContentManagement() {
   const [mode, setMode] = useState<'static' | 'leaders' | 'ai-bot' | 'backgrounds' | 'gallery' | 'reviews'>('static');

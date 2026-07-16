@@ -1,5 +1,5 @@
 import { log } from '@/lib/logger';
-import { notifyAdminApproved, notifyAdminRejected, notifyConsentSubmitted, notifyContractSigned, sendCleanerWelcome } from '@/lib/notifications';
+import { notifyAdminRejected, notifyConsentSubmitted, notifyContractSigned, sendCleanerWelcome } from '@/lib/notifications';
 import { createEnvelope, getSigningUrl, isDocusignFullyConfigured } from '@/lib/docusign';
 import { getCloudflareContext } from '@/lib/runtime-context';
 import { logOnboardingTransition } from '@/lib/db';

@@ -2,11 +2,10 @@
 
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table";
-import { DollarSign, Info } from "lucide-react";
+import { Info } from "lucide-react";
 
 export default function PricingConfiguration() {
   const [pricingMatrix, setPricingMatrix] = useState<any[]>([]);

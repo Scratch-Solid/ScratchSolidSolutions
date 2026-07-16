@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, revokeAllUserSessions, logAuditEvent } from '@/lib/db';
+import { revokeAllUserSessions, logAuditEvent } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import { withAuth, withTracing, withSecurityHeaders, withRateLimit } from '@/lib/middleware';
 

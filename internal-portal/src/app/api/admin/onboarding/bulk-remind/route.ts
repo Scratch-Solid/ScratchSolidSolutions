@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, getNotificationPreferences, logNotification } from '@/lib/db';
+import { getNotificationPreferences, logNotification } from '@/lib/db';
 import { withAuth, withSecurityHeaders, withTracing, withCsrf } from '@/lib/middleware';
 import { notifyProfileCreated } from '@/lib/notifications';
 

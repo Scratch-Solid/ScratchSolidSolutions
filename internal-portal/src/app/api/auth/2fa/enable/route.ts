@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import { verifyAccessToken, generateTOTPSecret, generateTOTPURI, logAuthEvent } from '@/lib/auth';
+import { verifyAccessToken, generateTOTPSecret, generateTOTPURI } from '@/lib/auth';
 import crypto from 'crypto';
 
 /**

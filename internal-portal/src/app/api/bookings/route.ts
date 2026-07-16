@@ -1,9 +1,9 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, getTrainingDb } from '@/lib/db';
+import { getTrainingDb } from '@/lib/db';
 import { withAuth, withTracing, withSecurityHeaders, withCsrf } from '@/lib/middleware';
 import { horizonScoper, suburbExtractor } from '@/lib/horizon/scoping';
-import { autoAssignBooking, resolveAssignmentPool, isValidTimeSlot } from '@/lib/pool-management/pool-assignment';
+import { autoAssignBooking, resolveAssignmentPool } from '@/lib/pool-management/pool-assignment';
 
 const VALID_TIME_SLOTS = ['08:00', '11:00', '12:00', '14:00'];
 

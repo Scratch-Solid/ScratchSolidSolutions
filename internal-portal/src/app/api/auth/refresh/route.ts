@@ -3,10 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import crypto from 'crypto';
 import {
-  verifyRefreshToken,
-  verifyPassword,
   hashPassword,
-  logAuthEvent,
   getUserPermissions,
   isSuperuser,
 } from '@/lib/auth';

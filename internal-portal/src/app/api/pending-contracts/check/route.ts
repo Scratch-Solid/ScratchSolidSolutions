@@ -2,7 +2,6 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { withRateLimit } from "@/lib/middleware";
-import { sanitizeRequestBody } from "@/lib/sanitization";
 
 export async function GET(request: NextRequest) {
   const rateLimitResponse = await withRateLimit(request);

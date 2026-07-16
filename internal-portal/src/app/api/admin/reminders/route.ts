@@ -2,7 +2,6 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/middleware';
 import { notifyPaymentReminder } from '@/lib/notifications';
-import { getInvoiceStatus } from '@/lib/zoho';
 
 export async function GET(request: NextRequest) {
   const authResult = await withAuth(request, ['admin']);
