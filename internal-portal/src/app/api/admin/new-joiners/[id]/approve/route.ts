@@ -43,6 +43,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const {
       paysheetCode,
+      tempPassword,
       erpEmployeeResult,
       payrollSetupResult,
       notificationResult,
@@ -77,6 +78,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       paysheetCode
     });
 
+    // The applicant's WhatsApp welcome message can never be delivered on
+    // first contact under the free tier (they've never messaged the
+    // business number, so there's no open 24h conversation window) - and
+    // email can fail for other reasons. When neither channel confirms
+    // delivery, the admin needs the credentials on-screen as a manual
+    // backup so the cleaner isn't left unable to log in.
+    const notificationsDelivered = notificationResult.status === 'sent';
+
     const response = NextResponse.json({
       success: true,
       message: 'Application approved successfully',
@@ -89,10 +98,16 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           payroll: payrollSetupResult,
           notifications: notificationResult,
         },
+        notificationsDelivered,
+        // Only surfaced when auto-delivery didn't confirm - this is the
+        // manual-share fallback, not a general-purpose credential leak.
+        credentialsBackup: notificationsDelivered ? undefined : { paysheetCode, tempPassword },
         next_steps: [
           'Employee account created',
           'Training progress initialized',
-          'Notification sent to applicant with login credentials'
+          notificationsDelivered
+            ? 'Notification sent to applicant with login credentials'
+            : 'Automatic WhatsApp/email delivery did not confirm - share the credentials shown below with the applicant directly'
         ]
       }
     });

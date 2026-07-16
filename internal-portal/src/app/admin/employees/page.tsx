@@ -39,7 +39,7 @@ export default function AdminEmployeesPage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [formError, setFormError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [successInfo, setSuccessInfo] = useState<{ paysheetCode: string } | null>(null);
+  const [successInfo, setSuccessInfo] = useState<{ paysheetCode: string; notificationsDelivered?: boolean; tempPassword?: string } | null>(null);
   const [actionError, setActionError] = useState("");
   const [actioningId, setActioningId] = useState<number | null>(null);
 
@@ -48,7 +48,7 @@ export default function AdminEmployeesPage() {
     try {
       const [cleanerRes, joinRes] = await Promise.allSettled([
         authFetch("/api/admin/cleaners"),
-        authFetch("/api/admin/new-joiners"),
+        authFetch("/api/admin/new-joiners?status=pending"),
       ]);
       const tokenInvalid = [cleanerRes, joinRes].every(
         (r): r is PromiseFulfilledResult<Response> =>
@@ -101,7 +101,11 @@ export default function AdminEmployeesPage() {
         setActionError(data?.error?.message || data?.error || `Approval failed (${res.status})`);
         return;
       }
-      setSuccessInfo({ paysheetCode: data?.data?.paysheetCode || "" });
+      setSuccessInfo({
+        paysheetCode: data?.data?.paysheetCode || "",
+        notificationsDelivered: data?.data?.notificationsDelivered,
+        tempPassword: data?.data?.credentialsBackup?.tempPassword,
+      });
       setNewJoiners((prev) => prev.filter((j) => j.id !== id));
       load();
     } catch {
@@ -197,13 +201,23 @@ export default function AdminEmployeesPage() {
       )}
 
       {successInfo && (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 flex items-center justify-between">
+        <div className={`rounded-lg border px-4 py-3 text-sm flex items-center justify-between ${
+          successInfo.notificationsDelivered === false
+            ? "border-amber-300 bg-amber-50 text-amber-900"
+            : "border-emerald-200 bg-emerald-50 text-emerald-800"
+        }`}>
           <span>
-            {successInfo.paysheetCode
-              ? <>Cleaner account active. Paysheet code (their login username): <strong>{successInfo.paysheetCode}</strong>. Login credentials were sent via WhatsApp/email where configured.</>
-              : "Done."}
+            {!successInfo.paysheetCode ? "Done." : successInfo.notificationsDelivered === false ? (
+              <>
+                Cleaner account active, but WhatsApp/email delivery didn&apos;t confirm - share these
+                details directly: paysheet code (username) <strong>{successInfo.paysheetCode}</strong>,
+                temporary password <strong>{successInfo.tempPassword}</strong>.
+              </>
+            ) : (
+              <>Cleaner account active. Paysheet code (their login username): <strong>{successInfo.paysheetCode}</strong>. Login credentials were sent via WhatsApp/email where configured.</>
+            )}
           </span>
-          <button onClick={() => setSuccessInfo(null)} className="text-emerald-600 hover:text-emerald-800">
+          <button onClick={() => setSuccessInfo(null)} className={successInfo.notificationsDelivered === false ? "text-amber-700 hover:text-amber-900" : "text-emerald-600 hover:text-emerald-800"}>
             <X className="h-4 w-4" />
           </button>
         </div>

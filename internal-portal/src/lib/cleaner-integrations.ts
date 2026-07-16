@@ -401,6 +401,7 @@ export async function activateCleanerAccount(
     name: data.name,
     paysheetCode,
     tempPassword,
+    db,
   });
 
   return {
@@ -605,8 +606,9 @@ export async function notifyCleanerApproval(params: {
   name: string;
   paysheetCode: string;
   tempPassword: string;
+  db?: D1Database;
 }) {
-  const result = await sendCleanerWelcome(params.phone, params.email, params.name, params.paysheetCode, params.tempPassword);
+  const result = await sendCleanerWelcome(params.phone, params.email, params.name, params.paysheetCode, params.tempPassword, undefined, params.db);
   log.audit('APPROVAL_NOTIFICATION', 'cleaner_application', {
     traceId: params.traceId,
     phone: params.phone,

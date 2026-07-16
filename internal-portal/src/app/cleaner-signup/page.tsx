@@ -101,8 +101,23 @@ export default function CleanerSignup() {
         </p>
 
         {success && (
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-6">
-            Application submitted successfully! We will review your application and contact you shortly.
+          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-6 space-y-3">
+            <p>Application submitted successfully! We will review your application and contact you shortly.</p>
+            <p className="text-sm">
+              {/* WhatsApp only lets us message you first once you've messaged us -
+                  sending this now means your approval/login details can reach you
+                  on WhatsApp instead of only by email. */}
+              One more thing: please message us on WhatsApp so we can send your
+              login details there once you&apos;re approved.
+            </p>
+            <a
+              href="https://wa.me/27696735947?text=Hi%2C%20I%27ve%20just%20submitted%20my%20cleaner%20application."
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block rounded-lg bg-[#25D366] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1ebd5a] transition-colors"
+            >
+              Message us on WhatsApp
+            </a>
           </div>
         )}
 

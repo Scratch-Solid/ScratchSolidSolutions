@@ -33,6 +33,7 @@ export default function AdminOnboardingPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [credentialsBackup, setCredentialsBackup] = useState<{ paysheetCode: string; tempPassword: string } | null>(null);
 
   // Registration form state
   const [showForm, setShowForm] = useState(false);
@@ -151,7 +152,12 @@ export default function AdminOnboardingPage() {
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        setMessage('Application approved successfully!');
+        if (data.data?.notificationsDelivered === false && data.data?.credentialsBackup) {
+          setMessage('');
+          setCredentialsBackup(data.data.credentialsBackup);
+        } else {
+          setMessage('Application approved successfully!');
+        }
         fetchJoiners();
       } else {
         setError(data.error?.message || 'Failed to approve application');
@@ -213,6 +219,19 @@ export default function AdminOnboardingPage() {
         {message && (
           <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded">
             {message}
+          </div>
+        )}
+        {credentialsBackup && (
+          <div className="mb-4 p-4 bg-amber-50 border border-amber-300 text-amber-900 rounded">
+            <p className="font-semibold">Couldn&apos;t confirm WhatsApp/email delivery - share these details directly:</p>
+            <p className="mt-1 text-sm">
+              Paysheet code (username): <strong>{credentialsBackup.paysheetCode}</strong>
+              {' · '}
+              Temporary password: <strong>{credentialsBackup.tempPassword}</strong>
+            </p>
+            <button onClick={() => setCredentialsBackup(null)} className="mt-2 text-sm underline text-amber-700 hover:text-amber-900">
+              Dismiss
+            </button>
           </div>
         )}
         {error && (
