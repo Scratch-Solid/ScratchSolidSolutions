@@ -30,17 +30,16 @@ export default function PublicTrackingPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [booking, setBooking] = useState<any>(null);
-  const [cleanerStatus, setCleanerStatus] = useState<any>(null);
-  const [gpsLocation, setGpsLocation] = useState<any>(null);
+  const [tracking, setTracking] = useState<any>(null);
 
   useEffect(() => {
     fetchTrackingData();
-    
+
     // Poll for updates every 15 seconds
     const interval = setInterval(() => {
       fetchTrackingData();
     }, 15000);
-    
+
     return () => clearInterval(interval);
   }, [token]);
 
@@ -48,7 +47,7 @@ export default function PublicTrackingPage() {
     try {
       setLoading(true);
       const response = await fetch(`/api/public/tracking/${token}`);
-      
+
       if (!response.ok) {
         const data = await response.json();
         setError((data as any).error || 'Failed to load tracking data');
@@ -58,8 +57,7 @@ export default function PublicTrackingPage() {
 
       const data = await response.json();
       setBooking((data as any).booking);
-      setCleanerStatus((data as any).cleanerStatus);
-      setGpsLocation((data as any).gpsLocation);
+      setTracking((data as any).tracking);
       setError("");
     } catch (err) {
       setError('Network error. Please try again.');
@@ -71,6 +69,8 @@ export default function PublicTrackingPage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'idle': return 'bg-gray-100 text-gray-800';
+      case 'scheduled':
+      case 'assigned': return 'bg-indigo-100 text-indigo-800';
       case 'on_way': return 'bg-blue-100 text-blue-800';
       case 'arrived': return 'bg-yellow-100 text-yellow-800';
       case 'completed': return 'bg-green-100 text-green-800';
@@ -81,6 +81,8 @@ export default function PublicTrackingPage() {
   const getStatusText = (status: string) => {
     switch (status) {
       case 'idle': return 'Idle';
+      case 'scheduled': return 'Scheduled';
+      case 'assigned': return 'Cleaner Assigned';
       case 'on_way': return 'On the Way';
       case 'arrived': return 'Arrived';
       case 'completed': return 'Completed';
@@ -168,84 +170,72 @@ export default function PublicTrackingPage() {
           </div>
         </div>
 
-        {/* Cleaner Status Card */}
-        {cleanerStatus && (
+        {/* Cleaner Status Timeline Card */}
+        {tracking ? (
           <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
             <h2 className="text-lg font-bold text-gray-800 mb-4">Cleaner Status</h2>
-            
+
             <div className="flex items-center justify-center mb-6">
-              <div className={`px-8 py-4 rounded-full text-xl font-bold ${getStatusColor(cleanerStatus.status)}`}>
-                {getStatusText(cleanerStatus.status)}
+              <div className={`px-8 py-4 rounded-full text-xl font-bold ${getStatusColor(tracking.status)}`}>
+                {getStatusText(tracking.status)}
               </div>
             </div>
 
             <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                  👤
-                </div>
+              <div className={`flex items-center gap-3 ${!tracking.started_at ? 'opacity-40' : ''}`}>
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">🚗</div>
                 <div>
-                  <p className="text-sm text-gray-500">Cleaner</p>
-                  <p className="font-semibold text-gray-800">{cleanerStatus.cleaner_name || 'Assigned Cleaner'}</p>
+                  <p className="text-sm text-gray-500">On the Way</p>
+                  <p className="font-semibold text-gray-800">
+                    {tracking.started_at ? new Date(tracking.started_at).toLocaleString() : 'Not yet'}
+                  </p>
                 </div>
               </div>
 
-              {cleanerStatus.status === 'on_way' && (
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                    🚗
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Status</p>
-                    <p className="font-semibold text-gray-800">On the way to your location</p>
-                  </div>
+              <div className={`flex items-center gap-3 ${!tracking.arrived_at ? 'opacity-40' : ''}`}>
+                <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">🏠</div>
+                <div>
+                  <p className="text-sm text-gray-500">Arrived</p>
+                  <p className="font-semibold text-gray-800">
+                    {tracking.arrived_at ? new Date(tracking.arrived_at).toLocaleString() : 'Not yet'}
+                  </p>
                 </div>
-              )}
+              </div>
 
-              {cleanerStatus.status === 'arrived' && (
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
-                    🏠
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Status</p>
-                    <p className="font-semibold text-gray-800">Has arrived at your location</p>
-                  </div>
+              <div className={`flex items-center gap-3 ${!tracking.completed_at ? 'opacity-40' : ''}`}>
+                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">✨</div>
+                <div>
+                  <p className="text-sm text-gray-500">Completed</p>
+                  <p className="font-semibold text-gray-800">
+                    {tracking.completed_at ? new Date(tracking.completed_at).toLocaleString() : 'Not yet'}
+                  </p>
                 </div>
-              )}
-
-              {cleanerStatus.status === 'completed' && (
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                    ✨
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Status</p>
-                    <p className="font-semibold text-gray-800">Cleaning service completed</p>
-                  </div>
-                </div>
-              )}
+              </div>
             </div>
+          </div>
+        ) : (
+          <div className="bg-white rounded-2xl shadow-xl p-6 mb-6 text-center">
+            <p className="text-gray-500">A cleaner hasn't been assigned to this booking yet. Check back once your booking is confirmed.</p>
           </div>
         )}
 
-        {/* GPS Location Card */}
-        {gpsLocation && gpsLocation.gps_lat && gpsLocation.gps_long && (
+        {/* GPS Location Card - shown only once live location data exists */}
+        {tracking?.location && (
           <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
             <h2 className="text-lg font-bold text-gray-800 mb-4">Live Location</h2>
-            
+
             <div className="bg-gray-100 rounded-xl p-4 mb-4">
               <p className="text-sm text-gray-500 mb-1">Last Updated</p>
               <p className="font-semibold text-gray-800">
-                {gpsLocation.last_update ? new Date(gpsLocation.last_update).toLocaleString() : 'Unknown'}
+                {tracking.location.recorded_at ? new Date(tracking.location.recorded_at).toLocaleString() : 'Unknown'}
               </p>
             </div>
 
             {/* Map */}
             <div className="mb-4">
               <TrackingMap
-                cleanerLat={gpsLocation.gps_lat}
-                cleanerLong={gpsLocation.gps_long}
+                cleanerLat={tracking.location.lat}
+                cleanerLong={tracking.location.lng}
                 destinationLat={booking.location ? getCoordinatesForArea(booking.location)?.lat : undefined}
                 destinationLong={booking.location ? getCoordinatesForArea(booking.location)?.long : undefined}
                 locationName={booking.location}
@@ -254,19 +244,8 @@ export default function PublicTrackingPage() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-blue-50 rounded-xl p-4">
-                <p className="text-sm text-gray-500 mb-1">Latitude</p>
-                <p className="font-semibold text-gray-800">{gpsLocation.gps_lat.toFixed(6)}</p>
-              </div>
-              <div className="bg-blue-50 rounded-xl p-4">
-                <p className="text-sm text-gray-500 mb-1">Longitude</p>
-                <p className="font-semibold text-gray-800">{gpsLocation.gps_long.toFixed(6)}</p>
-              </div>
-            </div>
-
             <a
-              href={`https://www.google.com/maps?q=${gpsLocation.gps_lat},${gpsLocation.gps_long}`}
+              href={`https://www.google.com/maps?q=${tracking.location.lat},${tracking.location.lng}`}
               target="_blank"
               rel="noopener noreferrer"
               className="block mt-4 text-center bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 transition-colors"

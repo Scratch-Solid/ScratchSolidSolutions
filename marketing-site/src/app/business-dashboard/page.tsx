@@ -14,7 +14,6 @@ export default function BusinessDashboard() {
   const [weekendRequests, setWeekendRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [assignedCleaner, setAssignedCleaner] = useState<any>(null);
-  const [cleanerStatus, setCleanerStatus] = useState<'idle' | 'on_way' | 'arrived' | 'completed'>('idle');
   const [contracts, setContracts] = useState<any[]>([]);
   const [recurringBookings, setRecurringBookings] = useState<any[]>([]);
   const [userProfile, setUserProfile] = useState<any>(null);
@@ -78,14 +77,6 @@ export default function BusinessDashboard() {
     } catch (error) {
       // Non-critical background fetch
     }
-  };
-
-  const updateCleanerStatus = (status: 'idle' | 'on_way' | 'arrived' | 'completed') => {
-    setCleanerStatus(status);
-  };
-
-  const updateCleanerStatusInner = (status: 'idle' | 'on_way' | 'arrived' | 'completed') => {
-    setCleanerStatus(status);
   };
 
   const handleWeekendRequest = async () => {
@@ -533,43 +524,6 @@ export default function BusinessDashboard() {
                         <p className="text-sm text-gray-600">
                           <strong>Specialties:</strong> {assignedCleaner.specialties?.join(', ') || 'General Cleaning'}
                         </p>
-                        <p className="text-sm text-gray-600">
-                          <strong>Status:</strong> 
-                          <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${
-                            cleanerStatus === 'idle' ? 'bg-gray-100 text-gray-800' :
-                            cleanerStatus === 'on_way' ? 'bg-blue-100 text-blue-800' :
-                            cleanerStatus === 'arrived' ? 'bg-yellow-100 text-yellow-800' :
-                            cleanerStatus === 'completed' ? 'bg-green-100 text-green-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {cleanerStatus === 'idle' ? 'Idle' :
-                             cleanerStatus === 'on_way' ? 'On the way' :
-                             cleanerStatus === 'arrived' ? 'Arrived' :
-                             cleanerStatus === 'completed' ? 'Completed' : 'Unknown'}
-                          </span>
-                        </p>
-                        
-                        {/* Demo buttons for cleaner status (for testing) */}
-                        <div className="mt-3 flex gap-2">
-                          <button
-                            onClick={() => updateCleanerStatus('on_way')}
-                            className="text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700"
-                          >
-                            On Way
-                          </button>
-                          <button
-                            onClick={() => updateCleanerStatus('arrived')}
-                            className="text-xs bg-yellow-600 text-white px-2 py-1 rounded hover:bg-yellow-700"
-                          >
-                            Arrived
-                          </button>
-                          <button
-                            onClick={() => updateCleanerStatus('completed')}
-                            className="text-xs bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700"
-                          >
-                            Complete
-                          </button>
-                        </div>
                       </div>
                     </div>
                   </div>

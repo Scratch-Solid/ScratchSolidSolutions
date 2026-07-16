@@ -5,6 +5,30 @@ import { logger } from '@/lib/logger';
 
 export const dynamic = "force-dynamic";
 
+const INTERNAL_PORTAL_URL = process.env.NEXT_PUBLIC_INTERNAL_PORTAL_URL || 'https://portal.scratchsolidsolutions.org';
+
+// Real jobs go: marketing-site booking -> Cal.com -> n8n -> internal-portal's
+// `jobs` table, correlated by calcom_uid (set on this booking row once the
+// Cal.com booking is created - see api/bookings/route.ts). The cleaner's
+// actual timestamped status updates (On the Way/Arrived/Completed, via
+// WhatsApp) live entirely in internal-portal's database, so this route asks
+// internal-portal for the real status instead of reading this app's own
+// booking row, which never gets a cleaner/status assigned to it directly.
+async function fetchJobStatus(calcomUid: string) {
+  try {
+    const res = await fetch(
+      `${INTERNAL_PORTAL_URL}/api/public/job-tracking?calcom_uid=${encodeURIComponent(calcomUid)}`,
+      { headers: { 'Content-Type': 'application/json' } }
+    );
+    if (!res.ok) return null;
+    const data = await res.json() as { found: boolean; [key: string]: any };
+    return data.found ? data : null;
+  } catch (error) {
+    logger.error('Error fetching job status from internal-portal', error as Error);
+    return null;
+  }
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ token: string }> }
@@ -27,20 +51,14 @@ export async function GET(
     // Get booking by tracking token
     const booking = await db.prepare(
       'SELECT * FROM bookings WHERE tracking_token = ?'
-    ).bind(token).first();
+    ).bind(token).first() as any;
 
     if (!booking) {
       const response = NextResponse.json({ error: 'Invalid tracking token' }, { status: 404 });
       return withSecurityHeaders(response, traceId);
     }
 
-    // Get cleaner status
-    let cleanerStatus = null;
-    if (booking.cleaner_id) {
-      cleanerStatus = await db.prepare(
-        'SELECT status, gps_lat, gps_long, updated_at FROM cleaner_profiles WHERE user_id = ?'
-      ).bind(booking.cleaner_id).first();
-    }
+    const jobStatus = booking.calcom_uid ? await fetchJobStatus(booking.calcom_uid) : null;
 
     // Prepare response data
     const responseData = {
@@ -52,17 +70,15 @@ export async function GET(
         location: booking.location,
         status: booking.status
       },
-      cleanerStatus: cleanerStatus ? {
-        status: cleanerStatus.status,
-        cleaner_name: booking.first_name && booking.last_name 
-          ? `${booking.first_name} ${booking.last_name}` 
-          : null
+      // Real, timestamped status from internal-portal's jobs table - the
+      // actual source of truth for the Transparency Policy tracker.
+      tracking: jobStatus ? {
+        status: jobStatus.status,
+        started_at: jobStatus.started_at,
+        arrived_at: jobStatus.arrived_at,
+        completed_at: jobStatus.completed_at,
+        location: jobStatus.location,
       } : null,
-      gpsLocation: booking.gps_lat && booking.gps_long ? {
-        gps_lat: booking.gps_lat,
-        gps_long: booking.gps_long,
-        last_update: booking.last_location_update
-      } : null
     };
 
     const response = NextResponse.json(responseData);
