@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, getUserById } from "@/lib/db";
+import { getUserById } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import { validateString, validateNumber } from "@/lib/validation";
 import { withRateLimit, rateLimits, withCsrf, withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';

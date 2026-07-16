@@ -2,8 +2,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { withAuth, withRateLimit, rateLimits } from '@/lib/middleware';
-import { getInvoicePdf, getInvoiceStatus } from '@/lib/zoho';
-import { jwtVerify } from 'jose';
+import { getInvoicePdf } from '@/lib/zoho';
 
 export async function GET(
   request: NextRequest,

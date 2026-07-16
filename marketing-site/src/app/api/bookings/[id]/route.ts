@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, getBookingById, updateBooking } from "@/lib/db";
+import { getBookingById, updateBooking } from "@/lib/db";
 import { withAuth, withTracing, withSecurityHeaders, withRateLimit, rateLimits } from '@/lib/middleware';
 import { logger } from '@/lib/logger';
 import { validateNumber, validateString } from '@/lib/validation';

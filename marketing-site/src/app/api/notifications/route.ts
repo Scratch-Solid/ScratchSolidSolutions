@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { logger } from '@/lib/logger';
-import { validateString, validateNumber } from '@/lib/validation';
 import { withRateLimit, rateLimits } from "@/lib/middleware";
 import {
   sendNotification,

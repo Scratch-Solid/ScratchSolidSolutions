@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import { withAuth, withRateLimit, rateLimits } from '@/lib/middleware';
+import { withRateLimit, rateLimits } from '@/lib/middleware';
 import { markEstimateAccepted, createInvoiceFromEstimate } from '@/lib/zoho';
 
 export async function POST(

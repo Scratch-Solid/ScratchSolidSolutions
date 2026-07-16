@@ -1,8 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, getCleanerProfileByUserId, getCleanerProfileByUsername, createCleanerProfile, updateCleanerProfile } from "@/lib/db";
+import { getCleanerProfileByUserId, getCleanerProfileByUsername, createCleanerProfile } from "@/lib/db";
 import { logger } from "@/lib/logger";
-import { validateString, validateNumber } from "@/lib/validation";
 import { withRateLimit, rateLimits } from "@/lib/middleware";
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 

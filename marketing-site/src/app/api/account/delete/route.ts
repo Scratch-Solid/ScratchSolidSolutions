@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { getDb } from '@/lib/db';
 import { withAuth, withTracing, withSecurityHeaders, withCsrf } from '@/lib/middleware';
 import { logger } from '@/lib/logger';
 import { withRateLimit, rateLimits } from "@/lib/middleware";

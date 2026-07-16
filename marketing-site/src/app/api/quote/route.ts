@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import { withRateLimit, rateLimits, withCsrf } from '@/lib/middleware';
+import { withRateLimit } from '@/lib/middleware';
 import { sanitizeText, sanitizeEmail, sanitizePhone } from '@/lib/sanitization';
 import { validateEmail } from '@/lib/validation';
 import { logAuditEvent } from '@/lib/audit';

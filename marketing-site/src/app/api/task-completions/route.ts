@@ -1,8 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, recordTaskCompletion, getCleanerEarnings } from "@/lib/db";
+import { recordTaskCompletion, getCleanerEarnings } from "@/lib/db";
 import { logger } from "@/lib/logger";
-import { validateNumber } from "@/lib/validation";
 import { withRateLimit, rateLimits } from "@/lib/middleware";
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 
