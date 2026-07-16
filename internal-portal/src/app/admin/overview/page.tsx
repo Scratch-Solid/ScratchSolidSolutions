@@ -48,7 +48,11 @@ export default function AdminOverviewPage() {
     async function load() {
       try {
         const token = typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
-        const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+        if (!token) {
+          window.location.href = "/auth/login";
+          return;
+        }
+        const headers: Record<string, string> = { Authorization: `Bearer ${token}` };
 
         const [bookingsRes, employeesRes, newJoinersRes, approvalsRes, healthRes] = await Promise.allSettled([
           fetch("/api/admin/bookings", { headers }),

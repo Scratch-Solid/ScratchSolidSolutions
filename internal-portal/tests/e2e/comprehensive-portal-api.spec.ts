@@ -139,12 +139,11 @@ test.describe('🔒 Protected Admin API Endpoints', () => {
 // CONTRACTS & PAYROLL
 // ─────────────────────────────────────────────
 test.describe('📄 Contracts & Payroll API', () => {
-  test('GET /api/contracts — returns contracts', async ({ request }) => {
+  test('GET /api/contracts — requires admin authentication', async ({ request }) => {
+    // withAuth(['admin']) - anonymous access must be rejected.
     const res = await request.get(`${BASE_URL}/api/contracts`);
     skipOn429(res);
-    expectStatusOk(res);
-    const body = await res.json();
-    expect(Array.isArray(body)).toBe(true);
+    expect(res.status()).toBe(401);
   });
 
   test('GET /api/payroll — requires auth', async ({ request }) => {

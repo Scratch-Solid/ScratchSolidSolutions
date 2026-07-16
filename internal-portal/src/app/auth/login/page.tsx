@@ -112,7 +112,9 @@ function LoginContent() {
     <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-background">
       <div className="w-full max-w-[380px]">
         <div className="flex flex-col items-center mb-8">
-          <img src="/logo-scratch-solid.png" alt="Scratch Solid" className="h-7 w-7 object-contain mb-3" />
+          <a href="https://scratchsolidsolutions.org">
+            <img src="/logo-scratch-solid.png" alt="Scratch Solid" className="h-7 w-7 object-contain mb-3" />
+          </a>
           <h1 className="text-xl font-semibold text-foreground">Internal Portal</h1>
           <p className="text-sm text-muted-foreground mt-1">Scratch Solid Solutions</p>
         </div>

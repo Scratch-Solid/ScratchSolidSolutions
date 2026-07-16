@@ -56,12 +56,18 @@ jobs:
       run: npx playwright test --project=chromium
       env:
         CI: true
+        # Without this, tests/e2e/*.spec.ts fall back to
+        # 'https://scratchsolidsolutions.org' (real production) - every CI
+        # run on every push/PR was hitting live production traffic instead
+        # of staging.
+        BASE_URL: https://staging.scratchsolidsolutions.org
 
     - name: Run Selenium tests
       working-directory: ./marketing-site
       run: npm run test:selenium
       env:
         CI: true
+        BASE_URL: https://staging.scratchsolidsolutions.org
     
     - name: Build
       working-directory: ./marketing-site
