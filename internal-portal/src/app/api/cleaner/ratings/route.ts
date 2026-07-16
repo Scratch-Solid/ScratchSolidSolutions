@@ -9,7 +9,10 @@ export async function GET(request: NextRequest) {
   const authResult = await withAuth(request, ['cleaner']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
-  const userId = authResult.user?.id;
+  // validateSession() returns the sessions row joined with the user - .id
+  // here is the session row's own primary key, not the user's id. .user_id
+  // is the actual FK to users(id) and must be checked first.
+  const userId = (authResult.user as any)?.user_id || authResult.user?.id;
 
   try {
     // Get cleaner profile
@@ -37,37 +40,40 @@ export async function GET(request: NextRequest) {
       limit: searchParams.get('limit')
     });
 
-    // Get ratings
+    // Get ratings. job_performance_metrics keys on staff_id (matching
+    // users.id, the same id GPS/WhatsApp confirmation writes use) - it has
+    // no employee_id/client_id/rating/client_feedback columns, those were
+    // never real column names on this table.
     const ratingsQuery = `
-      SELECT 
+      SELECT
         id,
-        client_id,
-        rating,
-        client_feedback,
+        booking_id,
+        client_rating,
+        notes,
         adherence_score,
         attendance_score,
         company_values_score,
-        created_at
+        recorded_at AS created_at
       FROM job_performance_metrics
-      WHERE employee_id = ?
-      ORDER BY created_at DESC
+      WHERE staff_id = ?
+      ORDER BY recorded_at DESC
     `;
 
     // Get total count
     const countResult = await db.prepare(
-      'SELECT COUNT(*) as count FROM job_performance_metrics WHERE employee_id = ?'
-    ).bind(cleaner.paysheet_code).first();
+      'SELECT COUNT(*) as count FROM job_performance_metrics WHERE staff_id = ?'
+    ).bind(userId).first();
     const total = (countResult as any)?.count || 0;
 
     // Get paginated results
     const ratings = await db.prepare(ratingsQuery + ' LIMIT ? OFFSET ?')
-      .bind(cleaner.paysheet_code, limit, offset)
+      .bind(userId, limit, offset)
       .all();
 
     // Calculate average rating
     const avgRatingResult = await db.prepare(
-      'SELECT AVG(rating) as avg_rating FROM job_performance_metrics WHERE employee_id = ?'
-    ).bind(cleaner.paysheet_code).first();
+      'SELECT AVG(client_rating) as avg_rating FROM job_performance_metrics WHERE staff_id = ?'
+    ).bind(userId).first();
 
     const response = NextResponse.json({
       success: true,

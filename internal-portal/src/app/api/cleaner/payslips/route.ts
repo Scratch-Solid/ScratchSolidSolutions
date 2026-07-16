@@ -9,7 +9,10 @@ export async function GET(request: NextRequest) {
   const authResult = await withAuth(request, ['cleaner']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
-  const userId = authResult.user?.id;
+  // validateSession() returns the sessions row joined with the user - .id
+  // here is the session row's own primary key, not the user's id. .user_id
+  // is the actual FK to users(id) and must be checked first.
+  const userId = (authResult.user as any)?.user_id || authResult.user?.id;
 
   try {
     // Get cleaner profile

@@ -9,7 +9,10 @@ export async function GET(request: NextRequest) {
   const authResult = await withAuth(request, ['cleaner']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
-  const userId = authResult.user?.id;
+  // validateSession() returns the sessions row joined with the user - .id
+  // here is the session row's own primary key, not the user's id. .user_id
+  // is the actual FK to users(id) and must be checked first.
+  const userId = (authResult.user as any)?.user_id || authResult.user?.id;
 
   try {
     // Get cleaner profile
@@ -37,23 +40,24 @@ export async function GET(request: NextRequest) {
       limit: searchParams.get('limit')
     });
 
-    // Get upcoming shifts. booking_assignments.cleaner_id is cleaner_profiles.id
-    // (an integer), not the paysheet_code string - and bookings has no
-    // scheduled_date/address/city columns, it's booking_date/location/suburb.
+    // Get upcoming shifts. booking_assignments links via staff_id (an
+    // integer matching cleaner_profiles.id), not cleaner_id - that column
+    // doesn't exist on this table. bookings has no client_id column either,
+    // the client is bookings.user_id.
     const shiftsQuery = `
       SELECT
         b.id,
         b.booking_date,
         b.time_slot,
         b.status,
-        b.client_id,
+        b.user_id,
         b.location,
         b.suburb,
         b.service_type,
-        ba.assigned_at
+        ba.created_at AS assigned_at
       FROM booking_assignments ba
       JOIN bookings b ON ba.booking_id = b.id
-      WHERE ba.cleaner_id = ? AND b.booking_date >= date('now') AND b.status != 'cancelled'
+      WHERE ba.staff_id = ? AND b.booking_date >= date('now') AND b.status != 'cancelled'
       ORDER BY b.booking_date ASC, b.time_slot ASC
     `;
 
@@ -61,7 +65,7 @@ export async function GET(request: NextRequest) {
     const countResult = await db.prepare(
       `SELECT COUNT(*) as count FROM booking_assignments ba
        JOIN bookings b ON ba.booking_id = b.id
-       WHERE ba.cleaner_id = ? AND b.booking_date >= date('now') AND b.status != 'cancelled'`
+       WHERE ba.staff_id = ? AND b.booking_date >= date('now') AND b.status != 'cancelled'`
     ).bind(cleaner.id).first();
     const total = (countResult as any)?.count || 0;
 
