@@ -308,7 +308,32 @@ test.describe('🧹 Cleaner Signup — Consent Form', () => {
 // ─────────────────────────────────────────────
 // ADMIN DASHBOARD TABS & BUTTONS
 // ─────────────────────────────────────────────
+// These pages redirect anonymous visitors to login client-side (fixed
+// earlier - /admin/overview previously had no `!token` guard at all), so
+// every test here needs a real authenticated session, not just a
+// pre-provisioned admin account's credentials.
+const E2E_ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL;
+const E2E_ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD;
+
 test.describe('👑 Admin Dashboard — Tabs & Admin Tools', () => {
+  test.beforeEach(async ({ page, request }) => {
+    test.skip(!E2E_ADMIN_EMAIL || !E2E_ADMIN_PASSWORD, 'E2E_ADMIN_EMAIL/E2E_ADMIN_PASSWORD not configured');
+
+    const loginRes = await request.post(`${BASE_URL}/api/auth/login`, {
+      data: { identifier: E2E_ADMIN_EMAIL, password: E2E_ADMIN_PASSWORD },
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (loginRes.status() === 429) { test.skip(true, 'Rate limited'); return; }
+    expect(loginRes.status()).toBe(200);
+    const { token } = await loginRes.json() as { token: string };
+
+    await page.goto(`${BASE_URL}/auth/login`, { waitUntil: 'domcontentloaded' });
+    await page.evaluate((t) => {
+      localStorage.setItem('authToken', t);
+      localStorage.setItem('userRole', 'admin');
+    }, token);
+  });
+
   test('Admin dashboard loads with Overview tab', async ({ page }) => {
     await goTo(page, '/admin-dashboard');
     await expect(page.locator('text=Overview')).toBeVisible();

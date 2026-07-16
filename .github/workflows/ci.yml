@@ -116,6 +116,11 @@ jobs:
         # code. Point at staging, matching playwright.config.ts's own CI
         # default baseURL.
         PORTAL_URL: https://portal-staging.scratchsolidsolutions.org
+        # tests/e2e/*.spec.ts read a *different* env var (BASE_URL, not
+        # PORTAL_URL) and default to real production when it's unset -
+        # meaning those files have been testing production instead of
+        # staging this whole time. Same fix, different variable name.
+        BASE_URL: https://portal-staging.scratchsolidsolutions.org
     
     - name: Build
       working-directory: ./internal-portal
