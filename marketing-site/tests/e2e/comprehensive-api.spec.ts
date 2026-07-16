@@ -374,12 +374,11 @@ test.describe('🔧 Diagnostic API', () => {
 // BACKGROUND IMAGES API
 // ─────────────────────────────────────────────
 test.describe('🖼️ Background Images API', () => {
-  test('GET /api/background-images — returns images', async ({ request }) => {
+  test('GET /api/background-images — requires auth', async ({ request }) => {
+    // Route requires withAuth(['admin']) - no anonymous access.
     const res = await request.get(`${BASE_URL}/api/background-images`);
     skipOn429(res);
-    expectStatusOk(res);
-    const body = await res.json();
-    expect(Array.isArray(body)).toBe(true);
+    expectStatus(res, 401);
   });
 });
 
