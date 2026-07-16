@@ -347,12 +347,11 @@ test.describe('🧹 Cleaner Profiles API', () => {
 // BUSINESS EVENTS API
 // ─────────────────────────────────────────────
 test.describe('🏢 Business Events API', () => {
-  test('GET /api/business-events — returns events', async ({ request }) => {
+  test('GET /api/business-events — requires auth', async ({ request }) => {
+    // Route requires withAuth(['business', 'admin']) - no anonymous access.
     const res = await request.get(`${BASE_URL}/api/business-events`);
     skipOn429(res);
-    expectStatusOk(res);
-    const body = await res.json();
-    expect(Array.isArray(body)).toBe(true);
+    expectStatus(res, 401);
   });
 });
 
