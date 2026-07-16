@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import { useTokenRefresh } from "@/hooks/useTokenRefresh";
 import { authFetch, getCsrfToken } from "@/lib/authFetch";
+import DeleteAccountSection from "@/components/DeleteAccountSection";
 
 export default function BusinessDashboard() {
   const router = useRouter();
@@ -555,6 +556,8 @@ export default function BusinessDashboard() {
                   Book a Cleaner
                 </Link>
               </div>
+
+              <DeleteAccountSection />
 
               {/* Weekend Assignment Notifications */}
               <div className="p-4 bg-yellow-50 rounded-lg">

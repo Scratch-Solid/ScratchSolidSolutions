@@ -7,6 +7,7 @@ import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import { useTokenRefresh } from "@/hooks/useTokenRefresh";
 import { authFetch, getCsrfToken } from "@/lib/authFetch";
 import BookingQuotePanel from "@/components/BookingQuotePanel";
+import DeleteAccountSection from "@/components/DeleteAccountSection";
 
 export default function ClientDashboard() {
   const router = useRouter();
@@ -1033,6 +1034,8 @@ export default function ClientDashboard() {
                   </div>
                 )}
               </div>
+
+              <DeleteAccountSection />
             </div>
           )}
 
