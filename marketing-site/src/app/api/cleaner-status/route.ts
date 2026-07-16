@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { logger } from '@/lib/logger';
 
-const INTERNAL_PORTAL_URL = process.env.NEXT_PUBLIC_INTERNAL_PORTAL_URL || 'https://portal.scratchsolidsolutions.org';
+const INTERNAL_PORTAL_URL = process.env.INTERNAL_PORTAL_URL || 'https://portal.scratchsolidsolutions.org';
 
 export async function GET(request: NextRequest) {
   const traceId = withTracing(request);

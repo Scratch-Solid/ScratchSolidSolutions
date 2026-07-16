@@ -5,7 +5,7 @@ import { logger } from '@/lib/logger';
 
 export const dynamic = "force-dynamic";
 
-const INTERNAL_PORTAL_URL = process.env.NEXT_PUBLIC_INTERNAL_PORTAL_URL || 'https://portal.scratchsolidsolutions.org';
+const INTERNAL_PORTAL_URL = process.env.INTERNAL_PORTAL_URL || 'https://portal.scratchsolidsolutions.org';
 
 // Real jobs go: marketing-site booking -> Cal.com -> n8n -> internal-portal's
 // `jobs` table, correlated by calcom_uid (set on this booking row once the
