@@ -40,19 +40,19 @@ async function assertNo500(page: Page) {
 // ─────────────────────────────────────────────
 test.describe('🏠 Public Pages — Load & Content', () => {
   test('Homepage loads with all sections', async ({ page }) => {
+    // Copy below matches the redesigned homepage (marketing-site/src/app/page.tsx) -
+    // the old "Spotless Space" / overlay-menu version was replaced.
     const res = await goTo(page, '/');
     expect(res?.status()).toBeLessThan(500);
     await assertNo500(page);
-    await expect(page.locator('h1').first()).toContainText('Spotless Space');
-    await expect(page.locator('text=Get a Quick Quote').first()).toBeVisible();
-    await expect(page.locator('text=Explore Our Services').first()).toBeVisible();
-    await expect(page.locator('text=Real-Time Tracking').first()).toBeVisible();
-    await expect(page.locator('text=Areas We Service').first()).toBeVisible();
+    await expect(page.locator('h1').first()).toContainText('Everything you need, under one roof.');
+    await expect(page.locator('text=Book a clean').first()).toBeVisible();
+    await expect(page.locator('text=Explore services').first()).toBeVisible();
+    await expect(page.locator('text=Real-time tracking').first()).toBeVisible();
+    await expect(page.locator('text=Areas we service').first()).toBeVisible();
     await expect(page.locator('text=Ready to see the difference').first()).toBeVisible();
     // WhatsApp FAB
     await expect(page.locator('a[aria-label="WhatsApp Booking"]')).toBeVisible();
-    // Overlay menu button
-    await expect(page.locator('button[aria-label="Open menu"]')).toBeVisible();
   });
 
   test('Services page loads with flip cards and quote button', async ({ page }) => {
@@ -166,29 +166,12 @@ test.describe('🔗 Navigation — All Links & Buttons', () => {
     await expect(page).toHaveURL(/\/gallery/);
   });
 
-  test('Overlay menu links work', async ({ page }) => {
+  test('Footer privacy link works', async ({ page }) => {
+    // The redesigned SiteNav has no overlay/hamburger menu - it's direct
+    // links plus a footer legal bar with the Privacy link instead.
     test.setTimeout(60000);
     await goTo(page, '/');
-    // Wait for the overlay menu button to be fully hydrated and interactive
-    const menuButton = page.locator('button[aria-label="Open menu"]');
-    await menuButton.waitFor({ state: 'visible', timeout: 20000 });
-    // Click the button — retry if dropdown doesn't open (hydration race)
-    const privacyLink = page.locator('#overlay-menu-dropdown a[href="/privacy"]');
-    for (let attempt = 0; attempt < 3; attempt++) {
-      await menuButton.click();
-      try {
-        await privacyLink.waitFor({ state: 'visible', timeout: 5000 });
-        break;
-      } catch {
-        if (attempt === 2) throw new Error('Overlay menu dropdown did not open after 3 attempts');
-        await delay(1000);
-      }
-    }
-    // Click the privacy link via evaluate to trigger Next.js router navigation
-    await page.evaluate(() => {
-      const link = document.querySelector('#overlay-menu-dropdown a[href="/privacy"]') as HTMLAnchorElement;
-      if (link) link.click();
-    });
+    await page.click('a[href="/privacy"]');
     await page.waitForURL('**/privacy', { timeout: 20000 });
     await expect(page).toHaveURL(/\/privacy/);
   });
