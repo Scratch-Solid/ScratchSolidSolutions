@@ -6,6 +6,6 @@ export default function LoadingSpinner({ size = "md" }: { size?: "sm" | "md" | "
   };
 
   return (
-    <div className={`animate-spin rounded-full border-2 border-blue-600 border-t-transparent ${sizeClasses[size]}`}></div>
+    <div className={`animate-spin rounded-full border-2 border-[#B08A5E] border-t-transparent ${sizeClasses[size]}`}></div>
   );
 }
