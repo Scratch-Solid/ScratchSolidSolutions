@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import SiteNav from "@/components/SiteNav";
+import SiteFooter from "@/components/SiteFooter";
 
 interface Review {
   id: number;
@@ -95,24 +96,24 @@ export default function GalleryClient() {
       <SiteNav current="gallery" />
 
       {/* ─── HERO SECTION ─── */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 pt-28 pb-20 px-4">
+      <section className="relative overflow-hidden bg-gradient-to-br from-[#2E1F16] via-[#3a281a] to-[#4a3420] pt-28 pb-20 px-4">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-1/2 -right-1/4 w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-3xl" />
-          <div className="absolute -bottom-1/2 -left-1/4 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-3xl" />
+          <div className="absolute -top-1/2 -right-1/4 w-[600px] h-[600px] bg-[#B08A5E]/10 rounded-full blur-3xl" />
+          <div className="absolute -bottom-1/2 -left-1/4 w-[500px] h-[500px] bg-[#8a6a45]/10 rounded-full blur-3xl" />
         </div>
 
         <div className="relative max-w-6xl mx-auto text-center">
-          <span className="inline-block px-4 py-1.5 bg-white/10 backdrop-blur-md rounded-full text-blue-200 text-sm font-medium mb-6 border border-white/10">
+          <span className="inline-block px-4 py-1.5 bg-white/10 backdrop-blur-md rounded-full text-[#D3C2A5] text-sm font-medium mb-6 border border-white/10">
             Trusted by hundreds of happy clients
           </span>
           <h1 className="text-5xl md:text-7xl font-extrabold text-white mb-6 tracking-tight">
             Real Results.
             <br />
-            <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-[#B08A5E] via-[#c9a06a] to-[#e0c090] bg-clip-text text-transparent">
               Real Reviews.
             </span>
           </h1>
-          <p className="text-lg md:text-xl text-blue-100/80 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-lg md:text-xl text-[#CBB89A]/90 max-w-2xl mx-auto leading-relaxed">
             Every photo you see here was submitted by a real client after their cleaning service.
             No stock images. No filters. Just honest work and honest feedback.
           </p>
@@ -135,12 +136,12 @@ export default function GalleryClient() {
                   “{currentReview.text}”
                 </blockquote>
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold text-lg">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#B08A5E] to-[#8a6a45] flex items-center justify-center text-white font-bold text-lg">
                     {(currentReview.user_name || 'C').charAt(0).toUpperCase()}
                   </div>
                   <div>
                     <p className="font-semibold text-white">Name: {currentReview.user_name || 'Client'}</p>
-                    <p className="text-sm text-blue-200/70">Area: {currentReview.service_location || 'Cape Town'}</p>
+                    <p className="text-sm text-[#CBB89A]/80">Area: {currentReview.service_location || 'Cape Town'}</p>
                   </div>
                 </div>
               </div>
@@ -168,7 +169,7 @@ export default function GalleryClient() {
             { label: 'Satisfaction Rate', value: '99', suffix: '%' },
           ].map((stat) => (
             <div key={stat.label} className="text-center">
-              <p className="text-3xl font-bold text-gray-900">{stat.value}<span className="text-blue-600">{stat.suffix}</span></p>
+              <p className="text-3xl font-bold text-gray-900">{stat.value}<span className="text-[#B08A5E]">{stat.suffix}</span></p>
               <p className="text-sm text-gray-500 font-medium">{stat.label}</p>
             </div>
           ))}
@@ -187,7 +188,7 @@ export default function GalleryClient() {
 
           {loading ? (
             <div className="flex items-center justify-center h-64">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#B08A5E]"></div>
             </div>
           ) : galleryImages.length === 0 ? (
             <div className="text-center py-16 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
@@ -252,7 +253,7 @@ export default function GalleryClient() {
 
           {loading ? (
             <div className="flex items-center justify-center h-64">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#B08A5E]"></div>
             </div>
           ) : reviews.length === 0 ? (
             <div className="text-center py-16 bg-white rounded-3xl border border-gray-200">
@@ -274,7 +275,7 @@ export default function GalleryClient() {
                   </div>
                   <p className="text-gray-700 text-sm leading-relaxed mb-4">“{review.text}”</p>
                   <div className="flex items-center gap-3 pt-4 border-t border-gray-50">
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-sm font-bold">
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#B08A5E] to-[#8a6a45] flex items-center justify-center text-white text-sm font-bold">
                       {(review.user_name || 'C').charAt(0).toUpperCase()}
                     </div>
                     <div>
@@ -290,18 +291,20 @@ export default function GalleryClient() {
       </section>
 
       {/* ─── CTA ─── */}
-      <section className="py-16 px-4 bg-gradient-to-r from-blue-600 to-indigo-600">
+      <section className="py-16 px-4 bg-gradient-to-r from-[#2E1F16] to-[#8a6a45]">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl font-bold text-white mb-4">Ready to Experience the Difference?</h2>
-          <p className="text-blue-100 mb-8">Join our satisfied clients. Book your first cleaning service today.</p>
+          <p className="text-[#CBB89A] mb-8">Join our satisfied clients. Book your first cleaning service today.</p>
           <a
             href="/auth?redirect=/client-dashboard"
-            className="inline-block bg-white text-blue-600 px-8 py-4 rounded-full font-bold text-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all"
+            className="inline-block bg-white text-[#2E1F16] px-8 py-4 rounded-full font-bold text-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all"
           >
             Book a Cleaning
           </a>
         </div>
       </section>
+
+      <SiteFooter />
 
       {/* ─── LIGHTBOX ─── */}
       {selectedImage && (

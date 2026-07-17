@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 
 // Pages that render their own <SiteFooter /> already - this footer must
 // stay out of their way rather than stacking a second one underneath.
-const PAGES_WITH_OWN_FOOTER = ["/", "/digital", "/transportation"];
+const PAGES_WITH_OWN_FOOTER = ["/", "/digital", "/transportation", "/services", "/about", "/contact", "/gallery"];
 
 export default function GlobalFooter() {
   const pathname = usePathname();
