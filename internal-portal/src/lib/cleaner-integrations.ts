@@ -560,43 +560,20 @@ export async function setupCleanerPayrollInErpNext(params: {
     } satisfies CleanerIntegrationResult;
   }
 
-  try {
-    // Create a minimal Salary Structure Assignment for the employee
-    const result = await erpNextRequest('/resource/Salary Structure Assignment', {
-      method: 'POST',
-      body: JSON.stringify({
-        data: {
-          employee: params.employeeId,
-          from_date: new Date().toISOString().split('T')[0],
-          base: 0, // Will be updated by admin
-        },
-      }),
-    });
-
-    log.audit('ERP_PAYROLL_SETUP', 'cleaner_application', {
-      traceId: params.traceId,
-      employeeId: params.employeeId,
-      assignmentName: result?.data?.name,
-    });
-
-    return {
-      provider: 'erpnext',
-      status: 'configured',
-      reference: result?.data?.name || params.paysheetCode,
-    } satisfies CleanerIntegrationResult;
-  } catch (error) {
-    log.error('ERP_PAYROLL_SETUP_FAILED', error instanceof Error ? error : new Error(String(error)), {
-      traceId: params.traceId,
-      employeeId: params.employeeId,
-    });
-
-    return {
-      provider: 'erpnext',
-      status: 'pending',
-      reference: params.paysheetCode,
-      reason: error instanceof Error ? error.message : 'ERPNext payroll setup failed',
-    } satisfies CleanerIntegrationResult;
-  }
+  // "Salary Structure Assignment" belongs to Frappe's separate HR app
+  // (hrms), which isn't installed on this ERPNext site - only frappe/erpnext
+  // are (confirmed via `bench list-apps` 2026-07-17). Calling this endpoint
+  // doesn't just 500 - it throws an unhandled ImportError inside Frappe's
+  // request handler that crashes the entire gunicorn process, taking down
+  // ERPNext for every other service too (confirmed: this took ERPNext down
+  // for an hour in production). Short-circuit until hrms is actually
+  // installed, rather than risk sending this request again.
+  return {
+    provider: 'erpnext',
+    status: 'pending',
+    reference: params.paysheetCode,
+    reason: 'Payroll setup requires the Frappe HR app (hrms), which is not yet installed on this ERPNext site',
+  } satisfies CleanerIntegrationResult;
 }
 
 export async function notifyCleanerApproval(params: {
