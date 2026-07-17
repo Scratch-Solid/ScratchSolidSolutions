@@ -17,6 +17,7 @@ import PoolManagement from "@/components/admin/PoolManagement";
 import ContentManagement from "@/components/admin/ContentManagement";
 import StaffReviews from "@/components/admin/StaffReviews";
 import AdminCleanerOverview from "@/components/admin/AdminCleanerOverview";
+import AdminLeaveRequests from "@/components/admin/AdminLeaveRequests";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -298,6 +299,7 @@ export default function AdminDashboard() {
           <TabsTrigger value="staff-reviews" className="gap-2 whitespace-nowrap"><UserCheck className="h-4 w-4" />Reviews</TabsTrigger>
           <TabsTrigger value="training" className="gap-2 whitespace-nowrap"><GraduationCap className="h-4 w-4" />Training</TabsTrigger>
           <TabsTrigger value="cleaner-analytics" className="gap-2 whitespace-nowrap"><BarChart3 className="h-4 w-4" />Cleaner Analytics</TabsTrigger>
+          <TabsTrigger value="leave" className="gap-2 whitespace-nowrap"><ClipboardList className="h-4 w-4" />Leave Requests</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">
@@ -668,6 +670,10 @@ export default function AdminDashboard() {
 
         <TabsContent value="cleaner-analytics">
           <AdminCleanerOverview />
+        </TabsContent>
+
+        <TabsContent value="leave">
+          <AdminLeaveRequests />
         </TabsContent>
       </Tabs>
     </DashboardLayout>

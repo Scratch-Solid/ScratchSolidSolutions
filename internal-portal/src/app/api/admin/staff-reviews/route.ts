@@ -44,15 +44,19 @@ export async function POST(request: NextRequest) {
     ).run();
 
     // Upsert monthly review summary
+    // staff_monthly_reviews schema is staff_id/month/year/reviewer_id
+    // (migrations/011_performance_reviews.sql) - not review_month/reviewed_by/
+    // reviewed_at, which don't exist and previously made every insert fail.
+    const reviewYear = new Date().getFullYear();
     await db.prepare(`
-      INSERT INTO staff_monthly_reviews (staff_id, review_month, attendance_score, company_values_score, notes, reviewed_by, reviewed_at)
-      VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-      ON CONFLICT(staff_id, review_month) DO UPDATE SET
+      INSERT INTO staff_monthly_reviews (staff_id, month, year, attendance_score, company_values_score, notes, reviewer_id, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      ON CONFLICT(staff_id, month, year) DO UPDATE SET
         attendance_score     = excluded.attendance_score,
         company_values_score = excluded.company_values_score,
         notes                = excluded.notes,
-        reviewed_at          = CURRENT_TIMESTAMP
-    `).bind(staff_id, reviewMonth, attendance_score ?? 5, company_values_score ?? 5, notes || null, `admin:${user.id}`).run();
+        updated_at           = CURRENT_TIMESTAMP
+    `).bind(staff_id, reviewMonth, reviewYear, attendance_score ?? 5, company_values_score ?? 5, notes || null, user.id).run();
 
     return NextResponse.json({ success: true });
   } catch (error) {
