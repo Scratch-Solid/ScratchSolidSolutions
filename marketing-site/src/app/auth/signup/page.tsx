@@ -11,8 +11,8 @@ export default function SignupRedirectPage() {
   }, [router]);
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-white">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+    <div className="flex items-center justify-center min-h-screen bg-[#F7F2EA]">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#B08A5E]"></div>
     </div>
   );
 }

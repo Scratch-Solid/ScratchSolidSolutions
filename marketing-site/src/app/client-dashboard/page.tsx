@@ -615,7 +615,7 @@ export default function ClientDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4 font-sans relative">
+    <div className="min-h-screen bg-[#F7F2EA] py-8 px-4 font-sans relative">
       {/* Background Image */}
       <div className="absolute inset-0 z-0">
         <Image
@@ -632,23 +632,23 @@ export default function ClientDashboard() {
         <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border-2 border-white/20 p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
           
           {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-3xl font-bold text-blue-700">
-              {bookingStep === 'dashboard' ? 'Client Dashboard' : 
+          <div className="flex items-center justify-between mb-6 rounded-xl px-5 py-4" style={{ background: "linear-gradient(135deg, #2E1F16, #3a281a)" }}>
+            <h1 className="text-3xl font-normal tracking-tight text-[#F7F2EA]" style={{ fontFamily: "Georgia, serif" }}>
+              {bookingStep === 'dashboard' ? 'Client Dashboard' :
                bookingStep === 'calendar' ? 'Select Date & Time' : 'Complete Booking'}
             </h1>
             <div className="flex items-center gap-4">
               {bookingStep !== 'dashboard' && (
                 <button
                   onClick={cancelBooking}
-                  className="text-gray-500 hover:text-gray-700 font-medium"
+                  className="text-[#CBB89A] hover:text-[#F7F2EA] font-medium"
                 >
                   Cancel
                 </button>
               )}
               <button
                 onClick={handleLogout}
-                className="text-red-600 hover:text-red-700 font-medium"
+                className="text-red-400 hover:text-red-300 font-medium"
               >
                 Logout
               </button>
@@ -673,7 +673,7 @@ export default function ClientDashboard() {
             <div className="space-y-6">
               {/* Assigned Cleaner Profile - MOVED TO TOP */}
               {assignedCleaner && (
-                <div className="bg-white rounded-lg p-6 border border-gray-200">
+                <div className="bg-white rounded-xl p-6 shadow-sm border border-[#E9E0D3]">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="font-semibold text-lg text-gray-800">Your Assigned Cleaner</h3>
                     <div className="flex items-center gap-2 px-3 py-1 bg-green-50 border border-green-200 rounded-full">
@@ -709,7 +709,7 @@ export default function ClientDashboard() {
                         <strong>Status:</strong> 
                         <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${
                           cleanerStatus === 'idle' ? 'bg-gray-100 text-gray-800' :
-                          cleanerStatus === 'on_way' ? 'bg-blue-100 text-blue-800' :
+                          cleanerStatus === 'on_way' ? 'bg-[#F0E6D6] text-[#8a6a3a]' :
                           cleanerStatus === 'arrived' ? 'bg-yellow-100 text-yellow-800' :
                           cleanerStatus === 'completed' ? 'bg-green-100 text-green-800' :
                           'bg-gray-100 text-gray-800'
@@ -726,12 +726,12 @@ export default function ClientDashboard() {
               )}
 
               {/* POPIA Compliance Notice */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="bg-[#F7F2EA] border border-[#E9E0D3] rounded-lg p-4">
                 <div className="flex items-start gap-3">
-                  <div className="text-blue-600 text-xl">🔒</div>
+                  <div className="text-[#8a6a45] text-xl">🔒</div>
                   <div>
-                    <h4 className="font-semibold text-blue-800 mb-1">Privacy Protected</h4>
-                    <p className="text-sm text-blue-700">
+                    <h4 className="font-semibold text-[#2E1F16] mb-1">Privacy Protected</h4>
+                    <p className="text-sm text-[#3f342a]">
                       Your cleaner's personal information (surname, contact details, address) is protected under POPIA. Only their first name, profile picture, and rating are displayed for your safety and privacy.
                     </p>
                   </div>
@@ -740,31 +740,31 @@ export default function ClientDashboard() {
 
               {/* Stats Overview */}
               <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
-                <div className="bg-blue-50 rounded-lg p-4">
-                  <h3 className="font-semibold text-blue-700">Active Bookings</h3>
-                  <p className="text-2xl font-bold text-blue-600">{bookings.length}</p>
+                <div className="bg-[#F7F2EA] rounded-lg p-4 border border-[#E9E0D3]">
+                  <h3 className="font-semibold text-[#2E1F16]">Active Bookings</h3>
+                  <p className="text-2xl font-bold text-[#8a6a45]">{bookings.length}</p>
                 </div>
               </div>
 
               {/* Book a Cleaning Button */}
-              <div className="bg-blue-50 rounded-lg p-6">
-                <h3 className="font-semibold text-lg text-blue-700 mb-4">Book a Cleaning</h3>
+              <div className="bg-[#F7F2EA] rounded-lg p-6 border border-[#E9E0D3]">
+                <h3 className="font-semibold text-lg text-[#2E1F16] mb-4">Book a Cleaning</h3>
                 <button
                   onClick={startBooking}
-                  className="w-full rounded-full bg-blue-600 px-6 py-3 text-white font-semibold hover:bg-blue-700 transition-colors"
+                  className="w-full rounded-lg bg-[#B08A5E] px-6 py-3 text-[#2E1F16] font-semibold hover:bg-[#c39a6c] transition-colors"
                 >
                   Schedule New Service
                 </button>
               </div>
 
               {/* Zoho Books Integration - Updated to show only one statement and one invoice */}
-              <div className="bg-white rounded-lg p-6 border border-gray-200">
+              <div className="bg-white rounded-xl p-6 shadow-sm border border-[#E9E0D3]">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-semibold text-lg text-gray-800">Financial Statements</h3>
                   <button
                     onClick={fetchZohoData}
                     disabled={zohoLoading}
-                    className="text-blue-600 hover:text-blue-700 text-sm font-medium disabled:opacity-50"
+                    className="text-[#8a6a45] hover:text-[#2E1F16] text-sm font-medium disabled:opacity-50"
                   >
                     {zohoLoading ? 'Loading...' : 'Refresh'}
                   </button>
@@ -777,14 +777,14 @@ export default function ClientDashboard() {
                       <h4 className="font-medium text-gray-700">Latest Statement</h4>
                       <button
                         onClick={() => setShowStatementsModal(true)}
-                        className="text-blue-600 hover:text-blue-700 text-xs font-medium"
+                        className="text-[#8a6a45] hover:text-[#2E1F16] text-xs font-medium"
                       >
                         View All
                       </button>
                     </div>
-                    <div 
+                    <div
                       onClick={() => setShowStatementsModal(true)}
-                      className="bg-gray-50 rounded-lg p-4 cursor-pointer hover:bg-gray-100 transition-colors"
+                      className="bg-[#F7F2EA] rounded-lg p-4 cursor-pointer hover:bg-[#F0E6D6] transition-colors"
                     >
                       <div className="flex justify-between items-start">
                         <div>
@@ -812,14 +812,14 @@ export default function ClientDashboard() {
                       <h4 className="font-medium text-gray-700">Latest Invoice</h4>
                       <button
                         onClick={() => setShowInvoicesModal(true)}
-                        className="text-blue-600 hover:text-blue-700 text-xs font-medium"
+                        className="text-[#8a6a45] hover:text-[#2E1F16] text-xs font-medium"
                       >
                         View All
                       </button>
                     </div>
-                    <div 
+                    <div
                       onClick={() => setShowInvoicesModal(true)}
-                      className="bg-gray-50 rounded-lg p-3 cursor-pointer hover:bg-gray-100 transition-colors"
+                      className="bg-[#F7F2EA] rounded-lg p-3 cursor-pointer hover:bg-[#F0E6D6] transition-colors"
                     >
                       <div className="flex justify-between items-center">
                         <div>
@@ -848,14 +848,14 @@ export default function ClientDashboard() {
                 <button
                   onClick={requestOlderStatements}
                   disabled={olderStatementsRequest}
-                  className="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors disabled:opacity-50 text-sm"
+                  className="w-full bg-white text-[#2E1F16] border border-[#E9E0D3] py-2 px-4 rounded-lg font-medium hover:bg-[#F7F2EA] transition-colors disabled:opacity-50 text-sm"
                 >
                   {olderStatementsRequest ? 'Submitting...' : 'Request Older Statements'}
                 </button>
               </div>
 
               {/* Review Upload Section */}
-              <div className="bg-white rounded-lg p-6 border border-gray-200">
+              <div className="bg-white rounded-xl p-6 shadow-sm border border-[#E9E0D3]">
                 <h3 className="font-semibold text-lg text-gray-800 mb-4">Write a Review</h3>
                 
                 <div className="space-y-4">
@@ -868,7 +868,7 @@ export default function ClientDashboard() {
                       multiple
                       accept="image/*"
                       onChange={handleImageUpload}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-[#E9E0D3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
                     />
                     {reviewImages.length > 0 && (
                       <div className="mt-3 grid grid-cols-3 gap-2">
@@ -900,7 +900,7 @@ export default function ClientDashboard() {
                     <select
                       value={selectedBookingForReview}
                       onChange={(e) => setSelectedBookingForReview(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-[#E9E0D3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
                     >
                       <option value="">Choose a booking...</option>
                       {bookings
@@ -940,7 +940,7 @@ export default function ClientDashboard() {
                       value={reviewText}
                       onChange={(e) => setReviewText(e.target.value)}
                       rows={4}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-[#E9E0D3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
                       placeholder="Share your experience..."
                     />
                     <p className="text-xs text-gray-500 mt-1">
@@ -951,7 +951,7 @@ export default function ClientDashboard() {
                   <button
                     onClick={handleReviewSubmit}
                     disabled={reviewImagesLoading || reviewText.trim().length === 0 || reviewText.trim().split(/\s+/).filter(w => w.length > 0).length > 100 || !selectedBookingForReview}
-                    className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full bg-[#B08A5E] text-[#2E1F16] py-3 px-4 rounded-lg font-semibold hover:bg-[#c39a6c] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {reviewImagesLoading ? 'Submitting...' : 'Submit Review'}
                   </button>
@@ -959,7 +959,7 @@ export default function ClientDashboard() {
               </div>
 
               {/* Recent Bookings */}
-              <div className="bg-white rounded-lg p-6 border border-gray-200">
+              <div className="bg-white rounded-xl p-6 shadow-sm border border-[#E9E0D3]">
                 <h3 className="font-semibold text-lg text-gray-800 mb-4">Your Bookings</h3>
                 {bookings.length === 0 ? (
                   <p className="text-gray-500 text-center py-4">No bookings yet</p>
@@ -971,7 +971,7 @@ export default function ClientDashboard() {
                       const hoursUntilBooking = (bookingDateTime.getTime() - Date.now()) / (1000 * 60 * 60);
                       const within24h = hoursUntilBooking > 0 && hoursUntilBooking < 24;
                       return (
-                        <div key={booking.id} className="bg-gray-50 rounded-lg p-4">
+                        <div key={booking.id} className="bg-[#F7F2EA] rounded-lg p-4">
                           <div className="flex justify-between items-start">
                             <div>
                               <p className="font-medium text-gray-800">
@@ -1020,7 +1020,7 @@ export default function ClientDashboard() {
                               <button
                                 onClick={() => openRescheduleModal(booking)}
                                 disabled={hoursUntilBooking <= 0}
-                                className="text-xs font-medium text-blue-600 hover:text-blue-700 disabled:opacity-50 flex items-center gap-1"
+                                className="text-xs font-medium text-[#8a6a45] hover:text-[#2E1F16] disabled:opacity-50 flex items-center gap-1"
                                 title={within24h ? "Rescheduling not allowed within 24h" : "Free rescheduling (24h+ before booking)"}
                               >
                                 Reschedule
@@ -1042,7 +1042,7 @@ export default function ClientDashboard() {
               <div className="flex items-center gap-3 mb-2">
                 <button
                   onClick={() => setBookingStep('dashboard')}
-                  className="text-blue-600 hover:text-blue-700 font-medium text-sm flex items-center gap-1"
+                  className="text-[#8a6a45] hover:text-[#2E1F16] font-medium text-sm flex items-center gap-1"
                 >
                   ← Back to Dashboard
                 </button>
@@ -1063,7 +1063,7 @@ export default function ClientDashboard() {
           {showIndemnityOverlay && (
             <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
               <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" onClick={handleIndemnityDecline} />
-              <div className="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl border-2 border-blue-200 p-8 max-w-md w-full max-h-[90vh] overflow-y-auto relative z-50">
+              <div className="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl border-2 border-[#E9E0D3] p-8 max-w-md w-full max-h-[90vh] overflow-y-auto relative z-50">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-2xl font-bold text-black">Indemnity Form</h2>
                   <button
@@ -1077,8 +1077,8 @@ export default function ClientDashboard() {
                 </div>
 
                 <div className="space-y-4">
-                  <div className="bg-blue-50 rounded-lg p-4">
-                    <h3 className="font-semibold text-blue-700 mb-2">Booking Details</h3>
+                  <div className="bg-[#F7F2EA] border border-[#E9E0D3] rounded-lg p-4">
+                    <h3 className="font-semibold text-[#2E1F16] mb-2">Booking Details</h3>
                     <p className="text-sm text-gray-600">
                       Date: {new Date(selectedDate).toLocaleDateString()}
                     </p>
@@ -1087,7 +1087,7 @@ export default function ClientDashboard() {
                     </p>
                   </div>
 
-                  <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="bg-[#F7F2EA] rounded-lg p-4">
                     <h3 className="font-semibold text-gray-800 mb-3">Terms and Conditions</h3>
                     <div className="text-sm text-gray-600 space-y-2">
                       <p>1. I acknowledge that Scratch Solid Cleaning Services will be performed at the specified date and time.</p>
@@ -1099,9 +1099,9 @@ export default function ClientDashboard() {
                     </div>
                   </div>
 
-                  <div className="bg-yellow-50 rounded-lg p-4">
-                    <h3 className="font-semibold text-yellow-700 mb-2">Important Notice</h3>
-                    <p className="text-sm text-yellow-700">
+                  <div className="bg-[#FAF3E6] border border-[#E9DCC0] rounded-lg p-4">
+                    <h3 className="font-semibold text-[#2E1F16] mb-2">Important Notice</h3>
+                    <p className="text-sm text-[#3f342a]">
                       By accepting this indemnity form, you agree to the terms and conditions outlined above. 
                       This booking is subject to availability and confirmation.
                     </p>
@@ -1113,7 +1113,7 @@ export default function ClientDashboard() {
                       id="indemnity-accept"
                       checked={indemnityAccepted}
                       onChange={(e) => setIndemnityAccepted(e.target.checked)}
-                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      className="w-4 h-4 text-[#B08A5E] border-[#E9E0D3] rounded focus:ring-[#B08A5E]"
                     />
                     <label htmlFor="indemnity-accept" className="text-sm text-gray-700">
                       I have read and agree to the terms and conditions
@@ -1130,7 +1130,7 @@ export default function ClientDashboard() {
                     <button
                       onClick={handleIndemnityAccept}
                       disabled={!indemnityAccepted}
-                      className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex-1 bg-[#B08A5E] text-[#2E1F16] py-3 px-4 rounded-lg font-semibold hover:bg-[#c39a6c] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Accept & Continue
                     </button>
@@ -1144,7 +1144,7 @@ export default function ClientDashboard() {
           {showStatementsModal && (
             <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
               <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" onClick={() => setShowStatementsModal(false)} />
-              <div className="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl border-2 border-blue-200 p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto relative z-50">
+              <div className="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl border-2 border-[#E9E0D3] p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto relative z-50">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-2xl font-bold text-black">Monthly Statements (6 Months)</h2>
                   <button
@@ -1159,7 +1159,7 @@ export default function ClientDashboard() {
 
                 <div className="space-y-4">
                   {zohoStatements.map((stmt) => (
-                    <div key={stmt.id} className="bg-gray-50 rounded-lg p-4">
+                    <div key={stmt.id} className="bg-[#F7F2EA] rounded-lg p-4">
                       <div className="flex justify-between items-start">
                         <div>
                           <p className="font-medium text-gray-800">{stmt.period}</p>
@@ -1186,7 +1186,7 @@ export default function ClientDashboard() {
           {showInvoicesModal && (
             <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
               <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" onClick={() => setShowInvoicesModal(false)} />
-              <div className="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl border-2 border-blue-200 p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto relative z-50">
+              <div className="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl border-2 border-[#E9E0D3] p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto relative z-50">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-2xl font-bold text-black">Invoices & Receipts (6 Months)</h2>
                   <button
@@ -1201,7 +1201,7 @@ export default function ClientDashboard() {
 
                 <div className="space-y-3">
                   {zohoInvoices.map((doc) => (
-                    <div key={doc.id} className="bg-gray-50 rounded-lg p-3">
+                    <div key={doc.id} className="bg-[#F7F2EA] rounded-lg p-3">
                       <div className="flex justify-between items-center">
                         <div>
                           <p className="font-medium text-gray-800">
@@ -1232,7 +1232,7 @@ export default function ClientDashboard() {
           {rescheduleBooking && (
             <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
               <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" onClick={() => setRescheduleBooking(null)} />
-              <div className="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl border-2 border-blue-200 p-8 max-w-md w-full relative z-50">
+              <div className="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl border-2 border-[#E9E0D3] p-8 max-w-md w-full relative z-50">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-2xl font-bold text-black">Reschedule Booking</h2>
                   <button
@@ -1245,7 +1245,7 @@ export default function ClientDashboard() {
                   </button>
                 </div>
                 <div className="space-y-4">
-                  <div className="bg-blue-50 rounded-lg p-3 text-sm text-gray-700">
+                  <div className="bg-[#F7F2EA] border border-[#E9E0D3] rounded-lg p-3 text-sm text-gray-700">
                     <p>Current: <strong>{new Date(rescheduleBooking.booking_date).toLocaleDateString()}</strong> at <strong>{rescheduleBooking.booking_time}</strong></p>
                   </div>
                   <div>
@@ -1255,7 +1255,7 @@ export default function ClientDashboard() {
                       value={rescheduleDate}
                       onChange={(e) => setRescheduleDate(e.target.value)}
                       min={new Date().toISOString().split('T')[0]}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-[#E9E0D3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
                     />
                   </div>
                   <div>
@@ -1263,7 +1263,7 @@ export default function ClientDashboard() {
                     <select
                       value={rescheduleTime}
                       onChange={(e) => setRescheduleTime(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-[#E9E0D3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
                     >
                       <option value="">Select a time slot</option>
                       <option value="08:00">08:00</option>
@@ -1280,14 +1280,14 @@ export default function ClientDashboard() {
                   <div className="flex gap-3 pt-2">
                     <button
                       onClick={() => setRescheduleBooking(null)}
-                      className="flex-1 rounded-full border-2 border-gray-300 px-4 py-2 text-gray-700 font-semibold hover:border-gray-400 transition-colors"
+                      className="flex-1 rounded-full border-2 border-[#E9E0D3] px-4 py-2 text-[#2E1F16] font-semibold hover:border-[#D3C6AE] transition-colors"
                     >
                       Cancel
                     </button>
                     <button
                       onClick={handleRescheduleSubmit}
                       disabled={rescheduleLoading || !rescheduleDate || !rescheduleTime}
-                      className="flex-1 rounded-full bg-blue-600 px-4 py-2 text-white font-bold hover:bg-blue-700 transition-colors disabled:opacity-50"
+                      className="flex-1 rounded-full bg-[#B08A5E] px-4 py-2 text-[#2E1F16] font-bold hover:bg-[#c39a6c] transition-colors disabled:opacity-50"
                     >
                       {rescheduleLoading ? "Rescheduling…" : "Confirm"}
                     </button>

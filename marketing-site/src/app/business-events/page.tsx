@@ -60,9 +60,9 @@ export default function BusinessEventsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white py-16 px-4 font-sans">
+    <div className="min-h-screen bg-[#F7F2EA] py-16 px-4 font-sans">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-4xl font-bold text-center text-blue-700 mb-8">
+        <h1 className="text-4xl font-normal tracking-tight text-center text-[#2E1F16] mb-8" style={{ fontFamily: "Georgia, serif" }}>
           Business Events & Extra Services
         </h1>
 
@@ -76,16 +76,16 @@ export default function BusinessEventsPage() {
             <p className="text-sm font-semibold text-green-600">{success}</p>
           </div>
         )}
-        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border-2 border-white/20 p-8">
+        <div className="bg-white rounded-2xl shadow-sm border border-[#E9E0D3] p-8">
           <div className="mb-8">
-            <h2 className="text-2xl font-semibold text-blue-700 mb-4">
+            <h2 className="text-2xl font-normal text-[#2E1F16] mb-4" style={{ fontFamily: "Georgia, serif" }}>
               Request Extra Services
             </h2>
-            
+
             <button
               onClick={handleSubmit}
               disabled={loading}
-              className="rounded-full bg-blue-600 px-8 py-3 text-lg font-semibold text-white shadow-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+              className="rounded-full bg-[#B08A5E] px-8 py-3 text-lg font-semibold text-[#2E1F16] shadow-lg hover:bg-[#c39a6c] transition-colors disabled:opacity-50"
             >
               {loading ? "Submitting..." : "Request Extra Services"}
             </button>
@@ -93,9 +93,9 @@ export default function BusinessEventsPage() {
           
           <div className="space-y-4">
             {events.map((event, index) => (
-              <div key={event.id} className="border rounded-lg p-4 bg-yellow-50">
+              <div key={event.id} className="border border-[#E9DCC0] rounded-lg p-4 bg-[#FAF3E6]">
                 <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-semibold text-lg text-blue-700">
+                  <h3 className="font-semibold text-lg text-[#2E1F16]">
                     {new Date(event.requested_date).toLocaleDateString()}
                   </h3>
                   <span className={`px-2 py-1 rounded text-xs font-medium ${
@@ -109,7 +109,7 @@ export default function BusinessEventsPage() {
                   </span>
                 </div>
                 
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-stone-600">
                   <p><strong>Event Type:</strong> {event.event_type}</p>
                   {event.special_instructions && (
                     <p><strong>Special Instructions:</strong> {event.special_instructions}</p>
@@ -126,7 +126,7 @@ export default function BusinessEventsPage() {
         <div className="mt-8 text-center">
           <Link 
             href="/business-dashboard" 
-            className="text-blue-600 hover:underline font-semibold"
+            className="text-[#8a6a45] hover:underline font-semibold"
           >
             Back to Dashboard
           </Link>

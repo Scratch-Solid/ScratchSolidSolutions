@@ -88,24 +88,24 @@ export default function BusinessBookingPage() {
 
   if (!authChecked) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600" />
+      <div className="min-h-screen bg-[#F7F2EA] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#B08A5E]" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-10 px-4">
+    <div className="min-h-screen bg-[#F7F2EA] py-10 px-4">
       <div className="max-w-2xl mx-auto">
         {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-3 mb-6 rounded-xl px-4 py-3" style={{ background: "linear-gradient(135deg, #2E1F16, #3a281a)" }}>
           <Link
             href="/business-dashboard"
-            className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+            className="text-[#CBB89A] hover:text-[#F7F2EA] font-medium text-sm"
           >
             ← Dashboard
           </Link>
-          <h1 className="text-2xl font-bold text-blue-700">Business Booking</h1>
+          <h1 className="text-2xl font-normal tracking-tight text-[#F7F2EA]" style={{ fontFamily: "Georgia, serif" }}>Business Booking</h1>
         </div>
 
         {error && (
@@ -121,28 +121,28 @@ export default function BusinessBookingPage() {
 
         {/* ── Mode selection ── */}
         {bookingMode === 'choose' && (
-          <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-8">
-            <h2 className="text-xl font-bold text-center text-gray-800 mb-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-[#E9E0D3] p-8">
+            <h2 className="text-xl font-normal text-center text-[#2E1F16] mb-6" style={{ fontFamily: "Georgia, serif" }}>
               What type of booking do you need?
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <button
                 onClick={() => setBookingMode('once-off')}
-                className="p-6 bg-blue-50 rounded-2xl border-2 border-blue-200 hover:border-blue-500 transition-colors text-left"
+                className="p-6 bg-[#F7F2EA] rounded-2xl border-2 border-[#E9E0D3] hover:border-[#B08A5E] transition-colors text-left"
               >
                 <div className="text-3xl mb-3">🗓️</div>
-                <h3 className="text-lg font-bold text-blue-700 mb-1">Once-off Booking</h3>
-                <p className="text-sm text-gray-600">
+                <h3 className="text-lg font-bold text-[#2E1F16] mb-1">Once-off Booking</h3>
+                <p className="text-sm text-stone-600">
                   Single cleaning visit — choose your service, area, rooms, and get an accurate price instantly.
                 </p>
               </button>
               <button
                 onClick={() => setBookingMode('contract')}
-                className="p-6 bg-green-50 rounded-2xl border-2 border-green-200 hover:border-green-500 transition-colors text-left"
+                className="p-6 bg-[#F0E6D6] rounded-2xl border-2 border-[#E9DCC0] hover:border-[#B08A5E] transition-colors text-left"
               >
                 <div className="text-3xl mb-3">📋</div>
-                <h3 className="text-lg font-bold text-green-700 mb-1">Contract Booking</h3>
-                <p className="text-sm text-gray-600">
+                <h3 className="text-lg font-bold text-[#2E1F16] mb-1">Contract Booking</h3>
+                <p className="text-sm text-stone-600">
                   Long-term recurring contract — submit your requirements and our team will confirm rates.
                 </p>
               </button>
@@ -155,12 +155,12 @@ export default function BusinessBookingPage() {
           <div className="space-y-4">
             <button
               onClick={() => setBookingMode('choose')}
-              className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+              className="text-[#8a6a45] hover:text-[#2E1F16] font-medium text-sm"
             >
               ← Change booking type
             </button>
-            <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
-              <p className="text-sm text-blue-700 font-medium">
+            <div className="bg-white border border-[#E9E0D3] rounded-xl px-4 py-3">
+              <p className="text-sm text-[#3f342a] font-medium">
                 🏢 Business rate — select your property type, area, and number of rooms/m² for an accurate quote.
               </p>
             </div>
@@ -180,19 +180,19 @@ export default function BusinessBookingPage() {
           <div className="space-y-4">
             <button
               onClick={() => setBookingMode('choose')}
-              className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+              className="text-[#8a6a45] hover:text-[#2E1F16] font-medium text-sm"
             >
               ← Change booking type
             </button>
-            <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-6 space-y-5">
-              <h2 className="text-xl font-bold text-gray-800">Contract Request</h2>
-              <p className="text-sm text-gray-600">
+            <div className="bg-white rounded-2xl shadow-sm border border-[#E9E0D3] p-6 space-y-5">
+              <h2 className="text-xl font-normal text-[#2E1F16]" style={{ fontFamily: "Georgia, serif" }}>Contract Request</h2>
+              <p className="text-sm text-stone-600">
                 Submit your contract requirements. Our team will review and send you a formal contract with confirmed rates within 24 hours.
               </p>
 
               <form onSubmit={handleContractSubmit} className="space-y-5">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-stone-700 mb-2">
                     Contract Duration <span className="text-red-500">*</span>
                   </label>
                   <div className="flex gap-4">
@@ -204,9 +204,9 @@ export default function BusinessBookingPage() {
                           value={d.value}
                           checked={contractData.duration === d.value}
                           onChange={(e) => setContractData({ ...contractData, duration: e.target.value })}
-                          className="w-4 h-4 text-blue-600"
+                          className="w-4 h-4 text-[#B08A5E] accent-[#B08A5E]"
                         />
-                        <span className="text-sm font-medium text-gray-700">{d.label}</span>
+                        <span className="text-sm font-medium text-stone-700">{d.label}</span>
                       </label>
                     ))}
                   </div>
@@ -214,7 +214,7 @@ export default function BusinessBookingPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    <label className="block text-sm font-semibold text-stone-700 mb-1">
                       Start Date <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -223,11 +223,11 @@ export default function BusinessBookingPage() {
                       onChange={(e) => setContractData({ ...contractData, start_date: e.target.value })}
                       min={new Date().toISOString().split('T')[0]}
                       required
-                      className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                      className="w-full border border-[#E9E0D3] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    <label className="block text-sm font-semibold text-stone-700 mb-1">
                       End Date (optional)
                     </label>
                     <input
@@ -235,7 +235,7 @@ export default function BusinessBookingPage() {
                       value={contractData.end_date}
                       onChange={(e) => setContractData({ ...contractData, end_date: e.target.value })}
                       min={contractData.start_date || new Date().toISOString().split('T')[0]}
-                      className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                      className="w-full border border-[#E9E0D3] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
                     />
                   </div>
                 </div>
@@ -246,9 +246,9 @@ export default function BusinessBookingPage() {
                       type="checkbox"
                       checked={weekendRequired}
                       onChange={(e) => setWeekendRequired(e.target.checked)}
-                      className="w-5 h-5 text-blue-600 rounded"
+                      className="w-5 h-5 text-[#B08A5E] accent-[#B08A5E] rounded"
                     />
-                    <span className="text-sm font-semibold text-gray-700">Weekend work required</span>
+                    <span className="text-sm font-semibold text-stone-700">Weekend work required</span>
                   </label>
                   {weekendRequired && (
                     <p className="text-xs text-orange-600 mt-1 ml-7">
@@ -258,7 +258,7 @@ export default function BusinessBookingPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  <label className="block text-sm font-semibold text-stone-700 mb-1">
                     Additional Requirements / Terms
                   </label>
                   <textarea
@@ -266,12 +266,12 @@ export default function BusinessBookingPage() {
                     onChange={(e) => setContractData({ ...contractData, terms: e.target.value })}
                     rows={3}
                     placeholder="Describe your premises, frequency, any special requirements…"
-                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+                    className="w-full border border-[#E9E0D3] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#B08A5E] resize-none"
                   />
                 </div>
 
-                <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
-                  <p className="text-sm text-yellow-800">
+                <div className="bg-[#FAF3E6] border border-[#E9DCC0] rounded-xl p-4">
+                  <p className="text-sm text-[#3f342a]">
                     <strong>Note:</strong> Contract rates are confirmed by our admin team. You will receive a formal quote with pricing breakdown within 24 hours of submission.
                   </p>
                 </div>
@@ -280,14 +280,14 @@ export default function BusinessBookingPage() {
                   <button
                     type="button"
                     onClick={() => setBookingMode('choose')}
-                    className="flex-1 rounded-full border-2 border-gray-300 px-6 py-3 text-gray-700 font-semibold hover:border-gray-400 transition-colors"
+                    className="flex-1 rounded-full border-2 border-[#E9E0D3] px-6 py-3 text-[#2E1F16] font-semibold hover:border-[#D3C6AE] transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={loading || !contractData.start_date}
-                    className="flex-1 rounded-full bg-green-600 px-6 py-3 text-white font-bold hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 rounded-full bg-[#B08A5E] px-6 py-3 text-[#2E1F16] font-bold hover:bg-[#c39a6c] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? 'Submitting…' : 'Submit Contract Request'}
                   </button>

@@ -336,15 +336,15 @@ export default function BusinessDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-16 px-4 font-sans">
+    <div className="min-h-screen bg-[#F7F2EA] py-16 px-4 font-sans">
       <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-4xl font-bold text-blue-700">
+        <div className="flex items-center justify-between mb-8 rounded-2xl px-6 py-5" style={{ background: "linear-gradient(135deg, #2E1F16, #3a281a)" }}>
+          <h1 className="text-4xl font-normal tracking-tight text-[#F7F2EA]" style={{ fontFamily: "Georgia, serif" }}>
             Business Dashboard
           </h1>
           <button
             onClick={handleLogout}
-            className="text-red-600 hover:text-red-700 font-medium"
+            className="text-[#CBB89A] hover:text-[#F7F2EA] font-medium"
           >
             Logout
           </button>
@@ -360,23 +360,23 @@ export default function BusinessDashboard() {
             <p className="text-sm font-semibold text-green-600">{success}</p>
           </div>
         )}
-        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border-2 border-white/20 p-8">
+        <div className="bg-white rounded-2xl shadow-sm border border-[#E9E0D3] p-8">
           <div className="space-y-6">
             <div className="text-center">
-              <h2 className="text-2xl font-semibold text-gray-800 mb-4">Welcome Back!</h2>
-              <p className="text-gray-600">Manage your business cleaning services</p>
+              <h2 className="text-2xl font-normal text-[#2E1F16] mb-4" style={{ fontFamily: "Georgia, serif" }}>Welcome Back!</h2>
+              <p className="text-stone-600">Manage your business cleaning services</p>
             </div>
 
             {/* Contract Tile */}
-            <div className="p-4 bg-purple-50 rounded-lg">
-              <h3 className="font-semibold text-lg text-purple-700 mb-2">Service Contracts</h3>
-              <p className="text-gray-600 mb-4">View and manage your service agreements</p>
+            <div className="p-4 bg-[#F7F2EA] rounded-lg border border-[#E9E0D3]">
+              <h3 className="font-semibold text-lg text-[#2E1F16] mb-2">Service Contracts</h3>
+              <p className="text-stone-600 mb-4">View and manage your service agreements</p>
               <div className="space-y-2">
                 {contracts.length === 0 ? (
                   <p className="text-sm text-gray-500">No contracts yet</p>
                 ) : (
                   contracts.map((contract: any) => (
-                    <div key={contract.id} className="border rounded-lg p-3 bg-white">
+                    <div key={contract.id} className="border border-[#E9E0D3] rounded-lg p-3 bg-white">
                       <div className="flex justify-between items-center mb-2">
                         <span className="font-medium text-gray-800">{contract.contract_type}</span>
                         <span className={`px-2 py-1 rounded text-xs font-medium ${
@@ -385,13 +385,13 @@ export default function BusinessDashboard() {
                           {contract.status}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-600">Rate: R{contract.rate_per_hour}/hr</p>
-                      <p className="text-sm text-gray-600">Weekend Multiplier: {contract.weekend_rate_multiplier}x</p>
+                      <p className="text-sm text-stone-600">Rate: R{contract.rate_per_hour}/hr</p>
+                      <p className="text-sm text-stone-600">Weekend Multiplier: {contract.weekend_rate_multiplier}x</p>
                       {contract.start_date && (
-                        <p className="text-sm text-gray-600">Start: {new Date(contract.start_date).toLocaleDateString()}</p>
+                        <p className="text-sm text-stone-600">Start: {new Date(contract.start_date).toLocaleDateString()}</p>
                       )}
                       {contract.end_date && (
-                        <p className="text-sm text-gray-600">End: {new Date(contract.end_date).toLocaleDateString()}</p>
+                        <p className="text-sm text-stone-600">End: {new Date(contract.end_date).toLocaleDateString()}</p>
                       )}
                       {contract.is_immutable === 1 && (
                         <div className="flex items-center justify-between mt-2">
@@ -399,13 +399,13 @@ export default function BusinessDashboard() {
                           <div className="flex gap-2">
                             <button
                               onClick={() => setViewingContract(contract)}
-                              className="text-xs bg-purple-600 text-white px-3 py-1 rounded hover:bg-purple-700"
+                              className="text-xs bg-[#B08A5E] text-[#2E1F16] px-3 py-1 rounded hover:bg-[#c39a6c]"
                             >
                               View
                             </button>
                             <button
                               onClick={() => handleExportPDF(contract.id)}
-                              className="text-xs bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+                              className="text-xs bg-[#2E1F16] text-[#F7F2EA] px-3 py-1 rounded hover:bg-[#241811]"
                             >
                               Export PDF
                             </button>
@@ -419,15 +419,15 @@ export default function BusinessDashboard() {
             </div>
 
             {/* Recurring Booking Tile */}
-            <div className="p-4 bg-green-50 rounded-lg">
-              <h3 className="font-semibold text-lg text-green-700 mb-2">Recurring Bookings</h3>
-              <p className="text-gray-600 mb-4">Manage your recurring cleaning schedule</p>
+            <div className="p-4 bg-[#F7F2EA] rounded-lg border border-[#E9E0D3]">
+              <h3 className="font-semibold text-lg text-[#2E1F16] mb-2">Recurring Bookings</h3>
+              <p className="text-stone-600 mb-4">Manage your recurring cleaning schedule</p>
               <div className="space-y-2">
                 {recurringBookings.length === 0 ? (
                   <p className="text-sm text-gray-500">No recurring bookings yet</p>
                 ) : (
                   recurringBookings.map((booking: any) => (
-                    <div key={booking.id} className="border rounded-lg p-3 bg-white">
+                    <div key={booking.id} className="border border-[#E9E0D3] rounded-lg p-3 bg-white">
                       <div className="flex justify-between items-center mb-2">
                         <span className="font-medium text-gray-800">{booking.service_type}</span>
                         <span className={`px-2 py-1 rounded text-xs font-medium ${
@@ -436,43 +436,43 @@ export default function BusinessDashboard() {
                           {booking.status}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-600">Next: {new Date(booking.booking_date).toLocaleDateString()}</p>
-                      <p className="text-sm text-gray-600">Time: {booking.booking_time}</p>
+                      <p className="text-sm text-stone-600">Next: {new Date(booking.booking_date).toLocaleDateString()}</p>
+                      <p className="text-sm text-stone-600">Time: {booking.booking_time}</p>
                     </div>
                   ))
                 )}
               </div>
-              <Link href="/client-dashboard?action=book" className="block mt-3 text-center bg-green-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-green-700 transition-colors">
+              <Link href="/client-dashboard?action=book" className="block mt-3 text-center bg-[#B08A5E] text-[#2E1F16] py-2 px-4 rounded-lg font-semibold hover:bg-[#c39a6c] transition-colors">
                 Schedule Recurring Booking
               </Link>
             </div>
 
             {/* Settings Tile */}
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <h3 className="font-semibold text-lg text-gray-700 mb-2">Settings</h3>
-              <p className="text-gray-600 mb-4">Account and profile settings</p>
+            <div className="p-4 bg-[#F7F2EA] rounded-lg border border-[#E9E0D3]">
+              <h3 className="font-semibold text-lg text-[#2E1F16] mb-2">Settings</h3>
+              <p className="text-stone-600 mb-4">Account and profile settings</p>
               {userProfile && (
-                <div className="border rounded-lg p-3 bg-white mb-3">
+                <div className="border border-[#E9E0D3] rounded-lg p-3 bg-white mb-3">
                   <p className="font-medium text-gray-800">{userProfile.name}</p>
-                  <p className="text-sm text-gray-600">{userProfile.email}</p>
+                  <p className="text-sm text-stone-600">{userProfile.email}</p>
                   {userProfile.business_name && (
-                    <p className="text-sm text-gray-600">{userProfile.business_name}</p>
+                    <p className="text-sm text-stone-600">{userProfile.business_name}</p>
                   )}
                 </div>
               )}
               <div className="space-y-2">
                 <button
                   onClick={() => setShowSettings(!showSettings)}
-                  className="w-full text-left px-4 py-2 bg-white border rounded-lg hover:bg-gray-100 transition-colors"
+                  className="w-full text-left px-4 py-2 bg-white border border-[#E9E0D3] rounded-lg hover:bg-[#F0E6D6] transition-colors"
                 >
                   {showSettings ? 'Hide Settings' : 'Show Settings'}
                 </button>
                 {showSettings && (
-                  <div className="space-y-2 pl-4 border-l-2 border-gray-300">
-                    <button className="w-full text-left px-4 py-2 text-blue-600 hover:text-blue-700">
+                  <div className="space-y-2 pl-4 border-l-2 border-[#D3C6AE]">
+                    <button className="w-full text-left px-4 py-2 text-[#8a6a45] hover:text-[#2E1F16]">
                       Edit Profile
                     </button>
-                    <button className="w-full text-left px-4 py-2 text-blue-600 hover:text-blue-700">
+                    <button className="w-full text-left px-4 py-2 text-[#8a6a45] hover:text-[#2E1F16]">
                       Change Password
                     </button>
                     <button
@@ -489,7 +489,7 @@ export default function BusinessDashboard() {
             <div className="space-y-4">
               {/* Assigned Cleaner Profile */}
               {assignedCleaner && (
-                <div className="bg-white rounded-lg p-6 border border-gray-200">
+                <div className="bg-white rounded-lg p-6 border border-[#E9E0D3]">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="font-semibold text-lg text-gray-800">Your Assigned Cleaner</h3>
                     <div className="flex items-center gap-2 px-3 py-1 bg-green-50 border border-green-200 rounded-full">
@@ -519,9 +519,9 @@ export default function BusinessDashboard() {
                             <span className="text-yellow-400">{'\u2605'.repeat(Math.floor(assignedCleaner.rating))}</span>
                             <span className="text-gray-400">{'\u2605'.repeat(5 - Math.floor(assignedCleaner.rating))}</span>
                           </div>
-                          <span className="text-sm text-gray-600">{assignedCleaner.rating}</span>
+                          <span className="text-sm text-stone-600">{assignedCleaner.rating}</span>
                         </div>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-stone-600">
                           <strong>Specialties:</strong> {assignedCleaner.specialties?.join(', ') || 'General Cleaning'}
                         </p>
                       </div>
@@ -531,12 +531,12 @@ export default function BusinessDashboard() {
               )}
               
               {/* POPIA Compliance Notice */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="bg-[#F7F2EA] border border-[#E9E0D3] rounded-lg p-4">
                 <div className="flex items-start gap-3">
-                  <div className="text-blue-600 text-xl">🔒</div>
+                  <div className="text-[#B08A5E] text-xl">🔒</div>
                   <div>
-                    <h4 className="font-semibold text-blue-800 mb-1">Privacy Protected</h4>
-                    <p className="text-sm text-blue-700">
+                    <h4 className="font-semibold text-[#2E1F16] mb-1">Privacy Protected</h4>
+                    <p className="text-sm text-[#3f342a]">
                       Your cleaner's personal information (surname, contact details, address) is protected under POPIA. Only their first name, profile picture, and rating are displayed for your safety and privacy.
                     </p>
                   </div>
@@ -544,22 +544,22 @@ export default function BusinessDashboard() {
               </div>
 
               {/* Booking Options */}
-              <div className="p-4 bg-blue-50 rounded-lg">
-                <h3 className="font-semibold text-lg text-blue-700 mb-2">Book Cleaning Service</h3>
-                <p className="text-gray-600 mb-4">Schedule your professional cleaning service</p>
+              <div className="p-4 bg-[#F7F2EA] rounded-lg border border-[#E9E0D3]">
+                <h3 className="font-semibold text-lg text-[#2E1F16] mb-2">Book Cleaning Service</h3>
+                <p className="text-stone-600 mb-4">Schedule your professional cleaning service</p>
                 
                 <Link
                   href="/business-booking"
-                  className="block bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors text-center"
+                  className="block bg-[#B08A5E] text-[#2E1F16] py-3 px-6 rounded-lg font-semibold hover:bg-[#c39a6c] transition-colors text-center"
                 >
                   Book a Cleaner
                 </Link>
               </div>
 
               {/* Weekend Assignment Notifications */}
-              <div className="p-4 bg-yellow-50 rounded-lg">
-                <h3 className="font-semibold text-lg text-yellow-700 mb-2">Weekend Assignments</h3>
-                <p className="text-gray-600 mb-4">Pending weekend cleaning assignments</p>
+              <div className="p-4 bg-[#FAF3E6] rounded-lg border border-[#E9DCC0]">
+                <h3 className="font-semibold text-lg text-[#2E1F16] mb-2">Weekend Assignments</h3>
+                <p className="text-stone-600 mb-4">Pending weekend cleaning assignments</p>
                 
                 <div className="space-y-4">
                   {weekendRequests.length === 0 ? (
@@ -569,7 +569,7 @@ export default function BusinessDashboard() {
                   ) : (
                     <div className="space-y-2">
                       {weekendRequests.map((request) => (
-                        <div key={request.id} className="border rounded-lg p-3 bg-white">
+                        <div key={request.id} className="border border-[#E9E0D3] rounded-lg p-3 bg-white">
                           <div className="flex justify-between items-center mb-2">
                             <h4 className="font-medium text-gray-800">
                               Weekend Assignment - {new Date(request.requested_date).toLocaleDateString()}
@@ -582,7 +582,7 @@ export default function BusinessDashboard() {
                             </span>
                           </div>
                           
-                          <div className="text-sm text-gray-600">
+                          <div className="text-sm text-stone-600">
                             <p><strong>Special Instructions:</strong> {request.special_instructions}</p>
                             {request.assigned_cleaner && (
                               <p><strong>Assigned Cleaner:</strong> {request.assigned_cleaner}</p>
@@ -590,7 +590,7 @@ export default function BusinessDashboard() {
                           </div>
                           
                           {request.status === 'pending' && (
-                            <div className="mt-3 text-xs text-blue-600">
+                            <div className="mt-3 text-xs text-[#8a6a45]">
                               Awaiting admin assignment
                             </div>
                           )}
@@ -601,9 +601,9 @@ export default function BusinessDashboard() {
                 </div>
               </div>
 
-              <div className="p-4 bg-blue-50 rounded-lg">
-                <h3 className="font-semibold text-lg text-blue-700 mb-2">Weekend Cleaning</h3>
-                <p className="text-gray-600 mb-4">Request weekend cleaning services</p>
+              <div className="p-4 bg-[#F7F2EA] rounded-lg border border-[#E9E0D3]">
+                <h3 className="font-semibold text-lg text-[#2E1F16] mb-2">Weekend Cleaning</h3>
+                <p className="text-stone-600 mb-4">Request weekend cleaning services</p>
                 
                 <div className="space-y-4">
                   {weekendRequests.length === 0 ? (
@@ -613,9 +613,9 @@ export default function BusinessDashboard() {
                   ) : (
                     <div className="space-y-4">
                       {weekendRequests.map((request, index) => (
-                        <div key={request.id} className="border rounded-lg p-4 bg-white">
+                        <div key={request.id} className="border border-[#E9E0D3] rounded-lg p-4 bg-white">
                           <div className="flex justify-between items-start mb-2">
-                            <h4 className="font-medium text-blue-700">
+                            <h4 className="font-medium text-[#2E1F16]">
                               Request for {new Date(request.requested_date).toLocaleDateString()}
                             </h4>
                             <span className={`px-2 py-1 rounded text-xs font-medium ${
@@ -626,7 +626,7 @@ export default function BusinessDashboard() {
                             </span>
                           </div>
                           
-                          <div className="text-sm text-gray-600">
+                          <div className="text-sm text-stone-600">
                             <p><strong>Special Instructions:</strong> {request.special_instructions}</p>
                           </div>
                           
@@ -645,19 +645,19 @@ export default function BusinessDashboard() {
                 </div>
               </div>
               
-              <div className="p-4 bg-green-50 rounded-lg">
-                <h3 className="font-semibold text-lg text-blue-700 mb-2">Submit New Request</h3>
+              <div className="p-4 bg-[#F7F2EA] rounded-lg border border-[#E9E0D3]">
+                <h3 className="font-semibold text-lg text-[#2E1F16] mb-2">Submit New Request</h3>
                 <button
                   onClick={handleWeekendRequest}
                   disabled={loading}
-                  className="w-full rounded-full bg-blue-600 px-6 py-3 text-white font-semibold hover:bg-blue-700 transition-colors disabled:bg-gray-400"
+                  className="w-full rounded-full bg-[#B08A5E] px-6 py-3 text-[#2E1F16] font-semibold hover:bg-[#c39a6c] transition-colors disabled:bg-gray-400"
                 >
                   {loading ? "Submitting..." : "Request Weekend Cleaning"}
                 </button>
               </div>
 
               {/* Review Upload Section */}
-              <div className="bg-white rounded-lg p-6 border border-gray-200">
+              <div className="bg-white rounded-lg p-6 border border-[#E9E0D3]">
                 <h3 className="font-semibold text-lg text-gray-800 mb-4">Write a Review</h3>
                 
                 <div className="space-y-4">
@@ -670,7 +670,7 @@ export default function BusinessDashboard() {
                       multiple
                       accept="image/*"
                       onChange={handleImageUpload}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-[#E9E0D3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
                     />
                     {reviewImages.length > 0 && (
                       <div className="mt-3 grid grid-cols-3 gap-2">
@@ -702,7 +702,7 @@ export default function BusinessDashboard() {
                     <select
                       value={selectedBookingForReview}
                       onChange={(e) => setSelectedBookingForReview(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-[#E9E0D3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
                     >
                       <option value="">Choose a booking...</option>
                       {recurringBookings
@@ -730,7 +730,7 @@ export default function BusinessDashboard() {
                           ★
                         </button>
                       ))}
-                      <span className="ml-2 text-sm text-gray-600">{reviewRating}/5</span>
+                      <span className="ml-2 text-sm text-stone-600">{reviewRating}/5</span>
                     </div>
                   </div>
 
@@ -742,7 +742,7 @@ export default function BusinessDashboard() {
                       value={reviewText}
                       onChange={(e) => setReviewText(e.target.value)}
                       rows={4}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-[#E9E0D3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
                       placeholder="Share your experience..."
                     />
                     <p className="text-xs text-gray-500 mt-1">
@@ -753,7 +753,7 @@ export default function BusinessDashboard() {
                   <button
                     onClick={handleReviewSubmit}
                     disabled={reviewImagesLoading || reviewText.trim().length === 0 || reviewText.trim().split(/\s+/).filter(w => w.length > 0).length > 100 || !selectedBookingForReview}
-                    className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full bg-[#B08A5E] text-[#2E1F16] py-3 px-4 rounded-lg font-semibold hover:bg-[#c39a6c] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {reviewImagesLoading ? 'Submitting...' : 'Submit Review'}
                   </button>
@@ -766,7 +766,7 @@ export default function BusinessDashboard() {
         <div className="mt-8 text-center">
           <Link 
             href="/business-dashboard" 
-            className="text-blue-600 hover:underline font-semibold"
+            className="text-[#8a6a45] hover:underline font-semibold"
           >
             Back to Dashboard
           </Link>
@@ -777,14 +777,14 @@ export default function BusinessDashboard() {
       {viewingContract && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setViewingContract(null)}></div>
-          <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-2xl border-2 border-white/20 p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="relative bg-white rounded-2xl shadow-2xl border border-[#E9E0D3] p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setViewingContract(null)}
               className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl font-bold"
             >
               ×
             </button>
-            <h2 className="text-2xl font-bold text-blue-700 mb-6">Contract Details</h2>
+            <h2 className="text-2xl font-normal text-[#2E1F16] mb-6" style={{ fontFamily: "Georgia, serif" }}>Contract Details</h2>
             <div className="space-y-4">
               <div>
                 <p className="text-sm text-gray-500">Contract Type</p>
@@ -828,13 +828,13 @@ export default function BusinessDashboard() {
             <div className="mt-6 flex gap-3">
               <button
                 onClick={() => handleExportPDF(viewingContract.id)}
-                className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                className="flex-1 bg-[#B08A5E] text-[#2E1F16] py-3 px-6 rounded-lg font-semibold hover:bg-[#c39a6c] transition-colors"
               >
                 Download PDF
               </button>
               <button
                 onClick={() => setViewingContract(null)}
-                className="flex-1 bg-gray-200 text-gray-700 py-3 px-6 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+                className="flex-1 bg-white text-[#2E1F16] border border-[#E9E0D3] py-3 px-6 rounded-lg font-semibold hover:bg-[#F7F2EA] transition-colors"
               >
                 Close
               </button>
