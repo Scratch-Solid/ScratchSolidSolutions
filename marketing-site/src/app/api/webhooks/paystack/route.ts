@@ -79,6 +79,13 @@ export async function POST(request: NextRequest) {
     metadata.paystack_event = event.event;
     metadata.paid_at = event.data?.paid_at;
     metadata.channel = event.data?.channel;
+    metadata.domain = event.data?.domain;
+    if (event.data?.domain === 'test') {
+      // See matching check in api/payments/paystack/verify/route.ts - a
+      // test-mode charge.success here means PAYSTACK_SECRET_KEY is a test
+      // key, and this "successful" payment never touched a real bank.
+      logger.error('Paystack webhook received TEST-mode charge.success - no real funds moved', new Error(`reference=${event.reference}`));
+    }
 
     await db.prepare(
       `UPDATE payments SET status = 'completed', payment_date = datetime('now'), metadata = ?, updated_at = datetime('now') WHERE id = ?`
