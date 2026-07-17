@@ -31,15 +31,21 @@ export function bonusPercentageForKpi(kpi5ptRounded: number): number {
 
 export async function calculateKpi(db: D1Database, staffId: number): Promise<KpiResult> {
   // Admin component: the last 30 admin-submitted review metrics for this cleaner
+  // (LIMIT must apply before AVG(), so the recent-30 slice is a subquery -
+  // AVG(...) ... LIMIT 30 with no subquery aggregates the entire table first
+  // and only then applies LIMIT to the single resulting row, a no-op).
   const adminRow = await db.prepare(`
     SELECT AVG(attendance_score)    AS attendance,
            AVG(company_values_score) AS company_values,
            AVG(quality_score)        AS quality,
            AVG(communication_score)  AS communication
-    FROM job_performance_metrics
-    WHERE staff_id = ?
-    ORDER BY created_at DESC
-    LIMIT 30
+    FROM (
+      SELECT attendance_score, company_values_score, quality_score, communication_score
+      FROM job_performance_metrics
+      WHERE staff_id = ?
+      ORDER BY recorded_at DESC
+      LIMIT 30
+    )
   `).bind(String(staffId)).first<{ attendance: number; company_values: number; quality: number; communication: number }>();
 
   const adminComponent = average([adminRow?.attendance, adminRow?.company_values, adminRow?.quality, adminRow?.communication]);
@@ -47,10 +53,13 @@ export async function calculateKpi(db: D1Database, staffId: number): Promise<Kpi
   // System component: real GPS-based punctuality, computed automatically on arrival
   const systemRow = await db.prepare(`
     SELECT AVG(adherence_score) AS adherence
-    FROM job_performance_metrics
-    WHERE staff_id = ?
-    ORDER BY created_at DESC
-    LIMIT 30
+    FROM (
+      SELECT adherence_score
+      FROM job_performance_metrics
+      WHERE staff_id = ?
+      ORDER BY recorded_at DESC
+      LIMIT 30
+    )
   `).bind(String(staffId)).first<{ adherence: number }>();
 
   const systemComponent = systemRow?.adherence ?? 0;
@@ -58,12 +67,15 @@ export async function calculateKpi(db: D1Database, staffId: number): Promise<Kpi
   // Client component: real customer ratings, via cleaner_profiles (cleaning_feedback.cleaner_id
   // references cleaner_profiles.id, not users.id - staffId here is a users.id)
   const clientRow = await db.prepare(`
-    SELECT AVG(cf.rating) AS avg_rating
-    FROM cleaning_feedback cf
-    JOIN cleaner_profiles cp ON cf.cleaner_id = cp.id
-    WHERE cp.user_id = ?
-    ORDER BY cf.created_at DESC
-    LIMIT 30
+    SELECT AVG(rating) AS avg_rating
+    FROM (
+      SELECT cf.rating
+      FROM cleaning_feedback cf
+      JOIN cleaner_profiles cp ON cf.cleaner_id = cp.id
+      WHERE cp.user_id = ?
+      ORDER BY cf.created_at DESC
+      LIMIT 30
+    )
   `).bind(staffId).first<{ avg_rating: number }>();
 
   const clientComponent = clientRow?.avg_rating ? (clientRow.avg_rating / 5) * 10 : 0;
