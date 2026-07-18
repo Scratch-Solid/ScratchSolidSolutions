@@ -48,6 +48,10 @@ export default function BusinessDashboard() {
   const [projectDetail, setProjectDetail] = useState<any>(null);
   const [projectDetailLoading, setProjectDetailLoading] = useState(false);
 
+  // localStorage is only available client-side — read it after mount, never
+  // at render time, or Next.js's static prerender step throws.
+  const [userName, setUserName] = useState('Business');
+
   // Review upload state
   const [reviewImages, setReviewImages] = useState<string[]>([]);
   const [reviewText, setReviewText] = useState<string>('');
@@ -65,6 +69,7 @@ export default function BusinessDashboard() {
       router.replace('/auth');
       return;
     }
+    setUserName(localStorage.getItem('userName') || 'Business');
     fetchWeekendRequests();
     fetchContracts();
     fetchRecurringBookings();
@@ -420,8 +425,6 @@ export default function BusinessDashboard() {
     overview: 'Overview', bookings: 'Bookings', financials: 'Financials', reviews: 'Reviews', settings: 'Settings',
     phases: 'Phases', files: 'Files', invoices: 'Invoices', updates: 'Updates',
   };
-
-  const userName = localStorage.getItem('userName') || 'Business';
 
   return (
     <DashboardShell

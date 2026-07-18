@@ -44,6 +44,10 @@ export default function ClientDashboard() {
   const [projectDetail, setProjectDetail] = useState<any>(null);
   const [projectDetailLoading, setProjectDetailLoading] = useState(false);
 
+  // localStorage is only available client-side — read it after mount, never
+  // at render time, or Next.js's static prerender step throws.
+  const [userName, setUserName] = useState('Client');
+
   // Booking flow state
   const [bookingStep, setBookingStep] = useState<'dashboard' | 'calendar' | 'form' | 'booking'>('dashboard');
   const [selectedDate, setSelectedDate] = useState<string>('');
@@ -90,6 +94,7 @@ export default function ClientDashboard() {
       router.replace('/auth');
       return;
     }
+    setUserName(localStorage.getItem('userName') || 'Client');
     fetchClientData();
     fetchZohoData();
     fetchCleanerStatus();
@@ -698,8 +703,6 @@ export default function ClientDashboard() {
     overview: 'Overview', bookings: 'Bookings', financials: 'Financials', reviews: 'Reviews', settings: 'Settings',
     phases: 'Phases', files: 'Files', invoices: 'Invoices', updates: 'Updates',
   };
-
-  const userName = localStorage.getItem('userName') || 'Client';
 
   // Booking flow takes over the content area regardless of department/view
   const showBookingFlow = bookingStep !== 'dashboard';
