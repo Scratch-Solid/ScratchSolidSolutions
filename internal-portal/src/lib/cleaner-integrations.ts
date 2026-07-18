@@ -307,8 +307,23 @@ export async function activateCleanerAccount(
   const lastName = data.name.split(' ').slice(1).join(' ');
 
   const existingUser = await db.prepare(
-    'SELECT id FROM users WHERE email = ?'
-  ).bind(data.email).first<{ id: number }>();
+    'SELECT id, role FROM users WHERE email = ?'
+  ).bind(data.email).first<{ id: number; role: string }>();
+
+  // The retry-reuse path below is only safe for a row THIS function itself
+  // created on a prior, partially-failed attempt (i.e. already role='cleaner').
+  // Without this guard, approving an application whose email happens to match
+  // ANY existing account (admin, business, client) would silently hijack that
+  // unrelated account - including overwriting its password - which is exactly
+  // what happened on 2026-07-18 (a cleaner application collided with the
+  // admin's own email and overwrote the admin's password). Refuse instead.
+  if (existingUser && existingUser.role !== 'cleaner') {
+    throw new Error(
+      `An account with email ${data.email} already exists with role "${existingUser.role}". ` +
+      `Refusing to activate a cleaner account over it - use a different email for this applicant, ` +
+      `or resolve the conflict manually if this is expected.`
+    );
+  }
 
   let newUserId: number;
   let paysheetCode: string;
