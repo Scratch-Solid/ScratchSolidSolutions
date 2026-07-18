@@ -4,16 +4,19 @@ import { useState, useEffect } from "react";
 import { SkeletonDashboard } from "@/components/Skeleton";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import { useTokenRefresh } from "@/hooks/useTokenRefresh";
+import { useRequireRole } from "@/hooks/useRequireRole";
 import DashboardLayout from "@/components/DashboardLayout";
 import PasswordBanner from "./components/PasswordBanner";
 
 export default function TransportDashboard() {
   useSessionTimeout(true);
   useTokenRefresh();
+  const { authorized } = useRequireRole(['transport']);
   const [deliveries, setDeliveries] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!authorized) return;
     async function fetchDeliveries() {
       try {
         const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
@@ -30,9 +33,9 @@ export default function TransportDashboard() {
       }
     }
     fetchDeliveries();
-  }, []);
+  }, [authorized]);
 
-  if (loading) {
+  if (!authorized || loading) {
     return <DashboardLayout title="Transport Dashboard" role="transport"><SkeletonDashboard /></DashboardLayout>;
   }
 

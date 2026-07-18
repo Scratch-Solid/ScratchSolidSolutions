@@ -361,6 +361,29 @@ export default function DigitalProjectsPage() {
                     <Badge variant={intakeStatusVariant(intakeDetail.status)}>{intakeDetail.status.replace("_", " ")}</Badge>
                   </div>
 
+                  {(intakeDetail.logo_file_url || intakeDetail.color_theme) && (
+                    <div className="flex items-center gap-3 text-sm">
+                      {intakeDetail.logo_file_url && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={intakeDetail.logo_file_url} alt="Client logo" className="h-8 w-8 rounded object-contain border border-stone-200 bg-white" />
+                      )}
+                      {intakeDetail.color_theme && (() => {
+                        try {
+                          const theme = JSON.parse(intakeDetail.color_theme) as { primary?: string; secondary?: string; accent?: string };
+                          return (
+                            <div className="flex items-center gap-1.5">
+                              {[theme.primary, theme.secondary, theme.accent].filter(Boolean).map((c, i) => (
+                                <span key={i} className="h-5 w-5 rounded border border-stone-300" style={{ background: c }} title={c} />
+                              ))}
+                            </div>
+                          );
+                        } catch {
+                          return null;
+                        }
+                      })()}
+                    </div>
+                  )}
+
                   {latestIteration && (
                     <div className="rounded-lg border border-stone-200 overflow-hidden">
                       <div className="bg-stone-50 border-b border-stone-200 px-3 py-1.5 text-xs text-stone-500">

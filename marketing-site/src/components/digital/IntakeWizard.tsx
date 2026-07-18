@@ -136,36 +136,44 @@ export default function IntakeWizard({ isOpen, onClose }: Props) {
         backendIntegrations && `Integrations: ${backendIntegrations}`,
       ].filter(Boolean).join("\n");
 
-      const createRes = await fetch("/api/intake", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: contactEmail.trim(),
-          name: contactName.trim(),
-          company_name: companyName.trim(),
-          who_target_users: whoTargetUsers,
-          what_description: whatFull,
-          why_description: whyFull,
-          when_timeline: whenFull,
-          where_context: whereFull,
-          how_description: howDescription,
-          backend_interaction_description: backendFull,
-          logo_file_url: logoUrl,
-          color_theme: JSON.stringify({ primary: colorPrimary, secondary: colorSecondary, accent: colorAccent }),
-          support_tier: selectedTier.id,
-          support_monthly_rate: selectedTier.rate,
-          support_min_term_months: selectedTier.minMonths,
-        }),
-      });
-      const created = await createRes.json() as { id?: number; error?: string };
-      if (!createRes.ok || !created.id) {
-        setError(created.error || "Failed to submit your project details.");
-        setSubmitting(false);
-        return;
+      // Reuse the existing draft if the client already created one (e.g. the
+      // mockup call below failed on a prior attempt and the user hit
+      // Generate again) - otherwise every retry creates a new orphaned draft
+      // row instead of continuing the same one.
+      let currentIntakeId = intakeId;
+      if (!currentIntakeId) {
+        const createRes = await fetch("/api/intake", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: contactEmail.trim(),
+            name: contactName.trim(),
+            company_name: companyName.trim(),
+            who_target_users: whoTargetUsers,
+            what_description: whatFull,
+            why_description: whyFull,
+            when_timeline: whenFull,
+            where_context: whereFull,
+            how_description: howDescription,
+            backend_interaction_description: backendFull,
+            logo_file_url: logoUrl,
+            color_theme: JSON.stringify({ primary: colorPrimary, secondary: colorSecondary, accent: colorAccent }),
+            support_tier: selectedTier.id,
+            support_monthly_rate: selectedTier.rate,
+            support_min_term_months: selectedTier.minMonths,
+          }),
+        });
+        const created = await createRes.json() as { id?: number; error?: string };
+        if (!createRes.ok || !created.id) {
+          setError(created.error || "Failed to submit your project details.");
+          setSubmitting(false);
+          return;
+        }
+        currentIntakeId = created.id;
+        setIntakeId(created.id);
       }
-      setIntakeId(created.id);
 
-      const mockupRes = await fetch(`/api/intake/${created.id}/mockup`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
+      const mockupRes = await fetch(`/api/intake/${currentIntakeId}/mockup`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
       const mockupData = await mockupRes.json() as { html?: string; iterations_used?: number; iterations_remaining?: number; error?: string };
       if (!mockupRes.ok || !mockupData.html) {
         setError(mockupData.error || "Failed to generate your mockup.");

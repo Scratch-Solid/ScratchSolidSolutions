@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { SkeletonDashboard } from "@/components/Skeleton";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import { useTokenRefresh } from "@/hooks/useTokenRefresh";
+import { useRequireRole } from "@/hooks/useRequireRole";
 import DashboardLayout from "@/components/DashboardLayout";
 import PasswordBanner from "./components/PasswordBanner";
 import LeaveSection from "@/components/staff/LeaveSection";
@@ -13,11 +14,13 @@ import KpiSection from "@/components/staff/KpiSection";
 export default function DigitalDashboard() {
   useSessionTimeout(true);
   useTokenRefresh();
+  const { authorized } = useRequireRole(['digital']);
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTile, setActiveTile] = useState("tasks");
 
   useEffect(() => {
+    if (!authorized) return;
     async function fetchTasks() {
       try {
         const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
@@ -34,9 +37,9 @@ export default function DigitalDashboard() {
       }
     }
     fetchTasks();
-  }, []);
+  }, [authorized]);
 
-  if (loading) {
+  if (!authorized || loading) {
     return <DashboardLayout title="Digital Marketing Dashboard" role="digital"><SkeletonDashboard /></DashboardLayout>;
   }
 

@@ -3,85 +3,79 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export default function StaffSignupPage() {
+export default function StaffApplyPage() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
-  const [department, setDepartment] = useState<"Scratch" | "Solid" | "Trans">("Scratch");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [phone, setPhone] = useState("");
+  const [department, setDepartment] = useState<"digital" | "transport">("digital");
+  const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [generatedPaysheetCode, setGeneratedPaysheetCode] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const router = useRouter();
 
-  const generatePaysheetCode = (dept: "Scratch" | "Solid" | "Trans"): string => {
-    const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    let suffix = "";
-    for (let i = 0; i < 6; i++) {
-      suffix += characters.charAt(Math.floor(Math.random() * characters.length));
-    }
-    return dept + suffix;
-  };
-
-  const handleDepartmentChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newDept = e.target.value as "Scratch" | "Solid" | "Trans";
-    setDepartment(newDept);
-    setGeneratedPaysheetCode(generatePaysheetCode(newDept));
-  };
-
-  const handleSignup = async (e: React.FormEvent) => {
+  const handleApply = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Validate passwords match
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
-
-    // Validate password length
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters");
-      return;
-    }
-
-    // Generate paysheet code if not already generated
-    const paysheetCode = generatedPaysheetCode || generatePaysheetCode(department);
+    setError("");
+    setSubmitting(true);
 
     try {
-      const res = await fetch('/api/auth/register', {
+      const res = await fetch('/api/apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          fullName,
+          role: department,
+          name: fullName,
           email,
-          department,
-          paysheetCode,
-          password,
-          role: department === 'Scratch' ? 'cleaner' : department === 'Solid' ? 'digital' : 'transport'
+          phone,
+          message,
         })
       });
 
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || 'Registration failed');
+        setError(data.error || 'Application failed');
         return;
       }
 
-      router.push("/auth/login?signup=success");
+      setSubmitted(true);
     } catch (err) {
       setError('Network error. Please try again.');
+    } finally {
+      setSubmitting(false);
     }
   };
+
+  if (submitted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="glass-panel max-w-md w-full text-center">
+          <h1 className="text-2xl font-bold mb-3">Application submitted</h1>
+          <p className="text-sm text-stone-600 mb-6">
+            Thanks, {fullName || "there"}! Your application to join the {department === 'digital' ? 'Digital' : 'Transportation'} team is now
+            pending review. You'll receive an email with your paysheet code and a temporary password once an admin approves it.
+          </p>
+          <a href="/auth/login" className="text-[#2E1F16] hover:underline font-medium">
+            Back to Login
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
       <div className="glass-panel max-w-md w-full">
-        <h1 className="text-2xl font-bold text-center mb-6">Staff Sign Up</h1>
+        <h1 className="text-2xl font-bold text-center mb-1">Apply to join the team</h1>
+        <p className="text-sm text-stone-500 text-center mb-6">
+          Submit your details below - an admin reviews every application before an account is created.
+        </p>
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
             {error}
           </div>
         )}
-        <form onSubmit={handleSignup}>
+        <form onSubmit={handleApply}>
           <div className="mb-4">
             <label htmlFor="fullName" className="block text-sm font-bold mb-2">
               Full Name
@@ -113,76 +107,61 @@ export default function StaffSignupPage() {
             />
           </div>
           <div className="mb-4">
+            <label htmlFor="phone" className="block text-sm font-bold mb-2">
+              Phone
+            </label>
+            <input
+              type="tel"
+              id="phone"
+              name="phone"
+              autoComplete="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
+              required
+            />
+          </div>
+          <div className="mb-4">
             <label htmlFor="department" className="block text-sm font-bold mb-2">
-              Department
+              Team
             </label>
             <select
               id="department"
               value={department}
-              onChange={handleDepartmentChange}
+              onChange={(e) => setDepartment(e.target.value as "digital" | "transport")}
               className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
               required
             >
-              <option value="Scratch">Cleaning Team (Scratch)</option>
-              <option value="Solid">Digital Team (Solid)</option>
-              <option value="Trans">Transport Team (Trans)</option>
+              <option value="digital">Digital Team</option>
+              <option value="transport">Transportation Team</option>
             </select>
           </div>
-          <div className="mb-4">
-            <label htmlFor="paysheetCode" className="block text-sm font-bold mb-2">
-              Paysheet Code (Auto-generated)
-            </label>
-            <input
-              type="text"
-              id="paysheetCode"
-              value={generatedPaysheetCode || generatePaysheetCode(department)}
-              readOnly
-              className="w-full px-3 py-2 border rounded-md bg-stone-100 focus:outline-none"
-              required
-            />
-            <p className="text-xs mt-1 text-stone-600">
-              Your paysheet code will be your username for login
-            </p>
-          </div>
-          <div className="mb-4">
-            <label htmlFor="password" className="block text-sm font-bold mb-2">
-              Password
-            </label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              autoComplete="new-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
-              required
-            />
-          </div>
           <div className="mb-6">
-            <label htmlFor="confirmPassword" className="block text-sm font-bold mb-2">
-              Confirm Password
+            <label htmlFor="message" className="block text-sm font-bold mb-2">
+              Anything else we should know? <span className="font-normal text-stone-400">(optional)</span>
             </label>
-            <input
-              type="password"
-              id="confirmPassword"
-              name="confirmPassword"
-              autoComplete="new-password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+            <textarea
+              id="message"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              rows={3}
               className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
-              required
+              placeholder="Relevant experience, availability, etc."
             />
           </div>
           <button
             type="submit"
-            className="w-full primary-button"
+            disabled={submitting}
+            className="w-full primary-button disabled:opacity-50"
           >
-            Sign Up
+            {submitting ? 'Submitting...' : 'Submit application'}
           </button>
         </form>
-        <div className="mt-4 text-center">
-          <a href="/auth/login" className="text-[#2E1F16] hover:underline">
+        <div className="mt-4 text-center space-y-1">
+          <p className="text-xs text-stone-500">
+            Looking to join the cleaning team? <a href="/signup/cleaner" className="text-[#2E1F16] hover:underline font-medium">Apply here</a> instead.
+          </p>
+          <a href="/auth/login" className="block text-[#2E1F16] hover:underline">
             Back to Login
           </a>
         </div>

@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
-import { activateCleanerAccount } from '@/lib/cleaner-integrations';
+import { activateCleanerAccount, activateStaffAccount, type StaffRole } from '@/lib/cleaner-integrations';
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { log } from '@/lib/logger';
 import { decryptField } from '@/lib/encryption';
@@ -34,27 +34,46 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     const joinerData = joiner as any;
+    // Pre-existing rows have no `role` column value - they're all cleaner
+    // applications from before Digital/Transportation applications existed.
+    const applicationRole: 'cleaner' | StaffRole = joinerData.role || 'cleaner';
 
-    // Decrypt sensitive fields from new_joiners
-    const decryptedPhone = await decryptField(joinerData.phone) || joinerData.phone;
-    const decryptedEmergencyContact = await decryptField(joinerData.emergency_contact) || joinerData.emergency_contact;
-    const decryptedIdNumber = await decryptField(joinerData.id_number) || joinerData.id_number;
-    const decryptedBankDetails = joinerData.bank_details ? (await decryptField(joinerData.bank_details) || joinerData.bank_details) : null;
+    let paysheetCode: string;
+    let tempPassword: string;
+    let erpEmployeeResult: unknown = null;
+    let payrollSetupResult: unknown = null;
+    let notificationResult: { status: string; [key: string]: unknown };
 
-    const {
-      paysheetCode,
-      tempPassword,
-      erpEmployeeResult,
-      payrollSetupResult,
-      notificationResult,
-    } = await activateCleanerAccount(db, {
-      name: joinerData.name,
-      email: joinerData.email,
-      phone: decryptedPhone,
-      emergencyContact: decryptedEmergencyContact,
-      idNumber: decryptedIdNumber,
-      bankDetailsPresent: Boolean(decryptedBankDetails),
-    }, traceId);
+    if (applicationRole === 'cleaner') {
+      // Decrypt sensitive fields from new_joiners
+      const decryptedPhone = await decryptField(joinerData.phone) || joinerData.phone;
+      const decryptedEmergencyContact = await decryptField(joinerData.emergency_contact) || joinerData.emergency_contact;
+      const decryptedIdNumber = await decryptField(joinerData.id_number) || joinerData.id_number;
+      const decryptedBankDetails = joinerData.bank_details ? (await decryptField(joinerData.bank_details) || joinerData.bank_details) : null;
+
+      const result = await activateCleanerAccount(db, {
+        name: joinerData.name,
+        email: joinerData.email,
+        phone: decryptedPhone,
+        emergencyContact: decryptedEmergencyContact,
+        idNumber: decryptedIdNumber,
+        bankDetailsPresent: Boolean(decryptedBankDetails),
+      }, traceId);
+      paysheetCode = result.paysheetCode;
+      tempPassword = result.tempPassword;
+      erpEmployeeResult = result.erpEmployeeResult;
+      payrollSetupResult = result.payrollSetupResult;
+      notificationResult = result.notificationResult;
+    } else {
+      const result = await activateStaffAccount(db, applicationRole, {
+        name: joinerData.name,
+        email: joinerData.email,
+        phone: joinerData.phone,
+      }, traceId);
+      paysheetCode = result.paysheetCode;
+      tempPassword = result.tempPassword;
+      notificationResult = result.notificationResult;
+    }
 
     // Ensure approval tracking columns exist
     await db.prepare(`ALTER TABLE new_joiners ADD COLUMN erpnext_employee_id TEXT`).run().catch(() => {});
@@ -70,11 +89,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     ).bind(paysheetCode, userId, joinerId).run();
 
     // Log audit event
-    log.audit('APPROVE', 'cleaner_application', {
+    log.audit('APPROVE', applicationRole === 'cleaner' ? 'cleaner_application' : 'staff_application', {
       traceId,
       userId,
       joinerId,
       applicantEmail: joinerData.email,
+      role: applicationRole,
       paysheetCode
     });
 
@@ -104,7 +124,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         credentialsBackup: notificationsDelivered ? undefined : { paysheetCode, tempPassword },
         next_steps: [
           'Employee account created',
-          'Training progress initialized',
+          ...(applicationRole === 'cleaner' ? ['Training progress initialized'] : []),
           notificationsDelivered
             ? 'Notification sent to applicant with login credentials'
             : 'Automatic WhatsApp/email delivery did not confirm - share the credentials shown below with the applicant directly'

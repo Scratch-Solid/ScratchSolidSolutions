@@ -6,6 +6,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import { useTokenRefresh } from "@/hooks/useTokenRefresh";
+import { useRequireRole } from "@/hooks/useRequireRole";
 import DashboardLayout from "@/components/DashboardLayout";
 import TrainingModuleCard from "@/components/TrainingModuleCard";
 import QuizInterface from "@/components/QuizInterface";
@@ -17,6 +18,7 @@ import jsPDF from 'jspdf';
 export default function CleanerDashboard() {
   useSessionTimeout(true);
   useTokenRefresh();
+  const { authorized } = useRequireRole(['cleaner']);
   const [cleaner, setCleaner] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [ratings, setRatings] = useState([]);
@@ -583,7 +585,7 @@ export default function CleanerDashboard() {
     window.location.href = '/auth/login';
   };
 
-  if (loading) return <DashboardLayout title="Cleaner Dashboard" role="cleaner"><div className="glass-panel text-center" style={{ color: 'var(--text)' }}>Loading...</div></DashboardLayout>;
+  if (!authorized || loading) return <DashboardLayout title="Cleaner Dashboard" role="cleaner"><div className="glass-panel text-center" style={{ color: 'var(--text)' }}>Loading...</div></DashboardLayout>;
   if (error) return <DashboardLayout title="Cleaner Dashboard" role="cleaner"><div className="error-msg">{error}</div></DashboardLayout>;
   if (!cleaner) return <DashboardLayout title="Cleaner Dashboard" role="cleaner"><div className="glass-panel text-center" style={{ color: 'var(--text)' }}>No data found.</div></DashboardLayout>;
 

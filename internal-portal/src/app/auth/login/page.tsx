@@ -238,6 +238,20 @@ function LoginContent() {
             Apply now
           </button>
         </div>
+
+        <div className="mt-3 rounded-xl border border-border bg-secondary/40 px-5 py-4 flex items-center justify-between gap-4">
+          <div>
+            <p className="text-sm font-medium text-foreground">Join Digital or Transportation</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Apply and an admin will review your application</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => router.push("/auth/signup")}
+            className="shrink-0 text-sm font-medium text-accent-foreground bg-accent/20 hover:bg-accent/30 rounded-lg px-3.5 py-2 transition-colors"
+          >
+            Apply now
+          </button>
+        </div>
       </div>
     </div>
   );

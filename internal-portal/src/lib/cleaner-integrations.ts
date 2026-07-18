@@ -1,10 +1,13 @@
 import { log } from '@/lib/logger';
 import { notifyAdminRejected, notifyConsentSubmitted, notifyContractSigned, sendCleanerWelcome } from '@/lib/notifications';
+import { sendEmail } from '@/lib/email';
 import { createEnvelope, getSigningUrl, isDocusignFullyConfigured } from '@/lib/docusign';
 import { getCloudflareContext } from '@/lib/runtime-context';
 import { logOnboardingTransition } from '@/lib/db';
 import { ensureCleanerTrainingProgress, setCleanerOnboardingStage } from '@/lib/cleaner-training';
 import type { D1Database } from '@cloudflare/workers-types';
+
+export type StaffRole = 'digital' | 'transport';
 
 export async function getErpNextCreds() {
   const { env } = await getCloudflareContext({ async: true }) as unknown as { env: any };
@@ -228,36 +231,56 @@ export async function createSignupSignatureReference(traceId: string) {
   };
 }
 
-// Generate paysheet code from first name per spec: abcX#####
-// Format: first 3 letters of first name (lowercase) + random uppercase letter + 6 random digits
-function generatePaysheetCode(firstName: string): string {
-  const normalized = firstName.toLowerCase().replace(/[^a-z]/g, '').substring(0, 3);
-  const randomUpper = String.fromCharCode(65 + Math.floor(Math.random() * 26)); // A-Z
-  const randomDigits = Math.floor(Math.random() * 900000 + 100000).toString(); // 100000-999999
-  return `${normalized}${randomUpper}${randomDigits}`;
+// Paysheet code format, per department - this is also the login username and
+// (via its prefix) how a staff member's account is visually identifiable:
+//   cleaner:   Scratch + 1 random capital letter + 4 digits   (e.g. ScratchY9472)
+//   digital:   SolidDigital + 4 digits                        (e.g. SolidDigital9472)
+//   transport: Trans + 1 random capital letter + 4 digits      (e.g. TransY9472)
+// This replaced the older name-derived `abcX######` format (still valid/unchanged
+// for existing cleaners - only NEW codes use this scheme) when generalizing
+// account creation to Digital and Transportation staff.
+function randomUpperLetter(): string {
+  return String.fromCharCode(65 + Math.floor(Math.random() * 26)); // A-Z
 }
 
-async function generateUniquePaysheetCode(db: D1Database, name: string): Promise<string> {
-  const firstName = name.split(' ')[0] || name;
+function randomDigits(count: number): string {
+  const max = Math.pow(10, count);
+  return Math.floor(Math.random() * max).toString().padStart(count, '0');
+}
+
+function generatePaysheetCode(role: 'cleaner' | StaffRole): string {
+  switch (role) {
+    case 'cleaner':
+      return `Scratch${randomUpperLetter()}${randomDigits(4)}`;
+    case 'digital':
+      return `SolidDigital${randomDigits(4)}`;
+    case 'transport':
+      return `Trans${randomUpperLetter()}${randomDigits(4)}`;
+  }
+}
+
+// Checks both cleaner_profiles.paysheet_code (cleaners) and users.paysheet_code
+// (digital/transport, which have no separate profile table) for collisions.
+async function generateUniquePaysheetCode(db: D1Database, role: 'cleaner' | StaffRole): Promise<string> {
   let attempts = 0;
   const maxAttempts = 5;
 
   while (attempts < maxAttempts) {
-    const code = generatePaysheetCode(firstName);
+    const code = generatePaysheetCode(role);
     const existing = await db.prepare(
-      'SELECT 1 FROM cleaner_profiles WHERE paysheet_code = ? LIMIT 1'
-    ).bind(code).first();
+      `SELECT 1 FROM cleaner_profiles WHERE paysheet_code = ?
+       UNION SELECT 1 FROM users WHERE paysheet_code = ? LIMIT 1`
+    ).bind(code, code).first();
     if (!existing) {
       return code;
     }
     attempts++;
   }
 
-  // Fallback: append timestamp suffix if all retries collided
+  // Fallback: append a timestamp suffix if all retries collided
   const fallbackSuffix = Date.now().toString().slice(-4);
-  const firstNameBase = firstName.toLowerCase().replace(/[^a-z]/g, '').substring(0, 3);
-  const randomUpper = String.fromCharCode(65 + Math.floor(Math.random() * 26));
-  return `${firstNameBase}${randomUpper}${fallbackSuffix}`;
+  const base = role === 'cleaner' ? `Scratch${randomUpperLetter()}` : role === 'digital' ? 'SolidDigital' : `Trans${randomUpperLetter()}`;
+  return `${base}${fallbackSuffix}`;
 }
 
 function generateTempPassword(): string {
@@ -339,7 +362,7 @@ export async function activateCleanerAccount(
     if (existingProfile) {
       paysheetCode = existingProfile.paysheet_code;
     } else {
-      paysheetCode = await generateUniquePaysheetCode(db, data.name);
+      paysheetCode = await generateUniquePaysheetCode(db, 'cleaner');
       await db.prepare(
         `INSERT INTO cleaner_profiles (user_id, username, paysheet_code, first_name, last_name, cellphone, emergency_contact, emergency_phone, id_number, created_at, updated_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
@@ -356,7 +379,7 @@ export async function activateCleanerAccount(
       ).run();
     }
   } else {
-    paysheetCode = await generateUniquePaysheetCode(db, data.name);
+    paysheetCode = await generateUniquePaysheetCode(db, 'cleaner');
 
     // Account is activated straight to consent_approved: approving/adding a
     // cleaner is now a single step, not "approve" here + a second "approve"
@@ -427,6 +450,126 @@ export async function activateCleanerAccount(
     payrollSetupResult,
     notificationResult,
   };
+}
+
+/**
+ * Single entry point for activating a Digital or Transportation staff account
+ * from an approved application - the same role, and equivalent safety guard
+ * against hijacking an unrelated existing account, as activateCleanerAccount,
+ * without the cleaner-specific machinery (no cleaner_profiles row, no
+ * training/ERPNext/DocuSign integration - none of that exists for these
+ * departments yet). The paysheet code lives directly on `users.paysheet_code`
+ * since there's no per-department profile table to hold it.
+ */
+export async function activateStaffAccount(
+  db: D1Database,
+  role: StaffRole,
+  data: { name: string; email: string; phone?: string },
+  traceId: string
+) {
+  const bcrypt = require('bcryptjs');
+
+  // users.paysheet_code/department were intended to ship in migration 030,
+  // which never actually applied on this environment (confirmed schema
+  // drift) - add them defensively here, same pattern already used elsewhere
+  // in this file/route for schema evolution that can't rely on migrations
+  // having run.
+  await db.prepare(`ALTER TABLE users ADD COLUMN paysheet_code TEXT`).run().catch(() => {});
+  await db.prepare(`ALTER TABLE users ADD COLUMN department TEXT`).run().catch(() => {});
+
+  const tempPassword = generateTempPassword();
+  const passwordHash = await bcrypt.hash(tempPassword, 12);
+
+  const existingUser = await db.prepare(
+    'SELECT id, role FROM users WHERE email = ?'
+  ).bind(data.email).first<{ id: number; role: string }>();
+
+  // Same reasoning as activateCleanerAccount's guard: refuse to reuse an
+  // existing account unless it already has this exact role.
+  if (existingUser && existingUser.role !== role) {
+    throw new Error(
+      `An account with email ${data.email} already exists with role "${existingUser.role}". ` +
+      `Refusing to activate a ${role} account over it - use a different email for this applicant, ` +
+      `or resolve the conflict manually if this is expected.`
+    );
+  }
+
+  let newUserId: number;
+  let paysheetCode: string;
+
+  if (existingUser) {
+    newUserId = existingUser.id;
+    paysheetCode = (await db.prepare('SELECT paysheet_code FROM users WHERE id = ?').bind(newUserId).first<{ paysheet_code: string | null }>())?.paysheet_code || '';
+    if (!paysheetCode) {
+      paysheetCode = await generateUniquePaysheetCode(db, role);
+    }
+    await db.prepare(
+      'UPDATE users SET password_hash = ?, paysheet_code = ?, department = ? WHERE id = ?'
+    ).bind(passwordHash, paysheetCode, role, newUserId).run();
+  } else {
+    paysheetCode = await generateUniquePaysheetCode(db, role);
+    const insertResult = await db.prepare(
+      `INSERT INTO users (name, email, password_hash, role, phone, paysheet_code, department, password_needs_reset, email_verified, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 1, 1, datetime('now'))`
+    ).bind(data.name, data.email, passwordHash, role, data.phone || '', paysheetCode, role).run();
+    newUserId = insertResult.meta.last_row_id as number;
+  }
+
+  await logOnboardingTransition(db, {
+    user_id: newUserId,
+    to_stage: 'active',
+    event_type: 'account_activated',
+    metadata: { traceId, role },
+  });
+
+  const notificationResult = await notifyStaffApproval({
+    traceId,
+    email: data.email,
+    name: data.name,
+    role,
+    paysheetCode,
+    tempPassword,
+  });
+
+  return { newUserId, paysheetCode, tempPassword, notificationResult };
+}
+
+export async function notifyStaffApproval(params: {
+  traceId: string;
+  email: string;
+  name: string;
+  role: StaffRole;
+  paysheetCode: string;
+  tempPassword: string;
+}) {
+  const departmentLabel = params.role === 'digital' ? 'Digital' : 'Transportation';
+  const result = await sendEmail({
+    to: params.email,
+    subject: `Welcome to Scratch Solid Solutions - ${departmentLabel}`,
+    html: `<p>Hi ${params.name},</p>
+<p>Your application to join the ${departmentLabel} team has been approved. Here's how to log in to the staff portal:</p>
+<p><strong>Portal:</strong> https://portal.scratchsolidsolutions.org/auth/login<br/>
+<strong>Username (paysheet code):</strong> ${params.paysheetCode}<br/>
+<strong>Temporary password:</strong> ${params.tempPassword}</p>
+<p>You'll be asked to change your password on first login.</p>
+<p>Welcome aboard!<br/>Scratch Solid Solutions</p>`,
+    text: `Hi ${params.name}, your application to join the ${departmentLabel} team has been approved. Portal: https://portal.scratchsolidsolutions.org/auth/login - Username (paysheet code): ${params.paysheetCode} - Temporary password: ${params.tempPassword}. You'll be asked to change your password on first login.`,
+  });
+
+  log.audit('APPROVAL_NOTIFICATION', 'staff_application', {
+    traceId: params.traceId,
+    email: params.email,
+    role: params.role,
+    paysheetCode: params.paysheetCode,
+    emailSuccess: result.success,
+  });
+
+  return {
+    provider: 'notifications',
+    status: result.success ? 'sent' : 'pending',
+    reference: params.paysheetCode,
+    reason: result.error,
+  } satisfies CleanerIntegrationResult;
 }
 
 export async function registerCleanerInErpNext(params: {
