@@ -22,6 +22,7 @@ const PUBLIC_PATHS = [
   '/api/areas',
   '/api/promo-codes',
   '/api/projects',
+  '/api/intake',
   '/api/quote',
   '/api/chatbot',
   '/api/about-content',

@@ -606,6 +606,127 @@ export async function addProjectUpdate(db: D1Database, data: {
   return result;
 }
 
+// Digital project intake (public "Start a project" wizard -> staff review queue)
+export async function createIntakeRequest(db: D1Database, data: {
+  client_id?: number | null;
+  email: string;
+  name: string;
+  company_name?: string;
+  who_target_users?: string;
+  what_description?: string;
+  why_description?: string;
+  when_timeline?: string;
+  where_context?: string;
+  how_description?: string;
+  backend_interaction_description?: string;
+  logo_file_url?: string;
+  color_theme?: string;
+  support_tier?: string;
+  support_monthly_rate?: number;
+  support_min_term_months?: number;
+}) {
+  const result = await db.prepare(
+    `INSERT INTO project_intake_requests
+      (client_id, email, name, company_name, who_target_users, what_description, why_description,
+       when_timeline, where_context, how_description, backend_interaction_description,
+       logo_file_url, color_theme, support_tier, support_monthly_rate, support_min_term_months, status)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft')
+     RETURNING *`
+  ).bind(
+    data.client_id ?? null,
+    data.email,
+    data.name,
+    data.company_name || '',
+    data.who_target_users || '',
+    data.what_description || '',
+    data.why_description || '',
+    data.when_timeline || '',
+    data.where_context || '',
+    data.how_description || '',
+    data.backend_interaction_description || '',
+    data.logo_file_url || '',
+    data.color_theme || '',
+    data.support_tier || 'warranty',
+    data.support_monthly_rate || 0,
+    data.support_min_term_months || 0
+  ).first();
+  return result;
+}
+
+export async function updateIntakeRequest(db: D1Database, id: number, data: Record<string, any>) {
+  const fields = Object.keys(data);
+  if (fields.length === 0) return getIntakeRequest(db, id);
+  const setClause = fields.map(f => `${f} = ?`).join(', ');
+  const values = [...fields.map(f => data[f]), id];
+  const result = await db.prepare(
+    `UPDATE project_intake_requests SET ${setClause}, updated_at = datetime('now') WHERE id = ? RETURNING *`
+  ).bind(...values).first();
+  return result;
+}
+
+export async function getIntakeRequest(db: D1Database, id: number) {
+  const result = await db.prepare('SELECT * FROM project_intake_requests WHERE id = ?').bind(id).first();
+  return result;
+}
+
+export async function getAllIntakeRequests(db: D1Database) {
+  const result = await db.prepare('SELECT * FROM project_intake_requests ORDER BY created_at DESC').all();
+  return result.results || [];
+}
+
+export async function updateIntakeStatus(db: D1Database, id: number, status: string) {
+  const result = await db.prepare(
+    `UPDATE project_intake_requests SET status = ?, updated_at = datetime('now') WHERE id = ? RETURNING *`
+  ).bind(status, id).first();
+  return result;
+}
+
+export async function markIntakeConverted(db: D1Database, id: number, projectId: number) {
+  const result = await db.prepare(
+    `UPDATE project_intake_requests SET status = 'converted', converted_project_id = ?, updated_at = datetime('now') WHERE id = ? RETURNING *`
+  ).bind(projectId, id).first();
+  return result;
+}
+
+export async function addMockupIteration(db: D1Database, data: {
+  intake_id: number;
+  iteration_number: number;
+  prompt_text?: string;
+  generated_html: string;
+  input_tokens?: number;
+  output_tokens?: number;
+  estimated_cost_cents?: number;
+}) {
+  const result = await db.prepare(
+    `INSERT INTO intake_mockup_iterations
+      (intake_id, iteration_number, prompt_text, generated_html, input_tokens, output_tokens, estimated_cost_cents)
+     VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING *`
+  ).bind(
+    data.intake_id,
+    data.iteration_number,
+    data.prompt_text || '',
+    data.generated_html,
+    data.input_tokens || 0,
+    data.output_tokens || 0,
+    data.estimated_cost_cents || 0
+  ).first();
+  return result;
+}
+
+export async function getIntakeIterations(db: D1Database, intakeId: number) {
+  const result = await db.prepare(
+    'SELECT * FROM intake_mockup_iterations WHERE intake_id = ? ORDER BY iteration_number ASC'
+  ).bind(intakeId).all();
+  return result.results || [];
+}
+
+export async function countIntakeIterations(db: D1Database, intakeId: number): Promise<number> {
+  const result = await db.prepare(
+    'SELECT COUNT(*) as count FROM intake_mockup_iterations WHERE intake_id = ?'
+  ).bind(intakeId).first<{ count: number }>();
+  return result?.count || 0;
+}
+
 // Task completion / earnings
 export async function recordTaskCompletion(db: D1Database, bookingId: number, cleanerId: number, earnings: number = 150) {
   const result = await db.prepare(
