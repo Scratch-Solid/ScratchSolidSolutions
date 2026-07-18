@@ -455,6 +455,157 @@ export async function assignBookingToCleaner(db: D1Database, bookingId: number, 
   return result;
 }
 
+// Digital projects (Digital dashboard department)
+export async function createProject(db: D1Database, data: {
+  client_id: number;
+  name: string;
+  description?: string;
+  status?: string;
+  start_date?: string;
+  end_date?: string;
+}) {
+  const result = await db.prepare(
+    `INSERT INTO projects (client_id, name, description, status, start_date, end_date)
+     VALUES (?, ?, ?, ?, ?, ?) RETURNING *`
+  ).bind(
+    data.client_id,
+    data.name,
+    data.description || '',
+    data.status || 'active',
+    data.start_date || null,
+    data.end_date || null
+  ).first();
+  return result;
+}
+
+export async function updateProject(db: D1Database, id: number, data: Record<string, any>) {
+  const fields = Object.keys(data);
+  const setClause = fields.map(f => `${f} = ?`).join(', ');
+  const values = [...fields.map(f => data[f]), id];
+
+  const result = await db.prepare(
+    `UPDATE projects SET ${setClause}, updated_at = datetime('now') WHERE id = ? RETURNING *`
+  ).bind(...values).first();
+  return result;
+}
+
+export async function getProjectsByClient(db: D1Database, clientId: number) {
+  const result = await db.prepare('SELECT * FROM projects WHERE client_id = ? ORDER BY created_at DESC').bind(clientId).all();
+  return result.results || [];
+}
+
+export async function getAllProjects(db: D1Database) {
+  const result = await db.prepare(
+    `SELECT projects.*, users.name AS client_name, users.email AS client_email
+     FROM projects JOIN users ON users.id = projects.client_id
+     ORDER BY projects.created_at DESC`
+  ).all();
+  return result.results || [];
+}
+
+export async function getProjectById(db: D1Database, id: number) {
+  const result = await db.prepare('SELECT * FROM projects WHERE id = ?').bind(id).first();
+  return result;
+}
+
+export async function getProjectDetail(db: D1Database, id: number) {
+  const project = await db.prepare('SELECT * FROM projects WHERE id = ?').bind(id).first();
+  if (!project) return null;
+  const [phases, milestones, files, updates] = await Promise.all([
+    db.prepare('SELECT * FROM project_phases WHERE project_id = ? ORDER BY order_index ASC').bind(id).all(),
+    db.prepare('SELECT * FROM project_milestones WHERE project_id = ? ORDER BY id ASC').bind(id).all(),
+    db.prepare('SELECT * FROM project_files WHERE project_id = ? ORDER BY created_at DESC').bind(id).all(),
+    db.prepare('SELECT * FROM project_updates WHERE project_id = ? ORDER BY created_at DESC LIMIT 20').bind(id).all(),
+  ]);
+  return {
+    ...(project as Record<string, any>),
+    phases: phases.results || [],
+    milestones: milestones.results || [],
+    files: files.results || [],
+    updates: updates.results || [],
+  };
+}
+
+export async function addProjectPhase(db: D1Database, data: {
+  project_id: number;
+  name: string;
+  status?: string;
+  order_index?: number;
+}) {
+  const result = await db.prepare(
+    `INSERT INTO project_phases (project_id, name, status, order_index) VALUES (?, ?, ?, ?) RETURNING *`
+  ).bind(data.project_id, data.name, data.status || 'pending', data.order_index || 0).first();
+  return result;
+}
+
+export async function updateProjectPhase(db: D1Database, id: number, data: Record<string, any>) {
+  const fields = Object.keys(data);
+  const setClause = fields.map(f => `${f} = ?`).join(', ');
+  const values = [...fields.map(f => data[f]), id];
+  const result = await db.prepare(
+    `UPDATE project_phases SET ${setClause}, updated_at = datetime('now') WHERE id = ? RETURNING *`
+  ).bind(...values).first();
+  return result;
+}
+
+export async function addProjectMilestone(db: D1Database, data: {
+  project_id: number;
+  phase_id?: number;
+  name: string;
+  status?: string;
+  billing_status?: string;
+  amount?: number;
+  due_date?: string;
+}) {
+  const result = await db.prepare(
+    `INSERT INTO project_milestones (project_id, phase_id, name, status, billing_status, amount, due_date)
+     VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING *`
+  ).bind(
+    data.project_id,
+    data.phase_id || null,
+    data.name,
+    data.status || 'pending',
+    data.billing_status || 'not_invoiced',
+    data.amount || 0,
+    data.due_date || null
+  ).first();
+  return result;
+}
+
+export async function updateProjectMilestone(db: D1Database, id: number, data: Record<string, any>) {
+  const fields = Object.keys(data);
+  const setClause = fields.map(f => `${f} = ?`).join(', ');
+  const values = [...fields.map(f => data[f]), id];
+  const result = await db.prepare(
+    `UPDATE project_milestones SET ${setClause}, updated_at = datetime('now') WHERE id = ? RETURNING *`
+  ).bind(...values).first();
+  return result;
+}
+
+export async function addProjectFile(db: D1Database, data: {
+  project_id: number;
+  uploaded_by?: number;
+  file_name: string;
+  file_url: string;
+  file_type?: string;
+}) {
+  const result = await db.prepare(
+    `INSERT INTO project_files (project_id, uploaded_by, file_name, file_url, file_type) VALUES (?, ?, ?, ?, ?) RETURNING *`
+  ).bind(data.project_id, data.uploaded_by || null, data.file_name, data.file_url, data.file_type || '').first();
+  return result;
+}
+
+export async function addProjectUpdate(db: D1Database, data: {
+  project_id: number;
+  author_id?: number;
+  message: string;
+}) {
+  const result = await db.prepare(
+    `INSERT INTO project_updates (project_id, author_id, message) VALUES (?, ?, ?) RETURNING *`
+  ).bind(data.project_id, data.author_id || null, data.message).first();
+  return result;
+}
+
 // Task completion / earnings
 export async function recordTaskCompletion(db: D1Database, bookingId: number, cleanerId: number, earnings: number = 150) {
   const result = await db.prepare(

@@ -2,11 +2,29 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import { useTokenRefresh } from "@/hooks/useTokenRefresh";
 import { authFetch, getCsrfToken } from "@/lib/authFetch";
 import BookingQuotePanel from "@/components/BookingQuotePanel";
+import DashboardShell, { DashboardDepartment } from "@/components/dashboard/DashboardShell";
+
+const ic = {
+  grid: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="8" height="8" rx="1.5" /><rect x="13" y="3" width="8" height="8" rx="1.5" /><rect x="3" y="13" width="8" height="8" rx="1.5" /><rect x="13" y="13" width="8" height="8" rx="1.5" /></svg>,
+  calendar: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4" /></svg>,
+  bank: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 10l9-6 9 6" /><path d="M5 10v9M10 10v9M14 10v9M19 10v9M3 21h18" /></svg>,
+  star: <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.1 6.6 7.2.8-5.4 5 1.5 7.2L12 18.3 5.6 21.6 7.1 14.4 1.7 9.4l7.2-.8z" /></svg>,
+  gear: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.9-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1-1.6 1.7 1.7 0 00-1.9.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.9 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1 1.7 1.7 0 00-.3-1.9l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.9.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.9-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.9V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z" /></svg>,
+  broom: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 4L10 14" /><path d="M8 16l-5 5" /><path d="M6 18l5-5 3 3-5 5z" /><path d="M14 6l4 4" /></svg>,
+  car: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 13l1.6-4.8A2 2 0 016.5 7h11a2 2 0 011.9 1.2L21 13" /><rect x="2" y="13" width="20" height="6" rx="1.5" /><circle cx="7" cy="19.5" r="1.5" /><circle cx="17" cy="19.5" r="1.5" /></svg>,
+  code: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 8l-5 4 5 4M15 8l5 4-5 4" /></svg>,
+  layers: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2l9 5-9 5-9-5 9-5z" /><path d="M3 12l9 5 9-5M3 17l9 5 9-5" /></svg>,
+  folder: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" /></svg>,
+  receipt: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 2h12v20l-3-2-3 2-3-2-3 2z" /><path d="M9 8h6M9 12h6" /></svg>,
+  activity: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12h4l2-7 4 14 2-7h6" /></svg>,
+};
+
+const TRANSPORT_NOTIFY_LINK =
+  "https://wa.me/27696735947?text=" + encodeURIComponent("Hi, please notify me when Scratch Solid Transportation launches.");
 
 export default function ClientDashboard() {
   const router = useRouter();
@@ -16,7 +34,16 @@ export default function ClientDashboard() {
   const [payments, setPayments] = useState<any[]>([]);
   const [monthlyStatement, setMonthlyStatement] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  
+
+  // Dashboard navigation state
+  const [activeDept, setActiveDept] = useState<DashboardDepartment>('cleaning');
+  const [activeView, setActiveView] = useState('overview');
+
+  // Digital department state
+  const [projects, setProjects] = useState<any[]>([]);
+  const [projectDetail, setProjectDetail] = useState<any>(null);
+  const [projectDetailLoading, setProjectDetailLoading] = useState(false);
+
   // Booking flow state
   const [bookingStep, setBookingStep] = useState<'dashboard' | 'calendar' | 'form' | 'booking'>('dashboard');
   const [selectedDate, setSelectedDate] = useState<string>('');
@@ -35,7 +62,7 @@ export default function ClientDashboard() {
   const [indemnityAccepted, setIndemnityAccepted] = useState(false);
   const [paymentError, setPaymentError] = useState(false);
   const [cleanerUnavailable, setCleanerUnavailable] = useState(false);
-  
+
   // New features state - POPIA compliant (only first name, profile picture, rating displayed)
   const [assignedCleaner, setAssignedCleaner] = useState<{ profilePicture?: string; firstName?: string; rating?: number; specialties?: string[]; status?: string; [key: string]: any } | null>(null);
   const [zohoStatements, setZohoStatements] = useState<any[]>([]);
@@ -66,13 +93,14 @@ export default function ClientDashboard() {
     fetchClientData();
     fetchZohoData();
     fetchCleanerStatus();
-    
+    fetchProjects();
+
     // Poll for cleaner updates every 30 seconds
     const interval = setInterval(() => {
       fetchClientData();
       fetchCleanerStatus();
     }, 30000);
-    
+
     return () => clearInterval(interval);
   }, []);
 
@@ -143,6 +171,37 @@ export default function ClientDashboard() {
     }
   };
 
+  // Digital department — only surfaced if the client actually has a project
+  const fetchProjects = async () => {
+    try {
+      const res = await authFetch('/api/projects');
+      if (res.ok) {
+        const data = await res.json() as any[];
+        setProjects(data);
+      }
+    } catch (e) {
+      // Silently fail — Digital department simply won't be offered
+    }
+  };
+
+  const loadProjectDetail = async (id: number) => {
+    setProjectDetailLoading(true);
+    try {
+      const res = await authFetch(`/api/projects/${id}`);
+      if (res.ok) setProjectDetail(await res.json());
+    } finally {
+      setProjectDetailLoading(false);
+    }
+  };
+
+  const selectDepartment = (dept: DashboardDepartment) => {
+    setActiveDept(dept);
+    setActiveView('overview');
+    if (dept === 'digital' && projects.length > 0 && !projectDetail) {
+      loadProjectDetail(projects[0].id);
+    }
+  };
+
   // Booking logic functions
   const startBooking = () => {
     setBookingStep('booking');
@@ -210,7 +269,7 @@ export default function ClientDashboard() {
 
     try {
       const userId = localStorage.getItem("userId");
-      
+
       if (!selectedServiceType) {
         setError('Please select a service type');
         setLoading(false);
@@ -309,7 +368,7 @@ export default function ClientDashboard() {
 
       setBookings(prev => [...prev, bookingResult]);
       setSuccess(`Booking saved! Please make ${paymentMethod.toUpperCase()} payment. Your cleaner will be dispatched once payment is confirmed.`);
-      
+
       // Reset booking form and return to dashboard
       setTimeout(() => {
         setBookingStep('dashboard');
@@ -425,14 +484,14 @@ export default function ClientDashboard() {
     setZohoLoading(true);
     try {
       const userId = localStorage.getItem("userId");
-      
+
       const zohoRes = await authFetch(`/api/zoho/financials?customer_id=${userId}`);
       if (zohoRes.ok) {
         const zohoData = await zohoRes.json() as { statements?: any[]; invoices?: any[] };
         setZohoStatements(zohoData.statements || []);
         setZohoInvoices(zohoData.invoices || []);
       }
-      
+
     } catch (error) {
       setError('Failed to fetch Zoho Books data');
     } finally {
@@ -585,7 +644,7 @@ export default function ClientDashboard() {
     // Simulate WhatsApp message to client
     const clientPhone = localStorage.getItem('userPhone') || '+27696735947';
     const message = `Scratch Solid: Your cleaning service has been completed today! We've cleaned your premises thoroughly. Thank you for choosing our services!`;
-    
+
   };
 
   const requestOlderStatements = async () => {
@@ -593,7 +652,7 @@ export default function ClientDashboard() {
     try {
       // Simulate manual processing
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       setSuccess('Request submitted! Older statements will be sent to your email/WhatsApp within 24 hours.');
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
@@ -614,689 +673,863 @@ export default function ClientDashboard() {
     router.push('/auth');
   };
 
+  const departments = [
+    { key: 'cleaning' as const, label: 'Cleaning', icon: ic.broom },
+    { key: 'transportation' as const, label: 'Transportation', icon: ic.car, locked: true },
+    ...(projects.length > 0 ? [{ key: 'digital' as const, label: 'Digital', icon: ic.code }] : []),
+  ];
+
+  const cleaningNav = [
+    { key: 'overview', label: 'Overview', icon: ic.grid },
+    { key: 'bookings', label: 'Bookings', icon: ic.calendar },
+    { key: 'financials', label: 'Financials', icon: ic.bank },
+    { key: 'reviews', label: 'Reviews', icon: ic.star },
+    { key: 'settings', label: 'Settings', icon: ic.gear },
+  ];
+  const digitalNav = [
+    { key: 'overview', label: 'Overview', icon: ic.grid },
+    { key: 'phases', label: 'Phases', icon: ic.layers },
+    { key: 'files', label: 'Files', icon: ic.folder },
+    { key: 'invoices', label: 'Invoices', icon: ic.receipt },
+    { key: 'updates', label: 'Updates', icon: ic.activity },
+  ];
+
+  const viewLabels: Record<string, string> = {
+    overview: 'Overview', bookings: 'Bookings', financials: 'Financials', reviews: 'Reviews', settings: 'Settings',
+    phases: 'Phases', files: 'Files', invoices: 'Invoices', updates: 'Updates',
+  };
+
+  const userName = localStorage.getItem('userName') || 'Client';
+
+  // Booking flow takes over the content area regardless of department/view
+  const showBookingFlow = bookingStep !== 'dashboard';
+
   return (
-    <div className="min-h-screen bg-[#F7F2EA] py-8 px-4 font-sans relative">
-      {/* Background Image */}
-      <div className="absolute inset-0 z-0">
-        <Image
-          src="/scratchsolid-logo.jpg"
-          alt="Scratch Solid Background"
-          fill
-          className="object-cover opacity-20"
-          priority
-        />
-      </div>
-      
-      {/* Glassified Overlay */}
-      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen">
-        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border-2 border-white/20 p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-          
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6 rounded-xl px-5 py-4" style={{ background: "linear-gradient(135deg, #2E1F16, #3a281a)" }}>
-            <h1 className="text-3xl font-normal tracking-tight text-[#F7F2EA]" style={{ fontFamily: "Georgia, serif" }}>
-              {bookingStep === 'dashboard' ? 'Client Dashboard' :
-               bookingStep === 'calendar' ? 'Select Date & Time' : 'Complete Booking'}
-            </h1>
-            <div className="flex items-center gap-4">
-              {bookingStep !== 'dashboard' && (
-                <button
-                  onClick={cancelBooking}
-                  className="text-[#CBB89A] hover:text-[#F7F2EA] font-medium"
-                >
-                  Cancel
-                </button>
-              )}
-              <button
-                onClick={handleLogout}
-                className="text-red-400 hover:text-red-300 font-medium"
-              >
-                Logout
-              </button>
+    <DashboardShell
+      userName={userName}
+      userRoleLabel="Individual client"
+      departments={departments}
+      activeDepartment={activeDept}
+      onDepartmentChange={selectDepartment}
+      navItems={activeDept === 'digital' ? digitalNav : activeDept === 'cleaning' ? cleaningNav : []}
+      activeView={activeView}
+      onViewChange={setActiveView}
+      pageTitle={showBookingFlow ? 'Book a Cleaning' : viewLabels[activeView] || 'Overview'}
+      primaryAction={
+        !showBookingFlow && activeDept === 'cleaning' && (activeView === 'overview' || activeView === 'bookings')
+          ? { label: 'Schedule New Service', onClick: startBooking }
+          : undefined
+      }
+      onLogout={handleLogout}
+    >
+      {error && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-600 text-sm">{error}</p>
+        </div>
+      )}
+
+      {success && (
+        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <p className="text-green-600 text-sm">{success}</p>
+        </div>
+      )}
+
+      {showBookingFlow && (
+        <div className="space-y-4">
+          <button
+            onClick={cancelBooking}
+            className="text-[#8a6a45] hover:text-[#2E1F16] font-medium text-sm flex items-center gap-1"
+          >
+            ← Back to Dashboard
+          </button>
+          <BookingQuotePanel
+            mode="client"
+            onSuccess={(_id, _amount) => {
+              fetchClientData();
+              setTimeout(() => setBookingStep('dashboard'), 3000);
+            }}
+            onCancel={() => setBookingStep('dashboard')}
+          />
+        </div>
+      )}
+
+      {!showBookingFlow && activeDept === 'cleaning' && activeView === 'overview' && (
+        <div className="space-y-6">
+          {assignedCleaner && (
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-[#E9E0D3]">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-lg text-gray-800">Your Assigned Cleaner</h3>
+                <div className="flex items-center gap-2 px-3 py-1 bg-green-50 border border-green-200 rounded-full">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span className="text-xs font-medium text-green-700">POPIA Compliant</span>
+                </div>
+              </div>
+              <div className="flex items-start space-x-6">
+                <div className="flex-shrink-0">
+                  <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
+                    {assignedCleaner.profilePicture ? (
+                      <img src={assignedCleaner.profilePicture} alt="Cleaner" className="w-full h-full object-cover" />
+                    ) : (
+                      <svg className="w-12 h-12 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 12c2.21 0 4 1.79 4 4s-1.79 4-4 4-4 4 4 4-1.79 4-4-4-4zm0 6c-3.31 0-6 2.69-6 6h2c0 3.31 2.69 6 6 6 3.31 0 6-2.69 6-6-2.69-6-6-6z" />
+                      </svg>
+                    )}
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-semibold text-gray-800">{assignedCleaner.firstName || assignedCleaner.name?.split(' ')[0]}</h4>
+                  <div className="flex items-center space-x-2 my-2">
+                    <div className="flex items-center">
+                      <span className="text-yellow-400">{'★'.repeat(Math.floor(assignedCleaner.rating || 0))}</span>
+                      <span className="text-gray-400">{'★'.repeat(5 - Math.floor(assignedCleaner.rating || 0))}</span>
+                    </div>
+                    <span className="text-sm text-gray-600">{assignedCleaner.rating || 0}</span>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    <strong>Specialties:</strong> {assignedCleaner.specialties?.join(', ') || 'General Cleaning'}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    <strong>Status:</strong>
+                    <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${
+                      cleanerStatus === 'idle' ? 'bg-gray-100 text-gray-800' :
+                      cleanerStatus === 'on_way' ? 'bg-[#F0E6D6] text-[#8a6a3a]' :
+                      cleanerStatus === 'arrived' ? 'bg-yellow-100 text-yellow-800' :
+                      cleanerStatus === 'completed' ? 'bg-green-100 text-green-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {cleanerStatus === 'idle' ? 'Idle' :
+                       cleanerStatus === 'on_way' ? 'On the way' :
+                       cleanerStatus === 'arrived' ? 'Arrived' :
+                       cleanerStatus === 'completed' ? 'Completed' : 'Unknown'}
+                    </span>
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="bg-[#F7F2EA] border border-[#E9E0D3] rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <div className="text-[#8a6a45] text-xl">🔒</div>
+              <div>
+                <h4 className="font-semibold text-[#2E1F16] mb-1">Privacy Protected</h4>
+                <p className="text-sm text-[#3f342a]">
+                  Your cleaner's personal information (surname, contact details, address) is protected under POPIA. Only their first name, profile picture, and rating are displayed for your safety and privacy.
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* Error and Success Messages */}
-          {error && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-600 text-sm">{error}</p>
+          <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+            <div className="bg-[#F7F2EA] rounded-lg p-4 border border-[#E9E0D3]">
+              <h3 className="font-semibold text-[#2E1F16]">Active Bookings</h3>
+              <p className="text-2xl font-bold text-[#8a6a45]">{bookings.length}</p>
             </div>
-          )}
-          
-          {success && (
-            <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-              <p className="text-green-600 text-sm">{success}</p>
-            </div>
-          )}
+          </div>
 
-          {/* Dashboard View */}
-          {bookingStep === 'dashboard' && (
-            <div className="space-y-6">
-              {/* Assigned Cleaner Profile - MOVED TO TOP */}
-              {assignedCleaner && (
-                <div className="bg-white rounded-xl p-6 shadow-sm border border-[#E9E0D3]">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-semibold text-lg text-gray-800">Your Assigned Cleaner</h3>
-                    <div className="flex items-center gap-2 px-3 py-1 bg-green-50 border border-green-200 rounded-full">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="text-xs font-medium text-green-700">POPIA Compliant</span>
-                    </div>
-                  </div>
-                  <div className="flex items-start space-x-6">
-                    <div className="flex-shrink-0">
-                      <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
-                        {assignedCleaner.profilePicture ? (
-                          <img src={assignedCleaner.profilePicture} alt="Cleaner" className="w-full h-full object-cover" />
-                        ) : (
-                          <svg className="w-12 h-12 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 12c2.21 0 4 1.79 4 4s-1.79 4-4 4-4 4 4 4-1.79 4-4-4-4zm0 6c-3.31 0-6 2.69-6 6h2c0 3.31 2.69 6 6 6 3.31 0 6-2.69 6-6-2.69-6-6-6z"/>
-                          </svg>
+          <div className="bg-[#F7F2EA] rounded-lg p-6 border border-[#E9E0D3]">
+            <h3 className="font-semibold text-lg text-[#2E1F16] mb-4">Book a Cleaning</h3>
+            <button
+              onClick={startBooking}
+              className="w-full rounded-lg bg-[#B08A5E] px-6 py-3 text-[#2E1F16] font-semibold hover:bg-[#c39a6c] transition-colors"
+            >
+              Schedule New Service
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!showBookingFlow && activeDept === 'cleaning' && activeView === 'bookings' && (
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-[#E9E0D3]">
+          <h3 className="font-semibold text-lg text-gray-800 mb-4">Your Bookings</h3>
+          {bookings.length === 0 ? (
+            <p className="text-gray-500 text-center py-4">No bookings yet</p>
+          ) : (
+            <div className="space-y-3">
+              {bookings.map((booking) => {
+                const canCancelOrReschedule = ['pending', 'confirmed', 'awaiting_payment'].includes(booking.status);
+                const bookingDateTime = new Date(`${booking.booking_date}T${booking.booking_time || '00:00'}`);
+                const hoursUntilBooking = (bookingDateTime.getTime() - Date.now()) / (1000 * 60 * 60);
+                const within24h = hoursUntilBooking > 0 && hoursUntilBooking < 24;
+                return (
+                  <div key={booking.id} className="bg-[#F7F2EA] rounded-lg p-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-medium text-gray-800">
+                          {new Date(booking.booking_date).toLocaleDateString()}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {booking.booking_time}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          Cleaner: {availableCleaners.find(c => c.id === booking.cleaner_id)?.name || 'Auto-assigned'}
+                        </p>
+                        {booking.rescheduled_from && (
+                          <p className="text-xs text-gray-400 mt-1">
+                            Rescheduled from: {booking.rescheduled_from}
+                          </p>
+                        )}
+                        {booking.cancellation_reason && (
+                          <p className="text-xs text-red-500 mt-1">
+                            Cancelled: {booking.cancellation_reason}
+                          </p>
                         )}
                       </div>
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        booking.status === 'confirmed' ? 'bg-green-100 text-green-800' :
+                        booking.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                        booking.status === 'awaiting_payment' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {booking.status}
+                      </span>
                     </div>
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-gray-800">{assignedCleaner.firstName || assignedCleaner.name?.split(' ')[0]}</h4>
-                      <div className="flex items-center space-x-2 my-2">
-                        <div className="flex items-center">
-                          <span className="text-yellow-400">{'★'.repeat(Math.floor(assignedCleaner.rating || 0))}</span>
-                          <span className="text-gray-400">{'★'.repeat(5 - Math.floor(assignedCleaner.rating || 0))}</span>
-                        </div>
-                        <span className="text-sm text-gray-600">{assignedCleaner.rating || 0}</span>
-                      </div>
-                      <p className="text-sm text-gray-600">
-                        <strong>Specialties:</strong> {assignedCleaner.specialties?.join(', ') || 'General Cleaning'}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        <strong>Status:</strong> 
-                        <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${
-                          cleanerStatus === 'idle' ? 'bg-gray-100 text-gray-800' :
-                          cleanerStatus === 'on_way' ? 'bg-[#F0E6D6] text-[#8a6a3a]' :
-                          cleanerStatus === 'arrived' ? 'bg-yellow-100 text-yellow-800' :
-                          cleanerStatus === 'completed' ? 'bg-green-100 text-green-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
-                          {cleanerStatus === 'idle' ? 'Idle' :
-                           cleanerStatus === 'on_way' ? 'On the way' :
-                           cleanerStatus === 'arrived' ? 'Arrived' :
-                           cleanerStatus === 'completed' ? 'Completed' : 'Unknown'}
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* POPIA Compliance Notice */}
-              <div className="bg-[#F7F2EA] border border-[#E9E0D3] rounded-lg p-4">
-                <div className="flex items-start gap-3">
-                  <div className="text-[#8a6a45] text-xl">🔒</div>
-                  <div>
-                    <h4 className="font-semibold text-[#2E1F16] mb-1">Privacy Protected</h4>
-                    <p className="text-sm text-[#3f342a]">
-                      Your cleaner's personal information (surname, contact details, address) is protected under POPIA. Only their first name, profile picture, and rating are displayed for your safety and privacy.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Stats Overview */}
-              <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
-                <div className="bg-[#F7F2EA] rounded-lg p-4 border border-[#E9E0D3]">
-                  <h3 className="font-semibold text-[#2E1F16]">Active Bookings</h3>
-                  <p className="text-2xl font-bold text-[#8a6a45]">{bookings.length}</p>
-                </div>
-              </div>
-
-              {/* Book a Cleaning Button */}
-              <div className="bg-[#F7F2EA] rounded-lg p-6 border border-[#E9E0D3]">
-                <h3 className="font-semibold text-lg text-[#2E1F16] mb-4">Book a Cleaning</h3>
-                <button
-                  onClick={startBooking}
-                  className="w-full rounded-lg bg-[#B08A5E] px-6 py-3 text-[#2E1F16] font-semibold hover:bg-[#c39a6c] transition-colors"
-                >
-                  Schedule New Service
-                </button>
-              </div>
-
-              {/* Zoho Books Integration - Updated to show only one statement and one invoice */}
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-[#E9E0D3]">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-lg text-gray-800">Financial Statements</h3>
-                  <button
-                    onClick={fetchZohoData}
-                    disabled={zohoLoading}
-                    className="text-[#8a6a45] hover:text-[#2E1F16] text-sm font-medium disabled:opacity-50"
-                  >
-                    {zohoLoading ? 'Loading...' : 'Refresh'}
-                  </button>
-                </div>
-                
-                {/* Latest Monthly Statement */}
-                {zohoStatements.length > 0 && (
-                  <div className="mb-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium text-gray-700">Latest Statement</h4>
-                      <button
-                        onClick={() => setShowStatementsModal(true)}
-                        className="text-[#8a6a45] hover:text-[#2E1F16] text-xs font-medium"
-                      >
-                        View All
-                      </button>
-                    </div>
-                    <div
-                      onClick={() => setShowStatementsModal(true)}
-                      className="bg-[#F7F2EA] rounded-lg p-4 cursor-pointer hover:bg-[#F0E6D6] transition-colors"
-                    >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-medium text-gray-800">{zohoStatements[0].period}</p>
-                          <p className="text-sm text-gray-600">Due: {zohoStatements[0].due_date}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-lg font-bold text-gray-800">R{zohoStatements[0].total_amount}</p>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            zohoStatements[0].status === 'paid' ? 'bg-green-100 text-green-800' :
-                            'bg-yellow-100 text-yellow-800'
-                          }`}>
-                            {zohoStatements[0].status}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Latest Invoice/Receipt */}
-                {zohoInvoices.length > 0 && (
-                  <div className="mb-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium text-gray-700">Latest Invoice</h4>
-                      <button
-                        onClick={() => setShowInvoicesModal(true)}
-                        className="text-[#8a6a45] hover:text-[#2E1F16] text-xs font-medium"
-                      >
-                        View All
-                      </button>
-                    </div>
-                    <div
-                      onClick={() => setShowInvoicesModal(true)}
-                      className="bg-[#F7F2EA] rounded-lg p-3 cursor-pointer hover:bg-[#F0E6D6] transition-colors"
-                    >
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <p className="font-medium text-gray-800">
-                            {zohoInvoices[0].invoice_number || zohoInvoices[0].receipt_number}
-                          </p>
-                          <p className="text-sm text-gray-600">{zohoInvoices[0].description}</p>
-                          <p className="text-sm text-gray-600">{zohoInvoices[0].date}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-lg font-bold text-gray-800">R{zohoInvoices[0].amount}</p>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            zohoInvoices[0].status === 'paid' ? 'bg-green-100 text-green-800' :
-                            zohoInvoices[0].status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {zohoInvoices[0].status}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Request Older Statements Button */}
-                <button
-                  onClick={requestOlderStatements}
-                  disabled={olderStatementsRequest}
-                  className="w-full bg-white text-[#2E1F16] border border-[#E9E0D3] py-2 px-4 rounded-lg font-medium hover:bg-[#F7F2EA] transition-colors disabled:opacity-50 text-sm"
-                >
-                  {olderStatementsRequest ? 'Submitting...' : 'Request Older Statements'}
-                </button>
-              </div>
-
-              {/* Review Upload Section */}
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-[#E9E0D3]">
-                <h3 className="font-semibold text-lg text-gray-800 mb-4">Write a Review</h3>
-                
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Upload Photos (Max 3)
-                    </label>
-                    <input
-                      type="file"
-                      multiple
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="w-full px-3 py-2 border border-[#E9E0D3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
-                    />
-                    {reviewImages.length > 0 && (
-                      <div className="mt-3 grid grid-cols-3 gap-2">
-                        {reviewImages.map((img, index) => (
-                          <div key={index} className="relative">
-                            <img 
-                              src={img} 
-                              alt={`Review image ${index + 1}`}
-                              className="w-full h-24 object-cover rounded-lg"
-                            />
-                            <button
-                              onClick={() => removeReviewImage(index)}
-                              className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                            </button>
-                          </div>
-                        ))}
+                    {canCancelOrReschedule && (
+                      <div className="flex gap-2 mt-3 pt-3 border-t border-gray-200">
+                        <button
+                          onClick={() => handleCancelBooking(booking.id)}
+                          disabled={cancellingBookingId === booking.id}
+                          className="text-xs font-medium text-red-600 hover:text-red-700 disabled:opacity-50 flex items-center gap-1"
+                          title={within24h ? "Late cancellation — no refund within 24h of booking" : "Full refund available (24h+ before booking)"}
+                        >
+                          {cancellingBookingId === booking.id ? "Cancelling…" : "Cancel"}
+                          {within24h && (
+                            <span className="text-[10px] text-orange-500">(no refund)</span>
+                          )}
+                        </button>
+                        <span className="text-gray-300">|</span>
+                        <button
+                          onClick={() => openRescheduleModal(booking)}
+                          disabled={hoursUntilBooking <= 0}
+                          className="text-xs font-medium text-[#8a6a45] hover:text-[#2E1F16] disabled:opacity-50 flex items-center gap-1"
+                          title={within24h ? "Rescheduling not allowed within 24h" : "Free rescheduling (24h+ before booking)"}
+                        >
+                          Reschedule
+                        </button>
                       </div>
                     )}
                   </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Select Booking to Review
-                    </label>
-                    <select
-                      value={selectedBookingForReview}
-                      onChange={(e) => setSelectedBookingForReview(e.target.value)}
-                      className="w-full px-3 py-2 border border-[#E9E0D3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
-                    >
-                      <option value="">Choose a booking...</option>
-                      {bookings
-                        .filter((b: any) => b.status === 'completed')
-                        .map((b: any) => (
-                          <option key={b.id} value={String(b.id)}>
-                            {new Date(b.booking_date).toLocaleDateString()} — {b.booking_time}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Rating
-                    </label>
-                    <div className="flex items-center space-x-1">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <button
-                          key={star}
-                          type="button"
-                          onClick={() => setReviewRating(star)}
-                          className={`text-2xl transition-colors ${star <= reviewRating ? 'text-yellow-400' : 'text-gray-300'} hover:text-yellow-400`}
-                        >
-                          ★
-                        </button>
-                      ))}
-                      <span className="ml-2 text-sm text-gray-600">{reviewRating}/5</span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Your Review (100 words max)
-                    </label>
-                    <textarea
-                      value={reviewText}
-                      onChange={(e) => setReviewText(e.target.value)}
-                      rows={4}
-                      className="w-full px-3 py-2 border border-[#E9E0D3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
-                      placeholder="Share your experience..."
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      {reviewText.trim().split(/\s+/).filter(w => w.length > 0).length}/100 words
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={handleReviewSubmit}
-                    disabled={reviewImagesLoading || reviewText.trim().length === 0 || reviewText.trim().split(/\s+/).filter(w => w.length > 0).length > 100 || !selectedBookingForReview}
-                    className="w-full bg-[#B08A5E] text-[#2E1F16] py-3 px-4 rounded-lg font-semibold hover:bg-[#c39a6c] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {reviewImagesLoading ? 'Submitting...' : 'Submit Review'}
-                  </button>
-                </div>
-              </div>
-
-              {/* Recent Bookings */}
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-[#E9E0D3]">
-                <h3 className="font-semibold text-lg text-gray-800 mb-4">Your Bookings</h3>
-                {bookings.length === 0 ? (
-                  <p className="text-gray-500 text-center py-4">No bookings yet</p>
-                ) : (
-                  <div className="space-y-3">
-                    {bookings.map((booking) => {
-                      const canCancelOrReschedule = ['pending', 'confirmed', 'awaiting_payment'].includes(booking.status);
-                      const bookingDateTime = new Date(`${booking.booking_date}T${booking.booking_time || '00:00'}`);
-                      const hoursUntilBooking = (bookingDateTime.getTime() - Date.now()) / (1000 * 60 * 60);
-                      const within24h = hoursUntilBooking > 0 && hoursUntilBooking < 24;
-                      return (
-                        <div key={booking.id} className="bg-[#F7F2EA] rounded-lg p-4">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <p className="font-medium text-gray-800">
-                                {new Date(booking.booking_date).toLocaleDateString()}
-                              </p>
-                              <p className="text-sm text-gray-600">
-                                {booking.booking_time}
-                              </p>
-                              <p className="text-sm text-gray-600">
-                                Cleaner: {availableCleaners.find(c => c.id === booking.cleaner_id)?.name || 'Auto-assigned'}
-                              </p>
-                              {booking.rescheduled_from && (
-                                <p className="text-xs text-gray-400 mt-1">
-                                  Rescheduled from: {booking.rescheduled_from}
-                                </p>
-                              )}
-                              {booking.cancellation_reason && (
-                                <p className="text-xs text-red-500 mt-1">
-                                  Cancelled: {booking.cancellation_reason}
-                                </p>
-                              )}
-                            </div>
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                              booking.status === 'confirmed' ? 'bg-green-100 text-green-800' :
-                              booking.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                              booking.status === 'awaiting_payment' ? 'bg-yellow-100 text-yellow-800' :
-                              'bg-gray-100 text-gray-800'
-                            }`}>
-                              {booking.status}
-                            </span>
-                          </div>
-                          {canCancelOrReschedule && (
-                            <div className="flex gap-2 mt-3 pt-3 border-t border-gray-200">
-                              <button
-                                onClick={() => handleCancelBooking(booking.id)}
-                                disabled={cancellingBookingId === booking.id}
-                                className="text-xs font-medium text-red-600 hover:text-red-700 disabled:opacity-50 flex items-center gap-1"
-                                title={within24h ? "Late cancellation — no refund within 24h of booking" : "Full refund available (24h+ before booking)"}
-                              >
-                                {cancellingBookingId === booking.id ? "Cancelling…" : "Cancel"}
-                                {within24h && (
-                                  <span className="text-[10px] text-orange-500">(no refund)</span>
-                                )}
-                              </button>
-                              <span className="text-gray-300">|</span>
-                              <button
-                                onClick={() => openRescheduleModal(booking)}
-                                disabled={hoursUntilBooking <= 0}
-                                className="text-xs font-medium text-[#8a6a45] hover:text-[#2E1F16] disabled:opacity-50 flex items-center gap-1"
-                                title={within24h ? "Rescheduling not allowed within 24h" : "Free rescheduling (24h+ before booking)"}
-                              >
-                                Reschedule
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Booking Screen — full quote + schedule + payment */}
-          {(bookingStep === 'calendar' || bookingStep === 'form' || bookingStep === 'booking') && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-3 mb-2">
-                <button
-                  onClick={() => setBookingStep('dashboard')}
-                  className="text-[#8a6a45] hover:text-[#2E1F16] font-medium text-sm flex items-center gap-1"
-                >
-                  ← Back to Dashboard
-                </button>
-                <h2 className="font-bold text-xl text-gray-800">Schedule a Cleaning</h2>
-              </div>
-              <BookingQuotePanel
-                mode="client"
-                onSuccess={(_id, _amount) => {
-                  fetchClientData();
-                  setTimeout(() => setBookingStep('dashboard'), 3000);
-                }}
-                onCancel={() => setBookingStep('dashboard')}
-              />
-            </div>
-          )}
-
-          {/* Indemnity Overlay */}
-          {showIndemnityOverlay && (
-            <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-              <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" onClick={handleIndemnityDecline} />
-              <div className="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl border-2 border-[#E9E0D3] p-8 max-w-md w-full max-h-[90vh] overflow-y-auto relative z-50">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-black">Indemnity Form</h2>
-                  <button
-                    onClick={handleIndemnityDecline}
-                    className="text-gray-500 hover:text-black transition-colors"
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="bg-[#F7F2EA] border border-[#E9E0D3] rounded-lg p-4">
-                    <h3 className="font-semibold text-[#2E1F16] mb-2">Booking Details</h3>
-                    <p className="text-sm text-gray-600">
-                      Date: {new Date(selectedDate).toLocaleDateString()}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      Time: {selectedTimeSlot} - {selectedTimeSlot === '08:00' ? '12:00' : '17:00'}
-                    </p>
-                  </div>
-
-                  <div className="bg-[#F7F2EA] rounded-lg p-4">
-                    <h3 className="font-semibold text-gray-800 mb-3">Terms and Conditions</h3>
-                    <div className="text-sm text-gray-600 space-y-2">
-                      <p>1. I acknowledge that Scratch Solid Cleaning Services will be performed at the specified date and time.</p>
-                      <p>2. I understand that I am responsible for securing valuable items before the service.</p>
-                      <p>3. I agree to provide access to the premises and ensure utilities (water, electricity) are available.</p>
-                      <p>4. I understand that payment is required before or at the time of service.</p>
-                      <p>5. I release Scratch Solid from liability for any pre-existing damage to property.</p>
-                      <p>6. I agree to notify Scratch Solid of any specific areas that require special attention.</p>
-                    </div>
-                  </div>
-
-                  <div className="bg-[#FAF3E6] border border-[#E9DCC0] rounded-lg p-4">
-                    <h3 className="font-semibold text-[#2E1F16] mb-2">Important Notice</h3>
-                    <p className="text-sm text-[#3f342a]">
-                      By accepting this indemnity form, you agree to the terms and conditions outlined above. 
-                      This booking is subject to availability and confirmation.
-                    </p>
-                  </div>
-
-                  <div className="flex items-center space-x-3">
-                    <input
-                      type="checkbox"
-                      id="indemnity-accept"
-                      checked={indemnityAccepted}
-                      onChange={(e) => setIndemnityAccepted(e.target.checked)}
-                      className="w-4 h-4 text-[#B08A5E] border-[#E9E0D3] rounded focus:ring-[#B08A5E]"
-                    />
-                    <label htmlFor="indemnity-accept" className="text-sm text-gray-700">
-                      I have read and agree to the terms and conditions
-                    </label>
-                  </div>
-
-                  <div className="flex space-x-3 pt-4">
-                    <button
-                      onClick={handleIndemnityDecline}
-                      className="flex-1 bg-gray-200 text-black py-3 px-4 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
-                    >
-                      Decline
-                    </button>
-                    <button
-                      onClick={handleIndemnityAccept}
-                      disabled={!indemnityAccepted}
-                      className="flex-1 bg-[#B08A5E] text-[#2E1F16] py-3 px-4 rounded-lg font-semibold hover:bg-[#c39a6c] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Accept & Continue
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Statements Modal */}
-          {showStatementsModal && (
-            <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-              <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" onClick={() => setShowStatementsModal(false)} />
-              <div className="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl border-2 border-[#E9E0D3] p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto relative z-50">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-black">Monthly Statements (6 Months)</h2>
-                  <button
-                    onClick={() => setShowStatementsModal(false)}
-                    className="text-gray-500 hover:text-black transition-colors"
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-
-                <div className="space-y-4">
-                  {zohoStatements.map((stmt) => (
-                    <div key={stmt.id} className="bg-[#F7F2EA] rounded-lg p-4">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-medium text-gray-800">{stmt.period}</p>
-                          <p className="text-sm text-gray-600">Due: {stmt.due_date}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-lg font-bold text-gray-800">R{stmt.total_amount}</p>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            stmt.status === 'paid' ? 'bg-green-100 text-green-800' :
-                            'bg-yellow-100 text-yellow-800'
-                          }`}>
-                            {stmt.status}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Invoices Modal */}
-          {showInvoicesModal && (
-            <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-              <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" onClick={() => setShowInvoicesModal(false)} />
-              <div className="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl border-2 border-[#E9E0D3] p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto relative z-50">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-black">Invoices & Receipts (6 Months)</h2>
-                  <button
-                    onClick={() => setShowInvoicesModal(false)}
-                    className="text-gray-500 hover:text-black transition-colors"
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-
-                <div className="space-y-3">
-                  {zohoInvoices.map((doc) => (
-                    <div key={doc.id} className="bg-[#F7F2EA] rounded-lg p-3">
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <p className="font-medium text-gray-800">
-                            {doc.invoice_number || doc.receipt_number}
-                          </p>
-                          <p className="text-sm text-gray-600">{doc.description}</p>
-                          <p className="text-sm text-gray-600">{doc.date}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-lg font-bold text-gray-800">R{doc.amount}</p>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            doc.status === 'paid' ? 'bg-green-100 text-green-800' :
-                            doc.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {doc.status}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Reschedule Modal */}
-          {rescheduleBooking && (
-            <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-              <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" onClick={() => setRescheduleBooking(null)} />
-              <div className="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl border-2 border-[#E9E0D3] p-8 max-w-md w-full relative z-50">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-black">Reschedule Booking</h2>
-                  <button
-                    onClick={() => setRescheduleBooking(null)}
-                    className="text-gray-500 hover:text-black transition-colors"
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-                <div className="space-y-4">
-                  <div className="bg-[#F7F2EA] border border-[#E9E0D3] rounded-lg p-3 text-sm text-gray-700">
-                    <p>Current: <strong>{new Date(rescheduleBooking.booking_date).toLocaleDateString()}</strong> at <strong>{rescheduleBooking.booking_time}</strong></p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">New Date</label>
-                    <input
-                      type="date"
-                      value={rescheduleDate}
-                      onChange={(e) => setRescheduleDate(e.target.value)}
-                      min={new Date().toISOString().split('T')[0]}
-                      className="w-full px-3 py-2 border border-[#E9E0D3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">New Time</label>
-                    <select
-                      value={rescheduleTime}
-                      onChange={(e) => setRescheduleTime(e.target.value)}
-                      className="w-full px-3 py-2 border border-[#E9E0D3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
-                    >
-                      <option value="">Select a time slot</option>
-                      <option value="08:00">08:00</option>
-                      <option value="09:00">09:00</option>
-                      <option value="10:00">10:00</option>
-                      <option value="11:00">11:00</option>
-                      <option value="12:00">12:00</option>
-                      <option value="13:00">13:00</option>
-                      <option value="14:00">14:00</option>
-                      <option value="15:00">15:00</option>
-                      <option value="16:00">16:00</option>
-                    </select>
-                  </div>
-                  <div className="flex gap-3 pt-2">
-                    <button
-                      onClick={() => setRescheduleBooking(null)}
-                      className="flex-1 rounded-full border-2 border-[#E9E0D3] px-4 py-2 text-[#2E1F16] font-semibold hover:border-[#D3C6AE] transition-colors"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleRescheduleSubmit}
-                      disabled={rescheduleLoading || !rescheduleDate || !rescheduleTime}
-                      className="flex-1 rounded-full bg-[#B08A5E] px-4 py-2 text-[#2E1F16] font-bold hover:bg-[#c39a6c] transition-colors disabled:opacity-50"
-                    >
-                      {rescheduleLoading ? "Rescheduling…" : "Confirm"}
-                    </button>
-                  </div>
-                </div>
-              </div>
+                );
+              })}
             </div>
           )}
         </div>
+      )}
+
+      {!showBookingFlow && activeDept === 'cleaning' && activeView === 'financials' && (
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-[#E9E0D3]">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold text-lg text-gray-800">Financial Statements</h3>
+            <button
+              onClick={fetchZohoData}
+              disabled={zohoLoading}
+              className="text-[#8a6a45] hover:text-[#2E1F16] text-sm font-medium disabled:opacity-50"
+            >
+              {zohoLoading ? 'Loading...' : 'Refresh'}
+            </button>
+          </div>
+
+          {zohoStatements.length > 0 && (
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="font-medium text-gray-700">Latest Statement</h4>
+                <button
+                  onClick={() => setShowStatementsModal(true)}
+                  className="text-[#8a6a45] hover:text-[#2E1F16] text-xs font-medium"
+                >
+                  View All
+                </button>
+              </div>
+              <div
+                onClick={() => setShowStatementsModal(true)}
+                className="bg-[#F7F2EA] rounded-lg p-4 cursor-pointer hover:bg-[#F0E6D6] transition-colors"
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="font-medium text-gray-800">{zohoStatements[0].period}</p>
+                    <p className="text-sm text-gray-600">Due: {zohoStatements[0].due_date}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-bold text-gray-800">R{zohoStatements[0].total_amount}</p>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      zohoStatements[0].status === 'paid' ? 'bg-green-100 text-green-800' :
+                      'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {zohoStatements[0].status}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {zohoInvoices.length > 0 && (
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="font-medium text-gray-700">Latest Invoice</h4>
+                <button
+                  onClick={() => setShowInvoicesModal(true)}
+                  className="text-[#8a6a45] hover:text-[#2E1F16] text-xs font-medium"
+                >
+                  View All
+                </button>
+              </div>
+              <div
+                onClick={() => setShowInvoicesModal(true)}
+                className="bg-[#F7F2EA] rounded-lg p-3 cursor-pointer hover:bg-[#F0E6D6] transition-colors"
+              >
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="font-medium text-gray-800">
+                      {zohoInvoices[0].invoice_number || zohoInvoices[0].receipt_number}
+                    </p>
+                    <p className="text-sm text-gray-600">{zohoInvoices[0].description}</p>
+                    <p className="text-sm text-gray-600">{zohoInvoices[0].date}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-bold text-gray-800">R{zohoInvoices[0].amount}</p>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      zohoInvoices[0].status === 'paid' ? 'bg-green-100 text-green-800' :
+                      zohoInvoices[0].status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {zohoInvoices[0].status}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <button
+            onClick={requestOlderStatements}
+            disabled={olderStatementsRequest}
+            className="w-full bg-white text-[#2E1F16] border border-[#E9E0D3] py-2 px-4 rounded-lg font-medium hover:bg-[#F7F2EA] transition-colors disabled:opacity-50 text-sm"
+          >
+            {olderStatementsRequest ? 'Submitting...' : 'Request Older Statements'}
+          </button>
+        </div>
+      )}
+
+      {!showBookingFlow && activeDept === 'cleaning' && activeView === 'reviews' && (
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-[#E9E0D3]">
+          <h3 className="font-semibold text-lg text-gray-800 mb-4">Write a Review</h3>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Upload Photos (Max 3)
+              </label>
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="w-full px-3 py-2 border border-[#E9E0D3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
+              />
+              {reviewImages.length > 0 && (
+                <div className="mt-3 grid grid-cols-3 gap-2">
+                  {reviewImages.map((img, index) => (
+                    <div key={index} className="relative">
+                      <img
+                        src={img}
+                        alt={`Review image ${index + 1}`}
+                        className="w-full h-24 object-cover rounded-lg"
+                      />
+                      <button
+                        onClick={() => removeReviewImage(index)}
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Booking to Review
+              </label>
+              <select
+                value={selectedBookingForReview}
+                onChange={(e) => setSelectedBookingForReview(e.target.value)}
+                className="w-full px-3 py-2 border border-[#E9E0D3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
+              >
+                <option value="">Choose a booking...</option>
+                {bookings
+                  .filter((b: any) => b.status === 'completed')
+                  .map((b: any) => (
+                    <option key={b.id} value={String(b.id)}>
+                      {new Date(b.booking_date).toLocaleDateString()} — {b.booking_time}
+                    </option>
+                  ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Rating
+              </label>
+              <div className="flex items-center space-x-1">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setReviewRating(star)}
+                    className={`text-2xl transition-colors ${star <= reviewRating ? 'text-yellow-400' : 'text-gray-300'} hover:text-yellow-400`}
+                  >
+                    ★
+                  </button>
+                ))}
+                <span className="ml-2 text-sm text-gray-600">{reviewRating}/5</span>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Your Review (100 words max)
+              </label>
+              <textarea
+                value={reviewText}
+                onChange={(e) => setReviewText(e.target.value)}
+                rows={4}
+                className="w-full px-3 py-2 border border-[#E9E0D3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
+                placeholder="Share your experience..."
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                {reviewText.trim().split(/\s+/).filter(w => w.length > 0).length}/100 words
+              </p>
+            </div>
+
+            <button
+              onClick={handleReviewSubmit}
+              disabled={reviewImagesLoading || reviewText.trim().length === 0 || reviewText.trim().split(/\s+/).filter(w => w.length > 0).length > 100 || !selectedBookingForReview}
+              className="w-full bg-[#B08A5E] text-[#2E1F16] py-3 px-4 rounded-lg font-semibold hover:bg-[#c39a6c] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {reviewImagesLoading ? 'Submitting...' : 'Submit Review'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!showBookingFlow && activeDept === 'cleaning' && activeView === 'settings' && (
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-[#E9E0D3] space-y-4">
+          <h3 className="font-semibold text-lg text-gray-800 mb-2">Profile</h3>
+          {[
+            ['Full name', localStorage.getItem('userName')],
+            ['Email', localStorage.getItem('userEmail')],
+            ['Phone', localStorage.getItem('userPhone')],
+            ['Address', localStorage.getItem('userAddress')],
+          ].map(([label, value]) => (
+            <div key={label} className="flex items-center justify-between py-2 border-t border-[#E9E0D3] first:border-t-0">
+              <span className="text-sm font-medium text-gray-700">{label}</span>
+              <span className="text-sm text-gray-600">{value || '—'}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!showBookingFlow && activeDept === 'transportation' && (
+        <div className="bg-white rounded-xl p-8 shadow-sm border border-dashed border-[#D3C6AE] text-center">
+          <p className="text-[10px] uppercase tracking-[0.18em] text-[#a3906f] font-semibold mb-2">Coming soon</p>
+          <h3 className="text-xl font-normal text-[#2E1F16] mb-2" style={{ fontFamily: "Georgia, serif" }}>
+            Transportation is on its way
+          </h3>
+          <p className="text-sm text-stone-600 max-w-md mx-auto mb-5">
+            Corporate transport and airport transfers, run with the same tracking and transparency as our cleaning service. We'll let you know the moment it launches.
+          </p>
+          <a
+            href={TRANSPORT_NOTIFY_LINK}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block rounded-lg bg-[#B08A5E] px-6 py-3 text-[#2E1F16] font-semibold hover:bg-[#c39a6c] transition-colors"
+          >
+            Notify me on WhatsApp
+          </a>
+        </div>
+      )}
+
+      {!showBookingFlow && activeDept === 'digital' && (
+        <DigitalDashboardViews
+          activeView={activeView}
+          project={projects[0]}
+          detail={projectDetail}
+          loading={projectDetailLoading}
+        />
+      )}
+
+      {showIndemnityOverlay && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" onClick={handleIndemnityDecline} />
+          <div className="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl border-2 border-[#E9E0D3] p-8 max-w-md w-full max-h-[90vh] overflow-y-auto relative z-50">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-black">Indemnity Form</h2>
+              <button
+                onClick={handleIndemnityDecline}
+                className="text-gray-500 hover:text-black transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="bg-[#F7F2EA] border border-[#E9E0D3] rounded-lg p-4">
+                <h3 className="font-semibold text-[#2E1F16] mb-2">Booking Details</h3>
+                <p className="text-sm text-gray-600">
+                  Date: {new Date(selectedDate).toLocaleDateString()}
+                </p>
+                <p className="text-sm text-gray-600">
+                  Time: {selectedTimeSlot} - {selectedTimeSlot === '08:00' ? '12:00' : '17:00'}
+                </p>
+              </div>
+
+              <div className="bg-[#F7F2EA] rounded-lg p-4">
+                <h3 className="font-semibold text-gray-800 mb-3">Terms and Conditions</h3>
+                <div className="text-sm text-gray-600 space-y-2">
+                  <p>1. I acknowledge that Scratch Solid Cleaning Services will be performed at the specified date and time.</p>
+                  <p>2. I understand that I am responsible for securing valuable items before the service.</p>
+                  <p>3. I agree to provide access to the premises and ensure utilities (water, electricity) are available.</p>
+                  <p>4. I understand that payment is required before or at the time of service.</p>
+                  <p>5. I release Scratch Solid from liability for any pre-existing damage to property.</p>
+                  <p>6. I agree to notify Scratch Solid of any specific areas that require special attention.</p>
+                </div>
+              </div>
+
+              <div className="bg-[#FAF3E6] border border-[#E9DCC0] rounded-lg p-4">
+                <h3 className="font-semibold text-[#2E1F16] mb-2">Important Notice</h3>
+                <p className="text-sm text-[#3f342a]">
+                  By accepting this indemnity form, you agree to the terms and conditions outlined above.
+                  This booking is subject to availability and confirmation.
+                </p>
+              </div>
+
+              <div className="flex items-center space-x-3">
+                <input
+                  type="checkbox"
+                  id="indemnity-accept"
+                  checked={indemnityAccepted}
+                  onChange={(e) => setIndemnityAccepted(e.target.checked)}
+                  className="w-4 h-4 text-[#B08A5E] border-[#E9E0D3] rounded focus:ring-[#B08A5E]"
+                />
+                <label htmlFor="indemnity-accept" className="text-sm text-gray-700">
+                  I have read and agree to the terms and conditions
+                </label>
+              </div>
+
+              <div className="flex space-x-3 pt-4">
+                <button
+                  onClick={handleIndemnityDecline}
+                  className="flex-1 bg-gray-200 text-black py-3 px-4 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+                >
+                  Decline
+                </button>
+                <button
+                  onClick={handleIndemnityAccept}
+                  disabled={!indemnityAccepted}
+                  className="flex-1 bg-[#B08A5E] text-[#2E1F16] py-3 px-4 rounded-lg font-semibold hover:bg-[#c39a6c] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Accept & Continue
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showStatementsModal && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" onClick={() => setShowStatementsModal(false)} />
+          <div className="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl border-2 border-[#E9E0D3] p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto relative z-50">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-black">Monthly Statements (6 Months)</h2>
+              <button
+                onClick={() => setShowStatementsModal(false)}
+                className="text-gray-500 hover:text-black transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {zohoStatements.map((stmt) => (
+                <div key={stmt.id} className="bg-[#F7F2EA] rounded-lg p-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-medium text-gray-800">{stmt.period}</p>
+                      <p className="text-sm text-gray-600">Due: {stmt.due_date}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-bold text-gray-800">R{stmt.total_amount}</p>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        stmt.status === 'paid' ? 'bg-green-100 text-green-800' :
+                        'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {stmt.status}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showInvoicesModal && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" onClick={() => setShowInvoicesModal(false)} />
+          <div className="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl border-2 border-[#E9E0D3] p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto relative z-50">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-black">Invoices & Receipts (6 Months)</h2>
+              <button
+                onClick={() => setShowInvoicesModal(false)}
+                className="text-gray-500 hover:text-black transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {zohoInvoices.map((doc) => (
+                <div key={doc.id} className="bg-[#F7F2EA] rounded-lg p-3">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="font-medium text-gray-800">
+                        {doc.invoice_number || doc.receipt_number}
+                      </p>
+                      <p className="text-sm text-gray-600">{doc.description}</p>
+                      <p className="text-sm text-gray-600">{doc.date}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-bold text-gray-800">R{doc.amount}</p>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        doc.status === 'paid' ? 'bg-green-100 text-green-800' :
+                        doc.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {doc.status}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {rescheduleBooking && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" onClick={() => setRescheduleBooking(null)} />
+          <div className="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl border-2 border-[#E9E0D3] p-8 max-w-md w-full relative z-50">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-black">Reschedule Booking</h2>
+              <button
+                onClick={() => setRescheduleBooking(null)}
+                className="text-gray-500 hover:text-black transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div className="bg-[#F7F2EA] border border-[#E9E0D3] rounded-lg p-3 text-sm text-gray-700">
+                <p>Current: <strong>{new Date(rescheduleBooking.booking_date).toLocaleDateString()}</strong> at <strong>{rescheduleBooking.booking_time}</strong></p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">New Date</label>
+                <input
+                  type="date"
+                  value={rescheduleDate}
+                  onChange={(e) => setRescheduleDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                  className="w-full px-3 py-2 border border-[#E9E0D3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">New Time</label>
+                <select
+                  value={rescheduleTime}
+                  onChange={(e) => setRescheduleTime(e.target.value)}
+                  className="w-full px-3 py-2 border border-[#E9E0D3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
+                >
+                  <option value="">Select a time slot</option>
+                  <option value="08:00">08:00</option>
+                  <option value="09:00">09:00</option>
+                  <option value="10:00">10:00</option>
+                  <option value="11:00">11:00</option>
+                  <option value="12:00">12:00</option>
+                  <option value="13:00">13:00</option>
+                  <option value="14:00">14:00</option>
+                  <option value="15:00">15:00</option>
+                  <option value="16:00">16:00</option>
+                </select>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setRescheduleBooking(null)}
+                  className="flex-1 rounded-full border-2 border-[#E9E0D3] px-4 py-2 text-[#2E1F16] font-semibold hover:border-[#D3C6AE] transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleRescheduleSubmit}
+                  disabled={rescheduleLoading || !rescheduleDate || !rescheduleTime}
+                  className="flex-1 rounded-full bg-[#B08A5E] px-4 py-2 text-[#2E1F16] font-bold hover:bg-[#c39a6c] transition-colors disabled:opacity-50"
+                >
+                  {rescheduleLoading ? "Rescheduling…" : "Confirm"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </DashboardShell>
+  );
+}
+
+function DigitalDashboardViews({ activeView, project, detail, loading }: { activeView: string; project: any; detail: any; loading: boolean }) {
+  if (!project) {
+    return (
+      <div className="bg-white rounded-xl p-8 shadow-sm border border-[#E9E0D3] text-center">
+        <p className="text-sm text-stone-600">No active project on this account yet.</p>
+      </div>
+    );
+  }
+  if (loading || !detail) {
+    return (
+      <div className="flex justify-center py-12">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#B08A5E]" />
+      </div>
+    );
+  }
+
+  if (activeView === 'phases') {
+    return (
+      <div className="bg-white rounded-xl p-6 shadow-sm border border-[#E9E0D3]">
+        <h3 className="font-semibold text-lg text-gray-800 mb-4">Project Phases</h3>
+        <div className="space-y-2">
+          {detail.phases.map((p: any) => (
+            <div key={p.id} className="flex items-center justify-between bg-[#F7F2EA] rounded-lg p-3">
+              <span className="text-sm font-medium text-gray-800">{p.name}</span>
+              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                p.status === 'completed' ? 'bg-green-100 text-green-800' :
+                p.status === 'in_progress' ? 'bg-[#F0E6D6] text-[#8a6a3a]' :
+                'bg-gray-100 text-gray-800'
+              }`}>
+                {p.status.replace('_', ' ')}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (activeView === 'files') {
+    return (
+      <div className="bg-white rounded-xl p-6 shadow-sm border border-[#E9E0D3]">
+        <h3 className="font-semibold text-lg text-gray-800 mb-4">Files &amp; Links</h3>
+        {detail.files.length === 0 ? (
+          <p className="text-gray-500 text-center py-4">No files yet</p>
+        ) : (
+          <div className="space-y-2">
+            {detail.files.map((f: any) => (
+              <a key={f.id} href={f.file_url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between bg-[#F7F2EA] rounded-lg p-3 hover:bg-[#F0E6D6] transition-colors">
+                <span className="text-sm font-medium text-[#2E1F16]">{f.file_name}</span>
+                <span className="text-xs text-[#8a6a45]">Open →</span>
+              </a>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (activeView === 'invoices') {
+    const total = detail.milestones.reduce((a: number, m: any) => a + Number(m.amount || 0), 0);
+    return (
+      <div className="bg-white rounded-xl p-6 shadow-sm border border-[#E9E0D3]">
+        <h3 className="font-semibold text-lg text-gray-800 mb-4">Milestone Invoices</h3>
+        <div className="space-y-2 mb-4">
+          {detail.milestones.map((m: any) => (
+            <div key={m.id} className="flex items-center justify-between bg-[#F7F2EA] rounded-lg p-3">
+              <span className="text-sm font-medium text-gray-800">{m.name}</span>
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-gray-600">R{Number(m.amount).toLocaleString()}</span>
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  m.billing_status === 'paid' ? 'bg-green-100 text-green-800' :
+                  m.billing_status === 'invoiced' ? 'bg-yellow-100 text-yellow-800' :
+                  'bg-gray-100 text-gray-800'
+                }`}>
+                  {m.billing_status.replace('_', ' ')}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="flex justify-end gap-2 text-sm border-t border-[#E9E0D3] pt-3">
+          <span className="text-gray-600">Total project value</span>
+          <span className="font-bold text-gray-800">R{total.toLocaleString()}</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (activeView === 'updates') {
+    return (
+      <div className="bg-white rounded-xl p-6 shadow-sm border border-[#E9E0D3]">
+        <h3 className="font-semibold text-lg text-gray-800 mb-4">Project Updates</h3>
+        {detail.updates.length === 0 ? (
+          <p className="text-gray-500 text-center py-4">No updates yet</p>
+        ) : (
+          <div className="space-y-3">
+            {detail.updates.map((u: any) => (
+              <div key={u.id} className="border-l-2 border-[#E9E0D3] pl-3">
+                <p className="text-sm text-gray-800">{u.message}</p>
+                <p className="text-xs text-gray-400 mt-0.5">{new Date(u.created_at).toLocaleDateString()}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // overview
+  const completedPhases = detail.phases.filter((p: any) => p.status === 'completed').length;
+  const pct = detail.phases.length ? Math.round((completedPhases / detail.phases.length) * 100) : 0;
+  return (
+    <div className="space-y-6">
+      <div className="rounded-xl p-6 shadow-sm" style={{ background: "linear-gradient(135deg, #2E1F16, #3a281a)" }}>
+        <p className="text-[10px] uppercase tracking-[0.18em] text-[#B08A5E] font-semibold mb-2">Active project</p>
+        <h2 className="text-xl font-normal text-[#F7F2EA] mb-1" style={{ fontFamily: "Georgia, serif" }}>{detail.name}</h2>
+        <p className="text-sm text-[#CBB89A]">{detail.description || 'No description yet.'}</p>
+        <div className="mt-4 h-2 rounded-full bg-white/10 overflow-hidden max-w-xs">
+          <div className="h-full bg-[#B08A5E] rounded-full" style={{ width: `${pct}%` }} />
+        </div>
+        <p className="text-xs text-[#B7A288] mt-1">{pct}% complete · {completedPhases} of {detail.phases.length} phases</p>
+      </div>
+      <div className="bg-white rounded-xl p-6 shadow-sm border border-[#E9E0D3]">
+        <h3 className="font-semibold text-lg text-gray-800 mb-4">Latest updates</h3>
+        {detail.updates.slice(0, 3).map((u: any) => (
+          <div key={u.id} className="border-l-2 border-[#E9E0D3] pl-3 mb-3">
+            <p className="text-sm text-gray-800">{u.message}</p>
+            <p className="text-xs text-gray-400 mt-0.5">{new Date(u.created_at).toLocaleDateString()}</p>
+          </div>
+        ))}
+        {detail.updates.length === 0 && <p className="text-gray-500 text-sm">No updates yet</p>}
       </div>
     </div>
   );
