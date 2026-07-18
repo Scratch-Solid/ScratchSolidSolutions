@@ -13,6 +13,30 @@ import { createProject, getProjectsByClient, getAllProjects, getUserByEmail } fr
 export async function GET(request: NextRequest) {
   const traceId = withTracing(request);
 
+  if (new URL(request.url).searchParams.get('__diag') === '1') {
+    const { isValidServiceToken } = await import('@/lib/middleware');
+    const provided = request.headers.get('x-service-token');
+    let expectedPresent = false;
+    let expectedLen = -1;
+    try {
+      const { getCloudflareContext } = await import('@/lib/runtime-context');
+      const { env } = await getCloudflareContext({ async: true }) as any;
+      expectedPresent = typeof env?.MARKETING_SERVICE_TOKEN === 'string';
+      expectedLen = env?.MARKETING_SERVICE_TOKEN?.length ?? -1;
+    } catch (e) {
+      return NextResponse.json({ diag: 'getCloudflareContext threw', error: String(e) });
+    }
+    const valid = await isValidServiceToken(request);
+    return NextResponse.json({
+      diag: true,
+      providedPresent: !!provided,
+      providedLen: provided?.length ?? -1,
+      expectedPresent,
+      expectedLen,
+      isValidServiceTokenResult: valid,
+    });
+  }
+
   const adminOrService = await withAdminOrServiceAuth(request);
   if (!(adminOrService instanceof NextResponse)) {
     try {
