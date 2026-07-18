@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/badge";
@@ -393,9 +394,14 @@ export default function AdminEmployeesPage() {
                       </Button>
                     </div>
                   ) : (
-                    <Badge className={item.status === "blocked" ? "bg-red-100 text-red-700 hover:bg-red-100" : "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"}>
-                      {item.status}
-                    </Badge>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <Badge className={item.status === "blocked" ? "bg-red-100 text-red-700 hover:bg-red-100" : "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"}>
+                        {item.status}
+                      </Badge>
+                      <Link href={`/admin/employees/${item.id}`} className="text-xs font-medium text-[#8a6a45] hover:text-[#2E1F16] hover:underline">
+                        View details
+                      </Link>
+                    </div>
                   )}
                 </div>
               ))}
