@@ -125,7 +125,8 @@
 				"NEXT_PUBLIC_API_URL": "https://api-staging.scratchsolidsolutions.org/api",
 				"ALLOWED_ORIGINS": "https://portal-staging.scratchsolidsolutions.org",
 				"NODE_ENV": "staging",
-				"R2_PUBLIC_BASE": "https://uploads-staging.scratchsolidsolutions.org"
+				"R2_PUBLIC_BASE": "https://uploads-staging.scratchsolidsolutions.org",
+				"MARKETING_SITE_URL": "https://staging.scratchsolidsolutions.org"
 			}
 		}
 	}
