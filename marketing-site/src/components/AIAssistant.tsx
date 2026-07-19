@@ -125,7 +125,7 @@ export default function AIAssistant() {
   };
 
   return (
-    <div className="fixed bottom-20 right-6 z-40">
+    <div className="fixed bottom-20 right-6 z-[60]">
       {/* AI Assistant Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
