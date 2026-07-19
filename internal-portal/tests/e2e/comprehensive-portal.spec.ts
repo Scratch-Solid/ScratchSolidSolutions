@@ -50,7 +50,9 @@ test.describe('🏠 Public Pages — Load & Content', () => {
     await assertNo500(page);
     await expect(page.locator('text=Internal Portal')).toBeVisible();
     await expect(page.locator('text=Join the cleaning team')).toBeVisible();
-    await expect(page.locator('text=Apply now')).toBeVisible();
+    // Two "Apply now" buttons exist (cleaning + Digital/Transportation) -
+    // assert at least one is visible rather than a single-match locator.
+    await expect(page.locator('text=Apply now').first()).toBeVisible();
     await expect(page.locator('input#username')).toBeVisible();
     await expect(page.locator('input#password')).toBeVisible();
     await expect(page.locator('button[type="submit"]')).toBeVisible();

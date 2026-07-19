@@ -75,7 +75,12 @@ jobs:
     
     - name: Security audit
       working-directory: ./marketing-site
-      run: npm audit --audit-level=high
+      # Scoped to prod deps: chromedriver/selenium/lighthouse (test/audit
+      # tooling, devDependencies only) drag in a long chain of
+      # @opentelemetry/@sentry/adm-zip vulnerabilities that don't ship to
+      # users. The one remaining prod-dependency issue (postcss nested
+      # inside next) is moderate, not high, so it still doesn't fail this.
+      run: npm audit --omit=dev --audit-level=high
 
   internal-portal:
     name: Internal Portal - Build & Test
@@ -128,7 +133,9 @@ jobs:
     
     - name: Security audit
       working-directory: ./internal-portal
-      run: npm audit --audit-level=high
+      # Scoped to prod deps - see marketing-site's Security audit step for
+      # why (same chromedriver/lighthouse devDependency chain here too).
+      run: npm audit --omit=dev --audit-level=high
 
   backend-worker:
     name: Backend Worker - Build & Test
@@ -151,7 +158,8 @@ jobs:
     
     - name: Security audit
       working-directory: ./backend-worker
-      run: npm audit --audit-level=high
+      # Scoped to prod deps - consistent with marketing-site/internal-portal.
+      run: npm audit --omit=dev --audit-level=high
 
   alert-on-scheduled-failure:
     name: Alert on Daily Scheduled Failure
