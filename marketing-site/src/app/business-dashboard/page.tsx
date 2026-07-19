@@ -409,7 +409,8 @@ export default function BusinessDashboard() {
   const cleaningNav = [
     { key: 'overview', label: 'Overview', icon: ic.grid },
     { key: 'bookings', label: 'Bookings', icon: ic.calendar },
-    { key: 'financials', label: 'Financials', icon: ic.bank },
+    // Content here is service contracts/rates, not invoices - key stays 'financials' to avoid touching downstream checks
+    { key: 'financials', label: 'Contracts', icon: ic.bank },
     { key: 'reviews', label: 'Reviews', icon: ic.star },
     { key: 'settings', label: 'Settings', icon: ic.gear },
   ];
