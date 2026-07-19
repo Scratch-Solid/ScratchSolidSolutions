@@ -264,6 +264,15 @@ function generatePaysheetCode(role: 'cleaner' | 'staff' | StaffRole): string {
 // Checks both cleaner_profiles.paysheet_code (cleaners) and users.paysheet_code
 // (digital/transport, which have no separate profile table) for collisions.
 async function generateUniquePaysheetCode(db: D1Database, role: 'cleaner' | 'staff' | StaffRole): Promise<string> {
+  // users.paysheet_code was intended to ship in migration 030, which never
+  // actually applied on this environment (confirmed schema drift - see the
+  // near-identical comment in activateStaffAccount). The collision check
+  // below reads this column for every role, not just digital/transport, so
+  // the defensive add has to live here rather than in just one caller -
+  // this exact gap is what threw "no such column: paysheet_code" the first
+  // time anyone used the admin quick-add-cleaner form in production.
+  await db.prepare(`ALTER TABLE users ADD COLUMN paysheet_code TEXT`).run().catch(() => {});
+
   let attempts = 0;
   const maxAttempts = 5;
 
