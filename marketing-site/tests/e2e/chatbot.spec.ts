@@ -88,7 +88,7 @@ test.describe.serial('Chatbot API', () => {
 test.describe('Chatbot Widget', () => {
   test('opens chat widget and shows suggested questions', async ({ page }) => {
     await page.goto('/');
-    const button = page.locator('button[aria-label="AI Assistant"]').first();
+    const button = page.locator('button[aria-label="Scratch Solid Assistant"]').first();
     await expect(button).toBeVisible();
     await button.click();
     await expect(page.locator('text=Popular questions:')).toBeVisible();
@@ -97,7 +97,7 @@ test.describe('Chatbot Widget', () => {
 
   test('sends a message and receives a response', async ({ page }) => {
     await page.goto('/');
-    const button = page.locator('button[aria-label="AI Assistant"]').first();
+    const button = page.locator('button[aria-label="Scratch Solid Assistant"]').first();
     await button.click();
     const input = page.locator('input[placeholder="Ask me anything..."]').first();
     await input.fill('What services do you offer?');

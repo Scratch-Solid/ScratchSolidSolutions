@@ -138,7 +138,7 @@ export default function StaffApplyPage() {
           </div>
           <div className="mb-6">
             <label htmlFor="message" className="block text-sm font-bold mb-2">
-              Anything else we should know? <span className="font-normal text-stone-400">(optional)</span>
+              Anything else we should know? <span className="font-normal text-stone-600">(optional)</span>
             </label>
             <textarea
               id="message"

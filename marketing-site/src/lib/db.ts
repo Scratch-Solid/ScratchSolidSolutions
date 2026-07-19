@@ -64,11 +64,41 @@ export async function getUserByEmail(db: D1Database, email: string) {
   }
 }
 
+/**
+ * A phone number can be stored as +27XXXXXXXXX, 27XXXXXXXXX, or 0XXXXXXXXX
+ * depending on which format the user happened to type at signup - the
+ * signup form's placeholder ("+27 12 345 6789") and the login form's
+ * placeholder ("0730000000, 10 digits") suggest two different formats, and
+ * nothing normalizes between them. Without this, a real customer who signs
+ * up in one format and later logs in using the other gets "Invalid
+ * credentials" even with the exact right number and password. Generate every
+ * plausible variant of the given input and match any of them, rather than
+ * requiring stored data to be migrated to one canonical format.
+ */
+function phoneLookupVariants(phone: string): string[] {
+  const digits = phone.replace(/[^\d]/g, '');
+  const variants = new Set<string>([phone]);
+  if (digits.startsWith('27') && digits.length === 11) {
+    variants.add(`+${digits}`);
+    variants.add(digits);
+    variants.add(`0${digits.slice(2)}`);
+  } else if (digits.startsWith('0') && digits.length === 10) {
+    variants.add(digits);
+    variants.add(`+27${digits.slice(1)}`);
+    variants.add(`27${digits.slice(1)}`);
+  } else if (digits) {
+    variants.add(digits);
+  }
+  return Array.from(variants);
+}
+
 export async function getUserByPhone(db: D1Database, phone: string) {
+  const variants = phoneLookupVariants(phone);
+  const whereClause = variants.map(() => 'phone = ?').join(' OR ');
   try {
-    return await db.prepare('SELECT id, email, role, name, phone, address, business_name, password_hash, failed_attempts, locked_until, email_verified FROM users WHERE phone = ?').bind(phone).first();
+    return await db.prepare(`SELECT id, email, role, name, phone, address, business_name, password_hash, failed_attempts, locked_until, email_verified FROM users WHERE ${whereClause}`).bind(...variants).first();
   } catch {
-    const row = await db.prepare('SELECT id, email, role, name, phone, address, business_name, password_hash, failed_attempts, locked_until FROM users WHERE phone = ?').bind(phone).first();
+    const row = await db.prepare(`SELECT id, email, role, name, phone, address, business_name, password_hash, failed_attempts, locked_until FROM users WHERE ${whereClause}`).bind(...variants).first();
     return row ? { ...row, email_verified: 1 } : null;
   }
 }
@@ -153,9 +183,12 @@ export async function incrementFailedAttemptsByPhone(db: D1Database, phone: stri
   if (!user) return 0;
   const attempts = ((user as any).failed_attempts || 0) + 1;
   const lockedUntil = attempts >= 5 ? new Date(Date.now() + 15 * 60 * 1000).toISOString() : (user as any).locked_until;
-  // Update by phone since email may not exist
+  // Update using the user's actual stored phone (from the lookup above),
+  // not the raw login input - they can differ in format (see
+  // phoneLookupVariants) and a raw-input WHERE phone = ? would silently
+  // match zero rows.
   await db.prepare('UPDATE users SET failed_attempts = ?, locked_until = ? WHERE phone = ?')
-    .bind(attempts, lockedUntil || null, phone).run();
+    .bind(attempts, lockedUntil || null, (user as any).phone).run();
   return attempts;
 }
 
@@ -164,7 +197,12 @@ export async function resetFailedAttempts(db: D1Database, email: string) {
 }
 
 export async function resetFailedAttemptsByPhone(db: D1Database, phone: string) {
-  await db.prepare('UPDATE users SET failed_attempts = 0, locked_until = NULL WHERE phone = ?').bind(phone).run();
+  // Same reasoning as incrementFailedAttemptsByPhone - resolve to the user's
+  // actual stored phone value first, since the raw login input may be in a
+  // different (but equivalent) format.
+  const user = await getUserByPhone(db, phone);
+  if (!user) return;
+  await db.prepare('UPDATE users SET failed_attempts = 0, locked_until = NULL WHERE phone = ?').bind((user as any).phone).run();
 }
 
 export async function isAccountLocked(db: D1Database, email: string): Promise<boolean> {
