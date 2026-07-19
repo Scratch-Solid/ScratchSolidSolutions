@@ -6,6 +6,7 @@ import {
   type QuoteRequest,
   type QuoteResult as PricingQuoteResult
 } from '@/lib/pricing-engine';
+import { validateEmail } from '@/lib/validation';
 
 interface Service {
   id: number;
@@ -312,6 +313,10 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
 
   const handleSubmit = async () => {
     if (!name.trim() || !selectedServiceId || !pricingCalculation) return;
+    if (!validateEmail(email.trim()).valid) {
+      setSubmitError('Please enter a valid email address.');
+      return;
+    }
     setSubmitting(true);
     setSubmitError('');
     try {
@@ -862,7 +867,7 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Email <span className="text-gray-400 font-normal">(quote will be sent here)</span></label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Email <span className="text-red-500">*</span> <span className="text-gray-400 font-normal">(quote will be sent here)</span></label>
                   <input
                     type="email"
                     value={email}
@@ -870,6 +875,9 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
                     placeholder="your@email.com"
                     className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
                   />
+                  {email.trim().length > 0 && !validateEmail(email.trim()).valid && (
+                    <p className="text-xs text-red-500 mt-1">Please enter a valid email address.</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Phone Number</label>
@@ -905,7 +913,7 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
                   </button>
                   <button
                     onClick={handleSubmit}
-                    disabled={submitting || !name.trim()}
+                    disabled={submitting || !name.trim() || !validateEmail(email.trim()).valid}
                     className="flex-1 py-3 bg-[#B08A5E] text-[#2E1F16] font-bold rounded-xl hover:bg-[#c39a6c] disabled:opacity-50 transition-colors"
                   >
                     {submitting ? 'Generating...' : 'Get My Quote'}

@@ -118,24 +118,22 @@ export async function POST(request: NextRequest) {
       // Find individual by phone
       const phone = sanitizePhone(identifier);
       user = await getUserByPhone(db, phone);
-
-      if (!user) {
-        return NextResponse.json({ error: "No account found with this phone number" }, { status: 404 });
-      }
-
-      if (!(user as any).email) {
-        return NextResponse.json({ error: "Your account does not have an email address. Please contact support to reset your password." }, { status: 400 });
-      }
     } else if (type === "business") {
       // Find business by email
       const email = sanitizeEmail(identifier);
       user = await getUserByEmail(db, email);
-
-      if (!user) {
-        return NextResponse.json({ error: "No account found with this email address" }, { status: 404 });
-      }
     } else {
       return NextResponse.json({ error: "Invalid account type" }, { status: 400 });
+    }
+
+    // Generic, account-existence-agnostic response. Do not reveal whether a
+    // matching account exists (or has an email on file) — doing so lets an
+    // attacker enumerate valid phone numbers/emails. Same message and status
+    // are returned whether or not a user was found.
+    const genericMessage = "If an account matches those details, a password reset link has been sent to the associated email address.";
+
+    if (!user || !(user as any).email) {
+      return NextResponse.json({ message: genericMessage }, { status: 200 });
     }
 
     // Create reset token
@@ -145,15 +143,14 @@ export async function POST(request: NextRequest) {
     // Send email
     const userEmail = (user as any).email;
     const emailResult = await sendPasswordResetEmail(userEmail, resetLink);
-    
+
     if (!emailResult.success) {
+      // Log the real failure server-side, but keep the client-facing
+      // response identical to the success/not-found case.
       console.error('Email send failed:', emailResult.error);
-      return NextResponse.json({ error: "Failed to send reset email. Please contact support." }, { status: 500 });
     }
 
-    return NextResponse.json({
-      message: "A password reset link has been sent to your email address."
-    }, { status: 200 });
+    return NextResponse.json({ message: genericMessage }, { status: 200 });
 
   } catch (error) {
     console.error('Forgot password error:', error);

@@ -190,7 +190,7 @@ export default function AuthContent() {
 
         <div className="flex mb-6 bg-white/60 backdrop-blur-sm rounded-lg p-1 border border-[#E9E0D3]">
           <button
-            onClick={() => setTab("individual")}
+            onClick={() => { setTab("individual"); setError(""); }}
             className={`flex-1 py-2 rounded-md font-medium transition-colors ${
               tab === "individual" ? "bg-white text-[#B08A5E] shadow" : "text-gray-600"
             }`}
@@ -198,7 +198,7 @@ export default function AuthContent() {
             Individual
           </button>
           <button
-            onClick={() => setTab("business")}
+            onClick={() => { setTab("business"); setError(""); }}
             className={`flex-1 py-2 rounded-md font-medium transition-colors ${
               tab === "business" ? "bg-white text-[#B08A5E] shadow" : "text-gray-600"
             }`}
@@ -353,7 +353,14 @@ export default function AuthContent() {
         <div className="mt-8 text-center space-y-4">
           <p className="text-gray-600">
             {isLogin ? "Don't have an account?" : "Already have an account?"}
-            <button onClick={() => setIsLogin(!isLogin)} className="text-[#8a6a45] hover:underline font-semibold ml-2">
+            <button
+              onClick={() => {
+                setIsLogin(!isLogin);
+                setError("");
+                setInfoMessage("");
+              }}
+              className="text-[#8a6a45] hover:underline font-semibold ml-2"
+            >
               {isLogin ? "Sign Up" : "Sign In"}
             </button>
           </p>
