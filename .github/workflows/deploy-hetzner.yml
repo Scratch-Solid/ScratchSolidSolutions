@@ -18,6 +18,10 @@ on:
       - 'hetzner-v*'
   workflow_dispatch:
 
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   deploy-hetzner:
     name: Deploy infra stack to Hetzner
@@ -62,7 +66,11 @@ jobs:
           failures=""
           check() {
             local name=$1 url=$2 expect=$3
-            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 20 "$url" || echo "000")
+            # -L: several of these services redirect their root path when
+            # logged out (Cal.com -> /auth/login, Uptime Kuma -> /dashboard)
+            # - that's a healthy 30x, not a failure. Check the page it
+            # actually lands on.
+            code=$(curl -sL -o /dev/null -w "%{http_code}" --max-time 20 "$url" || echo "000")
             if [ "$code" != "$expect" ]; then
               failures="${failures}- $name returned $code (expected $expect)\n"
             fi
