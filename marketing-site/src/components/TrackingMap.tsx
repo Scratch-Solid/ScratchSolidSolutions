@@ -17,7 +17,7 @@ const customIcon = L.icon({
 });
 
 const cleanerIcon = L.divIcon({
-  html: '<div style="background-color: #3B82F6; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);"></div>',
+  html: '<div style="background-color: #B08A5E; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);"></div>',
   className: '',
   iconSize: [20, 20],
   iconAnchor: [10, 10]
@@ -106,8 +106,8 @@ export default function TrackingMap({
             center={[cleanerLat, cleanerLong]} 
             radius={100} 
             pathOptions={{ 
-              color: '#3B82F6', 
-              fillColor: '#3B82F6', 
+              color: '#B08A5E',
+              fillColor: '#B08A5E',
               fillOpacity: 0.1,
               weight: 2 
             }}

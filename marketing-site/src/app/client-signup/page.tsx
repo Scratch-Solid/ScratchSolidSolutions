@@ -64,16 +64,16 @@ export default function ClientSignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white py-8 sm:py-16 px-2 sm:px-4 font-sans">
+    <div className="min-h-screen bg-[#F7F2EA] py-8 sm:py-16 px-2 sm:px-4 font-sans">
       <div className="max-w-md mx-auto">
-        <h1 className="text-3xl sm:text-4xl font-bold text-center text-blue-700 mb-2">
+        <h1 className="text-3xl sm:text-4xl font-normal text-center text-[#2E1F16] mb-2 tracking-tight" style={{ fontFamily: "Georgia, serif" }}>
           Create Account
         </h1>
         <p className="text-center text-gray-600 mb-6 sm:mb-8">
           Sign up as an individual client
         </p>
 
-        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border-2 border-white/20 p-8">
+        <div className="bg-white rounded-xl shadow-sm border border-[#E9E0D3] p-8">
           {error && (
             <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-red-600 text-sm">{error}</p>
@@ -91,7 +91,7 @@ export default function ClientSignupPage() {
                 value={formData.name}
                 onChange={handleInputChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-[#E9E0D3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
                 placeholder="John Doe"
               />
             </div>
@@ -106,7 +106,7 @@ export default function ClientSignupPage() {
                 value={formData.email}
                 onChange={handleInputChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-[#E9E0D3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
                 placeholder="your@email.com"
               />
             </div>
@@ -121,7 +121,7 @@ export default function ClientSignupPage() {
                 value={formData.phone}
                 onChange={handleInputChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-[#E9E0D3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
                 placeholder="+27 12 345 6789"
               />
             </div>
@@ -136,7 +136,7 @@ export default function ClientSignupPage() {
                 value={formData.address}
                 onChange={handleInputChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-[#E9E0D3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
                 placeholder="123 Main St, City"
               />
             </div>
@@ -152,7 +152,7 @@ export default function ClientSignupPage() {
                 onChange={handleInputChange}
                 required
                 minLength={8}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-[#E9E0D3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
                 placeholder="Min 8 characters"
               />
             </div>
@@ -168,7 +168,7 @@ export default function ClientSignupPage() {
                 onChange={handleInputChange}
                 required
                 minLength={8}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-[#E9E0D3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
                 placeholder="Re-enter password"
               />
             </div>
@@ -176,7 +176,7 @@ export default function ClientSignupPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-full bg-blue-600 px-8 py-3 text-lg font-semibold text-white shadow-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full rounded-lg bg-[#B08A5E] px-8 py-3 text-lg font-semibold text-[#2E1F16] shadow-lg hover:bg-[#c39a6c] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? "Creating Account..." : "Create Account"}
             </button>
@@ -188,7 +188,7 @@ export default function ClientSignupPage() {
             Need a business account?{" "}
             <Link 
               href="/business-signup" 
-              className="text-blue-600 hover:underline font-semibold"
+              className="text-[#8a6a45] hover:underline font-semibold"
             >
               Sign up as Business
             </Link>
@@ -197,7 +197,7 @@ export default function ClientSignupPage() {
             Already have an account?{" "}
             <Link 
               href="/login" 
-              className="text-blue-600 hover:underline font-semibold"
+              className="text-[#8a6a45] hover:underline font-semibold"
             >
               Sign In
             </Link>
@@ -206,7 +206,7 @@ export default function ClientSignupPage() {
             or{" "}
             <Link 
               href="/" 
-              className="text-blue-600 hover:underline font-semibold"
+              className="text-[#8a6a45] hover:underline font-semibold"
             >
               Back to Home
             </Link>

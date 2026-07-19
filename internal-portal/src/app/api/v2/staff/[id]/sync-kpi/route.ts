@@ -60,13 +60,14 @@ export async function POST(
       // Continue - local DB update is the primary requirement
     }
 
-    // Update local database (staff_monthly_reviews schema: staff_id, review_month, notes, reviewed_by)
+    // Update local database (staff_monthly_reviews schema is staff_id/month/year -
+    // review_month/reviewed_by/reviewed_at don't exist and previously made this fail every time)
     await db.prepare(`
-      INSERT INTO staff_monthly_reviews (staff_id, review_month, notes, reviewed_by, reviewed_at)
-      VALUES (?, strftime('%Y-%m', 'now'), ?, 'system', CURRENT_TIMESTAMP)
-      ON CONFLICT(staff_id, review_month) DO UPDATE SET
+      INSERT INTO staff_monthly_reviews (staff_id, month, year, notes, updated_at)
+      VALUES (?, strftime('%Y-%m', 'now'), CAST(strftime('%Y', 'now') AS INTEGER), ?, CURRENT_TIMESTAMP)
+      ON CONFLICT(staff_id, month, year) DO UPDATE SET
         notes = excluded.notes,
-        reviewed_at = CURRENT_TIMESTAMP
+        updated_at = CURRENT_TIMESTAMP
     `).bind(staffId, JSON.stringify(kpi)).run();
 
     return NextResponse.json({

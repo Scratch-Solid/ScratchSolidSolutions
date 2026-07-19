@@ -176,44 +176,44 @@ export default function AuthContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-16 px-4 font-sans">
+    <div className="min-h-screen bg-[#F7F2EA] py-16 px-4 font-sans">
       <BrandHomeLink />
       <div className="max-w-md mx-auto">
-        <h1 className="text-4xl font-bold text-center text-blue-700 mb-8">
+        <h1 className="text-4xl font-normal text-center text-[#2E1F16] mb-8 tracking-tight" style={{ fontFamily: "Georgia, serif" }}>
           {isLogin ? "Sign In" : "Create Account"}
         </h1>
 
         {quoteContext && (
-          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl text-sm">
-            <p className="font-semibold text-blue-700 mb-0.5">📋 Accepting quote {quoteContext.ref}</p>
-            <p className="text-blue-600">{quoteContext.service} — Sign up or log in to complete your booking.</p>
+          <div className="mb-6 p-4 bg-white border border-[#E9E0D3] rounded-xl text-sm">
+            <p className="font-semibold text-[#2E1F16] mb-0.5">📋 Accepting quote {quoteContext.ref}</p>
+            <p className="text-[#3f342a]">{quoteContext.service} — Sign up or log in to complete your booking.</p>
           </div>
         )}
 
-        <div className="flex mb-6 bg-white/60 backdrop-blur-sm rounded-lg p-1 border border-white/20">
+        <div className="flex mb-6 bg-white/60 backdrop-blur-sm rounded-lg p-1 border border-[#E9E0D3]">
           <button
-            onClick={() => setTab("individual")}
+            onClick={() => { setTab("individual"); setError(""); }}
             className={`flex-1 py-2 rounded-md font-medium transition-colors ${
-              tab === "individual" ? "bg-white text-blue-600 shadow" : "text-gray-600"
+              tab === "individual" ? "bg-white text-[#B08A5E] shadow" : "text-gray-600"
             }`}
           >
             Individual
           </button>
           <button
-            onClick={() => setTab("business")}
+            onClick={() => { setTab("business"); setError(""); }}
             className={`flex-1 py-2 rounded-md font-medium transition-colors ${
-              tab === "business" ? "bg-white text-blue-600 shadow" : "text-gray-600"
+              tab === "business" ? "bg-white text-[#B08A5E] shadow" : "text-gray-600"
             }`}
           >
             Business
           </button>
         </div>
 
-        <div className="relative bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border-2 border-white/20 p-8 overflow-hidden">
+        <div className="relative bg-white rounded-xl shadow-sm border border-[#E9E0D3] p-8 overflow-hidden">
           <LogoWatermark size="lg" />
           {infoMessage && (
-            <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-blue-700 text-sm">{infoMessage}</p>
+            <div className="mb-4 p-4 bg-[#F7F2EA] border border-[#E9E0D3] rounded-lg">
+              <p className="text-[#3f342a] text-sm">{infoMessage}</p>
             </div>
           )}
         {error && (
@@ -226,12 +226,12 @@ export default function AuthContent() {
                     value={resendEmail}
                     onChange={(e) => setResendEmail(e.target.value)}
                     placeholder="Enter your email"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm mb-2"
+                    className="w-full px-3 py-2 border border-[#E9E0D3] rounded-md text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
                   />
                   <button
                     onClick={handleResendVerification}
                     disabled={resendLoading}
-                    className="w-full px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 disabled:opacity-50"
+                    className="w-full px-4 py-2 bg-[#B08A5E] text-[#2E1F16] font-semibold rounded-md text-sm hover:bg-[#c39a6c] disabled:opacity-50"
                   >
                     {resendLoading ? "Sending..." : "Resend Verification Email"}
                   </button>
@@ -249,18 +249,18 @@ export default function AuthContent() {
                 {tab === "individual" ? (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Cellphone Number *</label>
-                    <input type="tel" name="phone" value={formData.phone} onChange={handleInputChange} required pattern="[0-9]{10}" placeholder="0730000000" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    <input type="tel" name="phone" value={formData.phone} onChange={handleInputChange} required pattern="[0-9]{10}" placeholder="0730000000" className="w-full px-3 py-2 border border-[#E9E0D3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B08A5E]" />
                     <p className="text-xs text-gray-500 mt-1">Format: 10 digits, e.g. 0730000000</p>
                   </div>
                 ) : (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
-                    <input type="email" name="email" value={formData.email} onChange={handleInputChange} required placeholder="business@example.com" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    <input type="email" name="email" value={formData.email} onChange={handleInputChange} required placeholder="business@example.com" className="w-full px-3 py-2 border border-[#E9E0D3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B08A5E]" />
                   </div>
                 )}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Password *</label>
-                  <input type="password" name="password" value={formData.password} onChange={handleInputChange} required className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter your password" />
+                  <input type="password" name="password" value={formData.password} onChange={handleInputChange} required className="w-full px-3 py-2 border border-[#E9E0D3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B08A5E]" placeholder="Enter your password" />
                 </div>
               </>
             ) : (
@@ -269,56 +269,56 @@ export default function AuthContent() {
                   <>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
-                      <input type="text" name="name" value={formData.name} onChange={handleInputChange} required className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="John Doe" />
+                      <input type="text" name="name" value={formData.name} onChange={handleInputChange} required className="w-full px-3 py-2 border border-[#E9E0D3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B08A5E]" placeholder="John Doe" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Cellphone Number *</label>
-                      <input type="tel" name="phone" value={formData.phone} onChange={handleInputChange} required pattern="[0-9]{10}" placeholder="0730000000" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      <input type="tel" name="phone" value={formData.phone} onChange={handleInputChange} required pattern="[0-9]{10}" placeholder="0730000000" className="w-full px-3 py-2 border border-[#E9E0D3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B08A5E]" />
                       <p className="text-xs text-gray-500 mt-1">Format: 10 digits, e.g. 0730000000</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
-                      <input type="email" name="email" value={formData.email} onChange={handleInputChange} required className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="your@email.com" />
+                      <input type="email" name="email" value={formData.email} onChange={handleInputChange} required className="w-full px-3 py-2 border border-[#E9E0D3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B08A5E]" placeholder="your@email.com" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Address *</label>
-                      <input type="text" name="address" value={formData.address} onChange={handleInputChange} required className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="123 Main St, City" />
+                      <input type="text" name="address" value={formData.address} onChange={handleInputChange} required className="w-full px-3 py-2 border border-[#E9E0D3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B08A5E]" placeholder="123 Main St, City" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Password *</label>
-                      <input type="password" name="password" value={formData.password} onChange={handleInputChange} required minLength={8} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Min 8 characters" />
+                      <input type="password" name="password" value={formData.password} onChange={handleInputChange} required minLength={8} className="w-full px-3 py-2 border border-[#E9E0D3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B08A5E]" placeholder="Min 8 characters" />
                     </div>
                   </>
                 ) : (
                   <>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Business Name *</label>
-                      <input type="text" name="businessName" value={formData.businessName} onChange={handleInputChange} required className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="ABC Cleaning Services" />
+                      <input type="text" name="businessName" value={formData.businessName} onChange={handleInputChange} required className="w-full px-3 py-2 border border-[#E9E0D3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B08A5E]" placeholder="ABC Cleaning Services" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Registration Number *</label>
-                      <input type="text" name="registrationNumber" value={formData.registrationNumber} onChange={handleInputChange} required className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="2024/123456/07" />
+                      <input type="text" name="registrationNumber" value={formData.registrationNumber} onChange={handleInputChange} required className="w-full px-3 py-2 border border-[#E9E0D3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B08A5E]" placeholder="2024/123456/07" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Contact Person *</label>
-                      <input type="text" name="contactPerson" value={formData.contactPerson} onChange={handleInputChange} required className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="John Doe" />
+                      <input type="text" name="contactPerson" value={formData.contactPerson} onChange={handleInputChange} required className="w-full px-3 py-2 border border-[#E9E0D3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B08A5E]" placeholder="John Doe" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
-                      <input type="email" name="email" value={formData.email} onChange={handleInputChange} required className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="business@example.com" />
+                      <input type="email" name="email" value={formData.email} onChange={handleInputChange} required className="w-full px-3 py-2 border border-[#E9E0D3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B08A5E]" placeholder="business@example.com" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Cellphone Number (Optional)</label>
-                      <input type="tel" name="phone" value={formData.phone} onChange={handleInputChange} pattern="[0-9]{10}" placeholder="0730000000" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      <input type="tel" name="phone" value={formData.phone} onChange={handleInputChange} pattern="[0-9]{10}" placeholder="0730000000" className="w-full px-3 py-2 border border-[#E9E0D3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B08A5E]" />
                       <p className="text-xs text-gray-500 mt-1">Format: 10 digits, e.g. 0730000000</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Address *</label>
-                      <input type="text" name="address" value={formData.address} onChange={handleInputChange} required className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="123 Main St, City" />
+                      <input type="text" name="address" value={formData.address} onChange={handleInputChange} required className="w-full px-3 py-2 border border-[#E9E0D3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B08A5E]" placeholder="123 Main St, City" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Password *</label>
-                      <input type="password" name="password" value={formData.password} onChange={handleInputChange} required minLength={8} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Min 8 characters" />
+                      <input type="password" name="password" value={formData.password} onChange={handleInputChange} required minLength={8} className="w-full px-3 py-2 border border-[#E9E0D3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B08A5E]" placeholder="Min 8 characters" />
                     </div>
                   </>
                 )}
@@ -327,7 +327,7 @@ export default function AuthContent() {
 
             {isLogin && (
               <div className="text-right -mt-2">
-                <Link href="/forgot-password" className="text-sm text-blue-600 hover:underline">Forgot Password?</Link>
+                <Link href="/forgot-password" className="text-sm text-[#8a6a45] hover:underline">Forgot Password?</Link>
               </div>
             )}
 
@@ -339,14 +339,14 @@ export default function AuthContent() {
                   checked={consentAccepted}
                   onChange={(e) => setConsentAccepted(e.target.checked)}
                   required
-                  className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  className="mt-1 w-4 h-4 text-[#B08A5E] accent-[#B08A5E] border-[#E9E0D3] rounded focus:ring-[#B08A5E]"
                 />
                 <label htmlFor="consent" className="text-sm text-gray-600 leading-tight">
-                  I accept the <Link href="/privacy" className="text-blue-600 hover:underline">Privacy Policy</Link> and <Link href="/terms" className="text-blue-600 hover:underline">Terms of Service</Link>. I consent to the collection and processing of my personal data in accordance with POPIA.
+                  I accept the <Link href="/privacy" className="text-[#8a6a45] hover:underline">Privacy Policy</Link> and <Link href="/terms" className="text-[#8a6a45] hover:underline">Terms of Service</Link>. I consent to the collection and processing of my personal data in accordance with POPIA.
                 </label>
               </div>
             )}
-            <button type="submit" disabled={loading} className="w-full rounded-full bg-blue-600 px-8 py-3 text-lg font-semibold text-white shadow-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            <button type="submit" disabled={loading} className="w-full rounded-lg bg-[#B08A5E] px-8 py-3 text-lg font-semibold text-[#2E1F16] shadow-lg hover:bg-[#c39a6c] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
               {loading ? "Processing..." : isLogin ? "Sign In" : "Create Account"}
             </button>
           </form>
@@ -355,12 +355,19 @@ export default function AuthContent() {
         <div className="mt-8 text-center space-y-4">
           <p className="text-gray-600">
             {isLogin ? "Don't have an account?" : "Already have an account?"}
-            <button onClick={() => setIsLogin(!isLogin)} className="text-blue-600 hover:underline font-semibold ml-2">
+            <button
+              onClick={() => {
+                setIsLogin(!isLogin);
+                setError("");
+                setInfoMessage("");
+              }}
+              className="text-[#8a6a45] hover:underline font-semibold ml-2"
+            >
               {isLogin ? "Sign Up" : "Sign In"}
             </button>
           </p>
           <p className="text-gray-600">
-            <Link href="/" className="text-blue-600 hover:underline font-semibold">Back to Home</Link>
+            <Link href="/" className="text-[#8a6a45] hover:underline font-semibold">Back to Home</Link>
           </p>
         </div>
       </div>

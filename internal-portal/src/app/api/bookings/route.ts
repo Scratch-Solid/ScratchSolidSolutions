@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const traceId = withTracing(request);
-  const authResult = await withAuth(request, ['admin', 'cleaner', 'client']);
+  const authResult = await withAuth(request, ['admin', 'cleaner', 'client', 'staff']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
 

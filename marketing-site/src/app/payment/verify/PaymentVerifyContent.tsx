@@ -54,7 +54,7 @@ export default function PaymentVerifyContent() {
         <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border-2 border-white/20 p-8">
           {status === "verifying" && (
             <>
-              <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-[#B08A5E] mx-auto mb-4"></div>
               <h2 className="text-2xl font-semibold text-gray-800 mb-2">Processing Payment</h2>
               <p className="text-gray-600">{message}</p>
             </>
@@ -85,7 +85,7 @@ export default function PaymentVerifyContent() {
               <div className="mt-6 flex gap-4 justify-center">
                 <button
                   onClick={() => router.push("/client-dashboard")}
-                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+                  className="bg-[#B08A5E] text-[#2E1F16] font-semibold px-6 py-2 rounded-lg hover:bg-[#c39a6c] transition-colors"
                 >
                   Try Again
                 </button>

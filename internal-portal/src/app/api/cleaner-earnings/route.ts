@@ -1,27 +1,47 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth, withTracing, withSecurityHeaders } from '../../../lib/middleware';
+import { CLEANER_RATE_PER_TASK } from '../../../lib/pay-rates';
 
 export async function GET(request: NextRequest) {
   const traceId = withTracing(request);
-  const authResult = await withAuth(request, ['cleaner', 'admin']);
+  const authResult = await withAuth(request, ['cleaner', 'admin', 'staff']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
-  const { db } = authResult;
+  const { db, user } = authResult;
+  const requestingUserId = (user as any)?.user_id || user?.id;
+  const requestingRole = (user as any)?.role;
 
   try {
     const { searchParams } = new URL(request.url);
-    const cleanerId = searchParams.get('cleaner_id');
+    const requestedCleanerId = searchParams.get('cleaner_id');
+
+    // A cleaner may only ever see their own earnings - only admins can look
+    // up someone else's (previously any cleaner could pass any cleaner_id).
+    const cleanerId = requestingRole === 'admin' && requestedCleanerId
+      ? parseInt(requestedCleanerId)
+      : requestingUserId;
 
     if (!cleanerId) {
-      return NextResponse.json({ error: 'Missing cleaner_id' }, { status: 400 });
+      return withSecurityHeaders(NextResponse.json({ error: 'Missing cleaner_id' }, { status: 400 }), traceId);
     }
 
-    // Query payroll table for earnings data
-    const payrollRecords = await db.prepare(
-      'SELECT id, gross_amount, deductions, net_amount, pay_period_start, pay_period_end, status FROM payroll WHERE staff_id = ? ORDER BY pay_period_start DESC'
+    // booking_assignments.staff_id references users(id) directly (migration
+    // 024) - one row per completed task, flat R150 each.
+    const result = await db.prepare(
+      `SELECT ba.id, ba.booking_id, ba.completed_at
+       FROM booking_assignments ba
+       WHERE ba.staff_id = ? AND ba.assignment_status = 'completed'
+       ORDER BY ba.completed_at DESC`
     ).bind(cleanerId).all();
 
-    const response = NextResponse.json(payrollRecords.results || []);
+    const rows = (result.results || []).map((row: any) => ({
+      id: row.id,
+      booking_id: row.booking_id,
+      completed_at: row.completed_at,
+      earnings: CLEANER_RATE_PER_TASK,
+    }));
+
+    const response = NextResponse.json(rows);
     response.headers.set('Cache-Control', 'private, max-age=30');
     return withSecurityHeaders(response, traceId);
   } catch (error) {

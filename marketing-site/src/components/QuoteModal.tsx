@@ -6,6 +6,7 @@ import {
   type QuoteRequest,
   type QuoteResult as PricingQuoteResult
 } from '@/lib/pricing-engine';
+import { validateEmail } from '@/lib/validation';
 
 interface Service {
   id: number;
@@ -312,6 +313,10 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
 
   const handleSubmit = async () => {
     if (!name.trim() || !selectedServiceId || !pricingCalculation) return;
+    if (!validateEmail(email.trim()).valid) {
+      setSubmitError('Please enter a valid email address.');
+      return;
+    }
     setSubmitting(true);
     setSubmitError('');
     try {
@@ -467,7 +472,7 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
             <div className="flex items-center gap-4 mb-8">
               <img src="/scratchsolid-logo.jpg" alt="Scratch Solid" className="w-16 h-16 object-contain" />
               <div>
-                <h1 className="text-2xl font-bold text-blue-700">Scratch Solid Solutions</h1>
+                <h1 className="text-2xl font-bold text-[#2E1F16]">Scratch Solid Solutions</h1>
                 <p className="text-gray-500 text-sm">Professional Cleaning Services</p>
               </div>
             </div>
@@ -480,7 +485,7 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
                 {quoteResult.discount_amount > 0 && (
                   <tr className="border-b text-green-700"><td className="py-2">Discount ({quoteResult.promo_code})</td><td className="py-2 text-right">- R{quoteResult.discount_amount.toFixed(2)}</td></tr>
                 )}
-                <tr className="bg-blue-50"><td className="py-3 font-bold text-blue-700">Total</td><td className="py-3 font-bold text-blue-700 text-right text-lg">R{quoteResult.final_price.toFixed(2)}</td></tr>
+                <tr className="bg-[#F7F2EA]"><td className="py-3 font-bold text-[#2E1F16]">Total</td><td className="py-3 font-bold text-[#2E1F16] text-right text-lg">R{quoteResult.final_price.toFixed(2)}</td></tr>
               </tbody>
             </table>
             <p className="text-xs text-gray-400 mt-8">This quote is valid for 14 days. Contact us: info@scratchsolidsolutions.co.za</p>
@@ -494,14 +499,14 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
         <div className="relative w-full max-w-md bg-white/95 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/30 overflow-hidden">
           <LogoWatermark size="lg" />
           {/* Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 flex items-center justify-between">
+          <div className="px-6 py-4 flex items-center justify-between" style={{ background: "linear-gradient(135deg, #2E1F16, #3a281a)" }}>
             <div className="flex items-center gap-3">
               <img src="/scratchsolid-logo.jpg" alt="Scratch Solid" className="w-8 h-8 rounded-full object-cover bg-white" />
-              <h2 className="text-white font-bold text-lg">
+              <h2 className="text-[#F7F2EA] font-normal text-lg" style={{ fontFamily: "Georgia, serif" }}>
                 {step === 3 ? 'Your Quote' : 'Request a Quote'}
               </h2>
             </div>
-            <button onClick={onClose} className="text-white/80 hover:text-white transition-colors text-2xl leading-none">&times;</button>
+            <button onClick={onClose} className="text-[#CBB89A] hover:text-[#F7F2EA] transition-colors text-2xl leading-none">&times;</button>
           </div>
 
           {/* Step indicators */}
@@ -509,8 +514,8 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
             <div className="flex items-center gap-2 px-6 pt-4">
               {[1, 2].map(s => (
                 <div key={s} className="flex items-center gap-2">
-                  <div className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold ${step >= s ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-400'}`}>{s}</div>
-                  {s < 2 && <div className={`flex-1 h-0.5 w-8 ${step > s ? 'bg-blue-600' : 'bg-gray-200'}`} />}
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold ${step >= s ? 'bg-[#B08A5E] text-[#2E1F16]' : 'bg-gray-200 text-gray-400'}`}>{s}</div>
+                  {s < 2 && <div className={`flex-1 h-0.5 w-8 ${step > s ? 'bg-[#B08A5E]' : 'bg-gray-200'}`} />}
                 </div>
               ))}
               <span className="text-xs text-gray-400 ml-1">{step === 1 ? 'Select Service' : 'Your Details'}</span>
@@ -524,7 +529,7 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
                 <h3 className="text-lg font-bold text-gray-800 mb-3">Your Quotes</h3>
                 {quotesLoading ? (
                   <div className="flex justify-center py-4">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#B08A5E]"></div>
                   </div>
                 ) : quotesError ? (
                   <p className="text-red-500 text-sm">{quotesError}</p>
@@ -544,7 +549,7 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
                           </div>
                           <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
                             quote.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                            quote.status === 'sent' ? 'bg-blue-100 text-blue-800' :
+                            quote.status === 'sent' ? 'bg-[#F0E6D6] text-[#8a6a3a]' :
                             quote.status === 'accepted' ? 'bg-green-100 text-green-800' :
                             'bg-red-100 text-red-800'
                           }`}>
@@ -559,7 +564,7 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
                             <button
                               onClick={() => handleDownloadQuotePdf(quote.ref_number)}
                               disabled={historyPdfLoading === quote.ref_number}
-                              className="text-blue-600 hover:text-blue-700 px-2 py-1 border border-blue-500/30 rounded transition-all text-xs disabled:opacity-50 flex items-center gap-1"
+                              className="text-[#8a6a45] hover:text-[#2E1F16] px-2 py-1 border border-[#B08A5E]/30 rounded transition-all text-xs disabled:opacity-50 flex items-center gap-1"
                             >
                               {historyPdfLoading === quote.ref_number ? (
                                 <>
@@ -590,8 +595,8 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
 
             {/* ── NEW QUOTE SECTION ── */}
             {!userEmail && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-                <p className="text-sm text-blue-700">
+              <div className="bg-[#F7F2EA] border border-[#E9E0D3] rounded-lg p-3 mb-4">
+                <p className="text-sm text-[#3f342a]">
                   <span className="font-semibold">Note:</span> Log in to view your quote history.
                 </p>
               </div>
@@ -607,8 +612,8 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
                       onClick={() => { setClientType('individual'); setSelectedServiceId(null); }}
                       className={`flex-1 py-2.5 rounded-xl border-2 font-semibold text-sm transition-all ${
                         clientType === 'individual'
-                          ? 'border-blue-500 bg-blue-50 text-blue-700'
-                          : 'border-gray-200 text-gray-500 hover:border-blue-200'
+                          ? 'border-[#B08A5E] bg-[#F7F2EA] text-[#2E1F16]'
+                          : 'border-gray-200 text-gray-500 hover:border-[#D3C6AE]'
                       }`}
                     >
                       👤 Individual
@@ -617,8 +622,8 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
                       onClick={() => { setClientType('business'); setSelectedServiceId(null); }}
                       className={`flex-1 py-2.5 rounded-xl border-2 font-semibold text-sm transition-all ${
                         clientType === 'business'
-                          ? 'border-blue-500 bg-blue-50 text-blue-700'
-                          : 'border-gray-200 text-gray-500 hover:border-blue-200'
+                          ? 'border-[#B08A5E] bg-[#F7F2EA] text-[#2E1F16]'
+                          : 'border-gray-200 text-gray-500 hover:border-[#D3C6AE]'
                       }`}
                     >
                       🏢 Business
@@ -628,14 +633,14 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
 
                 {/* VAT registration for business users */}
                 {clientType === 'business' && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                  <div className="bg-[#F7F2EA] border border-[#E9E0D3] rounded-xl p-4">
                     <div className="flex items-center gap-3 mb-3">
                       <input
                         type="checkbox"
                         id="vatRegistered"
                         checked={vatRegistered}
                         onChange={(e) => setVatRegistered(e.target.checked)}
-                        className="w-5 h-5 text-blue-600 rounded focus:ring-blue-400"
+                        className="w-5 h-5 text-[#B08A5E] rounded focus:ring-[#B08A5E]"
                       />
                       <label htmlFor="vatRegistered" className="text-sm font-semibold text-gray-700">
                         Business registered for VAT?
@@ -649,7 +654,7 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
                           value={vatNumber}
                           onChange={(e) => setVatNumber(e.target.value.toUpperCase())}
                           placeholder="e.g., 1234567890"
-                          className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                          className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
                         />
                         <p className="text-xs text-gray-500 mt-1">
                           15% VAT will be added to generate a legal Tax Invoice
@@ -664,7 +669,7 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
                   <select
                     value={propertyType}
                     onChange={(e) => setPropertyType(e.target.value as any)}
-                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
                   >
                     <option value="residential">🏠 Residential</option>
                     <option value="office">🏢 Office</option>
@@ -679,7 +684,7 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
                   <select
                     value={area}
                     onChange={(e) => setArea(e.target.value)}
-                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
                   >
                     {areas.map((a) => (
                       <option key={a.id} value={a.name}>
@@ -699,7 +704,7 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
                     onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
                     min={propertyType === 'residential' || propertyType === 'short-term-stay' ? 1 : 50}
                     max={propertyType === 'residential' || propertyType === 'short-term-stay' ? 10 : 2000}
-                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
                   />
                   <p className="text-xs text-gray-400 mt-1">
                     {propertyType === 'residential' || propertyType === 'short-term-stay' ? '1-10 bedrooms' : '50-2000 m²'}
@@ -721,8 +726,8 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
                             onClick={() => setSelectedServiceId(service.id)}
                             className={`w-full text-left px-4 py-3 rounded-xl border-2 transition-all ${
                               selectedServiceId === service.id
-                                ? 'border-blue-500 bg-blue-50'
-                                : 'border-gray-200 hover:border-blue-200 bg-white'
+                                ? 'border-[#B08A5E] bg-[#F7F2EA]'
+                                : 'border-gray-200 hover:border-[#D3C6AE] bg-white'
                             }`}
                           >
                             <div className="flex items-center gap-2">
@@ -737,7 +742,7 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
                                   </p>
                                 )}
                                 {row && sd === 0 && row.price > 0 && (
-                                  <p className="text-xs text-blue-600 font-medium">From R{row.price.toFixed(2)}</p>
+                                  <p className="text-xs text-[#8a6a45] font-medium">From R{row.price.toFixed(2)}</p>
                                 )}
                               </div>
                             </div>
@@ -756,12 +761,12 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
                       value={promoInput}
                       onChange={e => { setPromoInput(e.target.value.toUpperCase()); setPromoResult(null); }}
                       placeholder="Enter code"
-                      className="flex-1 border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                      className="flex-1 border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
                     />
                     <button
                       onClick={handleApplyPromo}
                       disabled={promoLoading || !promoInput.trim()}
-                      className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                      className="px-4 py-2 bg-[#B08A5E] text-[#2E1F16] text-sm font-semibold rounded-xl hover:bg-[#c39a6c] disabled:opacity-50 transition-colors"
                     >
                       {promoLoading ? '...' : 'Apply'}
                     </button>
@@ -777,7 +782,7 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
 
                 {/* Live price breakdown */}
                 {pricingCalculation && (
-                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-4 border border-blue-100">
+                  <div className="bg-[#F7F2EA] rounded-2xl p-4 border border-[#E9E0D3]">
                     <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Price Breakdown</p>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
@@ -818,16 +823,16 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
                           <span className="font-medium">+ R{pricingCalculation.breakdown.surcharges.demand.toFixed(2)}</span>
                         </div>
                       )}
-                      <div className="flex justify-between border-t border-blue-200 pt-2">
-                        <span className="font-bold text-blue-700">Total</span>
-                        <span className="font-bold text-blue-700 text-base">R{pricingCalculation.finalPrice.toFixed(2)}</span>
+                      <div className="flex justify-between border-t border-[#E9E0D3] pt-2">
+                        <span className="font-bold text-[#2E1F16]">Total</span>
+                        <span className="font-bold text-[#2E1F16] text-base">R{pricingCalculation.finalPrice.toFixed(2)}</span>
                       </div>
                     </div>
                     {/* Loyalty points preview */}
                     {loyaltyPoints > 0 && (
-                      <div className="mt-3 pt-3 border-t border-blue-200">
+                      <div className="mt-3 pt-3 border-t border-[#E9E0D3]">
                         <p className="text-xs text-gray-600">
-                          🎁 You have <span className="font-bold text-blue-700">{loyaltyPoints}</span> loyalty points
+                          🎁 You have <span className="font-bold text-[#2E1F16]">{loyaltyPoints}</span> loyalty points
                           {loyaltyPoints >= 1000 && loyaltyPoints < 5000 && ' (Silver tier - 5% discount)'}
                           {loyaltyPoints >= 5000 && ' (Gold tier - 10% discount)'}
                         </p>
@@ -839,7 +844,7 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
                 <button
                   onClick={() => setStep(2)}
                   disabled={!selectedServiceId}
-                  className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 disabled:opacity-40 transition-colors"
+                  className="w-full py-3 bg-[#B08A5E] text-[#2E1F16] font-bold rounded-xl hover:bg-[#c39a6c] disabled:opacity-40 transition-colors"
                 >
                   Continue →
                 </button>
@@ -858,18 +863,21 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
                     value={name}
                     onChange={e => setName(e.target.value)}
                     placeholder="Your name"
-                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Email <span className="text-gray-400 font-normal">(quote will be sent here)</span></label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Email <span className="text-red-500">*</span> <span className="text-gray-400 font-normal">(quote will be sent here)</span></label>
                   <input
                     type="email"
                     value={email}
                     onChange={e => setEmail(e.target.value)}
                     placeholder="your@email.com"
-                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
                   />
+                  {email.trim().length > 0 && !validateEmail(email.trim()).valid && (
+                    <p className="text-xs text-red-500 mt-1">Please enter a valid email address.</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Phone Number</label>
@@ -878,7 +886,7 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
                     value={phone}
                     onChange={e => setPhone(e.target.value)}
                     placeholder="+27..."
-                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
                   />
                 </div>
 
@@ -890,7 +898,7 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
                     {(pricingCalculation.specialDiscount + pricingCalculation.promoDiscount + pricingCalculation.loyaltyDiscount) > 0 && (
                       <p className="text-green-600">Discount: −R{(pricingCalculation.specialDiscount + pricingCalculation.promoDiscount + pricingCalculation.loyaltyDiscount).toFixed(2)}</p>
                     )}
-                    <p className="font-bold text-blue-700">Total: R{pricingCalculation.finalPrice.toFixed(2)}</p>
+                    <p className="font-bold text-[#2E1F16]">Total: R{pricingCalculation.finalPrice.toFixed(2)}</p>
                   </div>
                 )}
 
@@ -905,8 +913,8 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
                   </button>
                   <button
                     onClick={handleSubmit}
-                    disabled={submitting || !name.trim()}
-                    className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                    disabled={submitting || !name.trim() || !validateEmail(email.trim()).valid}
+                    className="flex-1 py-3 bg-[#B08A5E] text-[#2E1F16] font-bold rounded-xl hover:bg-[#c39a6c] disabled:opacity-50 transition-colors"
                   >
                     {submitting ? 'Generating...' : 'Get My Quote'}
                   </button>
@@ -951,13 +959,13 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
                         <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                       </div>
                       <p className="text-lg font-bold text-gray-800">Your Quote is Ready!</p>
-                      <p className="text-xs text-gray-400 mt-1">Ref: <span className="font-mono font-semibold text-blue-600">{quoteResult.ref_number}</span></p>
+                      <p className="text-xs text-gray-400 mt-1">Ref: <span className="font-mono font-semibold text-[#8a6a45]">{quoteResult.ref_number}</span></p>
                       {quoteResult.zoho_estimate_number && (
                         <p className="text-xs text-gray-400">Estimate #: {quoteResult.zoho_estimate_number}</p>
                       )}
                     </div>
 
-                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-5 border border-blue-100 space-y-3">
+                    <div className="bg-[#F7F2EA] rounded-2xl p-5 border border-[#E9E0D3] space-y-3">
                       <p className="font-bold text-gray-800 text-base">{quoteResult.service_name}</p>
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between text-gray-600">
@@ -976,7 +984,7 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
                             <span>− R{quoteResult.discount_amount.toFixed(2)}</span>
                           </div>
                         )}
-                        <div className="flex justify-between font-bold text-blue-700 text-base border-t border-blue-200 pt-2">
+                        <div className="flex justify-between font-bold text-[#2E1F16] text-base border-t border-[#E9E0D3] pt-2">
                           <span>Total</span>
                           <span>R{quoteResult.final_price.toFixed(2)}</span>
                         </div>
@@ -1019,7 +1027,7 @@ export default function QuoteModal({ isOpen, onClose, services, pricing, initial
                         <button
                           onClick={handleAccept}
                           disabled={!!actionLoading}
-                          className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                          className="flex-1 py-3 bg-[#B08A5E] text-[#2E1F16] font-bold rounded-xl hover:bg-[#c39a6c] disabled:opacity-50 transition-colors"
                         >
                           {actionLoading === 'accept' ? 'Booking...' : 'Yes, Accept & Book'}
                         </button>

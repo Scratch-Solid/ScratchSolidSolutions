@@ -84,7 +84,10 @@ test.describe('Portal Pages - Content Verification', () => {
   test('Login page has "Join the cleaning team" CTA', async ({ page }) => {
     await page.goto(`${PORTAL_URL}/auth/login`);
     await expect(page.locator('text=Join the cleaning team')).toBeVisible();
-    await expect(page.locator('text=Apply now')).toBeVisible();
+    // Two "Apply now" buttons exist now (cleaning + Digital/Transportation) -
+    // assert at least one is visible rather than a single-match locator.
+    await expect(page.locator('text=Apply now').first()).toBeVisible();
+    await expect(page.locator('text=Apply now')).toHaveCount(2);
   });
 
   test('Signup/cleaner page has POPIA consent checkboxes', async ({ page }) => {

@@ -6,7 +6,7 @@ import { log } from '@/lib/logger';
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const traceId = withTracing(request);
-  const authResult = await withAuth(request, ['cleaner']);
+  const authResult = await withAuth(request, ['cleaner', 'staff']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
   const userId = authResult.user?.id;

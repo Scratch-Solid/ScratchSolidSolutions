@@ -51,6 +51,14 @@ export async function GET(request: NextRequest) {
     metadata.paystack_event = 'verify.success';
     metadata.paid_at = verifyResult.data.paid_at;
     metadata.channel = verifyResult.data.channel;
+    metadata.domain = verifyResult.data.domain;
+    if (verifyResult.data.domain === 'test') {
+      // A test-mode transaction reports "success" without ever touching a
+      // real bank - if this fires outside local/staging testing, the
+      // configured PAYSTACK_SECRET_KEY is a test key where a live key
+      // should be, and no customer has actually been charged.
+      logger.error('Paystack transaction verified in TEST mode - no real funds moved', new Error(`reference=${reference}`));
+    }
 
     await db.prepare(`
       UPDATE payments SET status = 'completed', payment_date = datetime('now'), metadata = ?, updated_at = datetime('now') WHERE id = ?

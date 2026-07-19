@@ -70,8 +70,8 @@ export default function PublicTrackingPage() {
     switch (status) {
       case 'idle': return 'bg-gray-100 text-gray-800';
       case 'scheduled':
-      case 'assigned': return 'bg-indigo-100 text-indigo-800';
-      case 'on_way': return 'bg-blue-100 text-blue-800';
+      case 'assigned': return 'bg-[#F0E6D6] text-[#8a6a3a]';
+      case 'on_way': return 'bg-[#B08A5E] text-[#2E1F16]';
       case 'arrived': return 'bg-yellow-100 text-yellow-800';
       case 'completed': return 'bg-green-100 text-green-800';
       default: return 'bg-gray-100 text-gray-800';
@@ -92,9 +92,9 @@ export default function PublicTrackingPage() {
 
   if (loading && !booking) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="min-h-screen bg-[#F7F2EA] flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#B08A5E] mx-auto mb-4"></div>
           <p className="text-gray-600">Loading tracking information...</p>
         </div>
       </div>
@@ -103,14 +103,14 @@ export default function PublicTrackingPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="min-h-screen bg-[#F7F2EA] flex items-center justify-center">
         <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md mx-4">
           <div className="text-red-500 text-5xl mb-4">⚠️</div>
           <h1 className="text-2xl font-bold text-gray-800 mb-2">Tracking Error</h1>
           <p className="text-gray-600 mb-4">{error}</p>
           <button
             onClick={fetchTrackingData}
-            className="w-full bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 transition-colors"
+            className="w-full bg-[#B08A5E] text-[#2E1F16] font-semibold py-3 rounded-xl hover:bg-[#c39a6c] transition-colors"
           >
             Try Again
           </button>
@@ -124,13 +124,13 @@ export default function PublicTrackingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-[#F7F2EA]">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div className="shadow-sm border-b border-white/10" style={{ background: "linear-gradient(135deg, #2E1F16, #3a281a)" }}>
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-xl font-bold text-gray-800">🧹 Scratch Solid Solutions</h1>
-            <span className="text-sm text-gray-600">Live Tracking</span>
+            <h1 className="text-xl font-normal tracking-tight text-[#F7F2EA]" style={{ fontFamily: "Georgia, serif" }}>🧹 Scratch Solid Solutions</h1>
+            <span className="text-sm text-[#CBB89A]">Live Tracking</span>
           </div>
         </div>
       </div>
@@ -183,7 +183,7 @@ export default function PublicTrackingPage() {
 
             <div className="space-y-3">
               <div className={`flex items-center gap-3 ${!tracking.started_at ? 'opacity-40' : ''}`}>
-                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">🚗</div>
+                <div className="w-10 h-10 bg-[#F0E6D6] rounded-full flex items-center justify-center">🚗</div>
                 <div>
                   <p className="text-sm text-gray-500">On the Way</p>
                   <p className="font-semibold text-gray-800">
@@ -224,7 +224,7 @@ export default function PublicTrackingPage() {
           <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
             <h2 className="text-lg font-bold text-gray-800 mb-4">Live Location</h2>
 
-            <div className="bg-gray-100 rounded-xl p-4 mb-4">
+            <div className="bg-[#F7F2EA] rounded-xl p-4 mb-4">
               <p className="text-sm text-gray-500 mb-1">Last Updated</p>
               <p className="font-semibold text-gray-800">
                 {tracking.location.recorded_at ? new Date(tracking.location.recorded_at).toLocaleString() : 'Unknown'}
@@ -248,7 +248,7 @@ export default function PublicTrackingPage() {
               href={`https://www.google.com/maps?q=${tracking.location.lat},${tracking.location.lng}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="block mt-4 text-center bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 transition-colors"
+              className="block mt-4 text-center bg-[#B08A5E] text-[#2E1F16] font-semibold py-3 rounded-xl hover:bg-[#c39a6c] transition-colors"
             >
               View on Google Maps
             </a>
@@ -260,7 +260,7 @@ export default function PublicTrackingPage() {
           <p>Auto-refreshing every 15 seconds...</p>
           <button
             onClick={fetchTrackingData}
-            className="mt-2 text-blue-600 hover:text-blue-700 underline"
+            className="mt-2 text-[#8a6a45] hover:text-[#2E1F16] underline"
           >
             Refresh Now
           </button>

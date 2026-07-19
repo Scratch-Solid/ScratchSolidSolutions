@@ -45,17 +45,17 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white py-8 sm:py-16 px-2 sm:px-4 font-sans">
+    <div className="min-h-screen bg-[#F7F2EA] py-8 sm:py-16 px-2 sm:px-4 font-sans">
       <BrandHomeLink />
       <div className="max-w-md mx-auto">
-        <h1 className="text-3xl sm:text-4xl font-bold text-center text-blue-700 mb-2">
+        <h1 className="text-3xl sm:text-4xl font-normal text-center text-[#2E1F16] mb-2 tracking-tight" style={{ fontFamily: "Georgia, serif" }}>
           Reset Password
         </h1>
         <p className="text-center text-gray-600 mb-6 sm:mb-8">
           Recover your account password
         </p>
 
-        <div className="relative bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 p-6 sm:p-8 overflow-hidden">
+        <div className="relative bg-white rounded-xl shadow-sm border border-[#E9E0D3] p-6 sm:p-8 overflow-hidden">
           <LogoWatermark size="md" />
           {error && (
             <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -80,7 +80,7 @@ export default function ForgotPasswordPage() {
                   onClick={() => setUserType("individual")}
                   className={`flex-1 px-4 py-2 rounded-lg border-2 transition-colors ${
                     userType === "individual"
-                      ? "border-blue-600 bg-blue-50 text-blue-600"
+                      ? "border-[#B08A5E] bg-[#F7F2EA] text-[#8a6a45]"
                       : "border-gray-300 text-gray-700 hover:border-gray-400"
                   }`}
                 >
@@ -91,7 +91,7 @@ export default function ForgotPasswordPage() {
                   onClick={() => setUserType("business")}
                   className={`flex-1 px-4 py-2 rounded-lg border-2 transition-colors ${
                     userType === "business"
-                      ? "border-blue-600 bg-blue-50 text-blue-600"
+                      ? "border-[#B08A5E] bg-[#F7F2EA] text-[#8a6a45]"
                       : "border-gray-300 text-gray-700 hover:border-gray-400"
                   }`}
                 >
@@ -109,7 +109,7 @@ export default function ForgotPasswordPage() {
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-[#E9E0D3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
                 placeholder={
                   userType === "individual" ? "+27 12 345 6789" : "business@example.com"
                 }
@@ -124,14 +124,14 @@ export default function ForgotPasswordPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-semibold"
+              className="w-full bg-[#B08A5E] text-[#2E1F16] py-2 px-4 rounded-lg hover:bg-[#c39a6c] disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-semibold"
             >
               {loading ? "Sending..." : "Send Reset Code"}
             </button>
           </form>
 
           <div className="mt-6 text-center">
-            <Link href="/login" className="text-blue-600 hover:underline text-sm">
+            <Link href="/login" className="text-[#8a6a45] hover:underline text-sm">
               Back to Login
             </Link>
           </div>

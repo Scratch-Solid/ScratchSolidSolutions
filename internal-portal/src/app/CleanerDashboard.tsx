@@ -6,20 +6,23 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import { useTokenRefresh } from "@/hooks/useTokenRefresh";
+import { useRequireRole } from "@/hooks/useRequireRole";
 import DashboardLayout from "@/components/DashboardLayout";
 import TrainingModuleCard from "@/components/TrainingModuleCard";
 import QuizInterface from "@/components/QuizInterface";
+import LeaveSection from "@/components/staff/LeaveSection";
+import PayslipSection from "@/components/staff/PayslipSection";
 import confetti from 'canvas-confetti';
 import jsPDF from 'jspdf';
 
 export default function CleanerDashboard() {
   useSessionTimeout(true);
   useTokenRefresh();
+  const { authorized } = useRequireRole(['cleaner', 'staff']);
   const [cleaner, setCleaner] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [ratings, setRatings] = useState([]);
   const [upcomingShifts, setUpcomingShifts] = useState([]);
-  const [payslips, setPayslips] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeTile, setActiveTile] = useState("profile");
@@ -245,14 +248,6 @@ export default function CleanerDashboard() {
           if (ratingsRes.ok) {
             const ratingsData = await ratingsRes.json() as { data?: any[] };
             setRatings(ratingsData.data || []);
-          }
-
-          const payslipsRes = await fetch('/api/cleaner/payslips', {
-            headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` }
-          });
-          if (payslipsRes.ok) {
-            const payslipsData = await payslipsRes.json() as { data?: any[] };
-            setPayslips(payslipsData.data || []);
           }
         }
 
@@ -590,7 +585,7 @@ export default function CleanerDashboard() {
     window.location.href = '/auth/login';
   };
 
-  if (loading) return <DashboardLayout title="Cleaner Dashboard" role="cleaner"><div className="glass-panel text-center" style={{ color: 'var(--text)' }}>Loading...</div></DashboardLayout>;
+  if (!authorized || loading) return <DashboardLayout title="Cleaner Dashboard" role="cleaner"><div className="glass-panel text-center" style={{ color: 'var(--text)' }}>Loading...</div></DashboardLayout>;
   if (error) return <DashboardLayout title="Cleaner Dashboard" role="cleaner"><div className="error-msg">{error}</div></DashboardLayout>;
   if (!cleaner) return <DashboardLayout title="Cleaner Dashboard" role="cleaner"><div className="glass-panel text-center" style={{ color: 'var(--text)' }}>No data found.</div></DashboardLayout>;
 
@@ -678,6 +673,13 @@ export default function CleanerDashboard() {
           style={{ color: activeTile === "payslips" ? '#2E1F16' : '#6B5D52' }}
         >
           Payslips
+        </button>
+        <button
+          onClick={() => setActiveTile("leave")}
+          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTile === "leave" ? "bg-white/20" : "bg-white/10 hover:bg-white/15"}`}
+          style={{ color: activeTile === "leave" ? '#2E1F16' : '#6B5D52' }}
+        >
+          Leave
         </button>
       </div>
 
@@ -1427,41 +1429,9 @@ export default function CleanerDashboard() {
         );
       })()}
 
-      {activeTile === "payslips" && (
-        <div className="glass-card p-6">
-          <h3 className="font-bold text-lg mb-4" style={{ color: 'var(--text-h)' }}>Payslips</h3>
-          {payslips.length === 0 ? (
-            <div className="text-center py-8" style={{ color: 'var(--text-light)' }}>
-              No payslips available yet.
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {payslips.map((payslip: any) => (
-                <div key={payslip.id} className="bg-white/5 rounded-lg p-4" style={{ borderColor: 'var(--border)' }}>
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <div className="font-semibold" style={{ color: 'var(--text-h)' }}>
-                        {payslip.period || 'Pay Period'}
-                      </div>
-                      <div className="text-sm" style={{ color: 'var(--text-light)' }}>
-                        {payslip.pay_date || new Date().toLocaleDateString()}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-bold text-lg" style={{ color: 'var(--text-h)' }}>
-                        R{(payslip.net_pay || payslip.amount || 0).toFixed(2)}
-                      </div>
-                      <div className="text-sm" style={{ color: 'var(--text-light)' }}>
-                        Net Pay
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+      {activeTile === "payslips" && <PayslipSection />}
+
+      {activeTile === "leave" && <LeaveSection />}
     </DashboardLayout>
   );
 }

@@ -12,7 +12,7 @@ export default function PrivacyPage() {
     <div className="min-h-screen py-8 sm:py-16 px-2 sm:px-4 font-sans pt-24 sm:pt-32">
       <div className="max-w-2xl mx-auto bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20 p-6 sm:p-10 relative overflow-hidden">
         <LogoWatermark size="lg" />
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-blue-700 mb-4 sm:mb-6 text-center drop-shadow-lg">Privacy Policy</h1>
+        <h1 className="text-3xl sm:text-4xl font-normal tracking-tight text-[#2E1F16] mb-4 sm:mb-6 text-center" style={{ fontFamily: "Georgia, serif" }}>Privacy Policy</h1>
 
         <div className="text-base sm:text-lg text-zinc-800 mb-6 sm:mb-8 relative z-10 leading-relaxed">
           <p className="text-sm text-gray-500 mb-6 text-center">Last Updated: May 2026</p>
@@ -22,7 +22,7 @@ export default function PrivacyPage() {
           </p>
 
           <div className="glass-card mb-6">
-            <h2 className="text-xl sm:text-2xl font-bold text-blue-800 mb-4">1. Information We Collect</h2>
+            <h2 className="text-xl sm:text-2xl font-normal text-[#2E1F16] mb-4" style={{ fontFamily: "Georgia, serif" }}>1. Information We Collect</h2>
             <p className="text-base sm:text-lg text-zinc-800 mb-4 leading-relaxed">
               We collect personal information necessary to provide our services and communicate with you, including:
             </p>
@@ -35,7 +35,7 @@ export default function PrivacyPage() {
           </div>
 
           <div className="glass-card mb-6">
-            <h2 className="text-xl sm:text-2xl font-bold text-blue-800 mb-4">2. Purpose of Collection</h2>
+            <h2 className="text-xl sm:text-2xl font-normal text-[#2E1F16] mb-4" style={{ fontFamily: "Georgia, serif" }}>2. Purpose of Collection</h2>
             <p className="text-base sm:text-lg text-zinc-800 mb-4 leading-relaxed">
               Your data is processed only for:
             </p>
@@ -47,7 +47,7 @@ export default function PrivacyPage() {
           </div>
 
           <div className="glass-card mb-6">
-            <h2 className="text-xl sm:text-2xl font-bold text-blue-800 mb-4">3. Data Security & IT GRC</h2>
+            <h2 className="text-xl sm:text-2xl font-normal text-[#2E1F16] mb-4" style={{ fontFamily: "Georgia, serif" }}>3. Data Security & IT GRC</h2>
             <p className="text-base sm:text-lg text-zinc-800 mb-4 leading-relaxed">
               As a tech-forward organization, we apply rigorous IT Governance and Risk Compliance standards:
             </p>
@@ -59,14 +59,14 @@ export default function PrivacyPage() {
           </div>
 
           <div className="glass-card mb-6">
-            <h2 className="text-xl sm:text-2xl font-bold text-blue-800 mb-4">4. Third-Party Sharing</h2>
+            <h2 className="text-xl sm:text-2xl font-normal text-[#2E1F16] mb-4" style={{ fontFamily: "Georgia, serif" }}>4. Third-Party Sharing</h2>
             <p className="text-base sm:text-lg text-zinc-800 leading-relaxed">
               We do not sell your data. We only share information with third parties (e.g., cloud storage or accounting software) that are also compliant with South African data protection laws.
             </p>
           </div>
 
           <div className="glass-card mb-6">
-            <h2 className="text-xl sm:text-2xl font-bold text-blue-800 mb-4">5. Your Rights</h2>
+            <h2 className="text-xl sm:text-2xl font-normal text-[#2E1F16] mb-4" style={{ fontFamily: "Georgia, serif" }}>5. Your Rights</h2>
             <p className="text-base sm:text-lg text-zinc-800 mb-4 leading-relaxed">
               Under POPIA, you have the right to:
             </p>
@@ -78,16 +78,16 @@ export default function PrivacyPage() {
           </div>
 
           <div className="glass-card mb-6">
-            <h2 className="text-xl sm:text-2xl font-bold text-blue-800 mb-4">6. Information Officer</h2>
+            <h2 className="text-xl sm:text-2xl font-normal text-[#2E1F16] mb-4" style={{ fontFamily: "Georgia, serif" }}>6. Information Officer</h2>
             <p className="text-base sm:text-lg text-zinc-800 leading-relaxed">
-              For any privacy-related inquiries, please contact our Information Officer at <a href="mailto:it@scratchsolidsolutions.org" className="text-blue-600 hover:underline">it@scratchsolidsolutions.org</a>
+              For any privacy-related inquiries, please contact our Information Officer at <a href="mailto:it@scratchsolidsolutions.org" className="text-[#8a6a45] hover:underline">it@scratchsolidsolutions.org</a>
             </p>
           </div>
         </div>
 
         <div className="flex flex-col sm:flex-row justify-center gap-4 mt-6 sm:mt-8 relative z-10">
-          <Link href="/terms" className="rounded-full bg-zinc-200 px-6 sm:px-8 py-2.5 sm:py-3 text-base sm:text-lg font-semibold text-blue-700 shadow hover:bg-zinc-300 transition-colors">Terms of Service</Link>
-          <Link href="/contact" className="rounded-full bg-zinc-200 px-6 sm:px-8 py-2.5 sm:py-3 text-base sm:text-lg font-semibold text-blue-700 shadow hover:bg-zinc-300 transition-colors">Contact Us</Link>
+          <Link href="/terms" className="rounded-full bg-[#F0E6D6] px-6 sm:px-8 py-2.5 sm:py-3 text-base sm:text-lg font-semibold text-[#2E1F16] shadow hover:bg-[#E9DCC0] transition-colors">Terms of Service</Link>
+          <Link href="/contact" className="rounded-full bg-[#F0E6D6] px-6 sm:px-8 py-2.5 sm:py-3 text-base sm:text-lg font-semibold text-[#2E1F16] shadow hover:bg-[#E9DCC0] transition-colors">Contact Us</Link>
         </div>
       </div>
     </div>

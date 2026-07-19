@@ -17,6 +17,7 @@ import PoolManagement from "@/components/admin/PoolManagement";
 import ContentManagement from "@/components/admin/ContentManagement";
 import StaffReviews from "@/components/admin/StaffReviews";
 import AdminCleanerOverview from "@/components/admin/AdminCleanerOverview";
+import AdminLeaveRequests from "@/components/admin/AdminLeaveRequests";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -44,6 +45,10 @@ export default function AdminDashboard() {
   const [bankingForm, setBankingForm] = useState({ bank_name: '', account_number: '', account_holder: '', branch_code: '', account_type: 'current' });
   const [showCreateCleaner, setShowCreateCleaner] = useState(false);
   const [newCleanerForm, setNewCleanerForm] = useState({ fullName: '', idPassportNumber: '', contactNumber: '', positionAppliedFor: '' });
+  // Shown when WhatsApp/email delivery of a newly approved cleaner's login
+  // credentials didn't confirm - lets the admin share them manually instead
+  // of the cleaner being silently stranded with no way to log in.
+  const [credentialsBackup, setCredentialsBackup] = useState<{ name: string; paysheetCode: string; tempPassword: string } | null>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -64,7 +69,7 @@ export default function AdminDashboard() {
 
         const [employeesRes, newJoinersRes, usersRes, bookingsRes, contractsRes, paymentsRes, notificationsRes, servicesRes, bankingRes] = await Promise.allSettled([
           fetch("/api/employees", { headers }),
-          fetch("/api/admin/new-joiners", { headers }),
+          fetch("/api/admin/new-joiners?status=pending", { headers }),
           fetch("/api/admin/users", { headers }),
           fetch("/api/admin/bookings", { headers }),
           fetch("/api/contracts", { headers }),
@@ -173,8 +178,16 @@ export default function AdminDashboard() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       });
       if (response.ok) {
+        const resData = await response.json() as { data?: { notificationsDelivered?: boolean; credentialsBackup?: { paysheetCode: string; tempPassword: string } } };
         setNewJoiners(prev => prev.filter((j: any) => j.id !== joiner.id));
         setSelectedJoiner(null);
+        if (resData.data && !resData.data.notificationsDelivered && resData.data.credentialsBackup) {
+          setCredentialsBackup({
+            name: joiner.fullName,
+            paysheetCode: resData.data.credentialsBackup.paysheetCode,
+            tempPassword: resData.data.credentialsBackup.tempPassword,
+          });
+        }
       } else {
         const errorData = await response.json() as { error?: string };
         setError(errorData.error || 'Failed to approve application');
@@ -228,7 +241,7 @@ export default function AdminDashboard() {
         setShowCreateCleaner(false);
         setNewCleanerForm({ fullName: '', idPassportNumber: '', contactNumber: '', positionAppliedFor: '' });
         // Refresh new joiners list from canonical endpoint
-        const newJoinersRes = await fetch("/api/admin/new-joiners", { headers: { Authorization: `Bearer ${token}` } });
+        const newJoinersRes = await fetch("/api/admin/new-joiners?status=pending", { headers: { Authorization: `Bearer ${token}` } });
         if (newJoinersRes.ok) {
           const data = await newJoinersRes.json() as { data?: any[] };
           setNewJoiners(data.data || []);
@@ -247,6 +260,32 @@ export default function AdminDashboard() {
 
   return (
     <DashboardLayout title="Admin Dashboard" role="admin">
+      {credentialsBackup && (
+        <div className="mb-6 rounded-lg border border-amber-300 bg-amber-50 p-4">
+          <p className="font-semibold text-amber-900">
+            Couldn&apos;t confirm WhatsApp/email delivery to {credentialsBackup.name}
+          </p>
+          <p className="mt-1 text-sm text-amber-800">
+            Share these login details with them directly (call, SMS, hand them over in person):
+          </p>
+          <div className="mt-2 flex flex-wrap gap-4 text-sm">
+            <div>
+              <span className="text-amber-700">Paysheet code (username): </span>
+              <code className="rounded bg-amber-100 px-2 py-0.5 font-semibold">{credentialsBackup.paysheetCode}</code>
+            </div>
+            <div>
+              <span className="text-amber-700">Temporary password: </span>
+              <code className="rounded bg-amber-100 px-2 py-0.5 font-semibold">{credentialsBackup.tempPassword}</code>
+            </div>
+          </div>
+          <button
+            onClick={() => setCredentialsBackup(null)}
+            className="mt-3 text-sm font-medium text-amber-700 underline hover:text-amber-900"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="w-full h-auto overflow-x-auto flex-wrap gap-1 p-1">
           <TabsTrigger value="overview" className="gap-2 whitespace-nowrap"><LayoutDashboard className="h-4 w-4" />Overview</TabsTrigger>
@@ -260,6 +299,7 @@ export default function AdminDashboard() {
           <TabsTrigger value="staff-reviews" className="gap-2 whitespace-nowrap"><UserCheck className="h-4 w-4" />Reviews</TabsTrigger>
           <TabsTrigger value="training" className="gap-2 whitespace-nowrap"><GraduationCap className="h-4 w-4" />Training</TabsTrigger>
           <TabsTrigger value="cleaner-analytics" className="gap-2 whitespace-nowrap"><BarChart3 className="h-4 w-4" />Cleaner Analytics</TabsTrigger>
+          <TabsTrigger value="leave" className="gap-2 whitespace-nowrap"><ClipboardList className="h-4 w-4" />Leave Requests</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">
@@ -630,6 +670,10 @@ export default function AdminDashboard() {
 
         <TabsContent value="cleaner-analytics">
           <AdminCleanerOverview />
+        </TabsContent>
+
+        <TabsContent value="leave">
+          <AdminLeaveRequests />
         </TabsContent>
       </Tabs>
     </DashboardLayout>

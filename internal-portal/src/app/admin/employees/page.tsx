@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +26,7 @@ const EMPTY_FORM = {
   phone: "",
   address: "",
   emergency_contact: "",
+  is_supervisor: false,
 };
 
 export default function AdminEmployeesPage() {
@@ -39,7 +41,7 @@ export default function AdminEmployeesPage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [formError, setFormError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [successInfo, setSuccessInfo] = useState<{ paysheetCode: string } | null>(null);
+  const [successInfo, setSuccessInfo] = useState<{ paysheetCode: string; notificationsDelivered?: boolean; tempPassword?: string } | null>(null);
   const [actionError, setActionError] = useState("");
   const [actioningId, setActioningId] = useState<number | null>(null);
 
@@ -48,7 +50,7 @@ export default function AdminEmployeesPage() {
     try {
       const [cleanerRes, joinRes] = await Promise.allSettled([
         authFetch("/api/admin/cleaners"),
-        authFetch("/api/admin/new-joiners"),
+        authFetch("/api/admin/new-joiners?status=pending"),
       ]);
       const tokenInvalid = [cleanerRes, joinRes].every(
         (r): r is PromiseFulfilledResult<Response> =>
@@ -101,7 +103,11 @@ export default function AdminEmployeesPage() {
         setActionError(data?.error?.message || data?.error || `Approval failed (${res.status})`);
         return;
       }
-      setSuccessInfo({ paysheetCode: data?.data?.paysheetCode || "" });
+      setSuccessInfo({
+        paysheetCode: data?.data?.paysheetCode || "",
+        notificationsDelivered: data?.data?.notificationsDelivered,
+        tempPassword: data?.data?.credentialsBackup?.tempPassword,
+      });
       setNewJoiners((prev) => prev.filter((j) => j.id !== id));
       load();
     } catch {
@@ -147,7 +153,10 @@ export default function AdminEmployeesPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setFormError(data.error?.message || data.error || "Failed to create cleaner account");
+        // details.error carries the actual thrown message; error.message on
+        // the 500 path is just the generic "Failed to create cleaner
+        // account" wrapper - surface the real one so this is actionable.
+        setFormError(data.error?.details?.error || data.error?.message || data.error || "Failed to create cleaner account");
         return;
       }
       setSuccessInfo({ paysheetCode: data.data.paysheetCode });
@@ -197,13 +206,23 @@ export default function AdminEmployeesPage() {
       )}
 
       {successInfo && (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 flex items-center justify-between">
+        <div className={`rounded-lg border px-4 py-3 text-sm flex items-center justify-between ${
+          successInfo.notificationsDelivered === false
+            ? "border-amber-300 bg-amber-50 text-amber-900"
+            : "border-emerald-200 bg-emerald-50 text-emerald-800"
+        }`}>
           <span>
-            {successInfo.paysheetCode
-              ? <>Cleaner account active. Paysheet code (their login username): <strong>{successInfo.paysheetCode}</strong>. Login credentials were sent via WhatsApp/email where configured.</>
-              : "Done."}
+            {!successInfo.paysheetCode ? "Done." : successInfo.notificationsDelivered === false ? (
+              <>
+                Cleaner account active, but WhatsApp/email delivery didn&apos;t confirm - share these
+                details directly: paysheet code (username) <strong>{successInfo.paysheetCode}</strong>,
+                temporary password <strong>{successInfo.tempPassword}</strong>.
+              </>
+            ) : (
+              <>Cleaner account active. Paysheet code (their login username): <strong>{successInfo.paysheetCode}</strong>. Login credentials were sent via WhatsApp/email where configured.</>
+            )}
           </span>
-          <button onClick={() => setSuccessInfo(null)} className="text-emerald-600 hover:text-emerald-800">
+          <button onClick={() => setSuccessInfo(null)} className={successInfo.notificationsDelivered === false ? "text-amber-700 hover:text-amber-900" : "text-emerald-600 hover:text-emerald-800"}>
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -285,12 +304,24 @@ export default function AdminEmployeesPage() {
                   className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-[#B08A5E] focus:border-transparent"
                 />
               </div>
+              <div className="sm:col-span-2 flex items-center gap-2 pt-1">
+                <input
+                  type="checkbox"
+                  id="is_supervisor"
+                  checked={form.is_supervisor}
+                  onChange={(e) => setForm({ ...form, is_supervisor: e.target.checked })}
+                  className="h-4 w-4 rounded border-stone-300 text-[#2E1F16] focus:ring-[#B08A5E]"
+                />
+                <label htmlFor="is_supervisor" className="text-sm text-stone-700">
+                  Also make this person a Supervisor (can oversee and assign jobs to other cleaners, in addition to their own)
+                </label>
+              </div>
               <div className="sm:col-span-2 flex justify-end gap-2 pt-2">
                 <Button type="button" variant="outline" onClick={() => setShowAddForm(false)}>
                   Cancel
                 </Button>
                 <Button type="submit" disabled={submitting} className="bg-[#2E1F16] hover:bg-[#2E1F16]/90">
-                  {submitting ? "Creating..." : "Create Cleaner Account"}
+                  {submitting ? "Creating..." : form.is_supervisor ? "Create Supervisor Account" : "Create Cleaner Account"}
                 </Button>
               </div>
             </form>
@@ -379,9 +410,14 @@ export default function AdminEmployeesPage() {
                       </Button>
                     </div>
                   ) : (
-                    <Badge className={item.status === "blocked" ? "bg-red-100 text-red-700 hover:bg-red-100" : "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"}>
-                      {item.status}
-                    </Badge>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <Badge className={item.status === "blocked" ? "bg-red-100 text-red-700 hover:bg-red-100" : "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"}>
+                        {item.status}
+                      </Badge>
+                      <Link href={`/admin/employees/${item.id}`} className="text-xs font-medium text-[#8a6a45] hover:text-[#2E1F16] hover:underline">
+                        View details
+                      </Link>
+                    </div>
                   )}
                 </div>
               ))}

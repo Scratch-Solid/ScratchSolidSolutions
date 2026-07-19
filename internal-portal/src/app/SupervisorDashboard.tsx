@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import { useTokenRefresh } from "@/hooks/useTokenRefresh";
+import { useRequireRole } from "@/hooks/useRequireRole";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/Button";
@@ -62,6 +63,7 @@ interface Cleaner {
 export default function SupervisorDashboard() {
   useSessionTimeout(true);
   useTokenRefresh();
+  const { authorized } = useRequireRole(['staff']);
   const [data, setData] = useState<DashboardData | null>(null);
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
   const [loading, setLoading] = useState(true);
@@ -146,7 +148,7 @@ export default function SupervisorDashboard() {
     return <Badge className={map[status] || "bg-stone-100 text-stone-800"}>{status.replace(/_/g, " ")}</Badge>;
   };
 
-  if (loading) {
+  if (!authorized || loading) {
     return (
       <DashboardLayout title="Supervisor Dashboard" role="staff">
         <div className="animate-pulse space-y-6">

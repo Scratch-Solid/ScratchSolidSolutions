@@ -31,8 +31,10 @@ export async function POST(request: NextRequest) {
       phone?: string;
       address?: string;
       emergency_contact?: string;
+      is_supervisor?: boolean;
     };
-    const { name, id_number, phone } = body;
+    const { name, id_number, phone, is_supervisor } = body;
+    const role = is_supervisor ? 'staff' : 'cleaner';
     const email = body.email?.trim() || `${(name || '').toLowerCase().replace(/[^a-z0-9]/g, '')}@scratch.local`;
     const address = body.address?.trim() || 'To be updated';
     const emergencyContact = body.emergency_contact?.trim() || '';
@@ -102,14 +104,19 @@ export async function POST(request: NextRequest) {
       emergencyContact,
       idNumber: id_number,
       bankDetailsPresent: false,
+      role,
     }, traceId);
 
     // Keep one history record per cleaner regardless of how they joined.
+    // bank_details is NOT NULL on this table (see the identical workaround
+    // in api/apply/route.ts) - an admin-verified-in-person quick-add never
+    // collects banking info, so it gets the same empty-string placeholder
+    // rather than reshaping the table.
     const joinerResult = await db.prepare(
       `INSERT INTO new_joiners (
-        name, id_number, email, phone, whatsapp, address, emergency_contact,
+        name, id_number, email, phone, whatsapp, address, emergency_contact, bank_details,
         status, position_applied_for, erpnext_employee_id, approved_by, approved_at, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, 'approved', 'Cleaner', ?, ?, datetime('now'), datetime('now'), datetime('now'))`
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, '', 'approved', ?, ?, ?, datetime('now'), datetime('now'), datetime('now'))`
     ).bind(
       name,
       id_number,
@@ -118,6 +125,7 @@ export async function POST(request: NextRequest) {
       phone,
       address,
       emergencyContact,
+      is_supervisor ? 'Supervisor' : 'Cleaner',
       paysheetCode,
       adminUserId
     ).run();

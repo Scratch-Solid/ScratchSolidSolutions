@@ -1,120 +1,22 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
-import bcrypt from 'bcryptjs';
-import { withTracing, withSecurityHeaders, withRateLimit } from '@/lib/middleware';
-import crypto from 'crypto';
+import { withTracing, withSecurityHeaders } from '@/lib/middleware';
 
+// Retired 2026-07-18: this endpoint let anyone create a fully-active staff
+// account (any role, including 'admin') by POSTing client-supplied
+// role/paysheetCode/department with zero admin approval - it trusted every
+// field verbatim and inserted straight into `users` with a live session
+// token. Account creation for Digital/Transportation staff now goes through
+// /api/apply (submits a pending application) -> admin review ->
+// /api/admin/new-joiners/[id]/approve (see lib/cleaner-integrations.ts,
+// activateStaffAccount). Cleaners already had their own equivalent flow via
+// /api/signup/cleaner. Kept as a stub (rather than deleted) so any stale
+// client hitting this old path gets a clear, actionable error instead of a
+// generic 404.
 export async function POST(request: NextRequest) {
   const traceId = withTracing(request);
-  
-  // Rate limiting
-  const rl = await withRateLimit(request);
-  if (rl) return withSecurityHeaders(rl, traceId);
-
-  try {
-    const body = await request.json() as { 
-      fullName?: string;
-      name?: string; 
-      email?: string; 
-      password?: string; 
-      role?: string; 
-      phone?: string; 
-      paysheetCode?: string;
-      department?: string;
-    };
-
-    const { fullName, name, email, password, role, phone, paysheetCode, department } = body;
-    const resolvedName = name || fullName;
-
-    if (!resolvedName || !email || !password) {
-      return withSecurityHeaders(NextResponse.json(
-        { error: 'Name, email, and password required' },
-        { status: 400 }
-      ), traceId);
-    }
-
-    const db = await getDb();
-    if (!db) {
-      return withSecurityHeaders(NextResponse.json(
-        { error: 'Database unavailable' },
-        { status: 503 }
-      ), traceId);
-    }
-
-    // Check if user already exists
-    const existing = await db.prepare('SELECT id FROM users WHERE email = ?').bind(email).first();
-    if (existing) {
-      return withSecurityHeaders(NextResponse.json(
-        { error: 'Email already registered' },
-        { status: 400 }
-      ), traceId);
-    }
-
-    // Hash password
-    const passwordHash = await bcrypt.hash(password, 12);
-
-    let result;
-    try {
-      result = await db.prepare(
-        `INSERT INTO users (name, email, password_hash, role, phone, paysheet_code, department, email_verified, password_needs_reset, created_at) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, 1, 0, datetime('now'))`
-      ).bind(resolvedName, email, passwordHash, role || 'cleaner', phone || '', paysheetCode || '', department || '').run();
-    } catch {
-      // Fallback: some columns may not exist in older schemas
-      try {
-        result = await db.prepare(
-          `INSERT INTO users (name, email, password_hash, role, phone, paysheet_code, department, created_at) 
-           VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))`
-        ).bind(resolvedName, email, passwordHash, role || 'cleaner', phone || '', paysheetCode || '', department || '').run();
-      } catch {
-        // Core fallback: only guaranteed columns from initial schema
-        result = await db.prepare(
-          `INSERT INTO users (name, email, password_hash, role, phone, created_at) 
-           VALUES (?, ?, ?, ?, ?, datetime('now'))`
-        ).bind(resolvedName, email, passwordHash, role || 'cleaner', phone || '').run();
-      }
-    }
-
-    const userId = result.meta.last_row_id;
-
-    if (paysheetCode) {
-      const usernameBase = String(paysheetCode).trim() || email;
-      try {
-        await db.prepare(
-          `INSERT INTO cleaner_profiles (user_id, username, paysheet_code, first_name, last_name, cellphone, department, status, created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, 'active', datetime('now'), datetime('now'))`
-        ).bind(
-          userId,
-          usernameBase,
-          paysheetCode,
-          resolvedName.split(' ')[0] || resolvedName,
-          resolvedName.split(' ').slice(1).join(' '),
-          phone || '',
-          department || 'cleaning'
-        ).run();
-      } catch {
-      }
-    }
-
-    // Generate session token
-    const sessionToken = crypto.randomUUID() + crypto.randomUUID().replace(/-/g, '');
-    await db.prepare(
-      `INSERT INTO sessions (user_id, token, expires_at) VALUES (?, ?, datetime('now', '+7 days'))`
-    ).bind(userId, sessionToken).run();
-
-    return withSecurityHeaders(NextResponse.json({
-      success: true,
-      id: userId,
-      token: sessionToken,
-      message: 'User registered successfully'
-    }), traceId);
-
-  } catch (error) {
-    console.error('Register error:', error);
-    return withSecurityHeaders(NextResponse.json(
-      { error: 'Registration failed' },
-      { status: 500 }
-    ), traceId);
-  }
+  const response = NextResponse.json({
+    error: 'This endpoint no longer creates accounts directly. Please apply via /auth/signup (Digital/Transportation) or /signup/cleaner (Cleaning) - an admin will review your application.',
+  }, { status: 410 });
+  return withSecurityHeaders(response, traceId);
 }

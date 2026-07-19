@@ -4,7 +4,7 @@ import { withAuth } from '@/lib/middleware';
 import { logAuditEvent } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
-  const authResult = await withAuth(request, ['admin', 'cleaner', 'transport', 'digital']);
+  const authResult = await withAuth(request, ['admin', 'cleaner', 'transport', 'digital', 'staff']);
   if (authResult instanceof NextResponse) return authResult;
   const { user, db } = authResult;
 
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const authResult = await withAuth(request, ['admin', 'cleaner', 'transport', 'digital']);
+  const authResult = await withAuth(request, ['admin', 'cleaner', 'transport', 'digital', 'staff']);
   if (authResult instanceof NextResponse) return authResult;
   const { user, db } = authResult;
 

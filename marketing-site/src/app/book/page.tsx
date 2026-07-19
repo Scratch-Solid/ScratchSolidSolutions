@@ -19,10 +19,10 @@ export default function BookingPage() {
   }, [router]);
 
   return (
-    <div className="min-h-screen bg-white py-16 px-4 font-sans">
+    <div className="min-h-screen bg-[#F7F2EA] py-16 px-4 font-sans">
       <div className="max-w-2xl mx-auto text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-        <p className="text-gray-600">Redirecting...</p>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#B08A5E] mx-auto mb-4"></div>
+        <p className="text-stone-600">Redirecting...</p>
       </div>
     </div>
   );

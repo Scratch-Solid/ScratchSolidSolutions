@@ -5,6 +5,14 @@ version: "3.8"
 # Deploy: cp .env.example .env && ./setup.sh
 #
 # Minimum Server Spec: 4 vCPU, 8GB RAM, 100GB SSD, Ubuntu 22.04 LTS
+#
+# mem_limit values below are hard caps (not reservations) sized against a
+# 3.7GB host with no per-container limits previously set at all - any one
+# runaway container could exhaust host memory and OOM-kill its neighbors
+# unpredictably. Caps intentionally sum higher than total RAM (standard
+# overcommit practice) since real usage per container is far below its cap;
+# the 2GB swap file added alongside this is the safety net for legitimate
+# temporary spikes.
 
 services:
   # ═══════════════════════════════════════════════════════════════
@@ -14,15 +22,18 @@ services:
     image: traefik:v2.11
     container_name: scratch_traefik
     restart: always
+    mem_limit: 256m
     command:
       - "--api.dashboard=false"
+      - "--api.insecure=false"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
       - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
       - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
-      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
       - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL:-admin@scratchsolidsolutions.org}"
       - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
       - "--log.level=INFO"
@@ -36,6 +47,7 @@ services:
       - traefik_certs:/letsencrypt
     networks:
       - scratch_public
+      - scratch_internal
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/ping"]
       interval: 10s
@@ -50,6 +62,7 @@ services:
     image: postgres:15-alpine
     container_name: calcom_db
     restart: always
+    mem_limit: 256m
     expose:
       - "5432"
     environment:
@@ -68,9 +81,10 @@ services:
       start_period: 10s
 
   calcom-web:
-    image: calcom/cal.com:v3.9.3
+    image: calcom/cal.com:v6.1.13
     container_name: calcom_engine
     restart: always
+    mem_limit: 1536m
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.calcom.rule=Host(`booking.scratchsolidsolutions.org`)"
@@ -82,6 +96,7 @@ services:
       NEXTAUTH_SECRET: ${CALCOM_NEXTAUTH_SECRET}
       CALENDSO_ENCRYPTION_KEY: ${CALCOM_ENCRYPTION_KEY}
       DATABASE_URL: postgresql://${CALCOM_DB_USER:-scratch_admin}:${CALCOM_DB_PASSWORD}@calcom-postgres:5432/${CALCOM_DB_NAME:-calcom}
+      DATABASE_DIRECT_URL: postgresql://${CALCOM_DB_USER:-scratch_admin}:${CALCOM_DB_PASSWORD}@calcom-postgres:5432/${CALCOM_DB_NAME:-calcom}
       NODE_ENV: production
       # Required for Cal.com self-hosted
       EMAIL_FROM: ${EMAIL_FROM:-noreply@scratchsolidsolutions.org}
@@ -103,6 +118,7 @@ services:
     image: postgres:15-alpine
     container_name: n8n_db
     restart: always
+    mem_limit: 256m
     expose:
       - "5432"
     environment:
@@ -124,6 +140,7 @@ services:
     image: docker.n8n.io/n8nio/n8n:1.45.0
     container_name: n8n_orchestrator
     restart: always
+    mem_limit: 512m
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.n8n.rule=Host(`n8n.scratchsolidsolutions.org`)"
@@ -160,7 +177,7 @@ services:
       - scratch_internal
       - scratch_public
     healthcheck:
-      test: ["CMD-SHELL", "wget --spider -q http://localhost:5678/healthz || exit 1"]
+      test: ["CMD-SHELL", "wget --spider -q http://127.0.0.1:5678/healthz || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -173,6 +190,7 @@ services:
     image: frappe/erpnext:v15.30.0
     container_name: erpnext_backend
     restart: always
+    mem_limit: 768m
     deploy:
       restart_policy:
         condition: on-failure
@@ -189,49 +207,70 @@ services:
     networks:
       - scratch_internal
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8000/api/method/ping"]
+      test: ["CMD", "curl", "-f", "-s", "-H", "Host: scratchsolid.local", "http://localhost:8000/api/method/ping"]
       interval: 15s
       timeout: 5s
       retries: 5
       start_period: 60s
 
+  # nginx frontend — serves /assets static files directly and proxies
+  # dynamic requests to the backend/websocket. Without this, Traefik hits
+  # gunicorn directly, which doesn't serve static assets (404s on all CSS/JS).
   erpnext-frontend:
     image: frappe/erpnext:v15.30.0
     container_name: erpnext_frontend
     restart: always
+    mem_limit: 256m
+    command: ["nginx-entrypoint.sh"]
+    environment:
+      BACKEND: erpnext-backend:8000
+      SOCKETIO: erpnext-websocket:9000
+      FRAPPE_SITE_NAME_HEADER: scratchsolid.local
+      UPSTREAM_REAL_IP_ADDRESS: 127.0.0.1
+      UPSTREAM_REAL_IP_HEADER: X-Forwarded-For
+      UPSTREAM_REAL_IP_RECURSIVE: "off"
+      PROXY_READ_TIMEOUT: "120"
+      CLIENT_MAX_BODY_SIZE: 50m
+    volumes:
+      - erpnext_sites:/home/frappe/frappe-bench/sites
+      - erpnext_logs:/home/frappe/frappe-bench/logs
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.erpnext.rule=Host(`erp.scratchsolidsolutions.org`)"
       - "traefik.http.routers.erpnext.tls.certresolver=letsencrypt"
       - "traefik.http.routers.erpnext.entrypoints=websecure"
       - "traefik.http.services.erpnext.loadbalancer.server.port=8080"
-    deploy:
-      restart_policy:
-        condition: on-failure
-    command: nginx-entrypoint
-    environment:
-      BACKEND: erpnext-backend:8000
-      FRAPPE_SITE_NAME_HEADER: ${ERPNEXT_SITE_NAME:-scratchsolid.local}
-      SOCKETIO: erpnext-websocket:9000
-      UPSTREAM_REAL_IP_ADDRESS: 127.0.0.1
-      UPSTREAM_REAL_IP_HEADER: X-Forwarded-For
-      UPSTREAM_REAL_IP_RECURSIVE: "off"
-    volumes:
-      - erpnext_sites:/home/frappe/frappe-bench/sites:ro
-    networks:
-      - scratch_internal
-      - scratch_public
+      # Frappe sends X-Frame-Options: SAMEORIGIN by default, which blocks the
+      # internal-portal's ERP Console iframe (a different origin). Modern
+      # browsers prefer CSP frame-ancestors over X-Frame-Options when both are
+      # present, so this allows embedding from the portal specifically without
+      # opening it up to arbitrary sites.
+      - "traefik.http.middlewares.erpnext-frame-ancestors.headers.customresponseheaders.Content-Security-Policy=frame-ancestors 'self' https://portal.scratchsolidsolutions.org"
+      - "traefik.http.routers.erpnext.middlewares=erpnext-frame-ancestors"
     depends_on:
       erpnext-backend:
         condition: service_healthy
-      erpnext-websocket:
-        condition: service_started
+    networks:
+      - scratch_internal
+    healthcheck:
+      test: ["CMD", "curl", "-f", "-s", "http://localhost:8080/api/method/ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   erpnext-websocket:
     image: frappe/erpnext:v15.30.0
     container_name: erpnext_websocket
     restart: always
+    mem_limit: 256m
     command: node /home/frappe/frappe-bench/apps/frappe/socketio.js
+    volumes:
+      - erpnext_sites:/home/frappe/frappe-bench/sites
+      - erpnext_logs:/home/frappe/frappe-bench/logs
+    depends_on:
+      erpnext-backend:
+        condition: service_healthy
     networks:
       - scratch_internal
 
@@ -239,6 +278,7 @@ services:
     image: frappe/erpnext:v15.30.0
     container_name: erpnext_queue_default
     restart: always
+    mem_limit: 256m
     command: bench worker --queue default
     volumes:
       - erpnext_sites:/home/frappe/frappe-bench/sites
@@ -253,6 +293,7 @@ services:
     image: frappe/erpnext:v15.30.0
     container_name: erpnext_queue_short
     restart: always
+    mem_limit: 256m
     command: bench worker --queue short
     volumes:
       - erpnext_sites:/home/frappe/frappe-bench/sites
@@ -267,6 +308,7 @@ services:
     image: frappe/erpnext:v15.30.0
     container_name: erpnext_queue_long
     restart: always
+    mem_limit: 256m
     command: bench worker --queue long
     volumes:
       - erpnext_sites:/home/frappe/frappe-bench/sites
@@ -281,6 +323,7 @@ services:
     image: frappe/erpnext:v15.30.0
     container_name: erpnext_scheduler
     restart: always
+    mem_limit: 256m
     command: bench schedule
     volumes:
       - erpnext_sites:/home/frappe/frappe-bench/sites
@@ -295,6 +338,7 @@ services:
     image: mariadb:10.6
     container_name: erpnext_db
     restart: always
+    mem_limit: 768m
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
@@ -318,6 +362,7 @@ services:
     image: redis:7-alpine
     container_name: erpnext_redis_cache
     restart: always
+    mem_limit: 96m
     volumes:
       - erpnext_redis_cache_data:/data
     networks:
@@ -327,6 +372,7 @@ services:
     image: redis:7-alpine
     container_name: erpnext_redis_queue
     restart: always
+    mem_limit: 96m
     volumes:
       - erpnext_redis_queue_data:/data
     networks:
@@ -336,6 +382,7 @@ services:
     image: redis:7-alpine
     container_name: erpnext_redis_socketio
     restart: always
+    mem_limit: 96m
     volumes:
       - erpnext_redis_socketio_data:/data
     networks:
@@ -348,6 +395,7 @@ services:
     image: postgres:15-alpine
     container_name: scratch_backup
     restart: unless-stopped
+    mem_limit: 128m
     environment:
       CALCOM_DB_PASSWORD: ${CALCOM_DB_PASSWORD}
       N8N_DB_PASSWORD: ${N8N_DB_PASSWORD}
@@ -384,6 +432,7 @@ services:
     image: louislam/uptime-kuma:1.23.13
     container_name: scratch_uptime_kuma
     restart: always
+    mem_limit: 256m
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.uptime-kuma.rule=Host(`status.scratchsolidsolutions.org`)"
@@ -396,218 +445,17 @@ services:
       - scratch_internal
       - scratch_public
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3001"]
+      test: ["CMD-SHELL", "curl -fs http://127.0.0.1:3001/ > /dev/null || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 10s
-
-  # ═══════════════════════════════════════════════════════════════
-  #  MARKETING SITE — Public Next.js app (migrated off Cloudflare)
-  # ═══════════════════════════════════════════════════════════════
-  marketing-postgres:
-    image: postgres:15-alpine
-    container_name: marketing_db
-    restart: always
-    expose:
-      - "5432"
-    environment:
-      POSTGRES_USER: ${MARKETING_DB_USER:-marketing}
-      POSTGRES_PASSWORD: ${MARKETING_DB_PASSWORD}
-      POSTGRES_DB: ${MARKETING_DB_NAME:-marketing}
-    volumes:
-      - marketing_db_data:/var/lib/postgresql/data
-    networks:
-      - scratch_internal
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${MARKETING_DB_USER:-marketing} -d ${MARKETING_DB_NAME:-marketing}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-
-  marketing-redis:
-    image: redis:7-alpine
-    container_name: marketing_redis
-    restart: always
-    volumes:
-      - marketing_redis_data:/data
-    networks:
-      - scratch_internal
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  marketing-web:
-    # Gated behind the "apps" profile so the default `docker compose up -d`
-    # readies infra + databases WITHOUT building/starting the heavy Next.js
-    # image or cutting traffic over from Cloudflare. Enable the cutover with:
-    #   docker compose --profile apps up -d marketing-web
-    profiles: ["apps"]
-    build:
-      context: ../marketing-site
-      dockerfile: Dockerfile
-    image: scratchsolid-web:latest
-    container_name: marketing_web
-    restart: always
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.marketing.rule=Host(`scratchsolidsolutions.org`) || Host(`www.scratchsolidsolutions.org`)"
-      - "traefik.http.routers.marketing.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.marketing.entrypoints=websecure"
-      - "traefik.http.services.marketing.loadbalancer.server.port=3000"
-      # Redirect www.* -> apex
-      - "traefik.http.middlewares.marketing-www.redirectregex.regex=^https://www\\.(.+)"
-      - "traefik.http.middlewares.marketing-www.redirectregex.replacement=https://$${1}"
-      - "traefik.http.middlewares.marketing-www.redirectregex.permanent=true"
-      - "traefik.http.routers.marketing.middlewares=marketing-www"
-    environment:
-      NODE_ENV: production
-      PORT: "3000"
-      HOSTNAME: "0.0.0.0"
-      DATABASE_URL: postgresql://${MARKETING_DB_USER:-marketing}:${MARKETING_DB_PASSWORD}@marketing-postgres:5432/${MARKETING_DB_NAME:-marketing}
-      REDIS_URL: redis://marketing-redis:6379
-      # Object storage (Cloudflare R2 over the S3 API, or self-hosted MinIO)
-      S3_ENDPOINT: ${R2_ENDPOINT}
-      S3_REGION: ${S3_REGION:-auto}
-      S3_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID}
-      S3_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY}
-      S3_BUCKET: ${MARKETING_UPLOADS_BUCKET:-scratchsolid-uploads}
-      S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-false}
-      R2_PUBLIC_BASE: ${R2_PUBLIC_BASE:-https://uploads.scratchsolidsolutions.org}
-      # Public URLs
-      NEXT_PUBLIC_BASE_URL: ${MARKETING_BASE_URL:-https://scratchsolidsolutions.org}
-      NEXT_PUBLIC_API_URL: ${MARKETING_API_URL:-https://api.scratchsolidsolutions.org/api}
-      # Auth / integrations
-      JWT_SECRET: ${JWT_SECRET}
-      CSRF_SECRET: ${CSRF_SECRET}
-      RESEND_API_KEY: ${RESEND_API_KEY}
-      ZOHO_ORG_ID: ${ZOHO_ORG_ID:-}
-      ZOHO_CLIENT_ID: ${ZOHO_CLIENT_ID:-}
-      ZOHO_CLIENT_SECRET: ${ZOHO_CLIENT_SECRET:-}
-      ZOHO_REFRESH_TOKEN: ${ZOHO_REFRESH_TOKEN:-}
-    depends_on:
-      marketing-postgres:
-        condition: service_healthy
-      marketing-redis:
-        condition: service_started
-    networks:
-      - scratch_internal
-      - scratch_public
-
-  # ═══════════════════════════════════════════════════════════════
-  #  INTERNAL PORTAL — Staff/admin/cleaner Next.js app
-  # ═══════════════════════════════════════════════════════════════
-  portal-postgres:
-    image: postgres:15-alpine
-    container_name: portal_db
-    restart: always
-    expose:
-      - "5432"
-    environment:
-      POSTGRES_USER: ${PORTAL_DB_USER:-portal}
-      POSTGRES_PASSWORD: ${PORTAL_DB_PASSWORD}
-      POSTGRES_DB: ${PORTAL_DB_NAME:-portal}
-    volumes:
-      - portal_db_data:/var/lib/postgresql/data
-    networks:
-      - scratch_internal
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${PORTAL_DB_USER:-portal} -d ${PORTAL_DB_NAME:-portal}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-
-  portal-redis:
-    image: redis:7-alpine
-    container_name: portal_redis
-    restart: always
-    volumes:
-      - portal_redis_data:/data
-    networks:
-      - scratch_internal
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  portal-web:
-    # Gated behind the "apps" profile (see marketing-web). The portal currently
-    # runs on Cloudflare Workers (restored via the universal runtime-context);
-    # only enable this container during a deliberate Hetzner cutover:
-    #   docker compose --profile apps up -d portal-web
-    profiles: ["apps"]
-    build:
-      context: ../internal-portal
-      dockerfile: Dockerfile
-    image: scratchsolid-portal:latest
-    container_name: portal_web
-    restart: always
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.portal.rule=Host(`portal.scratchsolidsolutions.org`)"
-      - "traefik.http.routers.portal.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.portal.entrypoints=websecure"
-      - "traefik.http.services.portal.loadbalancer.server.port=3000"
-    environment:
-      NODE_ENV: production
-      PORT: "3000"
-      HOSTNAME: "0.0.0.0"
-      # Both logical DBs (scratchsolid_db + training_db) share one Postgres
-      # instance; training tables live alongside portal tables.
-      DATABASE_URL: postgresql://${PORTAL_DB_USER:-portal}:${PORTAL_DB_PASSWORD}@portal-postgres:5432/${PORTAL_DB_NAME:-portal}
-      REDIS_URL: redis://portal-redis:6379
-      S3_ENDPOINT: ${R2_ENDPOINT}
-      S3_REGION: ${S3_REGION:-auto}
-      S3_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID}
-      S3_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY}
-      S3_BUCKET: ${PORTAL_UPLOADS_BUCKET:-scratchsolid-uploads}
-      S3_PHOTOS_BUCKET: ${PORTAL_PHOTOS_BUCKET:-scratchsolid-uploads}
-      S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-false}
-      R2_PUBLIC_BASE: ${R2_PUBLIC_BASE:-https://uploads.scratchsolidsolutions.org}
-      NEXT_PUBLIC_BASE_URL: ${PORTAL_BASE_URL:-https://portal.scratchsolidsolutions.org}
-      NEXT_PUBLIC_API_URL: ${MARKETING_API_URL:-https://api.scratchsolidsolutions.org/api}
-      ALLOWED_ORIGINS: ${PORTAL_BASE_URL:-https://portal.scratchsolidsolutions.org}
-      JWT_SECRET: ${JWT_SECRET}
-      CSRF_SECRET: ${CSRF_SECRET}
-      RESEND_API_KEY: ${RESEND_API_KEY}
-      INTERNAL_PORTAL_N8N_WEBHOOK_SECRET: ${INTERNAL_PORTAL_N8N_WEBHOOK_SECRET}
-      # Zoho Books / CRM
-      ZOHO_ORG_ID: ${ZOHO_ORG_ID:-}
-      ZOHO_CLIENT_ID: ${ZOHO_CLIENT_ID:-}
-      ZOHO_CLIENT_SECRET: ${ZOHO_CLIENT_SECRET:-}
-      ZOHO_REFRESH_TOKEN: ${ZOHO_REFRESH_TOKEN:-}
-      # ERPNext
-      ERPNEXT_BASE_URL: ${ERPNEXT_BASE_URL:-}
-      ERPNEXT_API_KEY: ${ERPNEXT_API_KEY:-}
-      ERPNEXT_API_SECRET: ${ERPNEXT_API_SECRET:-}
-      # Meta WhatsApp Cloud API
-      META_WABA_ID: ${META_WABA_ID:-}
-      META_PHONE_NUMBER_ID: ${META_PHONE_NUMBER_ID:-}
-      META_ACCESS_TOKEN: ${META_ACCESS_TOKEN:-}
-      META_VERIFY_TOKEN: ${META_VERIFY_TOKEN:-}
-    depends_on:
-      portal-postgres:
-        condition: service_healthy
-      portal-redis:
-        condition: service_started
-    networks:
-      - scratch_internal
-      - scratch_public
 
 # ═════════════════════════════════════════════════════════════════
 #  VOLUMES
 # ═════════════════════════════════════════════════════════════════
 volumes:
   traefik_certs:
-  marketing_db_data:
-  marketing_redis_data:
-  portal_db_data:
-  portal_redis_data:
   calcom_db_data:
   n8n_db_data:
   n8n_storage:

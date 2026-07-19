@@ -64,11 +64,41 @@ export async function getUserByEmail(db: D1Database, email: string) {
   }
 }
 
+/**
+ * A phone number can be stored as +27XXXXXXXXX, 27XXXXXXXXX, or 0XXXXXXXXX
+ * depending on which format the user happened to type at signup - the
+ * signup form's placeholder ("+27 12 345 6789") and the login form's
+ * placeholder ("0730000000, 10 digits") suggest two different formats, and
+ * nothing normalizes between them. Without this, a real customer who signs
+ * up in one format and later logs in using the other gets "Invalid
+ * credentials" even with the exact right number and password. Generate every
+ * plausible variant of the given input and match any of them, rather than
+ * requiring stored data to be migrated to one canonical format.
+ */
+function phoneLookupVariants(phone: string): string[] {
+  const digits = phone.replace(/[^\d]/g, '');
+  const variants = new Set<string>([phone]);
+  if (digits.startsWith('27') && digits.length === 11) {
+    variants.add(`+${digits}`);
+    variants.add(digits);
+    variants.add(`0${digits.slice(2)}`);
+  } else if (digits.startsWith('0') && digits.length === 10) {
+    variants.add(digits);
+    variants.add(`+27${digits.slice(1)}`);
+    variants.add(`27${digits.slice(1)}`);
+  } else if (digits) {
+    variants.add(digits);
+  }
+  return Array.from(variants);
+}
+
 export async function getUserByPhone(db: D1Database, phone: string) {
+  const variants = phoneLookupVariants(phone);
+  const whereClause = variants.map(() => 'phone = ?').join(' OR ');
   try {
-    return await db.prepare('SELECT id, email, role, name, phone, address, business_name, password_hash, failed_attempts, locked_until, email_verified FROM users WHERE phone = ?').bind(phone).first();
+    return await db.prepare(`SELECT id, email, role, name, phone, address, business_name, password_hash, failed_attempts, locked_until, email_verified FROM users WHERE ${whereClause}`).bind(...variants).first();
   } catch {
-    const row = await db.prepare('SELECT id, email, role, name, phone, address, business_name, password_hash, failed_attempts, locked_until FROM users WHERE phone = ?').bind(phone).first();
+    const row = await db.prepare(`SELECT id, email, role, name, phone, address, business_name, password_hash, failed_attempts, locked_until FROM users WHERE ${whereClause}`).bind(...variants).first();
     return row ? { ...row, email_verified: 1 } : null;
   }
 }
@@ -153,9 +183,12 @@ export async function incrementFailedAttemptsByPhone(db: D1Database, phone: stri
   if (!user) return 0;
   const attempts = ((user as any).failed_attempts || 0) + 1;
   const lockedUntil = attempts >= 5 ? new Date(Date.now() + 15 * 60 * 1000).toISOString() : (user as any).locked_until;
-  // Update by phone since email may not exist
+  // Update using the user's actual stored phone (from the lookup above),
+  // not the raw login input - they can differ in format (see
+  // phoneLookupVariants) and a raw-input WHERE phone = ? would silently
+  // match zero rows.
   await db.prepare('UPDATE users SET failed_attempts = ?, locked_until = ? WHERE phone = ?')
-    .bind(attempts, lockedUntil || null, phone).run();
+    .bind(attempts, lockedUntil || null, (user as any).phone).run();
   return attempts;
 }
 
@@ -164,7 +197,12 @@ export async function resetFailedAttempts(db: D1Database, email: string) {
 }
 
 export async function resetFailedAttemptsByPhone(db: D1Database, phone: string) {
-  await db.prepare('UPDATE users SET failed_attempts = 0, locked_until = NULL WHERE phone = ?').bind(phone).run();
+  // Same reasoning as incrementFailedAttemptsByPhone - resolve to the user's
+  // actual stored phone value first, since the raw login input may be in a
+  // different (but equivalent) format.
+  const user = await getUserByPhone(db, phone);
+  if (!user) return;
+  await db.prepare('UPDATE users SET failed_attempts = 0, locked_until = NULL WHERE phone = ?').bind((user as any).phone).run();
 }
 
 export async function isAccountLocked(db: D1Database, email: string): Promise<boolean> {
@@ -453,6 +491,278 @@ export async function assignBookingToCleaner(db: D1Database, bookingId: number, 
     `UPDATE bookings SET cleaner_id = ?, status = 'assigned', updated_at = datetime('now') WHERE id = ? RETURNING *`
   ).bind(cleanerId, bookingId).first();
   return result;
+}
+
+// Digital projects (Digital dashboard department)
+export async function createProject(db: D1Database, data: {
+  client_id: number;
+  name: string;
+  description?: string;
+  status?: string;
+  start_date?: string;
+  end_date?: string;
+}) {
+  const result = await db.prepare(
+    `INSERT INTO projects (client_id, name, description, status, start_date, end_date)
+     VALUES (?, ?, ?, ?, ?, ?) RETURNING *`
+  ).bind(
+    data.client_id,
+    data.name,
+    data.description || '',
+    data.status || 'active',
+    data.start_date || null,
+    data.end_date || null
+  ).first();
+  return result;
+}
+
+export async function updateProject(db: D1Database, id: number, data: Record<string, any>) {
+  const fields = Object.keys(data);
+  const setClause = fields.map(f => `${f} = ?`).join(', ');
+  const values = [...fields.map(f => data[f]), id];
+
+  const result = await db.prepare(
+    `UPDATE projects SET ${setClause}, updated_at = datetime('now') WHERE id = ? RETURNING *`
+  ).bind(...values).first();
+  return result;
+}
+
+export async function getProjectsByClient(db: D1Database, clientId: number) {
+  const result = await db.prepare('SELECT * FROM projects WHERE client_id = ? ORDER BY created_at DESC').bind(clientId).all();
+  return result.results || [];
+}
+
+export async function getAllProjects(db: D1Database) {
+  const result = await db.prepare(
+    `SELECT projects.*, users.name AS client_name, users.email AS client_email
+     FROM projects JOIN users ON users.id = projects.client_id
+     ORDER BY projects.created_at DESC`
+  ).all();
+  return result.results || [];
+}
+
+export async function getProjectById(db: D1Database, id: number) {
+  const result = await db.prepare('SELECT * FROM projects WHERE id = ?').bind(id).first();
+  return result;
+}
+
+export async function getProjectDetail(db: D1Database, id: number) {
+  const project = await db.prepare('SELECT * FROM projects WHERE id = ?').bind(id).first();
+  if (!project) return null;
+  const [phases, milestones, files, updates] = await Promise.all([
+    db.prepare('SELECT * FROM project_phases WHERE project_id = ? ORDER BY order_index ASC').bind(id).all(),
+    db.prepare('SELECT * FROM project_milestones WHERE project_id = ? ORDER BY id ASC').bind(id).all(),
+    db.prepare('SELECT * FROM project_files WHERE project_id = ? ORDER BY created_at DESC').bind(id).all(),
+    db.prepare('SELECT * FROM project_updates WHERE project_id = ? ORDER BY created_at DESC LIMIT 20').bind(id).all(),
+  ]);
+  return {
+    ...(project as Record<string, any>),
+    phases: phases.results || [],
+    milestones: milestones.results || [],
+    files: files.results || [],
+    updates: updates.results || [],
+  };
+}
+
+export async function addProjectPhase(db: D1Database, data: {
+  project_id: number;
+  name: string;
+  status?: string;
+  order_index?: number;
+}) {
+  const result = await db.prepare(
+    `INSERT INTO project_phases (project_id, name, status, order_index) VALUES (?, ?, ?, ?) RETURNING *`
+  ).bind(data.project_id, data.name, data.status || 'pending', data.order_index || 0).first();
+  return result;
+}
+
+export async function updateProjectPhase(db: D1Database, id: number, data: Record<string, any>) {
+  const fields = Object.keys(data);
+  const setClause = fields.map(f => `${f} = ?`).join(', ');
+  const values = [...fields.map(f => data[f]), id];
+  const result = await db.prepare(
+    `UPDATE project_phases SET ${setClause}, updated_at = datetime('now') WHERE id = ? RETURNING *`
+  ).bind(...values).first();
+  return result;
+}
+
+export async function addProjectMilestone(db: D1Database, data: {
+  project_id: number;
+  phase_id?: number;
+  name: string;
+  status?: string;
+  billing_status?: string;
+  amount?: number;
+  due_date?: string;
+}) {
+  const result = await db.prepare(
+    `INSERT INTO project_milestones (project_id, phase_id, name, status, billing_status, amount, due_date)
+     VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING *`
+  ).bind(
+    data.project_id,
+    data.phase_id || null,
+    data.name,
+    data.status || 'pending',
+    data.billing_status || 'not_invoiced',
+    data.amount || 0,
+    data.due_date || null
+  ).first();
+  return result;
+}
+
+export async function updateProjectMilestone(db: D1Database, id: number, data: Record<string, any>) {
+  const fields = Object.keys(data);
+  const setClause = fields.map(f => `${f} = ?`).join(', ');
+  const values = [...fields.map(f => data[f]), id];
+  const result = await db.prepare(
+    `UPDATE project_milestones SET ${setClause}, updated_at = datetime('now') WHERE id = ? RETURNING *`
+  ).bind(...values).first();
+  return result;
+}
+
+export async function addProjectFile(db: D1Database, data: {
+  project_id: number;
+  uploaded_by?: number;
+  file_name: string;
+  file_url: string;
+  file_type?: string;
+}) {
+  const result = await db.prepare(
+    `INSERT INTO project_files (project_id, uploaded_by, file_name, file_url, file_type) VALUES (?, ?, ?, ?, ?) RETURNING *`
+  ).bind(data.project_id, data.uploaded_by || null, data.file_name, data.file_url, data.file_type || '').first();
+  return result;
+}
+
+export async function addProjectUpdate(db: D1Database, data: {
+  project_id: number;
+  author_id?: number;
+  message: string;
+}) {
+  const result = await db.prepare(
+    `INSERT INTO project_updates (project_id, author_id, message) VALUES (?, ?, ?) RETURNING *`
+  ).bind(data.project_id, data.author_id || null, data.message).first();
+  return result;
+}
+
+// Digital project intake (public "Start a project" wizard -> staff review queue)
+export async function createIntakeRequest(db: D1Database, data: {
+  client_id?: number | null;
+  email: string;
+  name: string;
+  company_name?: string;
+  who_target_users?: string;
+  what_description?: string;
+  why_description?: string;
+  when_timeline?: string;
+  where_context?: string;
+  how_description?: string;
+  backend_interaction_description?: string;
+  logo_file_url?: string;
+  color_theme?: string;
+  support_tier?: string;
+  support_monthly_rate?: number;
+  support_min_term_months?: number;
+}) {
+  const result = await db.prepare(
+    `INSERT INTO project_intake_requests
+      (client_id, email, name, company_name, who_target_users, what_description, why_description,
+       when_timeline, where_context, how_description, backend_interaction_description,
+       logo_file_url, color_theme, support_tier, support_monthly_rate, support_min_term_months, status)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft')
+     RETURNING *`
+  ).bind(
+    data.client_id ?? null,
+    data.email,
+    data.name,
+    data.company_name || '',
+    data.who_target_users || '',
+    data.what_description || '',
+    data.why_description || '',
+    data.when_timeline || '',
+    data.where_context || '',
+    data.how_description || '',
+    data.backend_interaction_description || '',
+    data.logo_file_url || '',
+    data.color_theme || '',
+    data.support_tier || 'warranty',
+    data.support_monthly_rate || 0,
+    data.support_min_term_months || 0
+  ).first();
+  return result;
+}
+
+export async function updateIntakeRequest(db: D1Database, id: number, data: Record<string, any>) {
+  const fields = Object.keys(data);
+  if (fields.length === 0) return getIntakeRequest(db, id);
+  const setClause = fields.map(f => `${f} = ?`).join(', ');
+  const values = [...fields.map(f => data[f]), id];
+  const result = await db.prepare(
+    `UPDATE project_intake_requests SET ${setClause}, updated_at = datetime('now') WHERE id = ? RETURNING *`
+  ).bind(...values).first();
+  return result;
+}
+
+export async function getIntakeRequest(db: D1Database, id: number) {
+  const result = await db.prepare('SELECT * FROM project_intake_requests WHERE id = ?').bind(id).first();
+  return result;
+}
+
+export async function getAllIntakeRequests(db: D1Database) {
+  const result = await db.prepare('SELECT * FROM project_intake_requests ORDER BY created_at DESC').all();
+  return result.results || [];
+}
+
+export async function updateIntakeStatus(db: D1Database, id: number, status: string) {
+  const result = await db.prepare(
+    `UPDATE project_intake_requests SET status = ?, updated_at = datetime('now') WHERE id = ? RETURNING *`
+  ).bind(status, id).first();
+  return result;
+}
+
+export async function markIntakeConverted(db: D1Database, id: number, projectId: number) {
+  const result = await db.prepare(
+    `UPDATE project_intake_requests SET status = 'converted', converted_project_id = ?, updated_at = datetime('now') WHERE id = ? RETURNING *`
+  ).bind(projectId, id).first();
+  return result;
+}
+
+export async function addMockupIteration(db: D1Database, data: {
+  intake_id: number;
+  iteration_number: number;
+  prompt_text?: string;
+  generated_html: string;
+  input_tokens?: number;
+  output_tokens?: number;
+  estimated_cost_cents?: number;
+}) {
+  const result = await db.prepare(
+    `INSERT INTO intake_mockup_iterations
+      (intake_id, iteration_number, prompt_text, generated_html, input_tokens, output_tokens, estimated_cost_cents)
+     VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING *`
+  ).bind(
+    data.intake_id,
+    data.iteration_number,
+    data.prompt_text || '',
+    data.generated_html,
+    data.input_tokens || 0,
+    data.output_tokens || 0,
+    data.estimated_cost_cents || 0
+  ).first();
+  return result;
+}
+
+export async function getIntakeIterations(db: D1Database, intakeId: number) {
+  const result = await db.prepare(
+    'SELECT * FROM intake_mockup_iterations WHERE intake_id = ? ORDER BY iteration_number ASC'
+  ).bind(intakeId).all();
+  return result.results || [];
+}
+
+export async function countIntakeIterations(db: D1Database, intakeId: number): Promise<number> {
+  const result = await db.prepare(
+    'SELECT COUNT(*) as count FROM intake_mockup_iterations WHERE intake_id = ?'
+  ).bind(intakeId).first<{ count: number }>();
+  return result?.count || 0;
 }
 
 // Task completion / earnings

@@ -1,5 +1,6 @@
 import SiteNav from "@/components/SiteNav";
 import SiteFooter from "@/components/SiteFooter";
+import StartProjectButton from "@/components/digital/StartProjectButton";
 
 export const metadata = {
   title: "Scratch Solid Digital — Web & App Development",
@@ -23,12 +24,7 @@ export default function DigitalPage() {
             Websites, apps, and booking systems &mdash; designed and run in-house, for our own cleaning and transport operations first, and for other businesses too.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <a
-              href="mailto:customerservice@scratchsolidsolutions.org?subject=New%20project%20enquiry"
-              className="rounded-lg bg-[#B08A5E] px-7 py-3.5 text-base font-semibold text-[#2E1F16] shadow-lg hover:bg-[#c39a6c] transition-colors"
-            >
-              Start a project
-            </a>
+            <StartProjectButton />
             <a
               href="https://wa.me/27696735947?text=Hi%2C%20I%27d%20like%20to%20discuss%20a%20web%2Fapp%20project."
               target="_blank"

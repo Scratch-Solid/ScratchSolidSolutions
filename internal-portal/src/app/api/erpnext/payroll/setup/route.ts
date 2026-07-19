@@ -36,6 +36,10 @@ export async function POST(request: NextRequest) {
     }
 
     const bankDetailsPresent = Boolean(bank_name && account_number);
+    // setupCleanerPayrollInErpNext() always returns 'pending'/'skipped' now -
+    // it's short-circuited (see that function's own comment) since the
+    // Salary Structure Assignment doctype it used to call requires Frappe's
+    // hrms app, which isn't installed and previously crashed ERPNext entirely.
     const result = await setupCleanerPayrollInErpNext({
       traceId,
       employeeId: employee_id,
@@ -44,8 +48,8 @@ export async function POST(request: NextRequest) {
     });
 
     const response = NextResponse.json({
-      success: result.status === 'configured',
-      message: result.status === 'configured' ? 'Payroll setup in ERPNext' : 'ERPNext payroll integration pending',
+      success: false,
+      message: 'ERPNext payroll integration pending (requires the Frappe HR app, which is not installed)',
       data: {
         employee_id,
         paysheet_code,
@@ -53,7 +57,7 @@ export async function POST(request: NextRequest) {
         status: result.status,
         reason: result.reason,
       }
-    }, { status: result.status === 'configured' ? 201 : 503 });
+    }, { status: 503 });
     return withSecurityHeaders(response, traceId);
 
   } catch (error) {

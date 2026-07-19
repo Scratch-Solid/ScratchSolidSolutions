@@ -129,30 +129,30 @@ export default function AIAssistant() {
       {/* AI Assistant Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-14 h-14 bg-purple-600 rounded-full shadow-2xl hover:bg-purple-700 transition-colors flex items-center justify-center border-2 border-white animate-bounce-slow"
-        aria-label="AI Assistant"
-        title="Ask our AI Assistant"
+        className="w-12 h-12 bg-[#2E1F16] rounded-2xl shadow-2xl hover:bg-[#3a281a] transition-colors flex items-center justify-center border border-[#B08A5E]/60"
+        aria-label="Scratch Solid Assistant"
+        title="Ask the Scratch Solid Assistant"
       >
-        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-5 h-5 text-[#B08A5E]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
         </svg>
       </button>
 
       {/* AI Chat Window */}
       {isOpen && (
-        <div className="absolute bottom-16 right-0 w-80 sm:w-96 h-[28rem] bg-white rounded-2xl shadow-2xl border-2 border-purple-200 flex flex-col relative overflow-hidden">
+        <div className="absolute bottom-16 right-0 w-80 sm:w-96 h-[28rem] bg-white rounded-2xl shadow-2xl border border-[#E9E0D3] flex flex-col relative overflow-hidden">
           <LogoWatermark size="md" />
           {/* Header */}
-          <div className="bg-purple-600 text-white p-4 rounded-t-2xl flex-shrink-0">
+          <div className="text-white p-4 rounded-t-2xl flex-shrink-0" style={{ background: "linear-gradient(135deg, #2E1F16, #3a281a)" }}>
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                <h3 className="font-semibold">AI Assistant</h3>
+                <div className="w-6 h-6 rounded-md bg-[#B08A5E] text-[#2E1F16] flex items-center justify-center text-xs font-bold">S</div>
+                <h3 className="font-semibold text-[#F7F2EA]" style={{ fontFamily: "Georgia, serif" }}>Scratch Solid Assistant</h3>
               </div>
               <div className="flex items-center space-x-1">
                 <button
                   onClick={clearChat}
-                  className="text-white hover:bg-purple-700 rounded p-1"
+                  className="text-[#CBB89A] hover:bg-white/10 hover:text-[#F7F2EA] rounded p-1"
                   title="Clear chat"
                   aria-label="Clear chat"
                 >
@@ -162,7 +162,7 @@ export default function AIAssistant() {
                 </button>
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="text-white hover:bg-purple-700 rounded p-1"
+                  className="text-[#CBB89A] hover:bg-white/10 hover:text-[#F7F2EA] rounded p-1"
                   title="Close chat"
                   aria-label="Close chat"
                 >
@@ -172,7 +172,7 @@ export default function AIAssistant() {
                 </button>
               </div>
             </div>
-            <p className="text-xs text-purple-200 mt-1">Ask me about services, pricing, tracking, and more</p>
+            <p className="text-xs text-[#CBB89A] mt-1">Ask me about services, pricing, tracking, and more</p>
           </div>
 
           {/* Messages */}
@@ -185,10 +185,10 @@ export default function AIAssistant() {
                 <div
                   className={`max-w-[85%] p-3 rounded-lg whitespace-pre-line text-sm ${
                     message.role === "user"
-                      ? "bg-purple-600 text-white"
+                      ? "bg-[#2E1F16] text-[#F7F2EA]"
                       : message.matched === false
-                      ? "bg-yellow-50 text-gray-800 border border-yellow-200"
-                      : "bg-gray-100 text-gray-800"
+                      ? "bg-[#FAF3E6] text-[#3f342a] border border-[#E9DCC0]"
+                      : "bg-[#F7F2EA] text-[#3f342a] border border-[#E9E0D3]"
                   }`}
                 >
                   {message.content}
@@ -208,9 +208,9 @@ export default function AIAssistant() {
             ))}
             {isLoading && (
               <div className="flex justify-start">
-                <div className="bg-gray-100 text-gray-800 p-3 rounded-lg">
+                <div className="bg-[#F7F2EA] text-[#3f342a] border border-[#E9E0D3] p-3 rounded-lg">
                   <div className="flex items-center space-x-2">
-                    <div className="animate-spin rounded-full border-2 border-purple-600 border-t-transparent w-4 h-4"></div>
+                    <div className="animate-spin rounded-full border-2 border-[#B08A5E] border-t-transparent w-4 h-4"></div>
                     <span className="text-sm">Thinking...</span>
                   </div>
                 </div>
@@ -227,7 +227,7 @@ export default function AIAssistant() {
                   key={topic.label}
                   onClick={() => handleSend(topic.query)}
                   disabled={isLoading}
-                  className="text-xs px-2 py-1 bg-purple-50 text-purple-700 rounded-full border border-purple-200 hover:bg-purple-100 transition-colors disabled:opacity-50"
+                  className="text-xs px-2 py-1 bg-[#F7F2EA] text-[#8a6a45] rounded-full border border-[#E9E0D3] hover:bg-[#F0E6D6] transition-colors disabled:opacity-50"
                 >
                   {topic.label}
                 </button>
@@ -245,7 +245,7 @@ export default function AIAssistant() {
                     key={q}
                     onClick={() => handleSend(q)}
                     disabled={isLoading}
-                    className="text-xs px-2 py-1 bg-gray-50 text-gray-700 rounded-full border border-gray-200 hover:bg-gray-100 transition-colors disabled:opacity-50 text-left"
+                    className="text-xs px-2 py-1 bg-white text-[#6B5F4D] rounded-full border border-[#E9E0D3] hover:bg-[#F7F2EA] transition-colors disabled:opacity-50 text-left"
                   >
                     {q}
                   </button>
@@ -264,13 +264,13 @@ export default function AIAssistant() {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Ask me anything..."
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                className="flex-1 px-3 py-2 border border-[#E9E0D3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B08A5E] text-sm"
                 disabled={isLoading}
               />
               <button
                 onClick={() => handleSend()}
                 disabled={isLoading || !input.trim()}
-                className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-[#B08A5E] text-[#2E1F16] px-4 py-2 rounded-lg hover:bg-[#c39a6c] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="Send"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

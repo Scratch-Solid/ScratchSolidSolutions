@@ -1,0 +1,106 @@
+name: Deploy to Hetzner
+
+# Automates what infra/scripts/deploy-stack.sh's "pull latest + restart" step
+# has always been done by hand: SSH in, git pull, docker compose pull/up.
+# ERPNext/Cal.com/n8n/Traefik change far less often than the Workers apps, so
+# this uses its own tag prefix (hetzner-v*) instead of sharing the v* tags
+# that trigger deploy-production.yml - the two stacks ship independently.
+#
+# n8n workflow JSON sync (infra/n8n-workflows/*.json -> n8n-setup.js) is
+# intentionally NOT automated here - that script isn't yet safe to re-run
+# blindly (see infra/scripts/n8n-setup.js's own setup notes on
+# already-exists behavior for credentials/workflows). Keep running it by
+# hand until it's been audited for idempotency.
+
+on:
+  push:
+    tags:
+      - 'hetzner-v*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  deploy-hetzner:
+    name: Deploy infra stack to Hetzner
+    runs-on: ubuntu-latest
+    environment: hetzner-production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.HETZNER_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          echo "${{ secrets.HETZNER_SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+
+      - name: Sync infra directory
+        run: |
+          rsync -az --delete \
+            -e "ssh -i ~/.ssh/deploy_key -o UserKnownHostsFile=~/.ssh/known_hosts" \
+            --exclude '.env' \
+            ./infra/ \
+            "${{ secrets.HETZNER_SSH_USER }}@${{ secrets.HETZNER_HOST }}:/opt/ScratchSolidSolutions/infra/"
+
+      - name: Pull images and restart stack
+        run: |
+          ssh -i ~/.ssh/deploy_key -o UserKnownHostsFile=~/.ssh/known_hosts \
+            "${{ secrets.HETZNER_SSH_USER }}@${{ secrets.HETZNER_HOST }}" '
+            set -euo pipefail
+            cd /opt/ScratchSolidSolutions/infra
+            docker compose pull --quiet
+            docker compose up -d --remove-orphans
+          '
+
+      - name: Wait for services to settle
+        run: sleep 45
+
+      - name: Smoke test public endpoints
+        id: smoke_test
+        run: |
+          failures=""
+          check() {
+            local name=$1 url=$2 expect=$3
+            # -L: several of these services redirect their root path when
+            # logged out (Cal.com -> /auth/login, Uptime Kuma -> /dashboard)
+            # - that's a healthy 30x, not a failure. Check the page it
+            # actually lands on.
+            code=$(curl -sL -o /dev/null -w "%{http_code}" --max-time 20 "$url" || echo "000")
+            if [ "$code" != "$expect" ]; then
+              failures="${failures}- $name returned $code (expected $expect)\n"
+            fi
+          }
+          check "ERPNext" https://erp.scratchsolidsolutions.org/api/method/ping 200
+          check "Cal.com" https://booking.scratchsolidsolutions.org 200
+          check "n8n" https://n8n.scratchsolidsolutions.org 200
+          check "Uptime Kuma" https://status.scratchsolidsolutions.org 200
+          if [ -n "$failures" ]; then
+            echo -e "$failures"
+            echo "failures<<EOF" >> "$GITHUB_OUTPUT"
+            echo -e "$failures" >> "$GITHUB_OUTPUT"
+            echo "EOF" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
+          echo "All Hetzner services responded as expected."
+
+      - name: Report failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          FAILURES: ${{ steps.smoke_test.outputs.failures }}
+        run: |
+          BODY="Hetzner infra deploy failed smoke tests.
+
+          ${FAILURES:-See workflow logs - failure occurred before smoke test step.}
+
+          Run: $RUN_URL
+          Time: $(date -u +"%Y-%m-%d %H:%M UTC")
+
+          Note: docker compose up -d already ran against the live server before this check failed - verify container health manually (docker compose ps) rather than assuming nothing changed."
+          gh issue create --repo "$GITHUB_REPOSITORY" --title "🔴 Hetzner infra deploy failed" --body "$BODY" --label "production-alert" || true

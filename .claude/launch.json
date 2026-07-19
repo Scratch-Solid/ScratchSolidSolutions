@@ -7,6 +7,12 @@
       "runtimeArgs": ["run", "dev", "--prefix", "marketing-site"],
       "port": 3000,
       "autoPort": true
+    },
+    {
+      "name": "internal-portal-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "internal-portal", "--", "-p", "3001"],
+      "port": 3001
     }
   ]
 }

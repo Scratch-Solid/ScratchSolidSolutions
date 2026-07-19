@@ -89,6 +89,14 @@ export async function getResendApiKey(): Promise<string> {
   return apiKey;
 }
 
+export async function getAnthropicApiKey(): Promise<string> {
+  const apiKey = await getCloudflareSecret('ANTHROPIC_API_KEY');
+  if (!apiKey) {
+    throw new Error('ANTHROPIC_API_KEY environment variable is required');
+  }
+  return apiKey;
+}
+
 export function getZohoCredentials(): { orgId: string; clientId: string; clientSecret: string; refreshToken: string; dc?: string } {
   const orgId = process.env.ZOHO_ORG_ID;
   const clientId = process.env.ZOHO_CLIENT_ID;

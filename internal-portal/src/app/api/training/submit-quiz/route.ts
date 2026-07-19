@@ -5,7 +5,7 @@ import { withAuth, withTracing, withSecurityHeaders, withCsrf } from '@/lib/midd
 
 export async function POST(request: NextRequest) {
   const traceId = withTracing(request);
-  const authResult = await withAuth(request, ['cleaner', 'admin']);
+  const authResult = await withAuth(request, ['cleaner', 'admin', 'staff']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { user } = authResult;
 

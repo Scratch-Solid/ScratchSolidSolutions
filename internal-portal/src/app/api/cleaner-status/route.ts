@@ -9,7 +9,7 @@ const VALID_STATUSES = ['idle', 'on_way', 'arrived', 'completed'];
 
 export async function PUT(request: NextRequest) {
   const traceId = withTracing(request);
-  const authResult = await withAuth(request, ['cleaner', 'admin']);
+  const authResult = await withAuth(request, ['cleaner', 'admin', 'staff']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
   const env = (authResult as any).env;
@@ -212,7 +212,7 @@ export async function PUT(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   const traceId = withTracing(request);
-  const authResult = await withAuth(request, ['cleaner', 'admin']);
+  const authResult = await withAuth(request, ['cleaner', 'admin', 'staff']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
 

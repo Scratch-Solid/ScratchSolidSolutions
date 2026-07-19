@@ -318,7 +318,7 @@ export async function hasPermission(db: any, userId: number, permission: string)
  * Detect admin email domain for automatic admin routing
  */
 export function isAdminEmailDomain(email: string): boolean {
-  return email.toLowerCase().endsWith('@scratchsolidsolution.org');
+  return email.toLowerCase().endsWith('@scratchsolidsolutions.org');
 }
 
 /**

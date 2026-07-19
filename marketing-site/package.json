@@ -19,6 +19,7 @@
     "test:selenium": "jest --config jest.selenium.config.js tests/selenium"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.112.3",
     "@aws-sdk/client-s3": "^3.787.0",
     "@aws-sdk/s3-request-presigner": "^3.787.0",
     "@opennextjs/cloudflare": "^1.19.11",

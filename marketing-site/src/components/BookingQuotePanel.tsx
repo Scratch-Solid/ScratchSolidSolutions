@@ -426,7 +426,7 @@ export default function BookingQuotePanel({
         <p className="text-green-700">{success}</p>
         <button
           onClick={onCancel}
-          className="mt-4 rounded-full bg-blue-600 px-8 py-3 text-white font-semibold hover:bg-blue-700 transition-colors"
+          className="mt-4 rounded-full bg-[#B08A5E] px-8 py-3 text-[#2E1F16] font-semibold hover:bg-[#c39a6c] transition-colors"
         >
           Back to Dashboard
         </button>
@@ -459,7 +459,7 @@ export default function BookingQuotePanel({
               <div className="flex justify-between text-sm"><span className="text-gray-500">Account Number</span><span className="font-semibold text-gray-800">{bankingDetails.account_number}</span></div>
               <div className="flex justify-between text-sm"><span className="text-gray-500">Branch Code</span><span className="font-semibold text-gray-800">{bankingDetails.branch_code}</span></div>
               <div className="flex justify-between text-sm"><span className="text-gray-500">Account Type</span><span className="font-semibold text-gray-800 capitalize">{bankingDetails.account_type}</span></div>
-              {calc && <div className="flex justify-between text-sm pt-2 border-t border-gray-200"><span className="text-gray-500">Amount Due</span><span className="font-bold text-blue-700">R{calc.finalPrice.toFixed(2)}</span></div>}
+              {calc && <div className="flex justify-between text-sm pt-2 border-t border-gray-200"><span className="text-gray-500">Amount Due</span><span className="font-bold text-[#2E1F16]">R{calc.finalPrice.toFixed(2)}</span></div>}
             </>
           ) : (
             <p className="text-sm text-red-600">Unable to load banking details. Please contact support to arrange payment.</p>
@@ -475,7 +475,7 @@ export default function BookingQuotePanel({
             value={popReference}
             onChange={(e) => setPopReference(e.target.value)}
             placeholder="e.g. the reference shown on your EFT confirmation"
-            className="w-full rounded-xl border-2 border-gray-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none"
+            className="w-full rounded-xl border-2 border-gray-200 px-4 py-2.5 text-sm focus:border-[#B08A5E] focus:outline-none"
           />
         </div>
 
@@ -487,7 +487,7 @@ export default function BookingQuotePanel({
             type="file"
             accept="image/*,.pdf"
             onChange={handleEftProofUpload}
-            className="w-full text-sm text-gray-600 file:mr-3 file:rounded-full file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-blue-700 hover:file:bg-blue-100"
+            className="w-full text-sm text-gray-600 file:mr-3 file:rounded-full file:border-0 file:bg-[#F7F2EA] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-[#8a6a45] hover:file:bg-[#F0E6D6]"
           />
           {popFile && <p className="text-xs text-gray-500 mt-1">Selected: {popFile.name}</p>}
         </div>
@@ -495,7 +495,7 @@ export default function BookingQuotePanel({
         <button
           onClick={handleEftSubmit}
           disabled={popSubmitting || !popReference.trim()}
-          className="w-full rounded-full bg-blue-600 px-8 py-3 text-white font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50"
+          className="w-full rounded-full bg-[#B08A5E] px-8 py-3 text-[#2E1F16] font-semibold hover:bg-[#c39a6c] transition-colors disabled:opacity-50"
         >
           {popSubmitting ? "Submitting…" : "Submit Payment Details"}
         </button>
@@ -528,8 +528,8 @@ export default function BookingQuotePanel({
                 onClick={() => setPropertyType(pt.value)}
                 className={`text-sm px-3 py-2 rounded-xl border-2 font-medium transition-all ${
                   propertyType === pt.value
-                    ? "border-blue-500 bg-blue-50 text-blue-700"
-                    : "border-gray-200 text-gray-600 hover:border-blue-200"
+                    ? "border-[#B08A5E] bg-[#F7F2EA] text-[#2E1F16]"
+                    : "border-gray-200 text-gray-600 hover:border-[#D3C6AE]"
                 }`}
               >
                 {pt.label}
@@ -546,7 +546,7 @@ export default function BookingQuotePanel({
           <select
             value={area}
             onChange={(e) => setArea(e.target.value)}
-            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
           >
             {areas.map((a) => (
               <option key={a.id} value={a.name}>
@@ -567,7 +567,7 @@ export default function BookingQuotePanel({
               onClick={() =>
                 setQuantity((q) => Math.max(isResidential ? 1 : 50, q - 1))
               }
-              className="w-9 h-9 rounded-full border-2 border-gray-300 text-gray-700 font-bold text-lg hover:border-blue-400 hover:text-blue-600 transition-colors flex items-center justify-center"
+              className="w-9 h-9 rounded-full border-2 border-gray-300 text-gray-700 font-bold text-lg hover:border-[#B08A5E] hover:text-[#8a6a45] transition-colors flex items-center justify-center"
             >
               −
             </button>
@@ -581,13 +581,13 @@ export default function BookingQuotePanel({
               }
               min={isResidential ? 1 : 50}
               max={isResidential ? 10 : 2000}
-              className="w-20 text-center border border-gray-300 rounded-xl px-2 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-20 text-center border border-gray-300 rounded-xl px-2 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
             />
             <button
               onClick={() =>
                 setQuantity((q) => Math.min(isResidential ? 10 : 2000, q + 1))
               }
-              className="w-9 h-9 rounded-full border-2 border-gray-300 text-gray-700 font-bold text-lg hover:border-blue-400 hover:text-blue-600 transition-colors flex items-center justify-center"
+              className="w-9 h-9 rounded-full border-2 border-gray-300 text-gray-700 font-bold text-lg hover:border-[#B08A5E] hover:text-[#8a6a45] transition-colors flex items-center justify-center"
             >
               +
             </button>
@@ -607,7 +607,7 @@ export default function BookingQuotePanel({
             value={location}
             onChange={(e) => setLocation(e.target.value)}
             placeholder="e.g. 12 Main Rd, Durbanville"
-            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
           />
         </div>
       </div>
@@ -617,7 +617,7 @@ export default function BookingQuotePanel({
         <h3 className="font-bold text-gray-800 text-base">2. Select Service</h3>
         {dataLoading ? (
           <div className="flex items-center gap-2 text-gray-500 text-sm py-4">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600" />
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#B08A5E]" />
             Loading services…
           </div>
         ) : services.length === 0 ? (
@@ -644,8 +644,8 @@ export default function BookingQuotePanel({
                   onClick={() => setSelectedServiceId(svc.id)}
                   className={`w-full text-left px-4 py-3 rounded-xl border-2 transition-all ${
                     selectedServiceId === svc.id
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-gray-200 hover:border-blue-200 bg-white"
+                      ? "border-[#B08A5E] bg-[#F7F2EA]"
+                      : "border-gray-200 hover:border-[#D3C6AE] bg-white"
                   }`}
                 >
                   <div className="flex items-center justify-between gap-2">
@@ -661,7 +661,7 @@ export default function BookingQuotePanel({
                     <div className="text-right flex-shrink-0">
                       {displayPrice > 0 ? (
                         <>
-                          <p className="font-bold text-blue-700 text-sm">
+                          <p className="font-bold text-[#8a6a45] text-sm">
                             R{displayPrice.toFixed(0)}
                             {unitPriceLabel}
                           </p>
@@ -697,7 +697,7 @@ export default function BookingQuotePanel({
               value={bookingDate}
               onChange={(e) => setBookingDate(e.target.value)}
               min={new Date().toISOString().split("T")[0]}
-              className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
             />
           </div>
           <div>
@@ -707,7 +707,7 @@ export default function BookingQuotePanel({
             <select
               value={timeSlot}
               onChange={(e) => setTimeSlot(e.target.value)}
-              className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#B08A5E]"
             >
               <option value="">Choose time slot</option>
               {TIME_SLOTS.map((t) => (
@@ -720,13 +720,13 @@ export default function BookingQuotePanel({
         </div>
 
         {clusterSuggestion && !clusterSuggestionDismissed && (
-          <div className="rounded-xl border-2 border-blue-200 bg-blue-50 p-4 flex items-start gap-3">
+          <div className="rounded-xl border-2 border-[#E9E0D3] bg-[#F7F2EA] p-4 flex items-start gap-3">
             <span className="text-2xl">📍</span>
             <div className="flex-1">
-              <p className="text-sm font-semibold text-blue-800">
+              <p className="text-sm font-semibold text-[#2E1F16]">
                 We already have a cleaner booked in {area} on {new Date(`${clusterSuggestion.suggestedDate}T00:00:00`).toLocaleDateString("en-ZA", { weekday: "long", day: "numeric", month: "long" })}
               </p>
-              <p className="text-xs text-blue-700 mt-0.5">
+              <p className="text-xs text-[#3f342a] mt-0.5">
                 Booking the same day usually means faster, more reliable service since your cleaner is already working nearby. Totally up to you.
               </p>
               <div className="flex gap-2 mt-3">
@@ -736,14 +736,14 @@ export default function BookingQuotePanel({
                     setBookingDate(clusterSuggestion.suggestedDate);
                     setClusterSuggestionDismissed(true);
                   }}
-                  className="rounded-full bg-blue-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 transition-colors"
+                  className="rounded-full bg-[#B08A5E] px-4 py-1.5 text-xs font-semibold text-[#2E1F16] hover:bg-[#c39a6c] transition-colors"
                 >
                   Book this day instead
                 </button>
                 <button
                   type="button"
                   onClick={() => setClusterSuggestionDismissed(true)}
-                  className="rounded-full border border-blue-300 px-4 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
+                  className="rounded-full border border-[#D3C6AE] px-4 py-1.5 text-xs font-semibold text-[#8a6a45] hover:bg-[#F0E6D6] transition-colors"
                 >
                   Keep my date
                 </button>
@@ -764,8 +764,8 @@ export default function BookingQuotePanel({
                 onClick={() => setBookingType(bt)}
                 className={`flex-1 py-2.5 rounded-xl border-2 font-semibold text-sm transition-all ${
                   bookingType === bt
-                    ? "border-blue-500 bg-blue-50 text-blue-700"
-                    : "border-gray-200 text-gray-500 hover:border-blue-200"
+                    ? "border-[#B08A5E] bg-[#F7F2EA] text-[#2E1F16]"
+                    : "border-gray-200 text-gray-500 hover:border-[#D3C6AE]"
                 }`}
               >
                 {bt === "once_off" ? "🗓 Once-off" : "🔄 Recurring"}
@@ -784,7 +784,7 @@ export default function BookingQuotePanel({
             onChange={(e) => setSpecialInstructions(e.target.value)}
             placeholder="Any specific requests or access instructions…"
             rows={2}
-            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#B08A5E] resize-none"
           />
         </div>
       </div>
@@ -799,8 +799,8 @@ export default function BookingQuotePanel({
               onClick={() => setPaymentMethod(pm.value)}
               className={`p-3 rounded-xl border-2 transition-all text-center ${
                 paymentMethod === pm.value
-                  ? "border-blue-500 bg-blue-50 text-blue-700"
-                  : "border-gray-200 text-gray-600 hover:border-blue-200"
+                  ? "border-[#B08A5E] bg-[#F7F2EA] text-[#2E1F16]"
+                  : "border-gray-200 text-gray-600 hover:border-[#D3C6AE]"
               }`}
             >
               <p className="font-semibold text-xs leading-tight">{pm.label}</p>
@@ -827,12 +827,12 @@ export default function BookingQuotePanel({
             value={promoInput}
             onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
             placeholder="Enter promo code"
-            className="flex-1 border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 uppercase"
+            className="flex-1 border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#B08A5E] uppercase"
           />
           <button
             onClick={handleApplyPromo}
             disabled={promoLoading || !promoInput.trim()}
-            className="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50"
+            className="px-4 py-2 rounded-xl bg-[#B08A5E] text-[#2E1F16] text-sm font-semibold hover:bg-[#c39a6c] transition-colors disabled:opacity-50"
           >
             {promoLoading ? "…" : "Apply"}
           </button>
@@ -856,8 +856,8 @@ export default function BookingQuotePanel({
 
       {/* ── Price Breakdown ── */}
       {selectedServiceId && calc && (
-        <div className="rounded-2xl border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 p-5 space-y-2">
-          <h3 className="font-bold text-blue-800 text-base mb-3">Price Breakdown</h3>
+        <div className="rounded-2xl border-2 border-[#E9E0D3] bg-[#F7F2EA] p-5 space-y-2">
+          <h3 className="font-bold text-[#2E1F16] text-base mb-3">Price Breakdown</h3>
 
           <div className="space-y-1.5 text-sm">
             <div className="flex justify-between text-gray-700">
@@ -893,14 +893,14 @@ export default function BookingQuotePanel({
             )}
           </div>
 
-          <div className="border-t border-blue-200 mt-3 pt-3 flex justify-between items-center">
-            <span className="font-bold text-blue-800 text-base">Total</span>
-            <span className="font-bold text-blue-800 text-2xl">
+          <div className="border-t border-[#E9E0D3] mt-3 pt-3 flex justify-between items-center">
+            <span className="font-bold text-[#2E1F16] text-base">Total</span>
+            <span className="font-bold text-[#2E1F16] text-2xl">
               R{calc.finalPrice.toFixed(2)}
             </span>
           </div>
 
-          <p className="text-xs text-blue-600 mt-1">
+          <p className="text-xs text-[#8a6a45] mt-1">
             {paymentMethod === "card"
               ? "Payment collected securely via Paystack before booking is confirmed."
               : paymentMethod === "eft"
@@ -980,7 +980,7 @@ export default function BookingQuotePanel({
         <button
           onClick={handleSubmit}
           disabled={loading || !selectedServiceId || !bookingDate || !timeSlot}
-          className="flex-1 rounded-full bg-blue-600 px-6 py-3 text-white font-bold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 rounded-full bg-[#B08A5E] px-6 py-3 text-[#2E1F16] font-bold hover:bg-[#c39a6c] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading
             ? "Processing…"

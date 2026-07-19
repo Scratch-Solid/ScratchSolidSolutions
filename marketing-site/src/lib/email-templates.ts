@@ -32,10 +32,10 @@ export function generateQuoteConfirmationEmail(data: QuoteEmailData): string {
     .header {
       text-align: center;
       padding: 20px 0;
-      border-bottom: 2px solid #1e40af;
+      border-bottom: 2px solid #B08A5E;
     }
     .header h1 {
-      color: #1e40af;
+      color: #2E1F16;
       margin: 0;
       font-size: 28px;
     }
@@ -49,7 +49,7 @@ export function generateQuoteConfirmationEmail(data: QuoteEmailData): string {
       margin: 20px 0;
     }
     .quote-details h2 {
-      color: #1e40af;
+      color: #2E1F16;
       margin-top: 0;
     }
     .price-row {
@@ -64,15 +64,15 @@ export function generateQuoteConfirmationEmail(data: QuoteEmailData): string {
     .price-row.total {
       font-size: 20px;
       font-weight: bold;
-      color: #1e40af;
-      border-top: 2px solid #1e40af;
+      color: #2E1F16;
+      border-top: 2px solid #B08A5E;
       padding-top: 15px;
       margin-top: 15px;
     }
     .button {
       display: inline-block;
-      background: #1e40af;
-      color: white;
+      background: #B08A5E;
+      color: #2E1F16;
       padding: 12px 24px;
       text-decoration: none;
       border-radius: 6px;
@@ -193,7 +193,7 @@ export function generatePromoCodeEmail(data: PromoCodeEmailData): string {
     .header {
       text-align: center;
       padding: 30px 20px;
-      background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+      background: linear-gradient(135deg, #2E1F16 0%, #3a281a 100%);
       color: white;
       border-radius: 12px 12px 0 0;
     }
@@ -219,7 +219,7 @@ export function generatePromoCodeEmail(data: PromoCodeEmailData): string {
     .promo-code {
       font-size: 36px;
       font-weight: bold;
-      color: #1e40af;
+      color: #2E1F16;
       letter-spacing: 3px;
       margin: 15px 0;
     }
@@ -230,8 +230,8 @@ export function generatePromoCodeEmail(data: PromoCodeEmailData): string {
     }
     .button {
       display: inline-block;
-      background: #1e40af;
-      color: white;
+      background: #B08A5E;
+      color: #2E1F16;
       padding: 15px 30px;
       text-decoration: none;
       border-radius: 8px;

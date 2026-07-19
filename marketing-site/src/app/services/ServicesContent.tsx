@@ -110,8 +110,8 @@ export default function ServicesContent() {
         initialServiceId={quoteServiceId}
       />
 
-      <div className="flex flex-col items-center justify-center min-h-screen py-8 sm:py-16 px-2 sm:px-4 font-sans animate-fade-in pt-20">
-        <div className="max-w-2xl w-full bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20 p-6 sm:p-10 relative">
+      <div className="flex flex-col items-center justify-center min-h-screen py-8 sm:py-16 px-2 sm:px-4 font-sans animate-fade-in pt-20 bg-white">
+        <div className="max-w-2xl w-full bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl border border-[#E9E0D3] p-6 sm:p-10 relative">
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0">
             <img
               src="/scratchsolid-logo.jpg"
@@ -122,7 +122,7 @@ export default function ServicesContent() {
               aria-hidden="true"
             />
           </div>
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-blue-700 mb-6 sm:mb-8 text-center relative z-10">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#2E1F16] mb-6 sm:mb-8 text-center relative z-10">
             Our Services
           </h1>
           <div className="text-base sm:text-lg text-zinc-700 mb-8 text-center relative z-10 leading-relaxed">
@@ -132,7 +132,7 @@ export default function ServicesContent() {
           </div>
 
           <div className="glass-card mb-8 relative z-10">
-            <h2 className="text-xl sm:text-2xl font-bold text-blue-800 mb-4 text-center">1. Choose Your Level of Clean</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-[#2E1F16] mb-4 text-center">1. Choose Your Level of Clean</h2>
             <p className="text-base sm:text-lg text-zinc-800 mb-4 text-center leading-relaxed">
               We offer two primary cleaning tiers to suit your needs and budget.
             </p>
@@ -156,10 +156,10 @@ export default function ServicesContent() {
                 >
                   <div
                     style={{ backfaceVisibility: 'hidden', position: 'absolute', inset: 0 }}
-                    className="bg-white/85 rounded-xl p-4 sm:p-5 text-center flex flex-col items-center justify-center border border-blue-100"
+                    className="bg-white/85 rounded-xl p-4 sm:p-5 text-center flex flex-col items-center justify-center border border-[#E9E0D3]"
                   >
                     <div className="text-4xl mb-3">🧹</div>
-                    <h3 className="font-bold text-blue-800 text-sm sm:text-base mb-1">Maintenance Clean</h3>
+                    <h3 className="font-bold text-[#2E1F16] text-sm sm:text-base mb-1">Maintenance Clean</h3>
                     <p className="text-xs sm:text-sm text-gray-500 mb-2">Weekly or bi-weekly visits</p>
                     <p className="text-[10px] text-gray-400 mt-2">Tap to see details</p>
                   </div>
@@ -170,11 +170,11 @@ export default function ServicesContent() {
                       position: 'absolute',
                       inset: 0,
                     }}
-                    className="bg-gradient-to-br from-blue-700 to-blue-500 rounded-xl p-3 sm:p-4 flex flex-col text-white overflow-hidden"
+                    className="bg-gradient-to-br from-[#2E1F16] to-[#8a6a45] rounded-xl p-3 sm:p-4 flex flex-col text-white overflow-hidden"
                   >
                     <h3 className="font-bold text-xs sm:text-sm mb-2 text-center">Maintenance Clean - What We Clean</h3>
                     <div className="flex-1 overflow-y-auto text-[10px] sm:text-xs leading-tight space-y-1.5 pr-1" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.3) transparent' }}>
-                      <p className="text-blue-100 italic text-center mb-2">Your home/office reset. Book weekly or bi-weekly.</p>
+                      <p className="text-[#E9DCC8] italic text-center mb-2">Your home/office reset. Book weekly or bi-weekly.</p>
                       <div><strong>All Areas:</strong></div>
                       <div>✓ Floors mopped</div>
                       <div>✓ Surfaces dusted</div>
@@ -201,9 +201,9 @@ export default function ServicesContent() {
                       <div>✓ Fresh lemon final touch spray</div>
                       <div>✓ Toilet paper folded 💚</div>
                       <div>✓ Home secured as found</div>
-                      <div className="mt-2 text-blue-200 italic text-[9px]">Note: Inside cupboards, ovens, fridges, windows & vacuum covered in Deep Clean.</div>
+                      <div className="mt-2 text-[#D3C2A5] italic text-[9px]">Note: Inside cupboards, ovens, fridges, windows & vacuum covered in Deep Clean.</div>
                     </div>
-                    <p className="text-[10px] text-blue-200 mt-2 text-center">Tap to flip back</p>
+                    <p className="text-[10px] text-[#D3C2A5] mt-2 text-center">Tap to flip back</p>
                   </div>
                 </div>
               </div>
@@ -226,10 +226,10 @@ export default function ServicesContent() {
                 >
                   <div
                     style={{ backfaceVisibility: 'hidden', position: 'absolute', inset: 0 }}
-                    className="bg-white/85 rounded-xl p-4 sm:p-5 text-center flex flex-col items-center justify-center border border-blue-100"
+                    className="bg-white/85 rounded-xl p-4 sm:p-5 text-center flex flex-col items-center justify-center border border-[#E9E0D3]"
                   >
                     <div className="text-4xl mb-3">✨</div>
-                    <h3 className="font-bold text-blue-800 text-sm sm:text-base mb-1">Deep Clean</h3>
+                    <h3 className="font-bold text-[#2E1F16] text-sm sm:text-base mb-1">Deep Clean</h3>
                     <p className="text-xs sm:text-sm text-gray-500 mb-2">First-time or seasonal resets</p>
                     <p className="text-[10px] text-gray-400 mt-2">Tap to see details</p>
                   </div>
@@ -240,11 +240,11 @@ export default function ServicesContent() {
                       position: 'absolute',
                       inset: 0,
                     }}
-                    className="bg-gradient-to-br from-blue-700 to-blue-500 rounded-xl p-3 sm:p-4 flex flex-col text-white overflow-hidden"
+                    className="bg-gradient-to-br from-[#2E1F16] to-[#8a6a45] rounded-xl p-3 sm:p-4 flex flex-col text-white overflow-hidden"
                   >
                     <h3 className="font-bold text-xs sm:text-sm mb-2 text-center">Deep Clean - What We Clean</h3>
                     <div className="flex-1 overflow-y-auto text-[10px] sm:text-xs leading-tight space-y-1.5 pr-1" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.3) transparent' }}>
-                      <p className="text-blue-100 italic text-center mb-2">Includes EVERYTHING from Maintenance Clean, PLUS:</p>
+                      <p className="text-[#E9DCC8] italic text-center mb-2">Includes EVERYTHING from Maintenance Clean, PLUS:</p>
                       <div><strong>Whole Home/Office:</strong></div>
                       <div>✓ Inside all windows + frames + tracks</div>
                       <div>✓ All doors + door frames wiped</div>
@@ -272,9 +272,9 @@ export default function ServicesContent() {
                       <div>✓ Shower glass water-repellent treated</div>
                       <div>✓ Bins deodorized with baking soda</div>
                       <div>✓ Fresh lemon final touch spray</div>
-                      <div className="mt-2 text-blue-200 italic text-[9px]">Your space reset to "like new". Recommend Deep Clean every 3-6 months.</div>
+                      <div className="mt-2 text-[#D3C2A5] italic text-[9px]">Your space reset to "like new". Recommend Deep Clean every 3-6 months.</div>
                     </div>
-                    <p className="text-[10px] text-blue-200 mt-2 text-center">Tap to flip back</p>
+                    <p className="text-[10px] text-[#D3C2A5] mt-2 text-center">Tap to flip back</p>
                   </div>
                 </div>
               </div>
@@ -282,7 +282,7 @@ export default function ServicesContent() {
           </div>
 
           <div className="glass-card mb-8 relative z-10">
-            <h2 className="text-xl sm:text-2xl font-bold text-blue-800 mb-4 text-center">2. Specialized Sectors</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-[#2E1F16] mb-4 text-center">2. Specialized Sectors</h2>
             <p className="text-base sm:text-lg text-zinc-800 mb-4 text-center leading-relaxed">
               Professional solutions tailored to your specific environment.
             </p>
@@ -323,12 +323,12 @@ export default function ServicesContent() {
                       {/* ── FRONT ── */}
                       <div
                         style={{ backfaceVisibility: 'hidden', position: 'absolute', inset: 0 }}
-                        className="bg-blue-50 rounded-2xl border-2 border-blue-100 p-5 flex flex-col justify-between"
+                        className="bg-[#F7F2EA] rounded-2xl border-2 border-[#E9E0D3] p-5 flex flex-col justify-between"
                       >
                         <div>
                           <div className="flex items-center gap-3 mb-2">
                             {service.icon && <span className="text-3xl">{service.icon}</span>}
-                            <h3 className="text-lg sm:text-xl font-bold text-blue-700 leading-tight">{service.name}</h3>
+                            <h3 className="text-lg sm:text-xl font-bold text-[#2E1F16] leading-tight">{service.name}</h3>
                           </div>
                           {priceLabel && (
                             <p className="text-sm font-semibold text-green-600 mt-1">{priceLabel}</p>
@@ -345,7 +345,7 @@ export default function ServicesContent() {
                           position: 'absolute',
                           inset: 0,
                         }}
-                        className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-4 flex flex-col"
+                        className="bg-gradient-to-br from-[#2E1F16] to-[#8a6a45] rounded-2xl p-4 flex flex-col"
                         onClick={e => e.stopPropagation()}
                       >
                         <div className="flex items-center gap-2 mb-2 flex-shrink-0">
@@ -353,14 +353,14 @@ export default function ServicesContent() {
                           <h3 className="text-white font-bold text-sm leading-tight">{service.name}</h3>
                         </div>
                         <div
-                          className="flex-1 overflow-y-auto pr-1 text-blue-100 text-xs leading-relaxed mb-3"
+                          className="flex-1 overflow-y-auto pr-1 text-[#E9DCC8] text-xs leading-relaxed mb-3"
                           style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.3) transparent' }}
                         >
                           {service.description || 'No details available.'}
                         </div>
                         <button
                           onClick={e => { e.stopPropagation(); openQuote(service.id); }}
-                          className="flex-shrink-0 w-full py-2 bg-white text-blue-700 font-bold text-xs rounded-xl hover:bg-blue-50 transition-colors shadow"
+                          className="flex-shrink-0 w-full py-2 bg-white text-[#2E1F16] font-bold text-xs rounded-xl hover:bg-[#F7F2EA] transition-colors shadow"
                         >
                           Get a Quote
                         </button>
@@ -375,13 +375,14 @@ export default function ServicesContent() {
           <div className="flex justify-center relative z-10 mt-6">
             <button
               onClick={() => openQuote()}
-              className="rounded-full bg-blue-600 px-6 sm:px-8 py-2.5 sm:py-3 text-base sm:text-lg font-semibold text-white shadow-lg hover:bg-blue-700 transition-colors"
+              className="rounded-full bg-[#B08A5E] px-6 sm:px-8 py-2.5 sm:py-3 text-base sm:text-lg font-semibold text-[#2E1F16] shadow-lg hover:bg-[#c39a6c] transition-colors"
             >
               Request a Quote
             </button>
           </div>
         </div>
       </div>
+
       <SiteFooter />
     </>
   );

@@ -40,22 +40,31 @@
   --font-mono: var(--mono);
 }
 
-body {
-  background: url('/cleaning-bg.jpg') center center / cover no-repeat fixed;
-  color: var(--text);
-  font-family: var(--sans);
-  min-height: 100vh;
-  position: relative;
-}
+@layer base {
+  body {
+    background: url('/cleaning-bg.jpg') center center / cover no-repeat fixed;
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    position: relative;
+  }
 
-h1, h2, h3, h4, h5 {
-  font-family: var(--heading);
-  color: var(--text-h);
-  margin: 0;
-}
+  /* In @layer base so page-level Tailwind color/font-family/margin utilities
+     on headings (e.g. text-white on a dark hero) correctly win - an
+     unlayered rule here would beat ALL Tailwind utility classes regardless
+     of specificity, since Tailwind's utilities live in @layer utilities and
+     unlayered CSS always outranks any layer. This previously made every
+     heading render in espresso (--text-h) regardless of its own color
+     class, including hero headings on dark backgrounds meant to be cream. */
+  h1, h2, h3, h4, h5 {
+    font-family: var(--heading);
+    color: var(--text-h);
+    margin: 0;
+  }
 
-h1 { font-size: clamp(2.25rem, 2.75vw, 3.5rem); line-height: 1.03; }
-h2 { font-size: clamp(1.5rem, 2vw, 2.1rem); }
+  h1 { font-size: clamp(2.25rem, 2.75vw, 3.5rem); line-height: 1.03; }
+  h2 { font-size: clamp(1.5rem, 2vw, 2.1rem); }
+}
 
 .glass-panel {
   background: var(--surface);

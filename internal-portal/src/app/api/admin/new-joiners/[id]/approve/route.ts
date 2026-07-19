@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
-import { activateCleanerAccount } from '@/lib/cleaner-integrations';
+import { activateCleanerAccount, activateStaffAccount, type StaffRole } from '@/lib/cleaner-integrations';
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { log } from '@/lib/logger';
 import { decryptField } from '@/lib/encryption';
@@ -34,26 +34,46 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     const joinerData = joiner as any;
+    // Pre-existing rows have no `role` column value - they're all cleaner
+    // applications from before Digital/Transportation applications existed.
+    const applicationRole: 'cleaner' | StaffRole = joinerData.role || 'cleaner';
 
-    // Decrypt sensitive fields from new_joiners
-    const decryptedPhone = await decryptField(joinerData.phone) || joinerData.phone;
-    const decryptedEmergencyContact = await decryptField(joinerData.emergency_contact) || joinerData.emergency_contact;
-    const decryptedIdNumber = await decryptField(joinerData.id_number) || joinerData.id_number;
-    const decryptedBankDetails = joinerData.bank_details ? (await decryptField(joinerData.bank_details) || joinerData.bank_details) : null;
+    let paysheetCode: string;
+    let tempPassword: string;
+    let erpEmployeeResult: unknown = null;
+    let payrollSetupResult: unknown = null;
+    let notificationResult: { status: string; [key: string]: unknown };
 
-    const {
-      paysheetCode,
-      erpEmployeeResult,
-      payrollSetupResult,
-      notificationResult,
-    } = await activateCleanerAccount(db, {
-      name: joinerData.name,
-      email: joinerData.email,
-      phone: decryptedPhone,
-      emergencyContact: decryptedEmergencyContact,
-      idNumber: decryptedIdNumber,
-      bankDetailsPresent: Boolean(decryptedBankDetails),
-    }, traceId);
+    if (applicationRole === 'cleaner') {
+      // Decrypt sensitive fields from new_joiners
+      const decryptedPhone = await decryptField(joinerData.phone) || joinerData.phone;
+      const decryptedEmergencyContact = await decryptField(joinerData.emergency_contact) || joinerData.emergency_contact;
+      const decryptedIdNumber = await decryptField(joinerData.id_number) || joinerData.id_number;
+      const decryptedBankDetails = joinerData.bank_details ? (await decryptField(joinerData.bank_details) || joinerData.bank_details) : null;
+
+      const result = await activateCleanerAccount(db, {
+        name: joinerData.name,
+        email: joinerData.email,
+        phone: decryptedPhone,
+        emergencyContact: decryptedEmergencyContact,
+        idNumber: decryptedIdNumber,
+        bankDetailsPresent: Boolean(decryptedBankDetails),
+      }, traceId);
+      paysheetCode = result.paysheetCode;
+      tempPassword = result.tempPassword;
+      erpEmployeeResult = result.erpEmployeeResult;
+      payrollSetupResult = result.payrollSetupResult;
+      notificationResult = result.notificationResult;
+    } else {
+      const result = await activateStaffAccount(db, applicationRole, {
+        name: joinerData.name,
+        email: joinerData.email,
+        phone: joinerData.phone,
+      }, traceId);
+      paysheetCode = result.paysheetCode;
+      tempPassword = result.tempPassword;
+      notificationResult = result.notificationResult;
+    }
 
     // Ensure approval tracking columns exist
     await db.prepare(`ALTER TABLE new_joiners ADD COLUMN erpnext_employee_id TEXT`).run().catch(() => {});
@@ -69,13 +89,22 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     ).bind(paysheetCode, userId, joinerId).run();
 
     // Log audit event
-    log.audit('APPROVE', 'cleaner_application', {
+    log.audit('APPROVE', applicationRole === 'cleaner' ? 'cleaner_application' : 'staff_application', {
       traceId,
       userId,
       joinerId,
       applicantEmail: joinerData.email,
+      role: applicationRole,
       paysheetCode
     });
+
+    // The applicant's WhatsApp welcome message can never be delivered on
+    // first contact under the free tier (they've never messaged the
+    // business number, so there's no open 24h conversation window) - and
+    // email can fail for other reasons. When neither channel confirms
+    // delivery, the admin needs the credentials on-screen as a manual
+    // backup so the cleaner isn't left unable to log in.
+    const notificationsDelivered = notificationResult.status === 'sent';
 
     const response = NextResponse.json({
       success: true,
@@ -89,10 +118,16 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           payroll: payrollSetupResult,
           notifications: notificationResult,
         },
+        notificationsDelivered,
+        // Only surfaced when auto-delivery didn't confirm - this is the
+        // manual-share fallback, not a general-purpose credential leak.
+        credentialsBackup: notificationsDelivered ? undefined : { paysheetCode, tempPassword },
         next_steps: [
           'Employee account created',
-          'Training progress initialized',
-          'Notification sent to applicant with login credentials'
+          ...(applicationRole === 'cleaner' ? ['Training progress initialized'] : []),
+          notificationsDelivered
+            ? 'Notification sent to applicant with login credentials'
+            : 'Automatic WhatsApp/email delivery did not confirm - share the credentials shown below with the applicant directly'
         ]
       }
     });

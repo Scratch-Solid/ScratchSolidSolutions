@@ -48,12 +48,10 @@ export async function GET(request: NextRequest) {
     // Normalize rows to camelCase shape expected by the admin frontend
     const normalizeRow = (row: any) => {
       const name = row.name || row.full_name || '';
-      const paysheetCode = name
-        ? `${name.toLowerCase().replace(/[^a-z]/g, '').substring(0, 3)}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`
-        : '';
       return {
         id: row.id,
         fullName: name,
+        role: row.role || 'cleaner',
         idPassportNumber: row.id_number || row.id_passport_number || '',
         contactNumber: row.phone || row.contact_number || row.contactNumber || '',
         email: row.email || '',
@@ -61,8 +59,8 @@ export async function GET(request: NextRequest) {
         address: row.address || '',
         emergencyContact: row.emergency_contact || '',
         bankDetails: row.bank_details || null,
+        message: row.message || '',
         positionAppliedFor: row.position_applied_for || 'Cleaner',
-        generatedUsername: paysheetCode,
         status: row.status,
         popiaConsent: Boolean(row.popia_consent),
         backgroundCheckConsent: Boolean(row.background_check_consent),

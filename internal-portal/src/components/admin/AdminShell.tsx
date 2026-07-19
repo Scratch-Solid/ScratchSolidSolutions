@@ -26,6 +26,8 @@ import {
   Sparkles,
   GraduationCap,
   MapPin,
+  CalendarDays,
+  FolderKanban,
 } from "lucide-react";
 
 const ERP_ENABLED = (process.env.NEXT_PUBLIC_ERP_URL || "").length > 0;
@@ -50,6 +52,7 @@ const APP_NAV_GROUPS: NavGroup[] = [
       { href: "/admin/employees", label: "Employees", icon: Users },
       { href: "/admin/services", label: "Services & Banking", icon: DollarSign },
       { href: "/admin/content", label: "Content", icon: FileText },
+      { href: "/admin/digital-projects", label: "Digital Projects", icon: FolderKanban },
       ...(ERP_ENABLED ? [{ href: "/admin/erp", label: "ERP Console", icon: Briefcase }] : []),
     ],
   },
@@ -60,6 +63,7 @@ const APP_NAV_GROUPS: NavGroup[] = [
       { href: "/admin/job-tracking", label: "Job Tracking", icon: MapPin },
       { href: "/admin/pools", label: "Pool Management", icon: Users },
       { href: "/admin/training", label: "Training", icon: GraduationCap },
+      { href: "/admin/leave", label: "Leave Requests", icon: CalendarDays },
       { href: "/admin/reviews", label: "Staff Reviews", icon: ClipboardList },
       { href: "/admin/onboarding", label: "Onboarding", icon: BarChart3 },
     ],
