@@ -55,9 +55,9 @@ export async function GET(request: NextRequest) {
 
     // Get user's referrals
     const referrals = await db.prepare(
-      `SELECT r.*, u.first_name, u.last_name 
+      `SELECT r.*, u.name AS referee_name
        FROM referrals r
-       LEFT JOIN users u ON r.referred_user_id = u.id
+       LEFT JOIN users u ON r.referee_id = u.id
        WHERE r.referrer_id = ?
        ORDER BY r.created_at DESC`
     ).bind(userId).all();
