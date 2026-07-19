@@ -153,7 +153,10 @@ export default function AdminEmployeesPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setFormError(data.error?.message || data.error || "Failed to create cleaner account");
+        // details.error carries the actual thrown message; error.message on
+        // the 500 path is just the generic "Failed to create cleaner
+        // account" wrapper - surface the real one so this is actionable.
+        setFormError(data.error?.details?.error || data.error?.message || data.error || "Failed to create cleaner account");
         return;
       }
       setSuccessInfo({ paysheetCode: data.data.paysheetCode });
