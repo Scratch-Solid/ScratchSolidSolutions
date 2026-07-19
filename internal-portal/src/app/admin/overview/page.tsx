@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { useRequireRole } from "@/hooks/useRequireRole";
 import {
   CalendarDays,
   DollarSign,
@@ -39,6 +40,7 @@ interface DashboardData {
 }
 
 export default function AdminOverviewPage() {
+  const { authorized } = useRequireRole(['admin']);
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -153,6 +155,10 @@ export default function AdminOverviewPage() {
     }
     load();
   }, []);
+
+  if (!authorized) {
+    return null;
+  }
 
   if (error) {
     return (

@@ -15,7 +15,7 @@ const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'Ju
 // thrown trying to .map() over that wrapper object.
 export async function GET(request: NextRequest) {
   const traceId = withTracing(request);
-  const authResult = await withAuth(request, ['cleaner', 'digital', 'admin']);
+  const authResult = await withAuth(request, ['cleaner', 'digital', 'admin', 'staff']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db, user } = authResult;
   const userId = (user as any)?.user_id || user?.id;

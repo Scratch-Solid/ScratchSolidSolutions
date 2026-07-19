@@ -18,7 +18,7 @@ const MIN_DWELL_MINUTES_BEFORE_AUTO_COMPLETE = 15;
 
 export async function POST(request: NextRequest) {
   const traceId = withTracing(request);
-  const authResult = await withAuth(request, ['cleaner']);
+  const authResult = await withAuth(request, ['cleaner', 'staff']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db, user } = authResult;
 

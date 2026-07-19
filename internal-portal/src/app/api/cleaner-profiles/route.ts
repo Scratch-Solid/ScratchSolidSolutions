@@ -4,7 +4,7 @@ import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 
 export async function POST(request: NextRequest) {
   const traceId = withTracing(request);
-  const authResult = await withAuth(request, ['admin', 'cleaner', 'digital', 'transport']);
+  const authResult = await withAuth(request, ['admin', 'cleaner', 'digital', 'transport', 'staff']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db, user } = authResult;
 
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   const traceId = withTracing(request);
-  const authResult = await withAuth(request, ['admin', 'cleaner', 'digital', 'transport']);
+  const authResult = await withAuth(request, ['admin', 'cleaner', 'digital', 'transport', 'staff']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db, user } = authResult;
 

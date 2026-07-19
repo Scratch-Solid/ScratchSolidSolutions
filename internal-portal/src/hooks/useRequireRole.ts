@@ -9,6 +9,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { OWN_DASHBOARD } from '@/lib/roleRouting';
 
 export function useRequireRole(allowedRoles: string[]) {
   const router = useRouter();
@@ -26,13 +27,12 @@ export function useRequireRole(allowedRoles: string[]) {
     if (!role || !allowedRoles.includes(role)) {
       // Send them to the dashboard their own role actually owns, not just
       // back to login (they're already authenticated - just misrouted).
-      const ownDashboard: Record<string, string> = {
-        admin: '/admin-dashboard',
-        cleaner: '/cleaner-dashboard',
-        digital: '/digital-dashboard',
-        transport: '/transport-dashboard',
-      };
-      router.replace((role && ownDashboard[role]) || '/auth/login');
+      // 'cleaner' isn't in the shared OWN_DASHBOARD map (its real landing
+      // needs a training-status API call, done elsewhere) - '/cleaner-dashboard'
+      // here is just a reasonable best-effort fallback, not the authoritative
+      // route.
+      const fallback: Record<string, string> = { ...OWN_DASHBOARD, cleaner: '/cleaner-dashboard' };
+      router.replace((role && fallback[role]) || '/auth/login');
       return;
     }
     setAuthorized(true);

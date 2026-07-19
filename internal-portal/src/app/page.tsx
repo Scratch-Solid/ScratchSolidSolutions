@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { OWN_DASHBOARD } from "@/lib/roleRouting";
 
 export default function RootPage() {
   const router = useRouter();
@@ -23,7 +24,7 @@ export default function RootPage() {
     async function redirectUser() {
       switch (effectiveRole) {
         case "admin":
-          router.push("/admin-dashboard");
+          router.push(OWN_DASHBOARD.admin);
           break;
         case "cleaner": {
           try {
@@ -54,13 +55,15 @@ export default function RootPage() {
           break;
         }
         case "digital":
-          router.push("/digital-dashboard");
+          router.push(OWN_DASHBOARD.digital);
           break;
         case "transport":
-          router.push("/transport-dashboard");
+          router.push(OWN_DASHBOARD.transport);
           break;
-        case "supervisor":
-          router.push("/supervisor-dashboard");
+        case "staff":
+          // Supervisors: users.role is 'staff', not a separate 'supervisor'
+          // value - see src/lib/roleRouting.ts.
+          router.push(OWN_DASHBOARD.staff);
           break;
         case "client":
         case "user":

@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
+import { OWN_DASHBOARD } from "@/lib/roleRouting";
 
 function LoginContent() {
   const [username, setUsername] = useState("");
@@ -83,23 +84,33 @@ function LoginContent() {
 
       if (data.role === 'admin') {
         localStorage.setItem("userEmail", username);
-        router.push("/admin-dashboard");
+        router.push(OWN_DASHBOARD.admin);
       } else if (data.role === 'cleaner') {
         const cleanerUsername = data.paysheet_code || username;
         localStorage.setItem("paysheetCode", cleanerUsername);
         localStorage.setItem("username", cleanerUsername);
         localStorage.setItem("cleanerRedirectTo", data.redirect_to || "/cleaner-pre-dashboard");
         router.push(data.redirect_to || "/cleaner-pre-dashboard");
+      } else if (data.role === 'staff') {
+        // Supervisors: users.role is 'staff', not a separate 'supervisor'
+        // value - see src/lib/roleRouting.ts.
+        localStorage.setItem("paysheetCode", data.paysheet_code || username);
+        router.push(OWN_DASHBOARD.staff);
       } else if (data.role === 'digital') {
         localStorage.setItem("paysheetCode", data.paysheet_code || username);
-        router.push("/digital-dashboard");
+        router.push(OWN_DASHBOARD.digital);
       } else if (data.role === 'transport') {
         localStorage.setItem("paysheetCode", data.paysheet_code || username);
-        router.push("/transport-dashboard");
+        router.push(OWN_DASHBOARD.transport);
+      } else if (data.role === 'client' || data.role === 'user') {
+        window.location.href = process.env.NEXT_PUBLIC_CLIENT_DASHBOARD_URL || 'https://scratchsolid.co.za/client-dashboard';
       } else if (data.role === 'business') {
         window.location.href = process.env.NEXT_PUBLIC_BUSINESS_DASHBOARD_URL || 'https://scratchsolid.co.za/business-dashboard';
       } else {
-        router.push("/admin-dashboard");
+        // Unrecognized role: don't guess - an unknown role landing on the
+        // admin dashboard was a latent privilege-confusion risk, not a
+        // helpful fallback.
+        router.push("/auth/login");
       }
     } catch (err) {
       setError('Network error. Please try again.');

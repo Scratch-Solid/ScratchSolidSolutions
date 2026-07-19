@@ -18,7 +18,7 @@ import jsPDF from 'jspdf';
 export default function CleanerDashboard() {
   useSessionTimeout(true);
   useTokenRefresh();
-  const { authorized } = useRequireRole(['cleaner']);
+  const { authorized } = useRequireRole(['cleaner', 'staff']);
   const [cleaner, setCleaner] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [ratings, setRatings] = useState([]);

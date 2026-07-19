@@ -248,10 +248,12 @@ function randomDigits(count: number): string {
   return Math.floor(Math.random() * max).toString().padStart(count, '0');
 }
 
-function generatePaysheetCode(role: 'cleaner' | StaffRole): string {
+function generatePaysheetCode(role: 'cleaner' | 'staff' | StaffRole): string {
   switch (role) {
     case 'cleaner':
       return `Scratch${randomUpperLetter()}${randomDigits(4)}`;
+    case 'staff':
+      return `Supv${randomUpperLetter()}${randomDigits(4)}`;
     case 'digital':
       return `SolidDigital${randomDigits(4)}`;
     case 'transport':
@@ -261,7 +263,7 @@ function generatePaysheetCode(role: 'cleaner' | StaffRole): string {
 
 // Checks both cleaner_profiles.paysheet_code (cleaners) and users.paysheet_code
 // (digital/transport, which have no separate profile table) for collisions.
-async function generateUniquePaysheetCode(db: D1Database, role: 'cleaner' | StaffRole): Promise<string> {
+async function generateUniquePaysheetCode(db: D1Database, role: 'cleaner' | 'staff' | StaffRole): Promise<string> {
   let attempts = 0;
   const maxAttempts = 5;
 
@@ -279,7 +281,11 @@ async function generateUniquePaysheetCode(db: D1Database, role: 'cleaner' | Staf
 
   // Fallback: append a timestamp suffix if all retries collided
   const fallbackSuffix = Date.now().toString().slice(-4);
-  const base = role === 'cleaner' ? `Scratch${randomUpperLetter()}` : role === 'digital' ? 'SolidDigital' : `Trans${randomUpperLetter()}`;
+  const base =
+    role === 'cleaner' ? `Scratch${randomUpperLetter()}` :
+    role === 'staff' ? `Supv${randomUpperLetter()}` :
+    role === 'digital' ? 'SolidDigital' :
+    `Trans${randomUpperLetter()}`;
   return `${base}${fallbackSuffix}`;
 }
 
@@ -319,10 +325,16 @@ export async function activateCleanerAccount(
     emergencyContact?: string;
     idNumber?: string;
     bankDetailsPresent?: boolean;
+    // 'staff' = a supervisor: goes through the exact same cleaner_profiles /
+    // training / ERPNext activation as a cleaner (so they're assignable to
+    // jobs and paid the same way), but the users.role that actually grants
+    // supervisor-dashboard/API access is 'staff', not 'cleaner'.
+    role?: 'cleaner' | 'staff';
   },
   traceId: string
 ) {
   const bcrypt = require('bcryptjs');
+  const role = data.role || 'cleaner';
 
   const tempPassword = generateTempPassword();
   const passwordHash = await bcrypt.hash(tempPassword, 12);
@@ -334,16 +346,17 @@ export async function activateCleanerAccount(
   ).bind(data.email).first<{ id: number; role: string }>();
 
   // The retry-reuse path below is only safe for a row THIS function itself
-  // created on a prior, partially-failed attempt (i.e. already role='cleaner').
-  // Without this guard, approving an application whose email happens to match
-  // ANY existing account (admin, business, client) would silently hijack that
-  // unrelated account - including overwriting its password - which is exactly
-  // what happened on 2026-07-18 (a cleaner application collided with the
-  // admin's own email and overwrote the admin's password). Refuse instead.
-  if (existingUser && existingUser.role !== 'cleaner') {
+  // created on a prior, partially-failed attempt (i.e. already this exact
+  // role). Without this guard, approving an application whose email happens
+  // to match ANY existing account (admin, business, client) would silently
+  // hijack that unrelated account - including overwriting its password -
+  // which is exactly what happened on 2026-07-18 (a cleaner application
+  // collided with the admin's own email and overwrote the admin's password).
+  // Refuse instead.
+  if (existingUser && existingUser.role !== role) {
     throw new Error(
       `An account with email ${data.email} already exists with role "${existingUser.role}". ` +
-      `Refusing to activate a cleaner account over it - use a different email for this applicant, ` +
+      `Refusing to activate a ${role} account over it - use a different email for this applicant, ` +
       `or resolve the conflict manually if this is expected.`
     );
   }
@@ -362,7 +375,7 @@ export async function activateCleanerAccount(
     if (existingProfile) {
       paysheetCode = existingProfile.paysheet_code;
     } else {
-      paysheetCode = await generateUniquePaysheetCode(db, 'cleaner');
+      paysheetCode = await generateUniquePaysheetCode(db, role);
       await db.prepare(
         `INSERT INTO cleaner_profiles (user_id, username, paysheet_code, first_name, last_name, cellphone, emergency_contact, emergency_phone, id_number, created_at, updated_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
@@ -379,15 +392,15 @@ export async function activateCleanerAccount(
       ).run();
     }
   } else {
-    paysheetCode = await generateUniquePaysheetCode(db, 'cleaner');
+    paysheetCode = await generateUniquePaysheetCode(db, role);
 
     // Account is activated straight to consent_approved: approving/adding a
     // cleaner is now a single step, not "approve" here + a second "approve"
     // click on a different admin page before they can proceed.
     const insertResult = await db.prepare(
       `INSERT INTO users (name, email, password_hash, role, phone, password_needs_reset, email_verified, onboarding_stage, created_at)
-       VALUES (?, ?, ?, 'cleaner', ?, 1, 1, 'consent_approved', datetime('now'))`
-    ).bind(data.name, data.email, passwordHash, data.phone).run();
+       VALUES (?, ?, ?, ?, ?, 1, 1, 'consent_approved', datetime('now'))`
+    ).bind(data.name, data.email, passwordHash, role, data.phone).run();
 
     newUserId = insertResult.meta.last_row_id as number;
 
@@ -424,7 +437,7 @@ export async function activateCleanerAccount(
     email: data.email,
     phone: data.phone,
     department: 'Scratch',
-    position: 'Cleaner',
+    position: role === 'staff' ? 'Supervisor' : 'Cleaner',
   });
   const payrollSetupResult = await setupCleanerPayrollInErpNext({
     traceId,

@@ -7,7 +7,7 @@ const LEAVE_TYPES = ['sick', 'annual', 'personal', 'other'];
 
 export async function GET(request: NextRequest) {
   const traceId = withTracing(request);
-  const authResult = await withAuth(request, ['cleaner', 'digital', 'admin']);
+  const authResult = await withAuth(request, ['cleaner', 'digital', 'admin', 'staff']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db, user } = authResult;
   const userId = (user as any)?.user_id || user?.id;
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const traceId = withTracing(request);
-  const authResult = await withAuth(request, ['cleaner', 'digital', 'admin']);
+  const authResult = await withAuth(request, ['cleaner', 'digital', 'admin', 'staff']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db, user } = authResult;
   const userId = (user as any)?.user_id || user?.id;

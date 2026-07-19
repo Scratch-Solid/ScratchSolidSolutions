@@ -5,7 +5,7 @@ import { withAuth, withTracing, withSecurityHeaders, withCsrf } from "../../../l
 
 export async function GET(request: NextRequest) {
   const traceId = withTracing(request);
-  const authResult = await withAuth(request, ['cleaner', 'admin']);
+  const authResult = await withAuth(request, ['cleaner', 'admin', 'staff']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
 
@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   const traceId = withTracing(request);
-  const authResult = await withAuth(request, ['cleaner', 'admin']);
+  const authResult = await withAuth(request, ['cleaner', 'admin', 'staff']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db, user } = authResult;
 

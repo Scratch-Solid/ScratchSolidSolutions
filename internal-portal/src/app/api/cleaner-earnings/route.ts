@@ -5,7 +5,7 @@ import { CLEANER_RATE_PER_TASK } from '../../../lib/pay-rates';
 
 export async function GET(request: NextRequest) {
   const traceId = withTracing(request);
-  const authResult = await withAuth(request, ['cleaner', 'admin']);
+  const authResult = await withAuth(request, ['cleaner', 'admin', 'staff']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db, user } = authResult;
   const requestingUserId = (user as any)?.user_id || user?.id;

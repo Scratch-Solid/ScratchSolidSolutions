@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const traceId = withTracing(request);
   const start = Date.now();
-  const authResult = await withAuth(request, ['admin', 'cleaner']);
+  const authResult = await withAuth(request, ['admin', 'cleaner', 'staff']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db, user } = authResult;
 
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const traceId = withTracing(request);
   const start = Date.now();
-  const authResult = await withAuth(request, ['admin', 'cleaner']);
+  const authResult = await withAuth(request, ['admin', 'cleaner', 'staff']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db, user } = authResult;
 

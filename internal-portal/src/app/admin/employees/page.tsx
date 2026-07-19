@@ -26,6 +26,7 @@ const EMPTY_FORM = {
   phone: "",
   address: "",
   emergency_contact: "",
+  is_supervisor: false,
 };
 
 export default function AdminEmployeesPage() {
@@ -300,12 +301,24 @@ export default function AdminEmployeesPage() {
                   className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-[#B08A5E] focus:border-transparent"
                 />
               </div>
+              <div className="sm:col-span-2 flex items-center gap-2 pt-1">
+                <input
+                  type="checkbox"
+                  id="is_supervisor"
+                  checked={form.is_supervisor}
+                  onChange={(e) => setForm({ ...form, is_supervisor: e.target.checked })}
+                  className="h-4 w-4 rounded border-stone-300 text-[#2E1F16] focus:ring-[#B08A5E]"
+                />
+                <label htmlFor="is_supervisor" className="text-sm text-stone-700">
+                  Also make this person a Supervisor (can oversee and assign jobs to other cleaners, in addition to their own)
+                </label>
+              </div>
               <div className="sm:col-span-2 flex justify-end gap-2 pt-2">
                 <Button type="button" variant="outline" onClick={() => setShowAddForm(false)}>
                   Cancel
                 </Button>
                 <Button type="submit" disabled={submitting} className="bg-[#2E1F16] hover:bg-[#2E1F16]/90">
-                  {submitting ? "Creating..." : "Create Cleaner Account"}
+                  {submitting ? "Creating..." : form.is_supervisor ? "Create Supervisor Account" : "Create Cleaner Account"}
                 </Button>
               </div>
             </form>
