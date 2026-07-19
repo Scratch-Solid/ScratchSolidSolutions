@@ -106,9 +106,9 @@ test.describe('Payment initialization (Paystack)', () => {
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
     });
     expect(initRes.status()).toBe(200);
-    const initBody = await initRes.json() as { data?: { authorization_url?: string } };
+    const initBody = await initRes.json() as { authorization_url?: string };
     // This is the exact assertion that would have caught the original bug:
     // a real, usable Paystack checkout URL, not a silent failure.
-    expect(initBody.data?.authorization_url).toMatch(/^https:\/\/checkout\.paystack\.com\//);
+    expect(initBody.authorization_url).toMatch(/^https:\/\/checkout\.paystack\.com\//);
   });
 });
