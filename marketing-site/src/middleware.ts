@@ -1,5 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// Deliberately named `middleware.ts`, not the newer `proxy.ts` Next.js 16
+// convention. `middleware.ts` still works but defaults to the Edge
+// runtime (backward-compat); `proxy.ts` defaults to the Node.js runtime
+// in v16, which @opennextjs/cloudflare's build does not support
+// ("Node.js middleware is not currently supported") - it fails the build
+// with no in-file opt-out (setting `runtime` inside a Proxy file throws).
+// Confirmed by reproducing the exact failure after a prior rename to
+// proxy.ts (PR #2, verified only via local `next dev`, which doesn't run
+// the Cloudflare build's middleware-runtime check at all). Don't rename
+// this back without first running the actual `cloudflare-build` step.
 const PUBLIC_PATHS = [
   '/api/health',
   '/api/status',
@@ -34,7 +44,7 @@ const PUBLIC_PATHS = [
   '/api/data-deletion/confirm',
 ];
 
-export function proxy(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Skip public paths - allow access without auth
