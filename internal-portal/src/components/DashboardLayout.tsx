@@ -212,7 +212,7 @@ export default function DashboardLayout({ children, title, role = 'admin' }: Das
 
           <div className="ml-auto flex items-center gap-2">
             <Link
-              href="/admin/monitoring"
+              href="/auth/change-password"
               className="hidden rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground sm:inline-flex"
               aria-label="Settings"
             >
