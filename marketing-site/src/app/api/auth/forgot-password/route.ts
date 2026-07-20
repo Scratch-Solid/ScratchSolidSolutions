@@ -44,7 +44,7 @@ async function sendPasswordResetEmail(to: string, resetLink: string) {
             <p>If you did not request this password reset, please ignore this email.</p>
           </div>
           <div class="footer">
-            <p>&copy; 2024 Scratch Solid Solutions. All rights reserved.</p>
+            <p>&copy; ${new Date().getFullYear()} Scratch Solid Solutions. All rights reserved.</p>
           </div>
         </div>
       </body>

@@ -2,7 +2,7 @@
 import Link from "next/link";
 
 interface Props {
-  current: "services" | "about" | "gallery" | "transportation" | "digital" | "contact";
+  current?: "services" | "about" | "gallery" | "transportation" | "digital" | "contact";
 }
 
 const links = [

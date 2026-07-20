@@ -13,12 +13,17 @@ export async function POST(request: NextRequest) {
   try {
     const userId = (user as any).user_id;
     const userEmail = (user as any).email;
+    const body = await request.json().catch(() => ({})) as { reason?: string };
+    const reason = typeof body.reason === 'string' ? body.reason.slice(0, 1000) : null;
 
-    // Create data deletion request
+    // Create data deletion request. Authenticated self-service requests are
+    // confirmed immediately (status 'pending') - the session already proves
+    // the requester owns this account, unlike the public/unauthenticated
+    // flow in /api/data-deletion/request which requires an emailed link.
     const result = await db.prepare(
-      `INSERT INTO data_deletion_requests (user_id, email, status, requested_at, processed_at)
-       VALUES (?, ?, 'pending', datetime('now'), NULL) RETURNING *`
-    ).bind(userId, userEmail).first();
+      `INSERT INTO data_deletion_requests (user_id, email, reason, status, confirmed_at, requested_at, processed_at)
+       VALUES (?, ?, ?, 'pending', datetime('now'), datetime('now'), NULL) RETURNING *`
+    ).bind(userId, userEmail, reason).first();
 
     // Log the request
     logger.info(`Data deletion request created for user ${userId}`, { userId, userEmail });

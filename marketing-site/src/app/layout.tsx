@@ -59,9 +59,29 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const SITE_URL = "https://scratchsolidsolutions.org";
+const SITE_TITLE = "Spotless | Scratch Solid Solutions - Professional Cleaning Services";
+const SITE_DESCRIPTION = "Professional, reliable, and affordable cleaning services for homes and businesses. Scratch-Free, Solidly Clean.";
+
 export const metadata: Metadata = {
-  title: "Spotless | Scratch Solid Solutions - Professional Cleaning Services",
-  description: "Professional, reliable, and affordable cleaning services for homes and businesses. Scratch-Free, Solidly Clean.",
+  metadataBase: new URL(SITE_URL),
+  title: SITE_TITLE,
+  description: SITE_DESCRIPTION,
+  openGraph: {
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    url: SITE_URL,
+    siteName: "Scratch Solid Solutions",
+    images: [{ url: "/scratchsolid-logo.jpg", width: 1200, height: 630, alt: "Scratch Solid Solutions" }],
+    locale: "en_ZA",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: ["/scratchsolid-logo.jpg"],
+  },
 };
 
 

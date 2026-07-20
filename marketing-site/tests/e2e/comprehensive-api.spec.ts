@@ -437,4 +437,13 @@ test.describe('🗑️ Data Deletion API', () => {
     skipOn429(res);
     expectStatus(res, 401);
   });
+
+  test('POST /api/data-deletion/confirm — rejects invalid token', async ({ request }) => {
+    // No real request/email is sent here - just verifies an unknown token is rejected.
+    const res = await request.post(`${BASE_URL}/api/data-deletion/confirm`, {
+      data: { token: 'not-a-real-token' }
+    });
+    skipOn429(res);
+    expectStatus(res, 400);
+  });
 });
