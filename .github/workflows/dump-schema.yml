@@ -1,10 +1,13 @@
 name: Dump D1 Table Schema
 
-# One-off diagnostic: prints the live CREATE TABLE statements for named
-# tables against a chosen database/environment. Exists because this
-# environment's migration files have repeatedly not matched what's
-# actually live (see project memory on D1 schema drift) - use this before
-# trusting any migration file as ground truth.
+# One-off diagnostic: runs a read-only SELECT against a chosen
+# database/environment - either a schema dump (leave `query` blank, fill in
+# `tables`) or an arbitrary ad-hoc SELECT (fill in `query`, leave `tables`
+# blank). Exists because this environment's migration files have
+# repeatedly not matched what's actually live (see project memory on D1
+# schema drift) - use this before trusting any migration file as ground
+# truth. Deliberately not wired to accept destructive statements from any
+# automated caller - only run SELECTs here.
 on:
   workflow_dispatch:
     inputs:
@@ -23,9 +26,15 @@ on:
           - staging
           - production
       tables:
-        description: 'Comma-separated table names'
-        required: true
+        description: 'Comma-separated table names (schema-dump mode - ignored if query is set)'
+        required: false
         type: string
+        default: ''
+      query:
+        description: 'Ad-hoc read-only SQL query (overrides tables mode if set)'
+        required: false
+        type: string
+        default: ''
 
 jobs:
   dump-schema:
@@ -40,25 +49,30 @@ jobs:
     - name: Install Wrangler
       run: npm install -g wrangler@4.93.0
 
-    - name: Build table list SQL
+    - name: Build SQL command
       id: sql
       run: |
-        TABLES="${{ github.event.inputs.tables }}"
-        IN_CLAUSE=$(echo "$TABLES" | sed "s/,/','/g")
-        echo "in_clause=$IN_CLAUSE" >> "$GITHUB_OUTPUT"
+        QUERY="${{ github.event.inputs.query }}"
+        if [ -n "$QUERY" ]; then
+          echo "final_query=$QUERY" >> "$GITHUB_OUTPUT"
+        else
+          TABLES="${{ github.event.inputs.tables }}"
+          IN_CLAUSE=$(echo "$TABLES" | sed "s/,/','/g")
+          echo "final_query=SELECT name, sql FROM sqlite_master WHERE type='table' AND name IN ('$IN_CLAUSE')" >> "$GITHUB_OUTPUT"
+        fi
 
-    - name: Dump schema (staging)
+    - name: Run query (staging)
       if: github.event.inputs.target == 'staging'
       working-directory: ${{ github.event.inputs.app }}
-      run: wrangler d1 execute scratchsolid_db --env staging --remote --command "SELECT name, sql FROM sqlite_master WHERE type='table' AND name IN ('${{ steps.sql.outputs.in_clause }}')"
+      run: wrangler d1 execute scratchsolid_db --env staging --remote --command "${{ steps.sql.outputs.final_query }}"
       env:
         CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
-    - name: Dump schema (production)
+    - name: Run query (production)
       if: github.event.inputs.target == 'production'
       working-directory: ${{ github.event.inputs.app }}
-      run: wrangler d1 execute scratchsolid_db --remote --command "SELECT name, sql FROM sqlite_master WHERE type='table' AND name IN ('${{ steps.sql.outputs.in_clause }}')"
+      run: wrangler d1 execute scratchsolid_db --remote --command "${{ steps.sql.outputs.final_query }}"
       env:
         CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
