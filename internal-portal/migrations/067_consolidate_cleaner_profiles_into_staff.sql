@@ -47,25 +47,43 @@
 --     employee_id IS NOT NULL` on the live DB before relying on this
 --     migration's backfill being the *first* real data in that column.
 --
--- Decision: RENAME staff.employee_id -> staff.paysheet_code (keeping its
--- existing NOT NULL UNIQUE constraint, which matches cleaner_profiles'
--- own NOT NULL requirement on paysheet_code). paysheet_code is the name
--- that wins because it's the name the rest of the live application already
--- uses everywhere outside this one dead column, and because "paysheet
+-- Decision: ADD staff.paysheet_code as a new column rather than RENAME
+-- staff.employee_id (originally planned as a rename - changed after this
+-- migration failed on staging: staging's live `staff` table doesn't have
+-- `employee_id`, `department`, or `status` at all - a THIRD, independently
+-- confirmed instance of staging/production schema drift found this
+-- session, on top of the employee_id-is-dead-and-NOT-NULL problem this
+-- migration already documented above). Since production's employee_id
+-- holds zero real data (confirmed: `SELECT COUNT(*) FROM staff` = 0), a
+-- rename buys nothing over a plain ADD - `employee_id` is simply left in
+-- place, inert, on whichever environment already has it (same treatment
+-- already given to cleaner_profiles.username elsewhere in this file).
+-- paysheet_code is the name that wins because it's the name the rest of
+-- the live application already uses everywhere, and because "paysheet
 -- code" is the term used uniformly for cleaners, supervisors, digital and
--- transport staff alike in the code's own comments
--- (see generatePaysheetCode() in src/lib/cleaner-integrations.ts) - it was
--- never actually cleaner-specific despite the old table name. `employee_id`
--- was the generic placeholder name and is not otherwise referenced by any
--- live query in the app (only training_progress.employee_id and
--- new_joiners.erpnext_employee_id use that name, and those are unrelated,
--- out-of-scope ERPNext-facing string keys per the task brief).
+-- transport staff alike in the code's own comments (see
+-- generatePaysheetCode() in src/lib/cleaner-integrations.ts).
+--
+-- staff.department and staff.status are NOT handled in this migration at
+-- all, for the same reason: production already has both (also holding no
+-- real data), staging has neither, and SQLite has no conditional DDL - a
+-- single ALTER TABLE ADD COLUMN statement cannot be written to succeed on
+-- one and be skipped on the other within one plain SQL file, and
+-- `wrangler d1 migrations apply` aborts the whole file on the first
+-- failing statement. Both columns are reconciled and backfilled via a
+-- one-off, per-environment-aware command run separately once this
+-- migration is confirmed applied everywhere (checks each environment's
+-- actual schema first, only ALTERs where the column is actually missing)
+-- - see the operational notes kept alongside this migration in project
+-- memory, not committed here since it's a one-time imperative action, not
+-- a repeatable migration.
 
-ALTER TABLE staff RENAME COLUMN employee_id TO paysheet_code;
+ALTER TABLE staff ADD COLUMN paysheet_code TEXT;
 
--- ─── Add every cleaner_profiles-only column to staff ───
+-- ─── Add every other cleaner_profiles-only column to staff ───
 -- Types/defaults copied from cleaner_profiles' live schema where they
--- differ from staff's existing conventions.
+-- differ from staff's existing conventions. Confirmed absent from BOTH
+-- staging and production before writing this - safe unconditional ADDs.
 
 ALTER TABLE staff ADD COLUMN profile_picture TEXT;
 ALTER TABLE staff ADD COLUMN residential_address TEXT;
@@ -78,19 +96,6 @@ ALTER TABLE staff ADD COLUMN branch_code TEXT;
 ALTER TABLE staff ADD COLUMN account_holder TEXT;
 ALTER TABLE staff ADD COLUMN blocked INTEGER DEFAULT 0;
 ALTER TABLE staff ADD COLUMN assignment_pool TEXT DEFAULT 'AUTO' CHECK(assignment_pool IN ('AUTO','MANUAL'));
-
--- NOTE on staff.status vs cleaner_profiles.status: staff already has a
--- `status TEXT DEFAULT 'active'` column from 001_core_tables.sql. Nothing
--- in the live app currently reads or writes it (dead, same as employee_id
--- was) - so this migration reuses it for cleaner_profiles.status'
--- semantics (idle/on_way/arrived/completed/blocked live work-status,
--- synced by the WhatsApp/GPS confirmation flow) rather than adding a
--- second `status`-shaped column. This is a second, smaller naming
--- collision beyond the one the task called out explicitly - flagged here
--- for the same reason. Existing staff rows keep whatever value they have
--- (almost certainly the untouched 'active' default, since nothing writes
--- this column today); new cleaner rows get their real status backfilled
--- below.
 
 CREATE INDEX IF NOT EXISTS idx_staff_paysheet_code ON staff(paysheet_code);
 CREATE INDEX IF NOT EXISTS idx_staff_assignment_pool ON staff(assignment_pool);
@@ -117,15 +122,18 @@ CREATE INDEX IF NOT EXISTS idx_staff_assignment_pool ON staff(assignment_pool);
 --     if this INSERT/UPDATE fails on a UNIQUE constraint, STOP and
 --     investigate the specific paysheet_code before re-running).
 
+-- department and status deliberately excluded from this INSERT/UPDATE -
+-- see the note above; backfilled separately once both columns are
+-- confirmed present on every environment.
+
 INSERT INTO staff (
-  user_id, paysheet_code, first_name, last_name, cellphone, department,
-  status, profile_picture, residential_address, emergency_contact,
+  user_id, paysheet_code, first_name, last_name, cellphone,
+  profile_picture, residential_address, emergency_contact,
   emergency_phone, id_number, bank_name, account_number, branch_code,
   account_holder, blocked, assignment_pool, created_at, updated_at
 )
 SELECT
   cp.user_id, cp.paysheet_code, cp.first_name, cp.last_name, cp.cellphone,
-  COALESCE(cp.department, 'cleaning'), COALESCE(cp.status, 'idle'),
   cp.profile_picture, cp.residential_address, cp.emergency_contact,
   cp.emergency_phone, cp.id_number, cp.bank_name, cp.account_number,
   cp.branch_code, cp.account_holder, COALESCE(cp.blocked, 0),
@@ -139,8 +147,6 @@ SET
   first_name = (SELECT cp.first_name FROM cleaner_profiles cp WHERE cp.user_id = staff.user_id),
   last_name = (SELECT cp.last_name FROM cleaner_profiles cp WHERE cp.user_id = staff.user_id),
   cellphone = (SELECT cp.cellphone FROM cleaner_profiles cp WHERE cp.user_id = staff.user_id),
-  department = COALESCE((SELECT cp.department FROM cleaner_profiles cp WHERE cp.user_id = staff.user_id), staff.department, 'cleaning'),
-  status = COALESCE((SELECT cp.status FROM cleaner_profiles cp WHERE cp.user_id = staff.user_id), staff.status),
   profile_picture = (SELECT cp.profile_picture FROM cleaner_profiles cp WHERE cp.user_id = staff.user_id),
   residential_address = (SELECT cp.residential_address FROM cleaner_profiles cp WHERE cp.user_id = staff.user_id),
   emergency_contact = (SELECT cp.emergency_contact FROM cleaner_profiles cp WHERE cp.user_id = staff.user_id),
