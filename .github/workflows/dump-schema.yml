@@ -1,0 +1,64 @@
+name: Dump D1 Table Schema
+
+# One-off diagnostic: prints the live CREATE TABLE statements for named
+# tables against a chosen database/environment. Exists because this
+# environment's migration files have repeatedly not matched what's
+# actually live (see project memory on D1 schema drift) - use this before
+# trusting any migration file as ground truth.
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: 'Which app D1 database'
+        required: true
+        type: choice
+        options:
+          - internal-portal
+          - marketing-site
+      target:
+        description: 'staging or production'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+      tables:
+        description: 'Comma-separated table names'
+        required: true
+        type: string
+
+jobs:
+  dump-schema:
+    name: Dump schema (${{ github.event.inputs.app }} / ${{ github.event.inputs.target }})
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.target }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Wrangler
+      run: npm install -g wrangler@4.93.0
+
+    - name: Build table list SQL
+      id: sql
+      run: |
+        TABLES="${{ github.event.inputs.tables }}"
+        IN_CLAUSE=$(echo "$TABLES" | sed "s/,/','/g")
+        echo "in_clause='$IN_CLAUSE'" >> "$GITHUB_OUTPUT"
+
+    - name: Dump schema (staging)
+      if: github.event.inputs.target == 'staging'
+      working-directory: ${{ github.event.inputs.app }}
+      run: wrangler d1 execute scratchsolid_db --env staging --remote --command "SELECT name, sql FROM sqlite_master WHERE type='table' AND name IN ('${{ steps.sql.outputs.in_clause }}')"
+      env:
+        CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+    - name: Dump schema (production)
+      if: github.event.inputs.target == 'production'
+      working-directory: ${{ github.event.inputs.app }}
+      run: wrangler d1 execute scratchsolid_db --remote --command "SELECT name, sql FROM sqlite_master WHERE type='table' AND name IN ('${{ steps.sql.outputs.in_clause }}')"
+      env:
+        CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
