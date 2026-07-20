@@ -34,7 +34,7 @@ const PUBLIC_PATHS = [
   '/api/data-deletion/confirm',
 ];
 
-export function proxy(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Skip public paths - allow access without auth
@@ -77,4 +77,5 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: '/api/:path*',
+  runtime: 'experimental-edge',
 };
