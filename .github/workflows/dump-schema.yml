@@ -45,7 +45,7 @@ jobs:
       run: |
         TABLES="${{ github.event.inputs.tables }}"
         IN_CLAUSE=$(echo "$TABLES" | sed "s/,/','/g")
-        echo "in_clause='$IN_CLAUSE'" >> "$GITHUB_OUTPUT"
+        echo "in_clause=$IN_CLAUSE" >> "$GITHUB_OUTPUT"
 
     - name: Dump schema (staging)
       if: github.event.inputs.target == 'staging'
