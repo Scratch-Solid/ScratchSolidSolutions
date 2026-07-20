@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import LogoWatermark from '@/components/LogoWatermark';
+import BrandHomeLink from '@/components/BrandHomeLink';
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 
 export default function AuthContent() {
@@ -176,6 +177,7 @@ export default function AuthContent() {
 
   return (
     <div className="min-h-screen bg-[#F7F2EA] py-16 px-4 font-sans">
+      <BrandHomeLink />
       <div className="max-w-md mx-auto">
         <h1 className="text-4xl font-normal text-center text-[#2E1F16] mb-8 tracking-tight" style={{ fontFamily: "Georgia, serif" }}>
           {isLogin ? "Sign In" : "Create Account"}

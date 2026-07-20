@@ -30,9 +30,11 @@ const PUBLIC_PATHS = [
   '/api/analytics/track',
   '/api/feedback',
   '/api/webhooks',
+  '/api/data-deletion/request',
+  '/api/data-deletion/confirm',
 ];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Skip public paths - allow access without auth

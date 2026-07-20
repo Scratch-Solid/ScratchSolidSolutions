@@ -346,6 +346,7 @@ export default function GalleryClient() {
           </div>
         </div>
       )}
+      <SiteFooter />
     </div>
   );
 }

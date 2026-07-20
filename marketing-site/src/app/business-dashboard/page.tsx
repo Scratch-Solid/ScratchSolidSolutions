@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import { useTokenRefresh } from "@/hooks/useTokenRefresh";
 import { authFetch, getCsrfToken } from "@/lib/authFetch";
+import DeleteAccountSection from "@/components/DeleteAccountSection";
 import DashboardShell, { DashboardDepartment } from "@/components/dashboard/DashboardShell";
 
 const ic = {
@@ -217,29 +218,6 @@ export default function BusinessDashboard() {
     setActiveView('overview');
     if (dept === 'digital' && projects.length > 0 && !projectDetail) {
       loadProjectDetail(projects[0].id);
-    }
-  };
-
-  const handleDeleteAccount = async () => {
-    if (!confirm("Are you sure you want to delete your account? This action cannot be undone.")) return;
-
-    try {
-      const userId = localStorage.getItem("userId");
-      const csrfToken = await getCsrfToken();
-      const response = await authFetch(`/api/users/${userId}`, {
-        method: 'DELETE',
-        headers: {
-          ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}),
-        },
-      });
-      if (response.ok) {
-        localStorage.clear();
-        router.push('/login');
-      } else {
-        setError("Failed to delete account");
-      }
-    } catch (error) {
-      setError("Network error. Please try again.");
     }
   };
 
@@ -834,14 +812,11 @@ export default function BusinessDashboard() {
                 <button className="w-full text-left px-4 py-2 text-[#8a6a45] hover:text-[#2E1F16]">
                   Change Password
                 </button>
-                <button
-                  onClick={handleDeleteAccount}
-                  className="w-full text-left px-4 py-2 text-red-600 hover:text-red-700"
-                >
-                  Delete Account
-                </button>
               </div>
             )}
+          </div>
+          <div className="mt-4">
+            <DeleteAccountSection />
           </div>
         </div>
       )}

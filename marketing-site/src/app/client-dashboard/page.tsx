@@ -6,6 +6,7 @@ import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import { useTokenRefresh } from "@/hooks/useTokenRefresh";
 import { authFetch, getCsrfToken } from "@/lib/authFetch";
 import BookingQuotePanel from "@/components/BookingQuotePanel";
+import DeleteAccountSection from "@/components/DeleteAccountSection";
 import DashboardShell, { DashboardDepartment } from "@/components/dashboard/DashboardShell";
 
 const ic = {
@@ -1133,6 +1134,9 @@ export default function ClientDashboard() {
               <span className="text-sm text-gray-600">{value || '—'}</span>
             </div>
           ))}
+          <div className="pt-2">
+            <DeleteAccountSection />
+          </div>
         </div>
       )}
 
