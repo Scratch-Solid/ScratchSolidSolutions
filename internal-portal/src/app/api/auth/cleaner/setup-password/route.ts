@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
 
     // Look up cleaner by paysheet code
     const cleanerProfile = await db.prepare(
-      'SELECT cp.user_id, cp.paysheet_code, u.name, u.email, u.role FROM cleaner_profiles cp JOIN users u ON cp.user_id = u.id WHERE cp.paysheet_code = ?'
+      'SELECT s.user_id, s.paysheet_code, u.name, u.email, u.role FROM staff s JOIN users u ON s.user_id = u.id WHERE s.paysheet_code = ?'
     ).bind(paysheet_code).first();
 
     if (!cleanerProfile) {

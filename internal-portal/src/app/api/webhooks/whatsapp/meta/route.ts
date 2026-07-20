@@ -173,9 +173,10 @@ async function handleStatusKeyword(db: any, phone: string, body: string) {
     }
   }
 
-  // Update cleaner_profiles status
+  // Update staff.status. staffRecord.id here is staff.id (from
+  // resolveStaff() in @/lib/active-assignment), not user_id.
   await db.prepare(
-    `UPDATE cleaner_profiles SET status = ?, updated_at = datetime('now') WHERE user_id = ?`
+    `UPDATE staff SET status = ?, updated_at = datetime('now') WHERE id = ?`
   ).bind(newStatus === 'on_way' ? 'on_way' : newStatus, staffRecord.id).run();
 
   console.log(

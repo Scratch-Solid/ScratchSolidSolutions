@@ -53,17 +53,26 @@ export async function POST(
       ops_score: clampScore(ops_score),
     };
 
-    // Upsert metrics
+    // Upsert metrics.
+    // NOTE (found while migrating cleaner_profiles -> staff, not introduced
+    // by that change): job_performance_metrics does not actually have
+    // job_id, cleaner_id, client_score or ops_score columns in any
+    // migration (011/027 only add staff_id, booking_id and the *_score
+    // columns kpi.ts reads) - this INSERT, and its `ON CONFLICT(job_id)`
+    // (job_id has no UNIQUE constraint either), already fail against the
+    // real schema today, independent of this table-name change. Flagged
+    // for a human; not fixed here since it's a job_performance_metrics
+    // schema gap, not a cleaner_profiles/staff naming issue.
     await db
       .prepare(
         `INSERT INTO job_performance_metrics (
           job_id, cleaner_id, client_score, adherence_score,
           attendance_score, company_values_score, ops_score, notes, created_at
         )
-        SELECT ?, cp.id, ?, ?, ?, ?, ?, ?, datetime('now')
-        FROM cleaner_profiles cp
+        SELECT ?, s.id, ?, ?, ?, ?, ?, ?, datetime('now')
+        FROM staff s
         JOIN jobs j ON j.id = ?
-        WHERE cp.user_id = j.supervisor_id
+        WHERE s.user_id = j.supervisor_id
         ON CONFLICT(job_id) DO UPDATE SET
           client_score = excluded.client_score,
           adherence_score = excluded.adherence_score,

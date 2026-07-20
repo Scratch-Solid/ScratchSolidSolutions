@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     
     // Get cleaner profile if exists
     const cleanerProfile = await db.prepare(
-      'SELECT * FROM cleaner_profiles WHERE user_id = ?'
+      'SELECT * FROM staff WHERE user_id = ?'
     ).bind(userId).first();
 
     // Get bookings if cleaner
@@ -86,8 +86,8 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Start transaction-like deletion
-    // Delete cleaner profile
-    await db.prepare('DELETE FROM cleaner_profiles WHERE user_id = ?').bind(userId).run();
+    // Delete staff profile (only this user's own row, scoped by user_id)
+    await db.prepare('DELETE FROM staff WHERE user_id = ?').bind(userId).run();
     
     // Delete bookings (as cleaner)
     await db.prepare('DELETE FROM bookings WHERE cleaner_id = ?').bind(userId).run();

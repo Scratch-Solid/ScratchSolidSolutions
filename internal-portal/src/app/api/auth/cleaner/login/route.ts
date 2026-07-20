@@ -7,15 +7,21 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { generateAccessToken, generateRefreshToken, setAuthCookies } from '@/lib/session';
 
+// Migrated off cleaner_profiles (2026-07-20 consolidation, see
+// migrations/067_consolidate_cleaner_profiles_into_staff.sql). The old
+// `OR cp.username = ?` clause is gone - cleaner_profiles.username was
+// always set to the same value as paysheet_code, so staff.paysheet_code
+// alone covers both. `username` is still returned in the result shape for
+// existing callers, aliased from paysheet_code.
 async function findCleanerForLogin(db: D1Database, paysheetCode: string) {
   const queries = [
-    'SELECT cp.user_id, cp.paysheet_code, cp.username, u.name, u.email, u.role, u.password_needs_reset, u.password_hash FROM cleaner_profiles cp JOIN users u ON cp.user_id = u.id WHERE cp.paysheet_code = ? OR cp.username = ?',
-    'SELECT cp.user_id, cp.paysheet_code, cp.username, u.name, u.email, u.role, 0 as password_needs_reset, u.password_hash FROM cleaner_profiles cp JOIN users u ON cp.user_id = u.id WHERE cp.paysheet_code = ? OR cp.username = ?',
+    'SELECT s.user_id, s.paysheet_code, s.paysheet_code as username, u.name, u.email, u.role, u.password_needs_reset, u.password_hash FROM staff s JOIN users u ON s.user_id = u.id WHERE s.paysheet_code = ?',
+    'SELECT s.user_id, s.paysheet_code, s.paysheet_code as username, u.name, u.email, u.role, 0 as password_needs_reset, u.password_hash FROM staff s JOIN users u ON s.user_id = u.id WHERE s.paysheet_code = ?',
   ];
 
   for (const sql of queries) {
     try {
-      const cleaner = await db.prepare(sql).bind(paysheetCode, paysheetCode).first();
+      const cleaner = await db.prepare(sql).bind(paysheetCode).first();
       if (cleaner) {
         return cleaner;
       }
@@ -29,14 +35,14 @@ async function findCleanerForLogin(db: D1Database, paysheetCode: string) {
 async function getCleanerOnboardingStatus(db: D1Database, userId: number) {
   const cleanerRecord = await db.prepare(
     `SELECT
-      cp.paysheet_code,
+      s.paysheet_code,
       tp.background_check_consent,
       tp.contract_signed,
       tp.completed,
       tp.completion_percentage
-    FROM cleaner_profiles cp
-    LEFT JOIN training_progress tp ON cp.paysheet_code = tp.employee_id
-    WHERE cp.user_id = ?`
+    FROM staff s
+    LEFT JOIN training_progress tp ON s.paysheet_code = tp.employee_id
+    WHERE s.user_id = ?`
   ).bind(userId).first();
 
   if (!cleanerRecord) {

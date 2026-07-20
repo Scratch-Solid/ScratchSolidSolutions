@@ -18,14 +18,17 @@ export async function GET(request: NextRequest) {
       limit: searchParams.get('limit')
     });
 
-    // Get cleaner list with onboarding status
+    // Get cleaner list with onboarding status. department = 'cleaning'
+    // keeps this scoped to cleaners only, matching cleaner_profiles' old
+    // implicit scope now that staff also holds supervisors/digital/
+    // transport rows (2026-07-20 consolidation).
     const cleanersQuery = `
-      SELECT 
-        cp.id,
-        cp.paysheet_code,
-        cp.first_name,
-        cp.last_name,
-        cp.status,
+      SELECT
+        s.id,
+        s.paysheet_code,
+        s.first_name,
+        s.last_name,
+        s.status,
         tp.completion_percentage,
         tp.completed as training_completed,
         tp.background_check_consent,
@@ -33,15 +36,16 @@ export async function GET(request: NextRequest) {
         u.email,
         u.onboarding_stage,
         u.created_at as joined_at
-      FROM cleaner_profiles cp
-      LEFT JOIN training_progress tp ON cp.paysheet_code = tp.employee_id
-      LEFT JOIN users u ON cp.user_id = u.id
+      FROM staff s
+      LEFT JOIN training_progress tp ON s.paysheet_code = tp.employee_id
+      LEFT JOIN users u ON s.user_id = u.id
+      WHERE s.department = 'cleaning'
       ORDER BY u.created_at DESC
     `;
 
     // Get total count
     const countResult = await db.prepare(
-      'SELECT COUNT(*) as count FROM cleaner_profiles cp'
+      "SELECT COUNT(*) as count FROM staff s WHERE s.department = 'cleaning'"
     ).first();
     const total = (countResult as any)?.count || 0;
 

@@ -49,12 +49,15 @@ export async function GET(request: NextRequest) {
       }>();
 
     // ─── Active cleaners ───
+    // Migrated to staff (2026-07-20 consolidation); department = 'cleaning'
+    // keeps this scoped to cleaners only, now that staff also holds
+    // supervisors/digital/transport rows.
     const activeCleaners = await db
       .prepare(
         `
         SELECT COUNT(DISTINCT paysheet_code) as count
-        FROM cleaner_profiles
-        WHERE status IN ('active', 'idle')
+        FROM staff
+        WHERE status IN ('active', 'idle') AND department = 'cleaning'
         `
       )
       .first<{ count: number }>();

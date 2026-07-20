@@ -40,10 +40,12 @@ export async function POST(
 
     const { cleaner_ids } = body as { cleaner_ids: string[] };
 
-    // Validate cleaners exist
+    // Validate cleaners exist. `cleaner_ids` here are actually paysheet
+    // codes (see the doc comment above); no numeric id is used from this
+    // lookup so it's safe to source from staff (2026-07-20 consolidation).
     const placeholders = cleaner_ids.map(() => '?').join(',');
     const cleanerCheck = await db
-      .prepare(`SELECT paysheet_code FROM cleaner_profiles WHERE paysheet_code IN (${placeholders})`)
+      .prepare(`SELECT paysheet_code FROM staff WHERE paysheet_code IN (${placeholders})`)
       .bind(...cleaner_ids)
       .all<{ paysheet_code: string }>();
 

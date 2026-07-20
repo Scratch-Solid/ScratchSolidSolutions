@@ -19,14 +19,14 @@ export async function getCleanerOnboardingStatus(
 ): Promise<CleanerOnboardingStatus> {
   const cleanerRecord = await db.prepare(
     `SELECT
-      cp.paysheet_code,
+      s.paysheet_code,
       tp.background_check_consent,
       tp.contract_signed,
       tp.completed,
       tp.completion_percentage
-    FROM cleaner_profiles cp
-    LEFT JOIN training_progress tp ON cp.paysheet_code = tp.employee_id
-    WHERE cp.user_id = ?`
+    FROM staff s
+    LEFT JOIN training_progress tp ON s.paysheet_code = tp.employee_id
+    WHERE s.user_id = ?`
   ).bind(userId).first();
 
   if (!cleanerRecord) {

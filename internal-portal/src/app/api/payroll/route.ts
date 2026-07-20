@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
 
     // Get cleaner profile with rates
     const cleaner = await db.prepare(
-      'SELECT * FROM cleaner_profiles WHERE user_id = ?'
+      'SELECT * FROM staff WHERE user_id = ?'
     ).bind(cleanerId).first();
 
     if (!cleaner) {
@@ -147,7 +147,7 @@ export async function PUT(request: NextRequest) {
     values.push(cleaner_id);
 
     await db.prepare(
-      `UPDATE cleaner_profiles SET ${updates.join(', ')} WHERE user_id = ?`
+      `UPDATE staff SET ${updates.join(', ')} WHERE user_id = ?`
     ).bind(...values).run();
 
     const response = NextResponse.json({ success: true });

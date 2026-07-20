@@ -16,30 +16,26 @@ export async function resolveStaff(
 ): Promise<{ id: number; first_name: string; paysheet_code?: string } | null> {
   const normalizedPhone = phone.replace(/\s+/g, '');
 
+  // Migrated (2026-07-20 consolidation, migrations/067_consolidate_cleaner_profiles_into_staff.sql):
+  // paysheet_code now lives directly on staff (renamed from staff's old,
+  // dead employee_id column and backfilled from cleaner_profiles), so the
+  // LEFT JOIN cleaner_profiles this used to need is gone, and so is the
+  // separate "check cleaner_profiles by cellphone" fallback query that used
+  // to exist below it - every cleaner_profiles cellphone is now also on
+  // staff after the backfill, so that fallback would only ever have been
+  // reached in an environment where migration 067 hasn't been applied yet.
   const staff = await db
     .prepare(
-      `SELECT s.id, s.first_name, cp.paysheet_code
-       FROM staff s
-       LEFT JOIN cleaner_profiles cp ON cp.user_id = s.user_id
-       WHERE REPLACE(s.cellphone, ' ', '') = ? AND s.is_active = 1
+      `SELECT id, first_name, paysheet_code
+       FROM staff
+       WHERE REPLACE(cellphone, ' ', '') = ? AND is_active = 1
        LIMIT 1`
     )
     .bind(normalizedPhone)
     .first() as { id: number; first_name: string; paysheet_code: string | null } | null;
 
-  if (staff) return { ...staff, paysheet_code: staff.paysheet_code || undefined };
-
-  const profile = await db
-    .prepare(
-      `SELECT user_id AS id, first_name, paysheet_code
-       FROM cleaner_profiles
-       WHERE REPLACE(cellphone, ' ', '') = ?
-       LIMIT 1`
-    )
-    .bind(normalizedPhone)
-    .first() as { id: number; first_name: string; paysheet_code: string } | null;
-
-  return profile || null;
+  if (!staff) return null;
+  return { ...staff, paysheet_code: staff.paysheet_code || undefined };
 }
 
 export async function findActiveAssignment(

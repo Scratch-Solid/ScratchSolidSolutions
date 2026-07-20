@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   try {
     // Get cleaner profile
     const cleanerProfile = await db.prepare(
-      'SELECT cp.id, cp.paysheet_code, cp.first_name, cp.last_name, cp.status FROM cleaner_profiles cp WHERE cp.user_id = ?'
+      'SELECT s.paysheet_code, s.first_name, s.last_name, s.status FROM staff s WHERE s.user_id = ?'
     ).bind(userId).first();
 
     if (!cleanerProfile) {
@@ -35,17 +35,32 @@ export async function GET(request: NextRequest) {
       'SELECT completion_percentage, completed FROM training_progress WHERE employee_id = ?'
     ).bind(cleaner.paysheet_code).first();
 
-    // Get upcoming shifts count (cleaner_id references cleaner_profiles.id)
-    const upcomingShifts = await db.prepare(
-      `SELECT COUNT(*) as count FROM booking_assignments ba 
-       JOIN bookings b ON ba.booking_id = b.id 
-       WHERE ba.cleaner_id = ? AND b.booking_date >= date('now') AND b.status != 'cancelled'`
-    ).bind(cleaner.id).first();
+    // Get upcoming shifts count. booking_assignments.cleaner_id is a real
+    // FK to cleaner_profiles.id (migration 002), NOT to staff.id or
+    // user_id - resolved via a small, NOT-MIGRATED cleaner_profiles lookup
+    // (see migrations/067_consolidate_cleaner_profiles_into_staff.sql for
+    // why this specific id can't move to staff.id without corrupting
+    // existing booking_assignments rows).
+    const legacyProfile = await db.prepare(
+      'SELECT id FROM cleaner_profiles WHERE user_id = ?'
+    ).bind(userId).first() as { id: number } | null;
 
-    // Get average rating (staff_id references cleaner_profiles.id)
+    const upcomingShifts = legacyProfile
+      ? await db.prepare(
+          `SELECT COUNT(*) as count FROM booking_assignments ba
+           JOIN bookings b ON ba.booking_id = b.id
+           WHERE ba.cleaner_id = ? AND b.booking_date >= date('now') AND b.status != 'cancelled'`
+        ).bind(legacyProfile.id).first()
+      : { count: 0 };
+
+    // Get average rating. job_performance_metrics.staff_id is a real FK to
+    // users(id) (migration 011), not cleaner_profiles.id - this previously
+    // bound cleaner_profiles.id here, which never matched (a pre-existing
+    // bug, fixed here to use userId, consistent with @/lib/kpi.ts and
+    // cleaner/ratings/route.ts which already use userId correctly).
     const ratingResult = await db.prepare(
       'SELECT AVG(client_star_rating) as avg_rating FROM job_performance_metrics WHERE staff_id = ?'
-    ).bind(cleaner.id).first();
+    ).bind(userId).first();
 
     const response = NextResponse.json({
       success: true,

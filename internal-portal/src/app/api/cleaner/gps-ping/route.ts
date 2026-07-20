@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     }
 
     const cleanerProfile = await db
-      .prepare('SELECT paysheet_code FROM cleaner_profiles WHERE user_id = ?')
+      .prepare('SELECT paysheet_code FROM staff WHERE user_id = ?')
       .bind(staffId)
       .first() as { paysheet_code?: string } | null;
 

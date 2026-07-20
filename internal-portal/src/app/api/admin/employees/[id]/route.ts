@@ -20,9 +20,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const profile = await db.prepare(
       `SELECT u.id, u.name, u.email, u.phone, u.role, u.onboarding_stage,
-              cp.paysheet_code, cp.first_name, cp.last_name, cp.status, cp.department
+              s.paysheet_code, s.first_name, s.last_name, s.status, s.department
        FROM users u
-       LEFT JOIN cleaner_profiles cp ON cp.user_id = u.id
+       LEFT JOIN staff s ON s.user_id = u.id
        WHERE u.id = ?`
     ).bind(userId).first();
 

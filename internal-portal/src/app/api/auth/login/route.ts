@@ -57,18 +57,19 @@ import crypto from 'crypto';
      }
    }
 
+   // Migrated off cleaner_profiles (2026-07-20 consolidation, see
+   // migrations/067_consolidate_cleaner_profiles_into_staff.sql). The old
+   // `OR cp.username = ?` clause is gone: cleaner_profiles.username was
+   // always set to the same value as paysheet_code by every caller, so
+   // staff.paysheet_code alone covers both.
    const cleanerQueries = [
-     'SELECT u.id, u.email, u.password_hash, u.role, u.name, u.phone, u.address, u.business_name, cp.paysheet_code as paysheet_code, u.password_needs_reset FROM cleaner_profiles cp JOIN users u ON cp.user_id = u.id WHERE cp.paysheet_code = ? OR cp.username = ?',
-     'SELECT u.id, u.email, u.password_hash, u.role, u.name, u.phone, u.address, u.business_name, cp.paysheet_code as paysheet_code, 0 as password_needs_reset FROM cleaner_profiles cp JOIN users u ON cp.user_id = u.id WHERE cp.paysheet_code = ? OR cp.username = ?',
-     'SELECT u.id, u.email, u.password_hash, u.role, u.name, u.phone, u.address, u.business_name, cp.paysheet_code as paysheet_code, 0 as password_needs_reset FROM cleaner_profiles cp JOIN users u ON cp.user_id = u.id WHERE cp.paysheet_code = ?',
+     'SELECT u.id, u.email, u.password_hash, u.role, u.name, u.phone, u.address, u.business_name, s.paysheet_code as paysheet_code, u.password_needs_reset FROM staff s JOIN users u ON s.user_id = u.id WHERE s.paysheet_code = ?',
+     'SELECT u.id, u.email, u.password_hash, u.role, u.name, u.phone, u.address, u.business_name, s.paysheet_code as paysheet_code, 0 as password_needs_reset FROM staff s JOIN users u ON s.user_id = u.id WHERE s.paysheet_code = ?',
    ];
 
    for (const sql of cleanerQueries) {
      try {
-       const statement = sql.includes('OR cp.username = ?')
-         ? db.prepare(sql).bind(identifier, identifier)
-         : db.prepare(sql).bind(identifier);
-       const user = await statement.first() as LoginUser | null;
+       const user = await db.prepare(sql).bind(identifier).first() as LoginUser | null;
        if (user) {
          return user;
        }
@@ -172,9 +173,9 @@ export async function POST(request: NextRequest) {
     if (user.role === 'cleaner') {
       const cleanerProgress = await db.prepare(
         `SELECT tp.background_check_consent, tp.contract_signed, tp.completed
-         FROM cleaner_profiles cp
-         LEFT JOIN training_progress tp ON cp.paysheet_code = tp.employee_id
-         WHERE cp.user_id = ?`
+         FROM staff s
+         LEFT JOIN training_progress tp ON s.paysheet_code = tp.employee_id
+         WHERE s.user_id = ?`
       ).bind(user.id).first() as {
         background_check_consent?: number | null;
         contract_signed?: number | null;

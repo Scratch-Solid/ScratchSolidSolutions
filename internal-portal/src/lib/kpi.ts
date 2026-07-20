@@ -65,7 +65,14 @@ export async function calculateKpi(db: D1Database, staffId: number): Promise<Kpi
   const systemComponent = systemRow?.adherence ?? 0;
 
   // Client component: real customer ratings, via cleaner_profiles (cleaning_feedback.cleaner_id
-  // references cleaner_profiles.id, not users.id - staffId here is a users.id)
+  // references cleaner_profiles.id, not users.id - staffId here is a users.id).
+  // NOT MIGRATED to staff as part of the 2026-07-20 cleaner_profiles ->
+  // staff consolidation (migrations/067_consolidate_cleaner_profiles_into_staff.sql):
+  // cleaning_feedback.cleaner_id is a real, already-populated FK to
+  // cleaner_profiles.id specifically (migration 020), and `staff.id` is a
+  // different, independent id sequence - switching this join to staff would
+  // silently break every existing rating lookup. cleaner_profiles is not
+  // being dropped, so this join is left exactly as-is on purpose.
   const clientRow = await db.prepare(`
     SELECT AVG(rating) AS avg_rating
     FROM (

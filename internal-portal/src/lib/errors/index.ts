@@ -203,7 +203,7 @@ export const WORKFORCE_ERRORS = {
     severity: 'warning',
     audience: 'staff',
     userMessage: `Cleaner ${id} not found or inactive.`,
-    technicalDetail: `Cleaner lookup failed: no active cleaner_profiles record for id=${id}.`,
+    technicalDetail: `Cleaner lookup failed: no active staff record for id=${id}.`,
     nextSteps: 'Verify the cleaner ID and check if the profile was deactivated.',
     httpStatus: 404,
     retryable: false,

@@ -19,12 +19,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: 'No pending bookings to assign', assigned: 0 });
     }
 
-    // Get available cleaners (not blocked, idle)
+    // Get available cleaners (not blocked, idle). department = 'cleaning'
+    // keeps this scoped to cleaners only (2026-07-20 consolidation). See
+    // the note in admin/bookings/auto-assign/route.ts (identical logic,
+    // pre-existing cleaner_id/user_id FK mismatch, out of scope here).
     const cleaners = await db.prepare(
-      `SELECT cp.*, u.email, u.name 
-       FROM cleaner_profiles cp
-       JOIN users u ON cp.user_id = u.id
-       WHERE cp.blocked = 0 AND cp.status = 'idle'`
+      `SELECT s.*, u.email, u.name
+       FROM staff s
+       JOIN users u ON s.user_id = u.id
+       WHERE s.blocked = 0 AND s.status = 'idle' AND s.department = 'cleaning'`
     ).all();
 
     const availableCleaners = cleaners.results || [];

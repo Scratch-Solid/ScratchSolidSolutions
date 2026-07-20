@@ -60,10 +60,18 @@ export async function GET(request: NextRequest) {
     }
 
     // Non-cleaner staff (digital, etc.) - the payroll table is scoped to
-    // cleaner_profiles, so staff without a cleaner profile (e.g. digital
-    // team) genuinely have no payslip data yet - there's no separate
-    // salaried-staff payroll system built. Returns empty rather than
-    // fabricating figures.
+    // cleaner_profiles.id (payroll.cleaner_id, migration 004), so staff
+    // without a cleaner profile (e.g. digital team) genuinely have no
+    // payslip data yet - there's no separate salaried-staff payroll system
+    // built. Returns empty rather than fabricating figures.
+    //
+    // NOT MIGRATED to staff.id as part of the 2026-07-20 cleaner_profiles ->
+    // staff consolidation (migrations/067_consolidate_cleaner_profiles_into_staff.sql):
+    // payroll.cleaner_id is a real, already-populated FK to
+    // cleaner_profiles.id specifically, and staff.id is a different,
+    // independent id sequence - resolving this via staff instead would
+    // silently break every existing payslip lookup. cleaner_profiles is not
+    // being dropped, so this stays pointed at it on purpose.
     const cleanerProfile = await db.prepare(`SELECT id FROM cleaner_profiles WHERE user_id = ?`).bind(userId).first() as { id: number } | null;
     if (!cleanerProfile) {
       const response = NextResponse.json({ data: [], message: 'No payroll records available for this role yet' });

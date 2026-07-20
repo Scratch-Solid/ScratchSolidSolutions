@@ -17,7 +17,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     // Get cleaner profile
     const cleanerProfile = await db.prepare(
-      'SELECT cp.paysheet_code FROM cleaner_profiles cp WHERE cp.user_id = ?'
+      'SELECT s.paysheet_code FROM staff s WHERE s.user_id = ?'
     ).bind(userId).first();
 
     if (!cleanerProfile) {

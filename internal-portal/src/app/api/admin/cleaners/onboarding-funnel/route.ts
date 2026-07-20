@@ -11,9 +11,10 @@ export async function GET(request: NextRequest) {
   const userId = authResult.user?.id;
 
   try {
-    // Get onboarding funnel statistics
+    // Get onboarding funnel statistics. department = 'cleaning' keeps this
+    // scoped to cleaners only (2026-07-20 consolidation).
     const totalCleaners = await db.prepare(
-      'SELECT COUNT(*) as count FROM cleaner_profiles'
+      "SELECT COUNT(*) as count FROM staff WHERE department = 'cleaning'"
     ).first();
     const consentSigned = await db.prepare(
       'SELECT COUNT(*) as count FROM training_progress WHERE background_check_consent = 1'

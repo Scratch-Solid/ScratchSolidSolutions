@@ -261,8 +261,10 @@ function generatePaysheetCode(role: 'cleaner' | 'staff' | StaffRole): string {
   }
 }
 
-// Checks both cleaner_profiles.paysheet_code (cleaners) and users.paysheet_code
-// (digital/transport, which have no separate profile table) for collisions.
+// Checks both staff.paysheet_code (cleaners/supervisors - formerly
+// cleaner_profiles.paysheet_code, see migrations/067_consolidate_cleaner_profiles_into_staff.sql)
+// and users.paysheet_code (digital/transport, which have no separate profile
+// table) for collisions.
 async function generateUniquePaysheetCode(db: D1Database, role: 'cleaner' | 'staff' | StaffRole): Promise<string> {
   // users.paysheet_code was intended to ship in migration 030, which never
   // actually applied on this environment (confirmed schema drift - see the
@@ -279,7 +281,7 @@ async function generateUniquePaysheetCode(db: D1Database, role: 'cleaner' | 'sta
   while (attempts < maxAttempts) {
     const code = generatePaysheetCode(role);
     const existing = await db.prepare(
-      `SELECT 1 FROM cleaner_profiles WHERE paysheet_code = ?
+      `SELECT 1 FROM staff WHERE paysheet_code = ?
        UNION SELECT 1 FROM users WHERE paysheet_code = ? LIMIT 1`
     ).bind(code, code).first();
     if (!existing) {
@@ -313,17 +315,20 @@ function generateTempPassword(): string {
 
 /**
  * Single entry point for turning a person (self-applied or admin-entered) into
- * a fully active cleaner account: user + cleaner_profile + training record +
+ * a fully active cleaner account: user + staff profile row + training record +
  * onboarding_stage + ERPNext registration + welcome notification. Used by both
  * the application-approval route and the admin "add cleaner" route so there is
  * exactly one place this logic lives.
  *
  * Idempotent: if a prior call already created the `users` row but failed
- * before finishing (e.g. the cleaner_profiles insert or a later step threw),
- * retrying with the same email reuses that row instead of hitting the email
- * UNIQUE constraint and failing forever. A fresh temp password is issued on
- * every call so a recovered retry always ends with valid, deliverable
- * credentials, even if the original notification never went out.
+ * before finishing (e.g. the staff insert or a later step threw), retrying
+ * with the same email reuses that row instead of hitting the email UNIQUE
+ * constraint and failing forever. A fresh temp password is issued on every
+ * call so a recovered retry always ends with valid, deliverable credentials,
+ * even if the original notification never went out.
+ *
+ * Writes to `staff`, not the now-legacy `cleaner_profiles` table - see
+ * migrations/067_consolidate_cleaner_profiles_into_staff.sql.
  */
 export async function activateCleanerAccount(
   db: D1Database,
@@ -334,7 +339,7 @@ export async function activateCleanerAccount(
     emergencyContact?: string;
     idNumber?: string;
     bankDetailsPresent?: boolean;
-    // 'staff' = a supervisor: goes through the exact same cleaner_profiles /
+    // 'staff' = a supervisor: goes through the exact same staff-profile /
     // training / ERPNext activation as a cleaner (so they're assignable to
     // jobs and paid the same way), but the users.role that actually grants
     // supervisor-dashboard/API access is 'staff', not 'cleaner'.
@@ -378,7 +383,7 @@ export async function activateCleanerAccount(
     await db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').bind(passwordHash, newUserId).run();
 
     const existingProfile = await db.prepare(
-      'SELECT paysheet_code FROM cleaner_profiles WHERE user_id = ?'
+      'SELECT paysheet_code FROM staff WHERE user_id = ?'
     ).bind(newUserId).first<{ paysheet_code: string }>();
 
     if (existingProfile) {
@@ -386,11 +391,10 @@ export async function activateCleanerAccount(
     } else {
       paysheetCode = await generateUniquePaysheetCode(db, role);
       await db.prepare(
-        `INSERT INTO cleaner_profiles (user_id, username, paysheet_code, first_name, last_name, cellphone, emergency_contact, emergency_phone, id_number, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
+        `INSERT INTO staff (user_id, paysheet_code, first_name, last_name, cellphone, emergency_contact, emergency_phone, id_number, department, status, pool_type, onboarding_stage, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'cleaning', 'idle', 'INDIVIDUAL', 'consent_approved', datetime('now'), datetime('now'))`
       ).bind(
         newUserId,
-        paysheetCode,
         paysheetCode,
         firstName,
         lastName,
@@ -414,11 +418,10 @@ export async function activateCleanerAccount(
     newUserId = insertResult.meta.last_row_id as number;
 
     await db.prepare(
-      `INSERT INTO cleaner_profiles (user_id, username, paysheet_code, first_name, last_name, cellphone, emergency_contact, emergency_phone, id_number, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
+      `INSERT INTO staff (user_id, paysheet_code, first_name, last_name, cellphone, emergency_contact, emergency_phone, id_number, department, status, pool_type, onboarding_stage, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'cleaning', 'idle', 'INDIVIDUAL', 'consent_approved', datetime('now'), datetime('now'))`
     ).bind(
       newUserId,
-      paysheetCode,
       paysheetCode,
       firstName,
       lastName,
@@ -478,10 +481,10 @@ export async function activateCleanerAccount(
  * Single entry point for activating a Digital or Transportation staff account
  * from an approved application - the same role, and equivalent safety guard
  * against hijacking an unrelated existing account, as activateCleanerAccount,
- * without the cleaner-specific machinery (no cleaner_profiles row, no
+ * without the cleaner-specific machinery (no `staff` profile row, no
  * training/ERPNext/DocuSign integration - none of that exists for these
  * departments yet). The paysheet code lives directly on `users.paysheet_code`
- * since there's no per-department profile table to hold it.
+ * since this path doesn't create a `staff` row at all.
  */
 export async function activateStaffAccount(
   db: D1Database,

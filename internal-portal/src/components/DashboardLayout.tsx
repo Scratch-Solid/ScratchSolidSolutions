@@ -48,7 +48,7 @@ const NAV_ITEMS: Record<Role, NavItem[]> = {
     { href: '/supervisor-dashboard?tab=jobs', label: 'Jobs', icon: ClipboardList },
     { href: '/supervisor-dashboard?tab=team', label: 'Team', icon: Users },
     // Supervisors are also a working cleaner (users.role='staff' still gets
-    // a cleaner_profiles row and is now allowed on every cleaner-facing
+    // a staff profile row and is now allowed on every cleaner-facing
     // route) - let them reach their own assigned jobs too.
     { href: '/cleaner-dashboard', label: 'My Jobs', icon: UserCheck },
   ],

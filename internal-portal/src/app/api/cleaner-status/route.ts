@@ -34,7 +34,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Check if cleaner is blocked
-    const cleaner = await db.prepare('SELECT blocked FROM cleaner_profiles WHERE user_id = ?').bind(cleaner_id).first();
+    const cleaner = await db.prepare('SELECT blocked FROM staff WHERE user_id = ?').bind(cleaner_id).first();
     if (!cleaner) {
       return NextResponse.json({ error: 'Cleaner not found' }, { status: 404 });
     }
@@ -43,7 +43,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Validate status transitions
-    const currentStatus = await db.prepare('SELECT status FROM cleaner_profiles WHERE user_id = ?').bind(cleaner_id).first() as any;
+    const currentStatus = await db.prepare('SELECT status FROM staff WHERE user_id = ?').bind(cleaner_id).first() as any;
     const validTransition = validateStatusTransition(currentStatus?.status || 'idle', status);
     if (!validTransition) {
       const response = NextResponse.json({ error: 'Invalid status transition' }, { status: 400 });
@@ -68,8 +68,15 @@ export async function PUT(request: NextRequest) {
     }
     values.push(String(cleaner_id));
 
+    // NOTE (pre-existing, not introduced by the cleaner_profiles -> staff
+    // rename): gps_lat/gps_long don't exist as real columns on the live
+    // cleaner_profiles/staff schema at all - this UPDATE already threw
+    // "no such column" against the real DB whenever a client sent
+    // gps_lat/gps_long, before this change too (the real, working GPS path
+    // is the storeGPSCoordinates() KV write further down). Table name
+    // retargeted only; flagged for a human to fix separately.
     await db.prepare(
-      `UPDATE cleaner_profiles SET ${updates.join(', ')} WHERE user_id = ?`
+      `UPDATE staff SET ${updates.join(', ')} WHERE user_id = ?`
     ).bind(...values).run();
 
     // Update booking GPS tracking if booking_id is provided
@@ -118,7 +125,7 @@ export async function PUT(request: NextRequest) {
             logger.info(`Auto-arrival detected for cleaner ${cleaner_id} at booking ${booking_id}, distance: ${arrivalCheck.distance}m`);
             
             await db.prepare(
-              'UPDATE cleaner_profiles SET status = ?, updated_at = datetime(\'now\') WHERE user_id = ?'
+              'UPDATE staff SET status = ?, updated_at = datetime(\'now\') WHERE user_id = ?'
             ).bind('arrived', cleaner_id).run();
             
             // Update KV with new status
@@ -224,7 +231,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Missing cleaner_id' }, { status: 400 });
     }
 
-    const cleaner = await db.prepare('SELECT status, gps_lat, gps_long, blocked FROM cleaner_profiles WHERE user_id = ?').bind(cleanerId).first();
+    // NOTE: gps_lat/gps_long are not real columns (see comment above) -
+    // pre-existing, unrelated to this table-name migration.
+    const cleaner = await db.prepare('SELECT status, gps_lat, gps_long, blocked FROM staff WHERE user_id = ?').bind(cleanerId).first();
     
     if (!cleaner) {
       return NextResponse.json({ error: 'Cleaner not found' }, { status: 404 });

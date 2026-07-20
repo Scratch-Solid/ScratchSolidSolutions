@@ -64,6 +64,15 @@ export async function scoreAssignmentCandidates(
   timeSlot: TimeSlot,
   suburb?: string | null
 ): Promise<AssignmentCandidate[]> {
+  // NOT MIGRATED to staff as part of the 2026-07-20 cleaner_profiles ->
+  // staff consolidation (migrations/067_consolidate_cleaner_profiles_into_staff.sql):
+  // the `id` returned here is fed straight into booking_assignments.cleaner_id
+  // and bookings.cleaner_id below, both of which are real, already-populated
+  // FKs to cleaner_profiles.id specifically (migrations 002/004). staff.id is
+  // a different, independent sequence, so switching this query's source
+  // table would silently start writing the wrong numeric id into every new
+  // booking assignment. cleaner_profiles is not being dropped, so this stays
+  // pointed at it on purpose.
   const cleanersResult = await db.prepare(`
     SELECT cp.id, cp.first_name, cp.last_name
     FROM cleaner_profiles cp
@@ -251,9 +260,13 @@ export async function transitionCleanerPool(
   reason: string,
   transitionedBy: number
 ): Promise<{ success: boolean; message: string }> {
+  // `cleanerId` here is a cleaner_profiles.id (same id space as
+  // scoreAssignmentCandidates/booking_assignments.cleaner_id above) - kept
+  // pointed at cleaner_profiles for the same FK reason, NOT migrated to
+  // staff.id. See the note in scoreAssignmentCandidates above.
   const cleaner = await db.prepare(
-    'SELECT assignment_pool FROM cleaner_profiles WHERE id = ?'
-  ).bind(cleanerId).first<{ assignment_pool: AssignmentPool }>();
+    'SELECT assignment_pool, user_id FROM cleaner_profiles WHERE id = ?'
+  ).bind(cleanerId).first<{ assignment_pool: AssignmentPool; user_id: number }>();
 
   if (!cleaner) {
     return { success: false, message: 'Cleaner not found' };
@@ -268,6 +281,14 @@ export async function transitionCleanerPool(
     'UPDATE cleaner_profiles SET assignment_pool = ?, updated_at = datetime(\'now\') WHERE id = ?'
   ).bind(toPool, cleanerId).run();
 
+  // Write-through to staff.assignment_pool (backfilled from cleaner_profiles
+  // by migration 067) so it doesn't silently drift out of sync now that
+  // staff is the intended long-term source of truth. Best-effort: a failure
+  // here shouldn't block the real, FK-safe cleaner_profiles update above.
+  await db.prepare(
+    'UPDATE staff SET assignment_pool = ?, updated_at = datetime(\'now\') WHERE user_id = ?'
+  ).bind(toPool, cleaner.user_id).run().catch(() => {});
+
   return { success: true, message: `Successfully moved cleaner from ${cleaner.assignment_pool} to ${toPool}` };
 }
 
@@ -275,14 +296,19 @@ export async function transitionCleanerPool(
  * Pool headcount/capacity summary for the admin Pool Management page.
  */
 export async function getPoolCapacity(db: D1Database): Promise<{ pool: AssignmentPool; totalCleaners: number; activeCleaners: number }[]> {
+  // Migrated to staff (2026-07-20 consolidation) - pure headcount reporting,
+  // no id value from this query is used as a stored FK elsewhere, so unlike
+  // scoreAssignmentCandidates/transitionCleanerPool above this one is safe
+  // to move. department = 'cleaning' preserves cleaner_profiles' implicit
+  // scope now that staff also holds supervisors/digital/transport.
   const results = await db.prepare(`
-    SELECT cp.assignment_pool as pool,
+    SELECT s.assignment_pool as pool,
            COUNT(*) as total_cleaners,
-           SUM(CASE WHEN cp.status != 'blocked' THEN 1 ELSE 0 END) as active_cleaners
-    FROM cleaner_profiles cp
-    JOIN users u ON cp.user_id = u.id
-    WHERE u.deleted = 0
-    GROUP BY cp.assignment_pool
+           SUM(CASE WHEN s.status != 'blocked' THEN 1 ELSE 0 END) as active_cleaners
+    FROM staff s
+    JOIN users u ON s.user_id = u.id
+    WHERE u.deleted = 0 AND s.department = 'cleaning'
+    GROUP BY s.assignment_pool
   `).all<{ pool: AssignmentPool; total_cleaners: number; active_cleaners: number }>();
 
   return (results.results || []).map(r => ({

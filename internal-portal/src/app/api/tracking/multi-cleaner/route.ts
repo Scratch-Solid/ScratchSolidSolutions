@@ -38,9 +38,18 @@ export async function GET(request: NextRequest) {
       return withSecurityHeaders(response, traceId);
     }
 
-    // Get cleaner GPS from KV or database
+    // Get cleaner GPS from KV or database.
+    // NOTE (pre-existing, not introduced by the cleaner_profiles -> staff
+    // rename): bookings.cleaner_id is a real FK to cleaner_profiles.id
+    // (migration 002), not to users.id, but this query treats `cleanerId`
+    // as if it were a user_id - so this lookup was already resolving the
+    // wrong row (or nothing) before this change too. gps_lat/gps_long also
+    // don't exist on the live cleaner_profiles/staff schema at all (this
+    // endpoint's own comment below says multi-cleaner tracking needs a
+    // schema update). Retargeted table name only; behavior (broken)
+    // unchanged - flagged for a human, out of scope for this migration.
     const cleaner = await db.prepare(
-      'SELECT gps_lat, gps_long, status, updated_at FROM cleaner_profiles WHERE user_id = ?'
+      'SELECT gps_lat, gps_long, status, updated_at FROM staff WHERE user_id = ?'
     ).bind(cleanerId).first();
 
     if (!cleaner) {

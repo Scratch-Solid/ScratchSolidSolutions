@@ -86,9 +86,18 @@ export async function POST(request: NextRequest) {
     const userQuery = `UPDATE users SET ${userUpdates.join(', ')} WHERE id = ?`;
     await db.prepare(userQuery).bind(...userParams).run();
 
-    // Update or create cleaner profile with profile picture
-    const cleanerProfile = await db.prepare('SELECT * FROM cleaner_profiles WHERE user_id = ?').bind((user as any).id).first();
-    
+    // Update or create staff profile with profile picture. Migrated off
+    // cleaner_profiles (2026-07-20 consolidation, see
+    // migrations/067_consolidate_cleaner_profiles_into_staff.sql). This
+    // INSERT has no paysheet_code (pre-existing gap: cleaner_profiles.
+    // paysheet_code was nullable so this never mattered before, but
+    // staff.paysheet_code is NOT NULL UNIQUE post-rename) - by the time a
+    // user reaches create-profile they've already been through
+    // activateCleanerAccount, which always creates the staff row with a
+    // paysheet_code first, so this INSERT branch should only fire for an
+    // account created outside that normal flow (e.g. via seed-users).
+    const cleanerProfile = await db.prepare('SELECT * FROM staff WHERE user_id = ?').bind((user as any).id).first();
+
     if (cleanerProfile) {
       // Update existing profile
       const profileUpdates: string[] = [];
@@ -110,14 +119,18 @@ export async function POST(request: NextRequest) {
 
       profileParams.push((user as any).id);
 
-      const profileQuery = `UPDATE cleaner_profiles SET ${profileUpdates.join(', ')} WHERE user_id = ?`;
+      const profileQuery = `UPDATE staff SET ${profileUpdates.join(', ')} WHERE user_id = ?`;
       await db.prepare(profileQuery).bind(...profileParams).run();
     } else {
-      // Create new cleaner profile
+      // Create new staff profile. paysheet_code is NOT NULL UNIQUE on
+      // staff - fall back to a locally-generated placeholder rather than
+      // letting this throw, since this branch is not expected to be hit
+      // for a real cleaner (see note above).
+      const fallbackPaysheetCode = `Scratch${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
       await db.prepare(
-        `INSERT INTO cleaner_profiles (user_id, first_name, last_name, residential_address, cellphone, profile_picture, status, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, 'idle', datetime('now'), datetime('now'))`
-      ).bind((user as any).id, firstName, lastName, encryptedResidentialAddress, encryptedCellphone, profilePicture || '').run();
+        `INSERT INTO staff (user_id, paysheet_code, first_name, last_name, residential_address, cellphone, profile_picture, department, status, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, 'cleaning', 'idle', datetime('now'), datetime('now'))`
+      ).bind((user as any).id, fallbackPaysheetCode, firstName, lastName, encryptedResidentialAddress, encryptedCellphone, profilePicture || '').run();
     }
 
     // Ensure staff table has onboarding columns

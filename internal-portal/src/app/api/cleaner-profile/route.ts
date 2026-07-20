@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
   }
 
   if (userId) {
-    const profile = await db.prepare('SELECT * FROM cleaner_profiles WHERE user_id = ?').bind(userId).first();
+    const profile = await db.prepare('SELECT * FROM staff WHERE user_id = ?').bind(userId).first();
     if (profile) {
       const response = NextResponse.json(profile);
       response.headers.set('Cache-Control', 'private, max-age=60');
@@ -43,11 +43,14 @@ export async function GET(request: NextRequest) {
   const limit = parseInt(searchParams.get('limit') || '50', 10);
   const offset = (page - 1) * limit;
 
+  // department = 'cleaning' keeps this scoped to cleaners only, matching
+  // cleaner_profiles' old implicit scope now that staff also holds
+  // supervisors/digital/transport rows (2026-07-20 consolidation).
   const profiles = await db.prepare(
-    'SELECT * FROM cleaner_profiles ORDER BY created_at DESC LIMIT ? OFFSET ?'
+    "SELECT * FROM staff WHERE department = 'cleaning' ORDER BY created_at DESC LIMIT ? OFFSET ?"
   ).bind(limit, offset).all();
 
-  const countResult = await db.prepare('SELECT COUNT(*) as total FROM cleaner_profiles').first();
+  const countResult = await db.prepare("SELECT COUNT(*) as total FROM staff WHERE department = 'cleaning'").first();
   const total = (countResult as any)?.total || 0;
 
   const response = NextResponse.json({
@@ -96,11 +99,16 @@ export async function POST(request: NextRequest) {
       return withSecurityHeaders(response, traceId);
     }
   } else {
-    // Create new profile
+    // Create new profile. `username` is folded into paysheet_code (see
+    // migrations/067_consolidate_cleaner_profiles_into_staff.sql). NOTE:
+    // this INSERT has no user_id (pre-existing gap, not introduced by this
+    // change) - staff.user_id is NOT NULL just like cleaner_profiles.
+    // user_id was, so this already failed against the real DB before this
+    // rename too.
     const result = await db.prepare(
-      `INSERT INTO cleaner_profiles (username, paysheet_code, department, first_name, last_name, status)
-       VALUES (?, ?, ?, ?, ?, 'idle') RETURNING *`
-    ).bind(data.username, data.username, data.department || 'cleaning', data.first_name || '', data.last_name || '').first();
+      `INSERT INTO staff (paysheet_code, department, first_name, last_name, status)
+       VALUES (?, ?, ?, ?, 'idle') RETURNING *`
+    ).bind(data.username, data.department || 'cleaning', data.first_name || '', data.last_name || '').first();
     
     if (result) {
       await logAuditEvent(db, {

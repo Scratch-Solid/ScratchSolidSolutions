@@ -67,15 +67,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to create user' }, { status: 500 });
     }
 
-    // Create cleaner profile for staff roles
+    // Create staff profile row for staff roles (dev/test seeding only).
+    // Migrated off cleaner_profiles (2026-07-20 consolidation) - `username`
+    // and `paysheet_code` were always the same value in cleaner_profiles,
+    // so staff.paysheet_code alone covers both.
     if (['cleaner', 'digital', 'transport'].includes(role)) {
-      const username = paysheetCode || `${department || 'Scratch'}${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+      const code = paysheetCode || `${department || 'Scratch'}${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
       const dept = department || (role === 'cleaner' ? 'cleaning' : role === 'digital' ? 'digital' : 'transport');
-      
+
       await db.prepare(
-        `INSERT INTO cleaner_profiles (user_id, username, paysheet_code, department, status)
-         VALUES (?, ?, ?, ?, 'idle')`
-      ).bind((user as any).id, username, paysheetCode || username, dept).run();
+        `INSERT INTO staff (user_id, paysheet_code, department, status)
+         VALUES (?, ?, ?, 'idle')`
+      ).bind((user as any).id, code, dept).run();
     }
 
     // Generate JWT token

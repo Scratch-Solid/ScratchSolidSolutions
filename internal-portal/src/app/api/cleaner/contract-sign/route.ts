@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
 
     // Get cleaner profile + user email
     const cleanerProfile = await db.prepare(
-      'SELECT cp.paysheet_code, cp.first_name, cp.last_name, cp.cellphone, u.email FROM cleaner_profiles cp JOIN users u ON cp.user_id = u.id WHERE cp.user_id = ?'
+      'SELECT s.paysheet_code, s.first_name, s.last_name, s.cellphone, u.email FROM staff s JOIN users u ON s.user_id = u.id WHERE s.user_id = ?'
     ).bind(userId).first();
 
     if (!cleanerProfile) {

@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     // Get user info for notification
     const user = await db.prepare('SELECT name, phone FROM users WHERE id = ?').bind(decoded.userId).first();
     const cleanerProfile = await db.prepare(
-      'SELECT paysheet_code FROM cleaner_profiles WHERE user_id = ?'
+      'SELECT paysheet_code FROM staff WHERE user_id = ?'
     ).bind(decoded.userId).first();
 
     // Capture signature metadata

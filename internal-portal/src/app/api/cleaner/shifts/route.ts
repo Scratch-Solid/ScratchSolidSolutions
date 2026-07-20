@@ -15,7 +15,14 @@ export async function GET(request: NextRequest) {
   const userId = (authResult.user as any)?.user_id || authResult.user?.id;
 
   try {
-    // Get cleaner profile
+    // Get cleaner profile. NOT MIGRATED to staff as part of the 2026-07-20
+    // cleaner_profiles -> staff consolidation
+    // (migrations/067_consolidate_cleaner_profiles_into_staff.sql): `.id`
+    // here is fed into booking_assignments.staff_id below, which for
+    // historical rows was backfilled from booking_assignments.cleaner_id -
+    // a real FK to cleaner_profiles.id (migration 002/024) - so this stays
+    // pointed at cleaner_profiles on purpose, same reasoning as
+    // @/lib/pool-management/pool-assignment.ts's scoreAssignmentCandidates.
     const cleanerProfile = await db.prepare(
       'SELECT cp.id, cp.paysheet_code FROM cleaner_profiles cp WHERE cp.user_id = ?'
     ).bind(userId).first();

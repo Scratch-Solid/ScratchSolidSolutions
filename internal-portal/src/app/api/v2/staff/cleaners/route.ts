@@ -12,20 +12,23 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
 
+    // Migrated to staff (2026-07-20 consolidation); department = 'cleaning'
+    // preserves cleaner_profiles' implicit "cleaners only" scope now that
+    // staff also holds supervisors/digital/transport rows.
     let query = `
-      SELECT cp.paysheet_code, cp.first_name, cp.last_name, cp.status
-      FROM cleaner_profiles cp
-      JOIN users u ON cp.user_id = u.id
-      WHERE u.deleted = 0 OR u.deleted IS NULL
+      SELECT s.paysheet_code, s.first_name, s.last_name, s.status
+      FROM staff s
+      JOIN users u ON s.user_id = u.id
+      WHERE (u.deleted = 0 OR u.deleted IS NULL) AND s.department = 'cleaning'
     `;
     const params: any[] = [];
 
     if (status) {
-      query += ' AND cp.status = ?';
+      query += ' AND s.status = ?';
       params.push(status);
     }
 
-    query += ' ORDER BY cp.created_at DESC';
+    query += ' ORDER BY s.created_at DESC';
 
     const cleaners = await db.prepare(query).bind(...params).all();
 

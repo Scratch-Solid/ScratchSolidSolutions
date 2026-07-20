@@ -25,11 +25,14 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => ({})) as { year?: number };
     const year = body.year || new Date().getFullYear();
 
+    // department = 'cleaning' keeps this scoped to actual cleaners, now
+    // that staff also holds supervisors/digital/transport rows
+    // (2026-07-20 consolidation).
     const cleaners = await db.prepare(`
-      SELECT cp.user_id
-      FROM cleaner_profiles cp
-      JOIN users u ON cp.user_id = u.id
-      WHERE u.deleted = 0
+      SELECT s.user_id
+      FROM staff s
+      JOIN users u ON s.user_id = u.id
+      WHERE u.deleted = 0 AND s.department = 'cleaning'
     `).all<{ user_id: number }>();
 
     const results: { cleanerId: number; monthsReviewed: number; kpi5pt: number; bonusPercentage: number }[] = [];

@@ -261,6 +261,11 @@ export async function POST(request: NextRequest) {
           );
 
           if (candidates.length > 0) {
+            // cleanerId here is a cleaner_profiles.id, produced by
+            // scoreAssignmentCandidates (@/lib/pool-management/pool-assignment) -
+            // NOT MIGRATED to staff for the same FK reason documented there
+            // (cleaner_profiles is kept around specifically so this id stays
+            // resolvable).
             const cleanerIds = candidates.slice(0, 1).map((c) => c.cleanerId);
             const placeholders = cleanerIds.map(() => '?').join(',');
             const paysheetResult = await db

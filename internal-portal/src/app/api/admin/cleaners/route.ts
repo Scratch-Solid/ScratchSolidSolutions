@@ -12,19 +12,23 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
 
+    // department = 'cleaning' keeps this scoped to cleaners only, matching
+    // cleaner_profiles' old implicit scope now that staff also holds
+    // supervisors/digital/transport rows (2026-07-20 consolidation).
     let query = `
-      SELECT cp.*, u.email, u.role, u.deleted as user_deleted, u.first_name, u.last_name
-      FROM cleaner_profiles cp
-      JOIN users u ON cp.user_id = u.id
+      SELECT s.*, u.email, u.role, u.deleted as user_deleted, u.first_name, u.last_name
+      FROM staff s
+      JOIN users u ON s.user_id = u.id
+      WHERE s.department = 'cleaning'
     `;
     const params: any[] = [];
 
     if (status) {
-      query += ' WHERE cp.status = ?';
+      query += ' AND s.status = ?';
       params.push(status);
     }
 
-    query += ' ORDER BY cp.created_at DESC';
+    query += ' ORDER BY s.created_at DESC';
 
     const cleaners = await db.prepare(query).bind(...params).all();
     const response = NextResponse.json(cleaners.results || []);
@@ -80,7 +84,7 @@ export async function PUT(request: NextRequest) {
     values.push(cleaner_id);
 
     await db.prepare(
-      `UPDATE cleaner_profiles SET ${updates.join(', ')} WHERE user_id = ?`
+      `UPDATE staff SET ${updates.join(', ')} WHERE user_id = ?`
     ).bind(...values).run();
 
     const response = NextResponse.json({ success: true });

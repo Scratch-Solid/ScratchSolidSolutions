@@ -232,20 +232,20 @@ export async function deleteSession(db: D1Database, token: string) {
 }
 
 // Cleaner profile operations
+//
+// MIGRATED off cleaner_profiles onto staff (2026-07-20 consolidation, see
+// migrations/067_consolidate_cleaner_profiles_into_staff.sql). cleaner_profiles
+// had two redundant identifier columns (username, paysheet_code) that every
+// INSERT site set to the same value - staff.paysheet_code (renamed from the
+// old, dead staff.employee_id) now covers both roles, so there is no
+// separate "lookup by username" case anymore: paysheet_code IS the username.
 export async function getCleanerProfileByUsername(db: D1Database, username: string) {
-  // Try to find by paysheet_code first (username is stored as paysheet_code)
-  const result = await db.prepare('SELECT * FROM cleaner_profiles WHERE paysheet_code = ?').bind(username).first();
-  if (result) return result;
-  
-  // Fallback: try to find by joining with users table
-  const joinedResult = await db.prepare(
-    'SELECT cp.* FROM cleaner_profiles cp JOIN users u ON cp.user_id = u.id WHERE u.username = ?'
-  ).bind(username).first();
-  return joinedResult;
+  const result = await db.prepare('SELECT * FROM staff WHERE paysheet_code = ?').bind(username).first();
+  return result;
 }
 
 export async function getCleanerProfileByUserId(db: D1Database, userId: number) {
-  const result = await db.prepare('SELECT * FROM cleaner_profiles WHERE user_id = ?').bind(userId).first();
+  const result = await db.prepare('SELECT * FROM staff WHERE user_id = ?').bind(userId).first();
   return result;
 }
 
@@ -257,51 +257,51 @@ export async function createCleanerProfile(db: D1Database, data: {
   last_name?: string;
   department?: string;
 }) {
+  // `username` is accepted for backwards compatibility with existing callers
+  // but is no longer stored separately - it becomes paysheet_code (falling
+  // back to the old paysheet_code param, then username, matching every
+  // pre-consolidation call site which always passed the same value for both).
+  const paysheetCode = data.paysheet_code || data.username;
   const result = await db.prepare(
-    `INSERT INTO cleaner_profiles (user_id, username, paysheet_code, first_name, last_name, department)
-     VALUES (?, ?, ?, ?, ?, ?) RETURNING *`
-  ).bind(data.user_id, data.username, data.paysheet_code || '', data.first_name || '', data.last_name || '', data.department || 'cleaning').first();
+    `INSERT INTO staff (user_id, paysheet_code, first_name, last_name, department, status, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, 'idle', datetime('now'), datetime('now')) RETURNING *`
+  ).bind(data.user_id, paysheetCode, data.first_name || '', data.last_name || '', data.department || 'cleaning').first();
   return result;
 }
 
-// Initialize cleaner_profiles table if it doesn't exist
+// Defensively ensure `staff` has the columns the cleaner-profile routes need,
+// for any environment where migration 067 hasn't run yet - mirrors the same
+// defensive ALTER TABLE ... ADD COLUMN pattern already used elsewhere in this
+// codebase for schema drift (e.g. generateUniquePaysheetCode in
+// cleaner-integrations.ts). Renamed from initializeCleanerProfilesTable;
+// cleaner_profiles itself is no longer created or written to by this file.
 export async function initializeCleanerProfilesTable(db: D1Database) {
   try {
-    await db.prepare(`
-      CREATE TABLE IF NOT EXISTS cleaner_profiles (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
-        username TEXT NOT NULL UNIQUE,
-        paysheet_code TEXT,
-        first_name TEXT,
-        last_name TEXT,
-        department TEXT DEFAULT 'cleaning',
-        status TEXT DEFAULT 'idle',
-        profile_picture TEXT,
-        bio TEXT,
-        specialties TEXT,
-        phone TEXT,
-        address TEXT,
-        residential_address TEXT,
-        cellphone TEXT,
-        tax_number TEXT,
-        emergency_contact1_name TEXT,
-        emergency_contact1_phone TEXT,
-        emergency_contact2_name TEXT,
-        emergency_contact2_phone TEXT,
-        gps_lat REAL,
-        gps_long REAL,
-        weekday_rate REAL DEFAULT 150,
-        weekend_rate REAL DEFAULT 225,
-        deductions REAL DEFAULT 0,
-        updated_at TEXT,
-        created_at TEXT DEFAULT (datetime('now')),
-        FOREIGN KEY (user_id) REFERENCES users(id)
-      )
-    `).run();
+    const columns = [
+      { name: 'profile_picture', type: 'TEXT' },
+      { name: 'residential_address', type: 'TEXT' },
+      { name: 'emergency_contact', type: 'TEXT' },
+      { name: 'emergency_phone', type: 'TEXT' },
+      { name: 'id_number', type: 'TEXT' },
+      { name: 'bank_name', type: 'TEXT' },
+      { name: 'account_number', type: 'TEXT' },
+      { name: 'branch_code', type: 'TEXT' },
+      { name: 'account_holder', type: 'TEXT' },
+      { name: 'blocked', type: 'INTEGER DEFAULT 0' },
+      { name: 'assignment_pool', type: "TEXT DEFAULT 'AUTO'" },
+    ];
+    for (const col of columns) {
+      try {
+        await db.prepare(`ALTER TABLE staff ADD COLUMN ${col.name} ${col.type}`).run();
+      } catch (error: any) {
+        if (!error.message?.includes('duplicate column name')) {
+          console.error(`Failed to add column ${col.name} to staff:`, error);
+        }
+      }
+    }
     return true;
   } catch (error) {
-    console.error('Failed to initialize cleaner_profiles table:', error);
+    console.error('Failed to ensure staff table columns:', error);
     return false;
   }
 }
@@ -402,6 +402,22 @@ export function mapDepartmentToPoolType(department: string): 'INDIVIDUAL' | 'BUS
   return 'BUSINESS';
 }
 
+// Fallback paysheet_code generator used only when createOrUpdateStaffRecord
+// has to INSERT a brand-new staff row with none supplied. staff.paysheet_code
+// is NOT NULL UNIQUE (renamed from the old employee_id column by migration
+// 067) - deliberately not importing generateUniquePaysheetCode from
+// cleaner-integrations.ts here since that module imports from this file
+// (logOnboardingTransition), and importing back would create a circular
+// dependency. Real cleaner/supervisor accounts always get their canonical
+// paysheet_code from activateCleanerAccount/migration 067's backfill before
+// this function is ever called for them, so this fallback should only ever
+// fire for an edge case this function doesn't otherwise expect.
+function generateFallbackPaysheetCode(): string {
+  const letter = String.fromCharCode(65 + Math.floor(Math.random() * 26));
+  const digits = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+  return `Staff${letter}${digits}`;
+}
+
 // Create or update staff record for a user
 export async function createOrUpdateStaffRecord(db: D1Database, data: {
   user_id: number;
@@ -413,18 +429,19 @@ export async function createOrUpdateStaffRecord(db: D1Database, data: {
   onboarding_stage?: string;
   training_completed?: boolean;
   is_active?: boolean;
+  paysheet_code?: string;
 }) {
   try {
     // Check if staff record exists
     const existing = await db.prepare('SELECT id FROM staff WHERE user_id = ?').bind(data.user_id).first();
-    
+
     const poolType = mapDepartmentToPoolType(data.department || 'cleaning');
-    
+
     if (existing) {
       // Update existing record
       const updates: string[] = [];
       const values: any[] = [];
-      
+
       if (data.first_name !== undefined) { updates.push('first_name = ?'); values.push(data.first_name); }
       if (data.last_name !== undefined) { updates.push('last_name = ?'); values.push(data.last_name); }
       if (data.cellphone !== undefined) { updates.push('cellphone = ?'); values.push(data.cellphone); }
@@ -433,23 +450,26 @@ export async function createOrUpdateStaffRecord(db: D1Database, data: {
       if (data.onboarding_stage !== undefined) { updates.push('onboarding_stage = ?'); values.push(data.onboarding_stage); }
       if (data.training_completed !== undefined) { updates.push('training_completed = ?'); values.push(data.training_completed ? 1 : 0); }
       if (data.is_active !== undefined) { updates.push('is_active = ?'); values.push(data.is_active ? 1 : 0); }
-      
+      if (data.paysheet_code !== undefined) { updates.push('paysheet_code = ?'); values.push(data.paysheet_code); }
+
       updates.push('pool_type = ?');
       values.push(poolType);
       updates.push('updated_at = datetime(\'now\')');
       values.push(data.user_id);
-      
+
       if (updates.length > 2) { // More than just pool_type and updated_at
         const setClause = updates.join(', ');
         await db.prepare(`UPDATE staff SET ${setClause} WHERE user_id = ?`).bind(...values).run();
       }
-      
+
       return existing;
     } else {
-      // Create new record
+      // Create new record. paysheet_code is NOT NULL UNIQUE on staff, so a
+      // brand-new row must always get one even if the caller didn't supply
+      // one (see generateFallbackPaysheetCode above).
       const result = await db.prepare(`
-        INSERT INTO staff (user_id, first_name, last_name, cellphone, email, department, pool_type, onboarding_stage, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+        INSERT INTO staff (user_id, first_name, last_name, cellphone, email, department, pool_type, onboarding_stage, paysheet_code, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
         RETURNING *
       `).bind(
         data.user_id,
@@ -459,9 +479,10 @@ export async function createOrUpdateStaffRecord(db: D1Database, data: {
         data.email || '',
         data.department || 'cleaning',
         poolType,
-        data.onboarding_stage || 'consent_pending'
+        data.onboarding_stage || 'consent_pending',
+        data.paysheet_code || generateFallbackPaysheetCode()
       ).first();
-      
+
       return result;
     }
   } catch (error) {
@@ -850,6 +871,13 @@ export async function updateNotificationPreferences(db: D1Database, userId: numb
 }
 
 export async function updateCleanerProfile(db: D1Database, lookupValue: string, data: Record<string, any>, lookupField: 'username' | 'paysheet_code' | 'user_id' = 'username') {
+  // 'username' lookups now resolve against staff.paysheet_code - the old
+  // cleaner_profiles.username column was retired in the consolidation
+  // (migrations/067_consolidate_cleaner_profiles_into_staff.sql): every
+  // caller always set username == paysheet_code, so paysheet_code alone
+  // covers both roles now.
+  const dbLookupField = lookupField === 'username' ? 'paysheet_code' : lookupField;
+
   // Map frontend field names to database column names
   const fieldMap: Record<string, string> = {
     'firstName': 'first_name',
@@ -883,13 +911,13 @@ export async function updateCleanerProfile(db: D1Database, lookupValue: string, 
 
   const fields = Object.keys(mappedData);
   if (fields.length === 0) return null;
-  
+
   const setClause = fields.map(f => `${f} = ?`).join(', ');
   const values = fields.map(f => mappedData[f]);
   values.push(lookupField === 'user_id' ? Number(lookupValue) : lookupValue);
-  
+
   const result = await db.prepare(
-    `UPDATE cleaner_profiles SET ${setClause}, updated_at = datetime('now') WHERE ${lookupField} = ? RETURNING *`
+    `UPDATE staff SET ${setClause}, updated_at = datetime('now') WHERE ${dbLookupField} = ? RETURNING *`
   ).bind(...values).first();
   return result;
 }
@@ -897,7 +925,7 @@ export async function updateCleanerProfile(db: D1Database, lookupValue: string, 
 // Get cleaner public profile (for client dashboard sync)
 export async function getCleanerPublicProfile(db: D1Database, cleanerId: number) {
   const result = await db.prepare(
-    `SELECT first_name, last_name, profile_picture, residential_address, cellphone FROM cleaner_profiles WHERE user_id = ?`
+    `SELECT first_name, last_name, profile_picture, residential_address, cellphone FROM staff WHERE user_id = ?`
   ).bind(cleanerId).first();
   return result;
 }

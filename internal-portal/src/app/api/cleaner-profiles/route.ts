@@ -41,14 +41,24 @@ export async function POST(request: NextRequest) {
       return withSecurityHeaders(response, traceId);
     }
 
+    // Migrated off cleaner_profiles (2026-07-20 consolidation, see
+    // migrations/067_consolidate_cleaner_profiles_into_staff.sql).
+    // `username` is folded into paysheet_code (every prior caller set them
+    // to the same value already). NOTE: emergency_contact1_name/phone and
+    // emergency_contact2_name/phone are not real columns on the live
+    // cleaner_profiles/staff schema (pre-existing schema drift, not
+    // introduced here) - this UPDATE/INSERT would already have failed
+    // against the real DB before this change too; left as-is, table name
+    // only retargeted, flagged for a human to fix separately.
+    const paysheetCode = paysheet_code || username;
+
     // Check if profile already exists
-    const existing = await db.prepare('SELECT id FROM cleaner_profiles WHERE user_id = ?').bind(user_id).first();
+    const existing = await db.prepare('SELECT id FROM staff WHERE user_id = ?').bind(user_id).first();
     if (existing) {
       // Update existing profile
       await db.prepare(
-        `UPDATE cleaner_profiles
-         SET username = COALESCE(?, username),
-             paysheet_code = COALESCE(?, paysheet_code),
+        `UPDATE staff
+         SET paysheet_code = COALESCE(?, paysheet_code),
              first_name = COALESCE(?, first_name),
              last_name = COALESCE(?, last_name),
              residential_address = COALESCE(?, residential_address),
@@ -60,20 +70,20 @@ export async function POST(request: NextRequest) {
              updated_at = datetime('now')
          WHERE user_id = ?`
       ).bind(
-        username, paysheet_code, first_name, last_name, residential_address, cellphone,
+        paysheetCode, first_name, last_name, residential_address, cellphone,
         emergency_contact1_name, emergency_contact1_phone, emergency_contact2_name, emergency_contact2_phone,
         user_id
       ).run();
     } else {
       // Create new profile
       await db.prepare(
-        `INSERT INTO cleaner_profiles 
-         (user_id, username, paysheet_code, first_name, last_name, residential_address, cellphone,
+        `INSERT INTO staff
+         (user_id, paysheet_code, first_name, last_name, residential_address, cellphone,
           emergency_contact1_name, emergency_contact1_phone, emergency_contact2_name, emergency_contact2_phone,
           department, status, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'cleaning', 'idle', datetime('now'), datetime('now'))`
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'cleaning', 'idle', datetime('now'), datetime('now'))`
       ).bind(
-        user_id, username, paysheet_code, first_name, last_name, residential_address, cellphone,
+        user_id, paysheetCode, first_name, last_name, residential_address, cellphone,
         emergency_contact1_name, emergency_contact1_phone, emergency_contact2_name, emergency_contact2_phone
       ).run();
     }
@@ -94,7 +104,7 @@ export async function GET(request: NextRequest) {
   const { db, user } = authResult;
 
   try {
-    const profile = await db.prepare('SELECT * FROM cleaner_profiles WHERE user_id = ?').bind((user as any).user_id).first();
+    const profile = await db.prepare('SELECT * FROM staff WHERE user_id = ?').bind((user as any).user_id).first();
     const response = NextResponse.json(profile || null);
     return withSecurityHeaders(response, traceId);
   } catch (error) {

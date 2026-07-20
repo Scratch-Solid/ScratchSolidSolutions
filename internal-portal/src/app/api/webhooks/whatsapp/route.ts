@@ -37,17 +37,14 @@ export async function POST(request: NextRequest) {
       const db = await getDb();
       if (!db) return twimlResponse('Service temporarily unavailable. Please try again.');
 
-      // 1. Resolve staff member by cellphone
-      const staff = await db.prepare(`
+      // 1. Resolve staff member by cellphone. The separate "legacy
+      // cleaner_profiles table" fallback this used to have is gone -
+      // migrations/067_consolidate_cleaner_profiles_into_staff.sql backfills
+      // every cleaner_profiles cellphone onto staff, so a single staff
+      // lookup now covers both.
+      const staffRecord = await db.prepare(`
         SELECT id, first_name FROM staff
         WHERE REPLACE(cellphone, ' ', '') = ? AND is_active = 1
-        LIMIT 1
-      `).bind(phone).first<{ id: number; first_name: string }>();
-
-      // Fallback: check legacy cleaner_profiles table
-      const staffRecord = staff ?? await db.prepare(`
-        SELECT user_id AS id, first_name FROM cleaner_profiles
-        WHERE REPLACE(cellphone, ' ', '') = ?
         LIMIT 1
       `).bind(phone).first<{ id: number; first_name: string }>();
 
@@ -98,10 +95,12 @@ export async function POST(request: NextRequest) {
         UPDATE bookings SET assignment_status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
       `).bind(newStatus, assignment.booking_id).run();
 
-      // 5. Also update cleaner_profiles status for dashboard sync
+      // 5. Also update staff.status for dashboard sync. staffRecord.id here
+      // is staff.id (from the query above), not user_id - status is looked
+      // up/updated by id, matching how staffRecord was resolved.
       await db.prepare(`
-        UPDATE cleaner_profiles SET status = ?, updated_at = datetime('now')
-        WHERE user_id = ?
+        UPDATE staff SET status = ?, updated_at = datetime('now')
+        WHERE id = ?
       `).bind(newStatus === 'on_way' ? 'on_way' : newStatus, staffRecord.id).run();
 
       return twimlResponse(`✅ Hi ${staffRecord.first_name}! Your status has been updated to "${label}" for today's booking (slot ${assignment.time_slot}).`);
