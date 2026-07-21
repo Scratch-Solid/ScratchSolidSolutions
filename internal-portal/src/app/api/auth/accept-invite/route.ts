@@ -85,15 +85,25 @@ export async function POST(request: NextRequest) {
       return withSecurityHeaders(NextResponse.json({ error: 'This invite has expired' }, { status: 400 }), traceId);
     }
 
+    // Consume the token atomically, re-checking used_at/revoked_at/expiry in
+    // the same statement - the SELECT above is only for error messaging.
+    // Without this, two concurrent POSTs with the same still-valid token
+    // could both pass the SELECT's used_at check before either UPDATE
+    // landed, letting the single-use token be redeemed twice.
+    const consumed = await db.prepare(
+      `UPDATE admin_invite_tokens SET used_at = datetime('now')
+       WHERE id = ? AND used_at IS NULL AND revoked_at IS NULL AND expires_at > datetime('now')`
+    ).bind(invite.id).run();
+
+    if (consumed.meta.changes === 0) {
+      return withSecurityHeaders(NextResponse.json({ error: 'This invite has already been used, revoked, or expired' }, { status: 400 }), traceId);
+    }
+
     const passwordHash = await hashPassword(password);
 
     await db.prepare(
       `UPDATE users SET password_hash = ?, email_verified = 1, admin_approval_status = 'approved', updated_at = datetime('now') WHERE id = ?`
     ).bind(passwordHash, invite.user_id).run();
-
-    await db.prepare(
-      `UPDATE admin_invite_tokens SET used_at = datetime('now') WHERE id = ?`
-    ).bind(invite.id).run();
 
     const accessToken = await generateAccessToken(invite.user_id, invite.email, invite.role);
     const refreshToken = await generateRefreshToken(invite.user_id, crypto.randomUUID());

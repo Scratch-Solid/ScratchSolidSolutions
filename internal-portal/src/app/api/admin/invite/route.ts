@@ -116,6 +116,12 @@ export async function DELETE(request: NextRequest) {
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
 
+  const csrfResult = await withCsrf(request);
+  if (csrfResult) return withSecurityHeaders(csrfResult, traceId);
+
+  const rateLimitResponse = await withRateLimit(request);
+  if (rateLimitResponse) return withSecurityHeaders(rateLimitResponse, traceId);
+
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
