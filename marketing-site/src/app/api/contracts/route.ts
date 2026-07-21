@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
       await db.prepare(
         `INSERT INTO weekend_assignments (business_id, contract_id, status, created_at)
          VALUES (?, ?, 'pending', datetime('now'))`
-      ).bind(business_id, result.meta.last_row_id).run();
+      ).bind(effectiveBusinessId, result.meta.last_row_id).run();
     }
 
     const response = NextResponse.json(contract, { status: 201 });
