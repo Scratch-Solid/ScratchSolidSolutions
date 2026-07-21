@@ -462,8 +462,10 @@ export async function updateBooking(db: D1Database, id: number, data: Record<str
   return result;
 }
 
-export async function getBookingsByClient(db: D1Database, clientId: number) {
-  const result = await db.prepare('SELECT * FROM bookings WHERE client_id = ? ORDER BY booking_date DESC').bind(clientId).all();
+export async function getBookingsByClient(db: D1Database, clientId: number, bookingType?: string) {
+  const result = bookingType
+    ? await db.prepare('SELECT * FROM bookings WHERE client_id = ? AND booking_type = ? ORDER BY booking_date DESC').bind(clientId, bookingType).all()
+    : await db.prepare('SELECT * FROM bookings WHERE client_id = ? ORDER BY booking_date DESC').bind(clientId).all();
   return result.results;
 }
 

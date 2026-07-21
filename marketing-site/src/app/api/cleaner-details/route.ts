@@ -32,16 +32,28 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const username = searchParams.get('username');
-    if (!username) {
-      return NextResponse.json({ error: 'username parameter required' }, { status: 400 });
+    const cleanerId = searchParams.get('cleaner_id');
+    if (!username && !cleanerId) {
+      return NextResponse.json({ error: 'username or cleaner_id parameter required' }, { status: 400 });
     }
-    const cleaner = await db.prepare(
-      `SELECT cp.username, cp.paysheet_code, u.name, u.phone, u.address,
-              cp.profile_picture, cp.specialties, cp.rating, cp.bio
-       FROM cleaner_profiles cp
-       JOIN users u ON cp.user_id = u.id
-       WHERE cp.username = ? AND cp.blocked = 0`
-    ).bind(username).first();
+    // u.id aliased as `id` - the client-dashboard's fetchCleanerStatus keys
+    // off assignedCleaner.id to poll /api/cleaner-status, so it must be
+    // present in this response regardless of which param was used to look up.
+    const cleaner = username
+      ? await db.prepare(
+          `SELECT u.id, cp.username, cp.paysheet_code, u.name, u.phone, u.address,
+                  cp.profile_picture, cp.specialties, cp.rating, cp.bio
+           FROM cleaner_profiles cp
+           JOIN users u ON cp.user_id = u.id
+           WHERE cp.username = ? AND cp.blocked = 0`
+        ).bind(username).first()
+      : await db.prepare(
+          `SELECT u.id, cp.username, cp.paysheet_code, u.name, u.phone, u.address,
+                  cp.profile_picture, cp.specialties, cp.rating, cp.bio
+           FROM cleaner_profiles cp
+           JOIN users u ON cp.user_id = u.id
+           WHERE cp.user_id = ? AND cp.blocked = 0`
+        ).bind(cleanerId).first();
     if (!cleaner) {
       return NextResponse.json({ error: 'Cleaner not found' }, { status: 404 });
     }

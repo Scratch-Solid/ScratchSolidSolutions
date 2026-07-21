@@ -43,8 +43,12 @@ export async function GET(request: NextRequest) {
       const newProgress = await trainingDb.prepare(
         'SELECT * FROM employee_training_progress WHERE user_id = ?'
       ).bind(userId).first();
-      
-      return withSecurityHeaders(NextResponse.json(newProgress), traceId);
+
+      // Same response shape as the existing-progress path below - the
+      // frontend (CleanerDashboard.tsx) always reads response.progress, so
+      // returning the row bare here left a brand-new user's first Training
+      // tab load with undefined progress.
+      return withSecurityHeaders(NextResponse.json({ progress: newProgress, attempts: [] }), traceId);
     }
 
     // Get quiz attempt history for this user

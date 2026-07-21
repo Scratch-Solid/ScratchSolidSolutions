@@ -298,6 +298,7 @@ export async function GET(request: NextRequest) {
     const clientId = searchParams.get('client_id');
     const cleanerId = searchParams.get('cleaner_id');
     const date = searchParams.get('date');
+    const bookingType = searchParams.get('booking_type') || undefined;
 
     const requestingUserRole = (user as any).role;
     // validateSession() returns the raw sessions row (s.*) joined with the
@@ -321,9 +322,9 @@ export async function GET(request: NextRequest) {
       if (requestingUserRole !== 'admin' && clientIdNumber !== requestingUserId) {
         return withSecurityHeaders(NextResponse.json({ error: 'Forbidden' }, { status: 403 }), traceId);
       }
-      bookings = await getBookingsByClient(db, clientIdNumber);
+      bookings = await getBookingsByClient(db, clientIdNumber, bookingType);
     } else if (requestingUserRole !== 'admin') {
-      bookings = await getBookingsByClient(db, requestingUserId);
+      bookings = await getBookingsByClient(db, requestingUserId, bookingType);
     } else {
       bookings = await getBookingsByDateRange(db, date || new Date().toISOString().split('T')[0], date || new Date().toISOString().split('T')[0]);
     }

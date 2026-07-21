@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import { useTokenRefresh } from "@/hooks/useTokenRefresh";
@@ -32,6 +32,11 @@ export default function ClientDashboard() {
   useSessionTimeout(true); // Enable inactivity timeout with auto-refresh
   useTokenRefresh(); // Silently refresh token every 5 minutes
   const [bookings, setBookings] = useState<any[]>([]);
+  // fetchCleanerStatus is called from the mount-only effect's setInterval,
+  // whose closure was created once on mount and otherwise always reads the
+  // initial empty `bookings` array - a ref keeps it reading the current value.
+  const bookingsRef = useRef<any[]>([]);
+  useEffect(() => { bookingsRef.current = bookings; }, [bookings]);
   const [payments, setPayments] = useState<any[]>([]);
   const [monthlyStatement, setMonthlyStatement] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -110,18 +115,34 @@ export default function ClientDashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  // Load cleaner public profile when assigned (only if username is available)
+  // Derive the assigned cleaner from the client's own active booking. This
+  // was previously never set at all - assignedCleaner stayed null forever,
+  // so the "Your Assigned Cleaner" card never rendered and the cleaner
+  // status/GPS polling below (gated on assignedCleaner) never ran.
   useEffect(() => {
-    const username = (assignedCleaner as any)?.username;
-    if (assignedCleaner && typeof assignedCleaner === 'object' && username) {
-      authFetch(`/api/cleaner-details?username=${encodeURIComponent(username)}`)
+    const activeBooking = bookings.find(
+      (b: any) => b.cleaner_id && ['assigned', 'confirmed', 'on_way', 'arrived', 'in_progress'].includes(b.status)
+    );
+    if (activeBooking && (activeBooking as any).cleaner_id !== (assignedCleaner as any)?.id) {
+      setAssignedCleaner({ id: (activeBooking as any).cleaner_id });
+    } else if (!activeBooking && assignedCleaner) {
+      setAssignedCleaner(null);
+    }
+  }, [bookings]);
+
+  // Load cleaner public profile once we know their id (only if not already loaded)
+  useEffect(() => {
+    const id = (assignedCleaner as any)?.id;
+    const hasFullProfile = assignedCleaner && ('profilePicture' in assignedCleaner || 'phone' in assignedCleaner);
+    if (id && !hasFullProfile) {
+      authFetch(`/api/cleaner-details?cleaner_id=${id}`)
         .then(res => res.ok ? res.json() : null).then(profile => {
         if (profile) {
           setAssignedCleaner(profile);
         }
       });
     }
-  }, [(assignedCleaner as any)?.username]);
+  }, [(assignedCleaner as any)?.id]);
 
   const fetchClientData = async () => {
     try {
@@ -633,7 +654,7 @@ export default function ClientDashboard() {
       }
 
       // Fetch GPS coordinates for real-time tracking
-      const activeBooking = bookings.find(b => b.status === 'confirmed' || b.status === 'in_progress');
+      const activeBooking = bookingsRef.current.find(b => b.status === 'confirmed' || b.status === 'in_progress');
       if (activeBooking) {
         const trackingResponse = await authFetch(`/api/tracking?booking_id=${activeBooking.id}`);
         if (trackingResponse.ok) {

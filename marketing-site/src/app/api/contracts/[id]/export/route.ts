@@ -11,8 +11,10 @@ export async function GET(
   const traceId = withTracing(request);
   const authResult = await withAuth(request, ['business', 'admin']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
-  const { db } = authResult;
+  const { db, user } = authResult;
   const { id } = await params;
+  const sessionRole: string = (user as any).role;
+  const sessionId: number = (user as any).user_id;
 
   // Rate limiting check
   const rateLimitResult = await withRateLimit(request, rateLimits.standard);
@@ -42,6 +44,14 @@ export async function GET(
     ).bind(contractId).first();
 
     if (!contract) {
+      return NextResponse.json({ error: 'Contract not found' }, { status: 404 });
+    }
+
+    // A business user may only export their own contract - previously any
+    // authenticated business account could export any other business's
+    // contract by guessing/incrementing the id, exposing their rate,
+    // weekend multiplier, and terms.
+    if (sessionRole !== 'admin' && String((contract as any).business_id) !== String(sessionId)) {
       return NextResponse.json({ error: 'Contract not found' }, { status: 404 });
     }
 

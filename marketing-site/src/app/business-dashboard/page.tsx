@@ -528,9 +528,21 @@ export default function BusinessDashboard() {
                 ))
               )}
             </div>
-            <Link href="/client-dashboard?action=book" className="block mt-3 text-center bg-[#B08A5E] text-[#2E1F16] py-2 px-4 rounded-lg font-semibold hover:bg-[#c39a6c] transition-colors">
+            {/* Previously linked to /client-dashboard?action=book, which
+                immediately redirects any business-role session to /auth
+                (client-dashboard is individual-client only) - a dead end.
+                There's no self-serve recurring-booking form for business
+                accounts yet, so this goes through the same WhatsApp contact
+                flow already used elsewhere on this page for anything that
+                needs a human to set up. */}
+            <a
+              href={"https://wa.me/27696735947?text=" + encodeURIComponent("Hi, I'd like to schedule a recurring cleaning booking for my business.")}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block mt-3 text-center bg-[#B08A5E] text-[#2E1F16] py-2 px-4 rounded-lg font-semibold hover:bg-[#c39a6c] transition-colors"
+            >
               Schedule Recurring Booking
-            </Link>
+            </a>
           </div>
 
           <div className="p-4 bg-[#FAF3E6] rounded-lg border border-[#E9DCC0]">
