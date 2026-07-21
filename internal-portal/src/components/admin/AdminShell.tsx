@@ -100,7 +100,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
       setUserRole(role);
 
       if (role !== "admin" && role !== "super_admin") {
-        router.push(role === "cleaner" ? "/CleanerDashboard" : "/supervisor-dashboard");
+        router.push(role === "cleaner" ? "/cleaner-dashboard" : "/supervisor-dashboard");
       }
     }
   }, [router]);

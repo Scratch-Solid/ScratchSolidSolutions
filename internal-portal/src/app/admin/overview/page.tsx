@@ -415,7 +415,6 @@ export default function AdminOverviewPage() {
             </CardHeader>
             <CardContent className="space-y-2.5">
               <HealthRow label="Database" status={healthRowStatus(health?.database?.status)} />
-              <HealthRow label="Authentication" status={healthRowStatus(health?.database?.status)} />
               <HealthRow label="Email Service" status={healthRowStatus(health?.resend?.status)} />
               <HealthRow label="Payment Gateway" status={healthRowStatus(health?.paystack?.status)} />
               <HealthRow label="ERPNext" status={ERP_ENABLED ? healthRowStatus(health?.erpnext?.status) : "paused"} />

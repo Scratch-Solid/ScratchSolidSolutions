@@ -1,79 +1,65 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuth } from '@/lib/middleware';
+import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 
-export async function POST(request: NextRequest) {
+// Read-only: suggests the best available cleaner for ONE specific booking
+// (lowest current workload), without writing anything. This previously
+// ignored the [id] param and its own read-only name entirely - it was a
+// byte-for-byte copy of auto-assign that WROTE bulk assignments for every
+// pending booking. No current UI calls this route, so this was a dormant
+// landmine rather than a live bug.
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const traceId = withTracing(request);
+
   const authResult = await withAuth(request, ['admin']);
-  if (authResult instanceof NextResponse) return authResult;
+  if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
 
   try {
-    // Get all pending bookings
-    const pendingBookings = await db.prepare(
-      'SELECT * FROM bookings WHERE status = ? AND cleaner_id IS NULL'
-    ).bind('pending').all();
+    const { id } = await params;
+    const bookingId = parseInt(id);
 
-    const bookings = pendingBookings.results || [];
-
-    if (bookings.length === 0) {
-      return NextResponse.json({ message: 'No pending bookings to assign', assigned: 0 });
+    const booking = await db.prepare('SELECT id FROM bookings WHERE id = ?').bind(bookingId).first();
+    if (!booking) {
+      return withSecurityHeaders(NextResponse.json({ error: 'Booking not found' }, { status: 404 }), traceId);
     }
 
-    // Get available cleaners (not blocked, idle). department = 'cleaning'
-    // keeps this scoped to cleaners only (2026-07-20 consolidation). See
-    // the note in admin/bookings/auto-assign/route.ts (identical logic,
-    // pre-existing cleaner_id/user_id FK mismatch, out of scope here).
+    // department = 'cleaning' keeps this scoped to cleaners only (2026-07-20
+    // consolidation into staff).
     const cleaners = await db.prepare(
-      `SELECT s.*, u.email, u.name
+      `SELECT s.user_id, s.first_name, s.last_name, u.email
        FROM staff s
        JOIN users u ON s.user_id = u.id
        WHERE s.blocked = 0 AND s.status = 'idle' AND s.department = 'cleaning'`
     ).all();
 
-    const availableCleaners = cleaners.results || [];
-
+    const availableCleaners = (cleaners.results || []) as any[];
     if (availableCleaners.length === 0) {
-      return NextResponse.json({ message: 'No available cleaners', assigned: 0 }, { status: 400 });
+      return withSecurityHeaders(NextResponse.json({ error: 'No available cleaners' }, { status: 400 }), traceId);
     }
 
-    // Get current workload for each cleaner
-    const cleanerWorkloads: any = {};
+    const workloads: Record<number, number> = {};
     for (const cleaner of availableCleaners) {
       const workload = await db.prepare(
-        `SELECT COUNT(*) as count FROM bookings 
-         WHERE cleaner_id = ? AND status IN ('assigned', 'on_way', 'arrived')`
-      ).bind((cleaner as any).user_id).first();
-      cleanerWorkloads[(cleaner as any).user_id] = (workload as any)?.count || 0;
+        `SELECT COUNT(*) as count FROM bookings WHERE cleaner_id = ? AND status IN ('assigned', 'on_way', 'arrived')`
+      ).bind(cleaner.user_id).first();
+      workloads[cleaner.user_id] = (workload as any)?.count || 0;
     }
 
-    // Assign bookings to cleaners with lowest workload (round-robin style)
-    let assignedCount = 0;
-    let cleanerIndex = 0;
+    const suggested = [...availableCleaners].sort(
+      (a, b) => workloads[a.user_id] - workloads[b.user_id]
+    )[0];
 
-    for (const booking of bookings as any[]) {
-      // Find cleaner with minimum workload
-      const sortedCleaners = [...availableCleaners].sort((a, b) => {
-        const workloadA = cleanerWorkloads[(a as any).user_id] || 0;
-        const workloadB = cleanerWorkloads[(b as any).user_id] || 0;
-        return workloadA - workloadB;
-      });
-
-      const selectedCleaner = sortedCleaners[0];
-      const cleanerId = (selectedCleaner as any).user_id;
-
-      // Assign booking
-      await db.prepare(
-        'UPDATE bookings SET cleaner_id = ?, status = ?, updated_at = datetime("now") WHERE id = ?'
-      ).bind(cleanerId, 'assigned', booking.id).run();
-
-      // Update workload
-      cleanerWorkloads[cleanerId]++;
-
-      assignedCount++;
-    }
-
-    return NextResponse.json({ message: `Auto-assigned ${assignedCount} bookings`, assigned: assignedCount });
+    return withSecurityHeaders(NextResponse.json({
+      booking_id: bookingId,
+      suggested_cleaner: {
+        cleaner_id: suggested.user_id,
+        name: `${suggested.first_name} ${suggested.last_name}`.trim(),
+        email: suggested.email,
+        current_workload: workloads[suggested.user_id],
+      },
+    }), traceId);
   } catch (error) {
-    return NextResponse.json({ error: `Failed to auto-assign bookings: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 });
+    return withSecurityHeaders(NextResponse.json({ error: `Failed to suggest cleaner: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 500 }), traceId);
   }
 }

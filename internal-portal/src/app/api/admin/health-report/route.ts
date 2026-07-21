@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
 
     // Get staff statistics
     const totalStaffResult = await db.prepare('SELECT COUNT(*) as count FROM staff').first();
-    const trainedStaffResult = await db.prepare("SELECT COUNT(*) as count FROM staff WHERE is_trained = 1").first();
+    const trainedStaffResult = await db.prepare("SELECT COUNT(*) as count FROM staff WHERE training_completed = 1").first();
     report.summary.totalStaff = (totalStaffResult as any)?.count || 0;
     report.summary.trainedStaff = (trainedStaffResult as any)?.count || 0;
 

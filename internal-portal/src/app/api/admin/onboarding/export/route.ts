@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
         u.created_at,
         s.department,
         s.pool_type,
-        s.is_trained,
+        s.training_completed,
         s.contract_url
       FROM users u
       LEFT JOIN staff s ON u.id = s.user_id
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
           row.onboarding_stage,
           `"${row.department || ''}"`,
           row.pool_type || '',
-          row.is_trained ? 'Yes' : 'No',
+          row.training_completed ? 'Yes' : 'No',
           `"${row.contract_url || ''}"`,
           row.created_at
         ].join(','))
