@@ -115,6 +115,8 @@ export default function CleanerDashboard() {
   useEffect(() => {
     async function fetchCleanerAndTasks() {
       setLoading(true);
+      let totalEarnings = 0;
+      let completedJobs = 0;
       try {
         const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
         if (!token) {
@@ -184,8 +186,8 @@ export default function CleanerDashboard() {
           const earningsRes = await fetch(`/api/cleaner-earnings?cleaner_id=${storedUserId}`);
           if (earningsRes.ok) {
             const earningsData = await earningsRes.json() as any[];
-            const totalEarnings = earningsData.reduce((sum: number, item: any) => sum + (item.earnings || 0), 0);
-            setCleaner(prev => prev ? { ...prev, totalEarnings, completedJobs: earningsData.length } : prev);
+            totalEarnings = earningsData.reduce((sum: number, item: any) => sum + (item.earnings || 0), 0);
+            completedJobs = earningsData.length;
           }
 
             // Fetch live KPI score
@@ -252,8 +254,6 @@ export default function CleanerDashboard() {
         }
 
         // Build cleaner profile from real API data
-        const totalEarnings = (cleaner as any)?.totalEarnings ?? 0;
-        const completedJobs = (cleaner as any)?.completedJobs ?? 0;
         setCleaner({
           id: cleanerId,
           name: `${profileData.firstName} ${profileData.lastName}`.trim() || username || "Cleaner",

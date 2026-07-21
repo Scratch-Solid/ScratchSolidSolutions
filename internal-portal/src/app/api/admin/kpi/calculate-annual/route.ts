@@ -38,10 +38,14 @@ export async function POST(request: NextRequest) {
     const results: { cleanerId: number; monthsReviewed: number; kpi5pt: number; bonusPercentage: number }[] = [];
 
     for (const { user_id: cleanerId } of cleaners.results || []) {
+      // staff_monthly_reviews schema is staff_id/month/year (migrations/
+      // 011_performance_reviews.sql), not review_month, which doesn't exist -
+      // same bug already fixed in staff-reviews/route.ts and
+      // v2/staff/[id]/sync-kpi/route.ts.
       const monthly = await db.prepare(`
         SELECT kpi_snapshot FROM staff_monthly_reviews
-        WHERE staff_id = ? AND month LIKE ?
-      `).bind(cleanerId, `${year}-%`).all<{ kpi_snapshot: string | null }>();
+        WHERE staff_id = ? AND year = ?
+      `).bind(cleanerId, year).all<{ kpi_snapshot: string | null }>();
 
       const rows = monthly.results || [];
       if (rows.length === 0) continue;

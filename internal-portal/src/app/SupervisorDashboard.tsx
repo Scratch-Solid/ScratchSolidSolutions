@@ -135,19 +135,6 @@ export default function SupervisorDashboard() {
     }
   };
 
-  const statusBadge = (status: string) => {
-    const map: Record<string, string> = {
-      scheduled: "bg-[#F0E6D6] text-[#1C130D]",
-      assigned: "bg-yellow-100 text-yellow-800",
-      in_progress: "bg-purple-100 text-purple-800",
-      completed: "bg-green-100 text-green-800",
-      cancelled: "bg-red-100 text-red-800",
-      paid: "bg-green-100 text-green-800",
-      pending: "bg-orange-100 text-orange-800",
-    };
-    return <Badge className={map[status] || "bg-stone-100 text-stone-800"}>{status.replace(/_/g, " ")}</Badge>;
-  };
-
   if (!authorized || loading) {
     return (
       <DashboardLayout title="Supervisor Dashboard" role="staff">

@@ -263,9 +263,9 @@ export async function createCleanerProfile(db: D1Database, data: {
   // pre-consolidation call site which always passed the same value for both).
   const paysheetCode = data.paysheet_code || data.username;
   const result = await db.prepare(
-    `INSERT INTO staff (user_id, paysheet_code, first_name, last_name, department, status, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, 'idle', datetime('now'), datetime('now')) RETURNING *`
-  ).bind(data.user_id, paysheetCode, data.first_name || '', data.last_name || '', data.department || 'cleaning').first();
+    `INSERT INTO staff (user_id, employee_id, paysheet_code, first_name, last_name, department, status, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, 'idle', datetime('now'), datetime('now')) RETURNING *`
+  ).bind(data.user_id, paysheetCode, paysheetCode, data.first_name || '', data.last_name || '', data.department || 'cleaning').first();
   return result;
 }
 
@@ -278,6 +278,10 @@ export async function createCleanerProfile(db: D1Database, data: {
 export async function initializeCleanerProfilesTable(db: D1Database) {
   try {
     const columns = [
+      { name: 'employee_id', type: 'TEXT' },
+      { name: 'paysheet_code', type: 'TEXT' },
+      { name: 'department', type: 'TEXT' },
+      { name: 'status', type: 'TEXT' },
       { name: 'profile_picture', type: 'TEXT' },
       { name: 'residential_address', type: 'TEXT' },
       { name: 'emergency_contact', type: 'TEXT' },
@@ -467,12 +471,14 @@ export async function createOrUpdateStaffRecord(db: D1Database, data: {
       // Create new record. paysheet_code is NOT NULL UNIQUE on staff, so a
       // brand-new row must always get one even if the caller didn't supply
       // one (see generateFallbackPaysheetCode above).
+      const newPaysheetCode = data.paysheet_code || generateFallbackPaysheetCode();
       const result = await db.prepare(`
-        INSERT INTO staff (user_id, first_name, last_name, cellphone, email, department, pool_type, onboarding_stage, paysheet_code, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+        INSERT INTO staff (user_id, employee_id, first_name, last_name, cellphone, email, department, pool_type, onboarding_stage, paysheet_code, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
         RETURNING *
       `).bind(
         data.user_id,
+        newPaysheetCode,
         data.first_name || '',
         data.last_name || '',
         data.cellphone || '',
@@ -480,7 +486,7 @@ export async function createOrUpdateStaffRecord(db: D1Database, data: {
         data.department || 'cleaning',
         poolType,
         data.onboarding_stage || 'consent_pending',
-        data.paysheet_code || generateFallbackPaysheetCode()
+        newPaysheetCode
       ).first();
 
       return result;

@@ -78,14 +78,14 @@ export async function GET(request: NextRequest) {
     const currentTrained = await db.prepare(`
       SELECT COUNT(*) as count
       FROM staff
-      WHERE is_trained = 1
+      WHERE training_completed = 1
         AND created_at >= datetime('now', '-30 days')
     `).first();
 
     const previousTrained = await db.prepare(`
       SELECT COUNT(*) as count
       FROM staff
-      WHERE is_trained = 1
+      WHERE training_completed = 1
         AND created_at >= datetime('now', '-60 days')
         AND created_at < datetime('now', '-30 days')
     `).first();
