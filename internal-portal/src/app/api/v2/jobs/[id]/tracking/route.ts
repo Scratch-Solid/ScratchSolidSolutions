@@ -91,7 +91,7 @@ export async function POST(
 
     await db
       .prepare(
-        `INSERT INTO job_tracking (job_id, latitude, longitude, timestamp, accuracy, source)
+        `INSERT INTO job_tracking (job_id, latitude, longitude, recorded_at, accuracy_meters, source)
          VALUES (?, ?, ?, datetime('now'), ?, ?)`
       )
       .bind(jobId, latitude, longitude, accuracy || null, source)

@@ -43,9 +43,9 @@ export async function POST(request: NextRequest) {
       // same bug already fixed in staff-reviews/route.ts and
       // v2/staff/[id]/sync-kpi/route.ts.
       const monthly = await db.prepare(`
-        SELECT notes FROM staff_monthly_reviews
+        SELECT kpi_snapshot FROM staff_monthly_reviews
         WHERE staff_id = ? AND year = ?
-      `).bind(cleanerId, year).all<{ notes: string }>();
+      `).bind(cleanerId, year).all<{ kpi_snapshot: string | null }>();
 
       const rows = monthly.results || [];
       if (rows.length === 0) continue;
@@ -53,10 +53,10 @@ export async function POST(request: NextRequest) {
       const overallScores: number[] = [];
       for (const row of rows) {
         try {
-          const parsed = JSON.parse(row.notes || '{}');
+          const parsed = JSON.parse(row.kpi_snapshot || '{}');
           if (typeof parsed.overall10pt === 'number') overallScores.push(parsed.overall10pt);
         } catch {
-          // Older rows may not have valid JSON notes - skip rather than fail the whole run
+          // Older rows may not have a valid JSON snapshot - skip rather than fail the whole run
         }
       }
       if (overallScores.length === 0) continue;
