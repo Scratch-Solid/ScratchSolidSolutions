@@ -346,7 +346,10 @@ test.describe('👑 Admin Dashboard — Tabs & Admin Tools', () => {
 
   test('Admin dashboard has all tabs', async ({ page }) => {
     await goTo(page, '/admin-dashboard');
-    const tabs = ['Overview', 'Employees', 'Services', 'Cleaners', 'Content', 'Pricing', 'Proxy', 'Pools', 'Reviews', 'Training', 'Cleaner Analytics'];
+    // 'Pools' removed: it toggled a dead staff.pool_type field with zero
+    // effect on real AUTO/MANUAL pool assignment - that live feature is at
+    // /admin/pools, not a tab on this (largely superseded) dashboard.
+    const tabs = ['Overview', 'Employees', 'Services', 'Cleaners', 'Content', 'Pricing', 'Proxy', 'Reviews', 'Training', 'Cleaner Analytics'];
     for (const tab of tabs) {
       await expect(page.locator(`text=${tab}`).first()).toBeVisible();
     }

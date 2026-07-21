@@ -1,0 +1,14 @@
+-- POST /api/v2/staff/[id]/sync-kpi and POST /api/admin/staff-reviews both
+-- upsert the same staff_monthly_reviews row (unique on staff_id/month/year),
+-- but both write to the same `notes` column for two unrelated purposes:
+-- sync-kpi stores a JSON blob of the calculated KPI, staff-reviews stores the
+-- admin's free-text review comment. The admin UI calls both endpoints back
+-- to back on every review submit, so whichever one runs last wins - in
+-- practice the admin's notes get overwritten by the KPI JSON every time.
+-- Worse, if a row ends up with plain-text notes instead of the JSON blob
+-- (e.g. sync-kpi's own request failed silently), calculate-annual's
+-- JSON.parse(row.notes) throws and that month is silently skipped from the
+-- annual bonus average.
+--
+-- Gives the KPI snapshot its own column so the two purposes stop colliding.
+ALTER TABLE staff_monthly_reviews ADD COLUMN kpi_snapshot TEXT;

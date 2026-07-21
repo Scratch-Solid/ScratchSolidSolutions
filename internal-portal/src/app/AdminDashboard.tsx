@@ -13,7 +13,6 @@ import CleanerVisibility from "./AdminDashboard/cleaner-visibility";
 import TrainingLedger from "./AdminDashboard/training-ledger";
 import ProxyObserver from "@/components/admin/ProxyObserver";
 import PricingConfiguration from "@/components/admin/PricingConfiguration";
-import PoolManagement from "@/components/admin/PoolManagement";
 import ContentManagement from "@/components/admin/ContentManagement";
 import StaffReviews from "@/components/admin/StaffReviews";
 import AdminCleanerOverview from "@/components/admin/AdminCleanerOverview";
@@ -295,7 +294,6 @@ export default function AdminDashboard() {
           <TabsTrigger value="content" className="gap-2 whitespace-nowrap"><FileText className="h-4 w-4" />Content</TabsTrigger>
           <TabsTrigger value="pricing" className="gap-2 whitespace-nowrap"><Wrench className="h-4 w-4" />Pricing</TabsTrigger>
           <TabsTrigger value="proxy-observer" className="gap-2 whitespace-nowrap"><Eye className="h-4 w-4" />Proxy</TabsTrigger>
-          <TabsTrigger value="pool-management" className="gap-2 whitespace-nowrap"><Settings className="h-4 w-4" />Pools</TabsTrigger>
           <TabsTrigger value="staff-reviews" className="gap-2 whitespace-nowrap"><UserCheck className="h-4 w-4" />Reviews</TabsTrigger>
           <TabsTrigger value="training" className="gap-2 whitespace-nowrap"><GraduationCap className="h-4 w-4" />Training</TabsTrigger>
           <TabsTrigger value="cleaner-analytics" className="gap-2 whitespace-nowrap"><BarChart3 className="h-4 w-4" />Cleaner Analytics</TabsTrigger>
@@ -654,10 +652,6 @@ export default function AdminDashboard() {
 
         <TabsContent value="proxy-observer">
           <ProxyObserver />
-        </TabsContent>
-
-        <TabsContent value="pool-management">
-          <PoolManagement />
         </TabsContent>
 
         <TabsContent value="staff-reviews">

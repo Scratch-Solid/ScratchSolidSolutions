@@ -36,11 +36,15 @@ export default function StaffReviews() {
         body: JSON.stringify({ staff_id: selected.id, ...form }),
       });
       if (res.ok) {
-        setMessage(`Review submitted for ${selected.first_name}. KPI will be recalculated.`);
-        await fetch(`/api/v2/staff/${selected.id}/sync-kpi`, {
+        const syncRes = await fetch(`/api/v2/staff/${selected.id}/sync-kpi`, {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` },
         });
+        setMessage(
+          syncRes.ok
+            ? `Review submitted for ${selected.first_name}. KPI recalculated.`
+            : `Review submitted for ${selected.first_name}, but KPI recalculation failed - it will be out of date until this is retried.`
+        );
         setForm({ attendance_score: 5, company_values_score: 5, quality_score: 7, communication_score: 7, notes: '' });
         setSelected(null);
         setTimeout(() => setMessage(''), 4000);

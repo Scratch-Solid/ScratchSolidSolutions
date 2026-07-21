@@ -61,12 +61,16 @@ export async function POST(
     }
 
     // Update local database (staff_monthly_reviews schema is staff_id/month/year -
-    // review_month/reviewed_by/reviewed_at don't exist and previously made this fail every time)
+    // review_month/reviewed_by/reviewed_at don't exist and previously made this fail every time).
+    // Written to its own kpi_snapshot column, not `notes` - that column is
+    // the admin's free-text review comment (see admin/staff-reviews/route.ts)
+    // and both routes upsert the same row, so sharing one column meant
+    // whichever call ran last silently clobbered the other's data.
     await db.prepare(`
-      INSERT INTO staff_monthly_reviews (staff_id, month, year, notes, updated_at)
+      INSERT INTO staff_monthly_reviews (staff_id, month, year, kpi_snapshot, updated_at)
       VALUES (?, strftime('%Y-%m', 'now'), CAST(strftime('%Y', 'now') AS INTEGER), ?, CURRENT_TIMESTAMP)
       ON CONFLICT(staff_id, month, year) DO UPDATE SET
-        notes = excluded.notes,
+        kpi_snapshot = excluded.kpi_snapshot,
         updated_at = CURRENT_TIMESTAMP
     `).bind(staffId, JSON.stringify(kpi)).run();
 
