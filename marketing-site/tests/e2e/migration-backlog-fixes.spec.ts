@@ -25,7 +25,7 @@ test.describe.configure({ mode: 'serial' });
 // Promo scan tracking — migration 028 added promo_scans.referrer
 // ─────────────────────────────────────────────
 test.describe('📊 Promo scan tracking (migration 028)', () => {
-  test('POST /api/analytics/track with a promoCode — documents a still-open bug, not the fixed behavior', async ({ request }) => {
+  test('POST /api/analytics/track with a promoCode exercises the promo_scans insert successfully', async ({ request }) => {
     const res = await request.post(`${BASE_URL}/api/analytics/track`, {
       data: {
         eventType: 'page_view',
@@ -35,21 +35,15 @@ test.describe('📊 Promo scan tracking (migration 028)', () => {
       },
     });
     skipOn429(res);
-    // Migration 028 added promo_scans.referrer (fixing the original "no such
-    // column" 500), but promo_scans.short_url_id is still NOT NULL from its
-    // original migration (003_promotions.sql) - a leftover from when this
-    // table only tracked short-URL scans. The INSERT in
-    // api/analytics/track/route.ts never supplies short_url_id (it has no
-    // short URL to attach - this call path is promo-code page-view
-    // tracking, unrelated to short URLs), so every promoCode page_view
-    // event still 500s today with a NOT NULL constraint violation. This
-    // assertion documents that current, still-broken reality rather than
-    // asserting success - flip it once short_url_id is made nullable (needs
-    // a table-recreate migration; SQLite/D1 can't drop a NOT NULL
-    // constraint via a plain ALTER TABLE).
-    expect(res.status()).toBe(500);
+    // Migration 028 added promo_scans.referrer. promo_scans.short_url_id was
+    // still NOT NULL from its original migration (003_promotions.sql, back
+    // when this table only tracked short-URL scans) - every promoCode
+    // page_view event 500'd with a NOT NULL constraint violation until
+    // migration 030 (table-recreate; SQLite/D1 can't drop a NOT NULL
+    // constraint via a plain ALTER TABLE) made short_url_id nullable.
+    expect(res.status()).toBeLessThan(300);
     const body = await res.json();
-    expect(body.error).toContain('short_url_id');
+    expect(body.success).toBe(true);
   });
 });
 
