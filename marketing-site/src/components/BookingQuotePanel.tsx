@@ -294,7 +294,9 @@ export default function BookingQuotePanel({
           client_name: userName,
           location: location || localStorage.getItem("userAddress") || "",
           suburb: area,
+          service_id: selectedServiceId,
           service_type: selectedService?.name || selectedServiceId.toString(),
+          quantity,
           booking_date: bookingDate,
           booking_time: timeSlot.split("-")[0],
           booking_type: bookingType,
@@ -309,6 +311,9 @@ export default function BookingQuotePanel({
             .filter(Boolean)
             .join(" | "),
           loyalty_discount: 0,
+          // Advisory only - the server independently recomputes and stores
+          // the authoritative price from service_id/quantity/suburb/promo_code,
+          // never trusts this value for what actually gets charged.
           price: calc.finalPrice,
           promo_code: promoResult?.valid ? promoInput.trim() : undefined,
         }),

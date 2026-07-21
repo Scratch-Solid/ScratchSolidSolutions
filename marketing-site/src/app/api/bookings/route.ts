@@ -7,6 +7,7 @@ import { withRateLimit, rateLimits, withCsrf, withAuth, withTracing, withSecurit
 import { addHours, timeOverlap, generateAlternativeTimes } from '@/lib/bookingUtils';
 import { sendBookingConfirmationEmail, sendAdminAlertEmail } from '@/lib/email';
 import { createCalcomBooking } from '@/lib/calcom';
+import { calculateQuote, type QuoteRequest } from '@/lib/pricing-engine';
 
 export async function POST(request: NextRequest) {
   const traceId = withTracing(request);
@@ -49,7 +50,9 @@ export async function POST(request: NextRequest) {
       client_name?: string;
       location?: string;
       suburb?: string;
+      service_id?: number;
       service_type?: string;
+      quantity?: number;
       booking_date?: string;
       booking_time?: string;
       special_instructions?: string;
@@ -66,7 +69,9 @@ export async function POST(request: NextRequest) {
       client_name,
       location,
       suburb,
+      service_id,
       service_type,
+      quantity,
       booking_date,
       booking_time,
       special_instructions,
@@ -154,9 +159,85 @@ export async function POST(request: NextRequest) {
       }, { status: 409 });
     }
 
-    // Validate and apply promo code if provided
+    // Independently recompute the price server-side from service_id/
+    // quantity/suburb/promo_code, using the exact same calculateQuote()
+    // engine the client's own live preview uses - but run again here
+    // against fresh services/service_pricing/service_areas rows, never the
+    // client's own numbers. Stored as quoted_price (migration 031) so the
+    // Paystack initialize route can charge THAT instead of trusting
+    // whatever `amount` a request body claims. Only runs when the caller
+    // supplies service_id/quantity; falls back to the old (client-trusted,
+    // pre-existing) behavior otherwise so a caller that predates this isn't
+    // broken - the only two booking-creation call sites are this route via
+    // BookingQuotePanel (always sends both) and a dead, never-invoked
+    // function in client-dashboard.tsx.
     let discountAmount = 0;
-    if (promo_code) {
+    let serverQuotedPrice: number | null = null;
+
+    if (service_id && quantity) {
+      try {
+        const serviceRow = await db.prepare('SELECT * FROM services WHERE id = ?').bind(service_id).first() as any;
+        const pricingRows = (await db.prepare('SELECT * FROM service_pricing WHERE service_id = ?').bind(service_id).all()).results as any[];
+        const clientType = requestingUserRole === 'business' ? 'business' : 'individual';
+        const pricingRow = pricingRows.find((r) => r.client_type === clientType) || pricingRows.find((r) => r.client_type === 'all') || pricingRows[0] || null;
+        const areaRow = suburb ? await db.prepare('SELECT * FROM service_areas WHERE name = ?').bind(suburb).first() as any : null;
+
+        let promoRow: any = null;
+        let promoData: Parameters<typeof calculateQuote>[2] | undefined;
+        if (promo_code) {
+          promoRow = await db.prepare(`SELECT * FROM promo_codes WHERE code = ? AND is_active = 1`).bind(promo_code.toUpperCase()).first();
+          if (promoRow) {
+            promoData = {
+              discountType: promoRow.discount_type,
+              discountValue: promoRow.discount_value,
+              minAmount: promoRow.min_amount || undefined,
+              validFrom: promoRow.valid_from || undefined,
+              validUntil: promoRow.valid_until || undefined,
+              maxUses: promoRow.max_uses || undefined,
+              usedCount: promoRow.used_count || undefined,
+            };
+          }
+        }
+
+        const specialPricing = pricingRow?.special_price
+          ? {
+              specialPrice: pricingRow.special_price,
+              specialLabel: pricingRow.special_label,
+              specialValidFrom: pricingRow.special_valid_from || undefined,
+              specialValidUntil: pricingRow.special_valid_until || undefined,
+            }
+          : undefined;
+
+        const quoteRequest: QuoteRequest = {
+          serviceId: service_id,
+          propertyType: (cleaning_type || 'residential') as QuoteRequest['propertyType'],
+          area: suburb || '',
+          quantity,
+          promoCode: promoData ? promo_code : undefined,
+          bookingDate: booking_date,
+        };
+
+        const result = calculateQuote(
+          quoteRequest,
+          specialPricing,
+          promoData,
+          0,
+          pricingRow?.price || serviceRow?.base_price || 0,
+          pricingRow?.unit_price || 0,
+          areaRow?.transport_fee
+        );
+        serverQuotedPrice = result.finalPrice;
+        discountAmount = result.promoDiscount + result.specialDiscount;
+
+        if (promoRow && result.promoDiscount > 0) {
+          await db.prepare(`UPDATE promo_codes SET used_count = used_count + 1 WHERE id = ?`).bind(promoRow.id).run();
+        }
+      } catch (quoteError) {
+        logger.error('Server-side quote recomputation failed', quoteError as Error);
+      }
+    } else if (promo_code) {
+      // Legacy path (no service_id/quantity supplied) - keeps the old,
+      // client-trusted discount-cap behavior rather than breaking silently.
       const promo = await db.prepare(
         `SELECT * FROM promo_codes WHERE code = ? AND is_active = 1`
       ).bind(promo_code.toUpperCase()).first();
@@ -177,10 +258,8 @@ export async function POST(request: NextRequest) {
               } else {
                 discountAmount = promo.discount_value as number;
               }
-              // Cap discount at price value
               discountAmount = Math.min(discountAmount, priceValue);
 
-              // Increment used_count
               await db.prepare(
                 `UPDATE promo_codes SET used_count = used_count + 1 WHERE id = ?`
               ).bind(promo.id).run();
@@ -206,7 +285,10 @@ export async function POST(request: NextRequest) {
       cleaner_id: undefined, // No cleaner assigned yet - will be assigned after payment confirmation
       status: 'pending_payment', // New status to indicate waiting for payment
       promo_code: promo_code ? promo_code.toUpperCase() : undefined,
-      discount_amount: discountAmount > 0 ? discountAmount : undefined
+      discount_amount: discountAmount > 0 ? discountAmount : undefined,
+      service_id: service_id || undefined,
+      quantity: quantity || undefined,
+      quoted_price: serverQuotedPrice ?? undefined
     });
 
     // Hand the booking off to Cal.com so the Cal.com -> n8n -> internal-portal

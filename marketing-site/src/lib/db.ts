@@ -417,13 +417,19 @@ export async function createBooking(db: D1Database, data: {
   status?: string;
   promo_code?: string;
   discount_amount?: number;
+  service_id?: number;
+  quantity?: number;
+  quoted_price?: number;
 }) {
   // Generate unique tracking token
   const trackingToken = generateTrackingToken();
 
+  // service_id/quantity/quoted_price (migration 031) let the payment route
+  // charge a server-computed amount instead of trusting the request body -
+  // see the comment in api/bookings/route.ts for the full reasoning.
   const result = await db.prepare(
-    `INSERT INTO bookings (client_id, client_name, location, suburb, service_type, booking_date, booking_time, special_instructions, booking_type, cleaning_type, payment_method, loyalty_discount, cleaner_id, status, tracking_token, promo_code, discount_amount)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`
+    `INSERT INTO bookings (client_id, client_name, location, suburb, service_type, booking_date, booking_time, special_instructions, booking_type, cleaning_type, payment_method, loyalty_discount, cleaner_id, status, tracking_token, promo_code, discount_amount, service_id, quantity, quoted_price)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`
   ).bind(
     data.client_id,
     data.client_name,
@@ -441,7 +447,10 @@ export async function createBooking(db: D1Database, data: {
     data.status || 'pending',
     trackingToken,
     data.promo_code || null,
-    data.discount_amount || 0
+    data.discount_amount || 0,
+    data.service_id || null,
+    data.quantity || null,
+    data.quoted_price ?? null
   ).first();
   return result;
 }

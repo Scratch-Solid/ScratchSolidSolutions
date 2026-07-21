@@ -24,8 +24,8 @@ export async function POST(request: NextRequest) {
     };
     const { booking_id, email, amount, callback_url } = body;
 
-    if (!booking_id || !email || !amount) {
-      return withSecurityHeaders(NextResponse.json({ error: 'booking_id, email, and amount are required' }, { status: 400 }), traceId);
+    if (!booking_id || !email) {
+      return withSecurityHeaders(NextResponse.json({ error: 'booking_id and email are required' }, { status: 400 }), traceId);
     }
 
     const booking = await db.prepare('SELECT * FROM bookings WHERE id = ? AND client_id = ?')
@@ -33,6 +33,17 @@ export async function POST(request: NextRequest) {
 
     if (!booking) {
       return withSecurityHeaders(NextResponse.json({ error: 'Booking not found' }, { status: 404 }), traceId);
+    }
+
+    // Charge the price the booking route independently computed server-side
+    // (migration 031), never the client-supplied `amount` - a request body
+    // is fully attacker-controlled, and nothing here previously recomputed
+    // the real price before handing it to Paystack. Only falls back to the
+    // client's amount for a booking created before this field existed (no
+    // quoted_price on the row), matching prior behavior for those.
+    const chargeAmount = (booking as any).quoted_price ?? amount;
+    if (!chargeAmount || chargeAmount <= 0) {
+      return withSecurityHeaders(NextResponse.json({ error: 'Unable to determine payment amount for this booking' }, { status: 400 }), traceId);
     }
 
     const existingPayment = await db.prepare(
@@ -51,7 +62,7 @@ export async function POST(request: NextRequest) {
 
     const initResult = await initializeTransaction({
       email,
-      amount: Math.round(amount * 100), // ZAR to kobo
+      amount: Math.round(chargeAmount * 100), // ZAR to kobo
       reference,
       callback_url,
       metadata: {
@@ -75,7 +86,7 @@ export async function POST(request: NextRequest) {
     `).bind(
       userId,
       booking_id,
-      amount,
+      chargeAmount,
       reference,
       JSON.stringify({ authorization_url: initResult.data.authorization_url, email, currency: 'ZAR' })
     ).run();
