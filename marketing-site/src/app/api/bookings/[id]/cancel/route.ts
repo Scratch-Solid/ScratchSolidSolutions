@@ -41,12 +41,19 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const now = new Date();
     const hoursUntilBooking = (bookingDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
 
+    // bookings has no total_amount/quote_amount column (that's a
+    // backend-worker-only column from the old disconnected schema) - the
+    // real amount paid lives on the completed payments row for this booking.
+    const completedPayment = await db.prepare(
+      'SELECT * FROM payments WHERE booking_id = ? AND status = ? AND gateway = ? ORDER BY id DESC LIMIT 1'
+    ).bind(parseInt(id), 'completed', 'paystack').first();
+
     let refundEligible = false;
     let refundAmount = 0;
 
     if (hoursUntilBooking >= 24) {
       refundEligible = true;
-      refundAmount = (booking as any).total_amount || (booking as any).quote_amount || 0;
+      refundAmount = completedPayment ? (completedPayment as any).amount : 0;
     } else if (hoursUntilBooking > 0) {
       // Late cancellation — no refund, but allow cancel
       refundEligible = false;
@@ -75,14 +82,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     // backend-worker's disconnected database - see lib/paystack.ts).
     let refundResult = null;
     if (refundEligible && refundAmount > 0) {
-      const payment = await db.prepare(
-        'SELECT * FROM payments WHERE booking_id = ? AND status = ? AND gateway = ? ORDER BY id DESC LIMIT 1'
-      ).bind(parseInt(id), 'completed', 'paystack').first();
-
-      if (payment && (payment as any).external_payment_id) {
+      if (completedPayment && (completedPayment as any).external_payment_id) {
         try {
           const result = await processRefund(db, {
-            reference: (payment as any).external_payment_id,
+            reference: (completedPayment as any).external_payment_id,
             amount: refundAmount,
             reason,
           });
