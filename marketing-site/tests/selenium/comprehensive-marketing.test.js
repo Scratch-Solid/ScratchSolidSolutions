@@ -4,7 +4,11 @@
  * Run: node tests/selenium/comprehensive-marketing.test.js
  */
 const { Builder, By, until } = require('selenium-webdriver');
-const chrome = require('selenium-webdriver/chrome');
+// Edge, not Chrome - matches every other file in this suite. No Chrome
+// binary is installed in the environments these tests actually run in;
+// Edge (Chromium-based) is what's actually available, and behaves
+// identically for these DOM/text assertions.
+const edge = require('selenium-webdriver/edge');
 
 const BASE_URL = process.env.BASE_URL || 'https://scratchsolidsolutions.org';
 const CI = !!process.env.CI;
@@ -15,9 +19,9 @@ function delay(ms = DELAY_MS) {
 }
 
 async function createDriver() {
-  const options = new chrome.Options();
-  options.addArguments('--headless=new', '--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu');
-  const driver = await new Builder().forBrowser('chrome').setChromeOptions(options).build();
+  const options = new edge.Options();
+  options.addArguments('--headless', '--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu');
+  const driver = await new Builder().forBrowser('MicrosoftEdge').setEdgeOptions(options).build();
   await driver.manage().setTimeouts({ implicit: 10000, pageLoad: 30000, script: 30000 });
   return driver;
 }

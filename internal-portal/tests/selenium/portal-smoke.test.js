@@ -8,7 +8,9 @@
  */
 
 const { Builder, By, until } = require('selenium-webdriver');
-const chrome = require('selenium-webdriver/chrome');
+// Edge, not Chrome - no Chrome binary is installed in the environments
+// these tests actually run in; Edge (Chromium-based) is what's available.
+const edge = require('selenium-webdriver/edge');
 
 const BASE_URL = process.env.TEST_BASE_URL || 'http://localhost:3000';
 const TIMEOUT = 10000;
@@ -17,16 +19,16 @@ const consoleErrors = [];
 const networkErrors = [];
 
 async function createDriver() {
-  const options = new chrome.Options();
-  options.addArguments('--headless=new');
+  const options = new edge.Options();
+  options.addArguments('--headless');
   options.addArguments('--no-sandbox');
   options.addArguments('--disable-dev-shm-usage');
   options.addArguments('--disable-gpu');
   options.addArguments('--window-size=1280,720');
 
   return new Builder()
-    .forBrowser('chrome')
-    .setChromeOptions(options)
+    .forBrowser('MicrosoftEdge')
+    .setEdgeOptions(options)
     .build();
 }
 

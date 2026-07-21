@@ -1,5 +1,7 @@
 const { Builder, By, until } = require('selenium-webdriver');
-const chrome = require('selenium-webdriver/chrome');
+// Edge, not Chrome - no Chrome binary is installed in the environments
+// these tests actually run in; Edge (Chromium-based) is what's available.
+const edge = require('selenium-webdriver/edge');
 
 const PORTAL_URL = process.env.PORTAL_URL || 'https://portal.scratchsolidsolutions.org';
 const isProd = PORTAL_URL.includes('scratchsolidsolutions.org') && !PORTAL_URL.includes('staging');
@@ -24,9 +26,9 @@ describe('Internal Portal Selenium Tests', () => {
   let driver;
 
   beforeAll(async () => {
-    const options = new chrome.Options();
+    const options = new edge.Options();
     options.addArguments('--headless', '--disable-gpu', '--window-size=1920,1080');
-    driver = await new Builder().forBrowser('chrome').setChromeOptions(options).build();
+    driver = await new Builder().forBrowser('MicrosoftEdge').setEdgeOptions(options).build();
   }, PAGE_TIMEOUT);
 
   afterAll(async () => {

@@ -4,20 +4,56 @@
  * Run: node tests/selenium/comprehensive-portal.test.js
  */
 const { Builder, By, until } = require('selenium-webdriver');
-const chrome = require('selenium-webdriver/chrome');
+// Edge, not Chrome - no Chrome binary is installed in the environments
+// these tests actually run in; Edge (Chromium-based) is what's available.
+const edge = require('selenium-webdriver/edge');
 
 const BASE_URL = process.env.BASE_URL || 'https://portal.scratchsolidsolutions.org';
 const CI = !!process.env.CI;
 const DELAY_MS = CI ? 3000 : 500;
+
+// This file is a standalone script (main() at the bottom, no describe/test
+// blocks) run directly via `node`, not through Jest - but every assertion
+// below calls a bare `expect(...)`, a Jest global that's never defined
+// outside a Jest runtime. Every one of these assertions has been silently
+// throwing "expect is not defined" instead of actually checking anything.
+// This is a minimal same-name shim covering just the matchers this file
+// uses, so the existing assertions (and their try/catch-based pass/fail
+// reporting below) start actually checking what they claim to.
+function expect(actual) {
+  return {
+    toBe(expected) {
+      if (actual !== expected) throw new Error(`Expected ${JSON.stringify(actual)} to be ${JSON.stringify(expected)}`);
+    },
+    toBeTruthy() {
+      if (!actual) throw new Error(`Expected a truthy value, got ${JSON.stringify(actual)}`);
+    },
+    toContain(expected) {
+      const ok = (typeof actual === 'string' || Array.isArray(actual)) && actual.includes(expected);
+      if (!ok) throw new Error(`Expected ${JSON.stringify(actual)} to contain ${JSON.stringify(expected)}`);
+    },
+    toMatch(regex) {
+      if (!regex.test(actual)) throw new Error(`Expected ${JSON.stringify(actual)} to match ${regex}`);
+    },
+    toBeGreaterThan(n) {
+      if (!(actual > n)) throw new Error(`Expected ${actual} to be greater than ${n}`);
+    },
+    toHaveProperty(key) {
+      if (!actual || !Object.prototype.hasOwnProperty.call(actual, key)) {
+        throw new Error(`Expected object to have property ${JSON.stringify(key)}`);
+      }
+    },
+  };
+}
 
 function delay(ms = DELAY_MS) {
   return new Promise(r => setTimeout(r, ms));
 }
 
 async function createDriver() {
-  const options = new chrome.Options();
-  options.addArguments('--headless=new', '--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu');
-  const driver = await new Builder().forBrowser('chrome').setChromeOptions(options).build();
+  const options = new edge.Options();
+  options.addArguments('--headless', '--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu');
+  const driver = await new Builder().forBrowser('MicrosoftEdge').setEdgeOptions(options).build();
   await driver.manage().setTimeouts({ implicit: 10000, pageLoad: 30000, script: 30000 });
   return driver;
 }
@@ -326,15 +362,22 @@ async function testApiEndpoints() {
         if (ep.expectArray) expect(Array.isArray(data)).toBe(true);
         if (ep.expectKey) expect(data).toHaveProperty(ep.expectKey);
       } else {
-        await driver.executeScript(`
-          window._testResult = fetch('${url}', {
+        // executeScript never awaits the fetch promise it assigns to
+        // window._testResult - it just serializes whatever's there the
+        // instant the script returns, which is the pending Promise object
+        // itself, not its resolved value. executeAsyncScript is the correct
+        // WebDriver primitive for this: the script gets an explicit
+        // callback argument and the driver actually waits for it to be
+        // invoked before returning.
+        const res = await driver.executeAsyncScript(`
+          const callback = arguments[arguments.length - 1];
+          fetch('${url}', {
             method: '${ep.method}',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(${JSON.stringify(ep.body || {})})
-          }).then(r => ({ status: r.status, ok: r.ok }));
+          }).then(r => callback({ status: r.status, ok: r.ok }))
+            .catch(e => callback({ status: 0, ok: false, error: String(e) }));
         `);
-        await delay(2000);
-        const res = await driver.executeScript('return window._testResult;');
         expect([200, 201, 400, 401, 403, 404, 405, 409]).toContain(res.status);
       }
     });
