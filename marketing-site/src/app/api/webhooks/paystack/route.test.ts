@@ -1,10 +1,14 @@
 /**
+ * @jest-environment node
+ *
  * Regression coverage for the Paystack webhook - the "authoritative async"
  * confirmation path per the payment-flow audit (initialize/verify already
  * had some coverage; webhook/refund/reconciliation had none at all). Uses a
  * real HMAC-SHA512 signature (Node's crypto, same algorithm the route's own
  * verifyWebhookSignature computes via Web Crypto) so the signature-gate
- * assertions are genuine, not just mocked past.
+ * assertions are genuine, not just mocked past. Needs the `node` test
+ * environment specifically - the route calls crypto.subtle (Web Crypto),
+ * which the default jsdom environment doesn't implement.
  */
 import { createHmac } from 'crypto';
 import { NextRequest } from 'next/server';
