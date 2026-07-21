@@ -81,9 +81,9 @@ export async function POST(request: NextRequest) {
     // staff.user_id is NOT NULL just like cleaner_profiles.user_id was, so
     // this already failed against the real DB before this rename too.
     const result = await db.prepare(
-      `INSERT INTO staff (paysheet_code, department, first_name, last_name, status)
-       VALUES (?, ?, ?, ?, 'idle') RETURNING *`
-    ).bind(data.username, data.department || 'cleaning', data.first_name || '', data.last_name || '').first();
+      `INSERT INTO staff (employee_id, paysheet_code, department, first_name, last_name, status)
+       VALUES (?, ?, ?, ?, ?, 'idle') RETURNING *`
+    ).bind(data.username, data.username, data.department || 'cleaning', data.first_name || '', data.last_name || '').first();
     
     if (result) {
       await logAuditEvent(db, { user_id: (user as any).user_id, action: 'create_cleaner_profile', resource: 'cleaner_profile', resource_id: String((result as any).id), details: JSON.stringify({ username: data.username }), ip_address: request.headers.get('x-forwarded-for') || '' });

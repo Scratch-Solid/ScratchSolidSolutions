@@ -76,9 +76,9 @@ export async function POST(request: NextRequest) {
       const dept = department || (role === 'cleaner' ? 'cleaning' : role === 'digital' ? 'digital' : 'transport');
 
       await db.prepare(
-        `INSERT INTO staff (user_id, paysheet_code, department, status)
-         VALUES (?, ?, ?, 'idle')`
-      ).bind((user as any).id, code, dept).run();
+        `INSERT INTO staff (user_id, employee_id, paysheet_code, department, status)
+         VALUES (?, ?, ?, ?, 'idle')`
+      ).bind((user as any).id, code, code, dept).run();
     }
 
     // Generate JWT token

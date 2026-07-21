@@ -391,10 +391,11 @@ export async function activateCleanerAccount(
     } else {
       paysheetCode = await generateUniquePaysheetCode(db, role);
       await db.prepare(
-        `INSERT INTO staff (user_id, paysheet_code, first_name, last_name, cellphone, emergency_contact, emergency_phone, id_number, department, status, pool_type, onboarding_stage, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'cleaning', 'idle', 'INDIVIDUAL', 'consent_approved', datetime('now'), datetime('now'))`
+        `INSERT INTO staff (user_id, employee_id, paysheet_code, first_name, last_name, cellphone, emergency_contact, emergency_phone, id_number, department, status, pool_type, onboarding_stage, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'cleaning', 'idle', 'INDIVIDUAL', 'consent_approved', datetime('now'), datetime('now'))`
       ).bind(
         newUserId,
+        paysheetCode,
         paysheetCode,
         firstName,
         lastName,
@@ -418,10 +419,11 @@ export async function activateCleanerAccount(
     newUserId = insertResult.meta.last_row_id as number;
 
     await db.prepare(
-      `INSERT INTO staff (user_id, paysheet_code, first_name, last_name, cellphone, emergency_contact, emergency_phone, id_number, department, status, pool_type, onboarding_stage, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'cleaning', 'idle', 'INDIVIDUAL', 'consent_approved', datetime('now'), datetime('now'))`
+      `INSERT INTO staff (user_id, employee_id, paysheet_code, first_name, last_name, cellphone, emergency_contact, emergency_phone, id_number, department, status, pool_type, onboarding_stage, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'cleaning', 'idle', 'INDIVIDUAL', 'consent_approved', datetime('now'), datetime('now'))`
     ).bind(
       newUserId,
+      paysheetCode,
       paysheetCode,
       firstName,
       lastName,

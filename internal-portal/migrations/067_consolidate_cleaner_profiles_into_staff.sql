@@ -126,14 +126,24 @@ CREATE INDEX IF NOT EXISTS idx_staff_assignment_pool ON staff(assignment_pool);
 -- see the note above; backfilled separately once both columns are
 -- confirmed present on every environment.
 
+-- employee_id is TEXT UNIQUE NOT NULL with no DEFAULT on environments where
+-- it predates this migration (see investigation above) - since no code path
+-- ever supplies it and it is being retired in favor of paysheet_code, it is
+-- set to the same value here purely to satisfy that constraint. paysheet_code
+-- is already guaranteed unique (generateUniquePaysheetCode), so this cannot
+-- introduce a UNIQUE collision on employee_id either. On environments where
+-- the column doesn't exist at all, referencing it here would fail - but this
+-- statement only runs where employee_id is confirmed present (production);
+-- staging's ADD COLUMN for it already happened via the earlier fixed version
+-- of this migration and staging has 0 cleaner_profiles rows to backfill.
 INSERT INTO staff (
-  user_id, paysheet_code, first_name, last_name, cellphone,
+  user_id, employee_id, paysheet_code, first_name, last_name, cellphone,
   profile_picture, residential_address, emergency_contact,
   emergency_phone, id_number, bank_name, account_number, branch_code,
   account_holder, blocked, assignment_pool, created_at, updated_at
 )
 SELECT
-  cp.user_id, cp.paysheet_code, cp.first_name, cp.last_name, cp.cellphone,
+  cp.user_id, cp.paysheet_code, cp.paysheet_code, cp.first_name, cp.last_name, cp.cellphone,
   cp.profile_picture, cp.residential_address, cp.emergency_contact,
   cp.emergency_phone, cp.id_number, cp.bank_name, cp.account_number,
   cp.branch_code, cp.account_holder, COALESCE(cp.blocked, 0),

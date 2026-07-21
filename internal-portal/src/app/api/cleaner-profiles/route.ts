@@ -78,12 +78,12 @@ export async function POST(request: NextRequest) {
       // Create new profile
       await db.prepare(
         `INSERT INTO staff
-         (user_id, paysheet_code, first_name, last_name, residential_address, cellphone,
+         (user_id, employee_id, paysheet_code, first_name, last_name, residential_address, cellphone,
           emergency_contact1_name, emergency_contact1_phone, emergency_contact2_name, emergency_contact2_phone,
           department, status, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'cleaning', 'idle', datetime('now'), datetime('now'))`
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'cleaning', 'idle', datetime('now'), datetime('now'))`
       ).bind(
-        user_id, paysheetCode, first_name, last_name, residential_address, cellphone,
+        user_id, paysheetCode, paysheetCode, first_name, last_name, residential_address, cellphone,
         emergency_contact1_name, emergency_contact1_phone, emergency_contact2_name, emergency_contact2_phone
       ).run();
     }

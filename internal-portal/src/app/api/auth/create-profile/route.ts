@@ -128,9 +128,9 @@ export async function POST(request: NextRequest) {
       // for a real cleaner (see note above).
       const fallbackPaysheetCode = `Scratch${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
       await db.prepare(
-        `INSERT INTO staff (user_id, paysheet_code, first_name, last_name, residential_address, cellphone, profile_picture, department, status, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, 'cleaning', 'idle', datetime('now'), datetime('now'))`
-      ).bind((user as any).id, fallbackPaysheetCode, firstName, lastName, encryptedResidentialAddress, encryptedCellphone, profilePicture || '').run();
+        `INSERT INTO staff (user_id, employee_id, paysheet_code, first_name, last_name, residential_address, cellphone, profile_picture, department, status, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'cleaning', 'idle', datetime('now'), datetime('now'))`
+      ).bind((user as any).id, fallbackPaysheetCode, fallbackPaysheetCode, firstName, lastName, encryptedResidentialAddress, encryptedCellphone, profilePicture || '').run();
     }
 
     // Ensure staff table has onboarding columns
