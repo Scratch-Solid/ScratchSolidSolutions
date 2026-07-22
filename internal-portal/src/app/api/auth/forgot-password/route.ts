@@ -2,13 +2,17 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import crypto from 'crypto';
-import { 
-  applySecurityMiddleware, 
-  checkRateLimit, 
-  getRateLimitHeaders, 
+import {
+  applySecurityMiddleware,
+  checkRateLimit,
+  getRateLimitHeaders,
   createSecurityError,
   createRateLimitError
 } from '@/lib/security-middleware';
+import { sendPasswordResetEmail } from '@/lib/email';
+
+const PORTAL_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://portal.scratchsolidsolutions.org';
+
 export async function POST(request: NextRequest) {
   const db = await getDb();
   if (!db) {
@@ -58,23 +62,32 @@ export async function POST(request: NextRequest) {
     const resetToken = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 3600000).toISOString();
 
-    // Ensure password_reset_tokens table exists
+    // Ensure password_reset_tokens table exists. Matches the table's actual
+    // live production schema (which also backs an OTP-based reset method
+    // this route doesn't use) - method is NOT NULL there, so every INSERT
+    // must supply it explicitly.
     await db.prepare(`
       CREATE TABLE IF NOT EXISTS password_reset_tokens (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
-        token TEXT NOT NULL UNIQUE,
-        expires_at DATETIME NOT NULL,
-        used_at DATETIME,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users(id)
+        user_id INTEGER REFERENCES users(id),
+        token TEXT UNIQUE NOT NULL,
+        otp TEXT DEFAULT NULL,
+        method TEXT NOT NULL,
+        expires_at TEXT NOT NULL,
+        created_at TEXT DEFAULT (datetime('now'))
       )
     `).run();
 
     // Store reset token in database
     await db.prepare(
-      `INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)`
+      `INSERT INTO password_reset_tokens (user_id, token, method, expires_at) VALUES (?, ?, 'email', ?)`
     ).bind(user.id, resetToken, expiresAt).run();
+
+    const resetLink = `${PORTAL_BASE_URL}/auth/reset-password?token=${resetToken}`;
+    const emailResult = await sendPasswordResetEmail(user.email, resetLink);
+    if (!emailResult.success) {
+      console.error('Failed to send password reset email', { email: user.email, error: emailResult.error });
+    }
 
     // In development, return the token for testing
     const isDevelopment = process.env.NODE_ENV === 'development';
