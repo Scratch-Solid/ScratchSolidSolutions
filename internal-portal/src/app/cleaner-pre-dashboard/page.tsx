@@ -3,11 +3,17 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
+type DocumentContent = { title?: string; content?: string } | null;
+
 export default function PreCleanerDashboard() {
   const router = useRouter();
   const [status, setStatus] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [docContent, setDocContent] = useState<DocumentContent>(null);
+  const [docLoading, setDocLoading] = useState(true);
+  const [docError, setDocError] = useState(false);
+  const [acknowledged, setAcknowledged] = useState(false);
 
   useEffect(() => {
     async function fetchStatus() {
@@ -20,6 +26,7 @@ export default function PreCleanerDashboard() {
       try {
         const response = await fetch('/api/cleaner/pre-dashboard', {
           headers: { Authorization: `Bearer ${token}` },
+          cache: 'no-store',
         });
 
         if (!response.ok) {
@@ -50,6 +57,35 @@ export default function PreCleanerDashboard() {
     }
     fetchStatus();
   }, [router]);
+
+  useEffect(() => {
+    const progressTracker = status?.progress_tracker;
+    if (!progressTracker) return;
+
+    const stepKey = !progressTracker.background_check_consent?.completed
+      ? 'background_check'
+      : !progressTracker.contract_signed?.completed
+      ? 'contract'
+      : null;
+
+    if (!stepKey) return;
+
+    const endpoint = stepKey === 'background_check' ? '/api/admin/consent-content' : '/api/admin/contract-content';
+    const token = localStorage.getItem('authToken');
+
+    setDocLoading(true);
+    setDocError(false);
+    setAcknowledged(false);
+
+    fetch(endpoint, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: 'no-store',
+    })
+      .then(res => (res.ok ? res.json() : Promise.reject(new Error('Failed to load document'))))
+      .then(data => setDocContent(data))
+      .catch(() => setDocError(true))
+      .finally(() => setDocLoading(false));
+  }, [status]);
 
   const handleBackgroundCheckConsent = async () => {
     const token = localStorage.getItem('authToken');
@@ -167,9 +203,28 @@ export default function PreCleanerDashboard() {
               {currentStep.key === 'background_check' && (
                 <div className="space-y-4">
                   <p className="text-stone-600">Please review and sign the background check consent form.</p>
+                  {docLoading ? (
+                    <div className="h-32 bg-white border border-stone-200 rounded-lg animate-pulse" />
+                  ) : docError || !docContent ? (
+                    <p className="text-sm text-stone-500 italic">Document text unavailable - contact support if you'd like to review it before signing.</p>
+                  ) : (
+                    <div className="bg-white border border-stone-200 rounded-lg p-4 max-h-64 overflow-y-auto">
+                      <h3 className="font-semibold text-stone-800 mb-2">{docContent.title}</h3>
+                      <p className="text-sm text-stone-600 whitespace-pre-wrap">{docContent.content}</p>
+                    </div>
+                  )}
+                  <label className="flex items-center gap-2 text-sm text-stone-700">
+                    <input
+                      type="checkbox"
+                      checked={acknowledged}
+                      onChange={(e) => setAcknowledged(e.target.checked)}
+                    />
+                    I have read and understood this consent form
+                  </label>
                   <button
                     onClick={() => handleBackgroundCheckConsent()}
-                    className="px-6 py-3 bg-[#2E1F16] text-white rounded-lg font-semibold hover:bg-[#241811] transition"
+                    disabled={!acknowledged}
+                    className="px-6 py-3 bg-[#2E1F16] text-white rounded-lg font-semibold hover:bg-[#241811] transition disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     Sign Consent Form
                   </button>
@@ -179,9 +234,28 @@ export default function PreCleanerDashboard() {
               {currentStep.key === 'contract' && (
                 <div className="space-y-4">
                   <p className="text-stone-600">Please review and sign your employment contract.</p>
+                  {docLoading ? (
+                    <div className="h-32 bg-white border border-stone-200 rounded-lg animate-pulse" />
+                  ) : docError || !docContent ? (
+                    <p className="text-sm text-stone-500 italic">Document text unavailable - contact support if you'd like to review it before signing.</p>
+                  ) : (
+                    <div className="bg-white border border-stone-200 rounded-lg p-4 max-h-64 overflow-y-auto">
+                      <h3 className="font-semibold text-stone-800 mb-2">{docContent.title}</h3>
+                      <p className="text-sm text-stone-600 whitespace-pre-wrap">{docContent.content}</p>
+                    </div>
+                  )}
+                  <label className="flex items-center gap-2 text-sm text-stone-700">
+                    <input
+                      type="checkbox"
+                      checked={acknowledged}
+                      onChange={(e) => setAcknowledged(e.target.checked)}
+                    />
+                    I have read and agree to this employment contract
+                  </label>
                   <button
                     onClick={() => handleContractSign()}
-                    className="px-6 py-3 bg-[#2E1F16] text-white rounded-lg font-semibold hover:bg-[#241811] transition"
+                    disabled={!acknowledged}
+                    className="px-6 py-3 bg-[#2E1F16] text-white rounded-lg font-semibold hover:bg-[#241811] transition disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     Sign Contract
                   </button>
