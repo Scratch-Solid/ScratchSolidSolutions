@@ -5,6 +5,7 @@ import { validateString, validateEmail } from '@/lib/validation';
 import { sanitizeText, sanitizeEmail } from '@/lib/sanitization';
 import { withAdminOrServiceAuth, withRateLimit, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { getDb, createIntakeRequest, getAllIntakeRequests } from '@/lib/db';
+import { resolveSupportTier } from '@/lib/digital-pricing';
 
 // GET /api/intake — staff review queue (internal-portal admin/service token only).
 // No client-facing GET is exposed — the wizard holds everything it needs in
@@ -70,8 +71,6 @@ export async function POST(request: NextRequest) {
       logo_file_url?: string;
       color_theme?: string;
       support_tier?: string;
-      support_monthly_rate?: number;
-      support_min_term_months?: number;
     };
 
     const nameValidation = validateString(body.name, 'name');
@@ -87,8 +86,13 @@ export async function POST(request: NextRequest) {
       return withSecurityHeaders(NextResponse.json({ error: 'Invalid email address' }, { status: 400 }), traceId);
     }
 
-    const allowedTiers = ['warranty', 'standard', 'growth', 'partner'];
-    const supportTier = allowedTiers.includes(body.support_tier || '') ? body.support_tier : 'warranty';
+    // Rate/min-term are never taken from the client - a request body is
+    // fully attacker-controlled, and this previously trusted
+    // support_monthly_rate/support_min_term_months directly (same class of
+    // bug as the booking price-tampering issue). Only the tier *choice*
+    // comes from the client; the price it maps to always comes from this
+    // server's own table.
+    const tier = resolveSupportTier(body.support_tier);
 
     const intake = await createIntakeRequest(db, {
       client_id: body.client_id ?? null,
@@ -104,9 +108,9 @@ export async function POST(request: NextRequest) {
       backend_interaction_description: body.backend_interaction_description ? sanitizeText(body.backend_interaction_description) : '',
       logo_file_url: body.logo_file_url || '',
       color_theme: body.color_theme || '',
-      support_tier: supportTier,
-      support_monthly_rate: body.support_monthly_rate || 0,
-      support_min_term_months: body.support_min_term_months || 0,
+      support_tier: tier.id,
+      support_monthly_rate: tier.rate,
+      support_min_term_months: tier.minMonths,
     });
 
     return withSecurityHeaders(NextResponse.json(intake, { status: 201 }), traceId);

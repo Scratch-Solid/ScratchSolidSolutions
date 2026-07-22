@@ -1,9 +1,9 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { getDb, getIntakeRequest } from '@/lib/db';
 import { logger } from '@/lib/logger';
 import { processWebhookEvent, verifyWebhookSignature } from '@/lib/paystack';
-import { sendBookingConfirmationEmail } from '@/lib/email';
+import { sendBookingConfirmationEmail, sendDigitalDepositConfirmationEmail, sendDigitalDepositAdminAlertEmail, sendDigitalFinalPaymentConfirmationEmail } from '@/lib/email';
 
 // Paystack webhook - moved here from backend-worker, which processed these
 // against its own separate, always-empty database (see lib/paystack.ts
@@ -74,7 +74,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ status: 'success', message: 'Already processed' });
     }
 
-    const bookingId = payment.booking_id;
     const metadata = payment.metadata ? JSON.parse(payment.metadata) : {};
     metadata.paystack_event = event.event;
     metadata.paid_at = event.data?.paid_at;
@@ -91,6 +90,68 @@ export async function POST(request: NextRequest) {
       `UPDATE payments SET status = 'completed', payment_date = datetime('now'), metadata = ?, updated_at = datetime('now') WHERE id = ?`
     ).bind(JSON.stringify(metadata), payment.id).run();
 
+    // Digital deposit / final payment - this webhook is an independent
+    // confirmation alongside the client's own fast-path verify-poll (see
+    // api/intake/[id]/deposit/verify and .../final-payment/verify). Whichever
+    // arrives first does the DB update and sends the email; guard on the
+    // intake's own timestamp column (read *before* this webhook's update) so
+    // the other one doesn't double-send.
+    if (payment.payment_purpose === 'digital_deposit' || payment.payment_purpose === 'digital_final') {
+      const intakeId = payment.project_intake_id;
+      const intakeBefore = await getIntakeRequest(db, intakeId) as Record<string, any> | null;
+      if (!intakeBefore) {
+        logger.error('Paystack webhook: project intake not found for digital payment', new Error(`intakeId=${intakeId}`));
+        return NextResponse.json({ status: 'acknowledged', event: event.event });
+      }
+
+      if (payment.payment_purpose === 'digital_deposit') {
+        const alreadyHandled = !!intakeBefore.deposit_paid_at;
+        if (!alreadyHandled) {
+          await db.prepare(
+            `UPDATE project_intake_requests SET deposit_paid_at = datetime('now'), deposit_payment_ref = ?, updated_at = datetime('now') WHERE id = ?`
+          ).bind(event.reference, intakeId).run();
+
+          const clientName = intakeBefore.name || intakeBefore.company_name || 'there';
+          try {
+            await sendDigitalDepositConfirmationEmail(
+              intakeBefore.email, clientName, payment.amount, intakeBefore.total_price || 0, intakeBefore.final_amount || 0, event.reference
+            );
+          } catch (emailError) {
+            logger.error('Paystack webhook: failed to send digital deposit confirmation email', emailError as Error);
+          }
+          try {
+            await sendDigitalDepositAdminAlertEmail(
+              clientName, intakeBefore.email, intakeBefore.company_name || intakeBefore.name || `Intake #${intakeId}`, payment.amount, intakeBefore.total_price || 0, intakeId
+            );
+          } catch (emailError) {
+            logger.error('Paystack webhook: failed to send digital deposit admin alert email', emailError as Error);
+          }
+        }
+      } else {
+        const alreadyHandled = !!intakeBefore.final_paid_at;
+        if (!alreadyHandled) {
+          await db.prepare(
+            `UPDATE project_intake_requests SET final_paid_at = datetime('now'), final_payment_ref = ?, updated_at = datetime('now') WHERE id = ?`
+          ).bind(event.reference, intakeId).run();
+
+          const clientName = intakeBefore.name || intakeBefore.company_name || 'there';
+          try {
+            await sendDigitalFinalPaymentConfirmationEmail(intakeBefore.email, clientName, payment.amount, event.reference);
+          } catch (emailError) {
+            logger.error('Paystack webhook: failed to send digital final payment confirmation email', emailError as Error);
+          }
+        }
+      }
+
+      return NextResponse.json({
+        status: 'success',
+        project_intake_id: intakeId,
+        payment_id: payment.id,
+        message: 'Digital payment processed',
+      });
+    }
+
+    const bookingId = payment.booking_id;
     await db.prepare(`UPDATE bookings SET status = 'confirmed', updated_at = datetime('now') WHERE id = ?`).bind(bookingId).run();
 
     const booking = await db.prepare('SELECT * FROM bookings WHERE id = ?').bind(bookingId).first() as any;

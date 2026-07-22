@@ -29,9 +29,44 @@ const TOTAL_STEPS = STEP_NAMES.length;
 const inputClass = "w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#B08A5E]";
 const labelClass = "block text-sm font-semibold text-gray-700 mb-1";
 
+// Display-only mirror of marketing-site/src/lib/digital-pricing.ts's price
+// table — used purely to render a price next to unchecked page items (the
+// server never returns pricing for excluded items). The server always
+// recomputes the real total from its own copy; nothing here is trusted for
+// the actual charge.
+const BASE_BUILD_FEE = 10000;
+const PAGE_PRICES: Record<string, number> = {
+  simple_page: 2500,
+  contact_form: 3500,
+  gallery: 4000,
+  blog: 8000,
+  ecommerce: 12000,
+  booking: 15000,
+  auth_system: 6000,
+  custom: 0,
+};
+
+interface PageItem {
+  type: string;
+  label: string;
+  included: boolean;
+}
+
+interface PriceBreakdown {
+  baseFee: number;
+  pricedItems: { type: string; label: string; price: number }[];
+  pagesSubtotal: number;
+  hasCustomItems: boolean;
+  promoCode: string | null;
+  discountAmount: number;
+  totalPrice: number;
+  depositAmount: number;
+  finalAmount: number;
+}
+
 export default function IntakeWizard({ isOpen, onClose }: Props) {
   const [step, setStep] = useState(0);
-  const [phase, setPhase] = useState<"wizard" | "mockup" | "submitted">("wizard");
+  const [phase, setPhase] = useState<"wizard" | "mockup" | "pricing">("wizard");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -70,6 +105,14 @@ export default function IntakeWizard({ isOpen, onClose }: Props) {
   const [changeRequest, setChangeRequest] = useState("");
   const [mockupLoading, setMockupLoading] = useState(false);
 
+  // Pricing phase state
+  const [pricing, setPricing] = useState<PriceBreakdown | null>(null);
+  const [pageItems, setPageItems] = useState<PageItem[]>([]);
+  const [promoInput, setPromoInput] = useState("");
+  const [promoError, setPromoError] = useState("");
+  const [promoApplying, setPromoApplying] = useState(false);
+  const [depositPaying, setDepositPaying] = useState(false);
+
   function reset() {
     setStep(0);
     setPhase("wizard");
@@ -89,6 +132,8 @@ export default function IntakeWizard({ isOpen, onClose }: Props) {
     setIntakeId(null); setMockupHtml("");
     setIterationsUsed(0); setIterationsRemaining(8);
     setShowChangeBox(false); setChangeRequest(""); setMockupLoading(false);
+    setPricing(null); setPageItems([]);
+    setPromoInput(""); setPromoError(""); setPromoApplying(false); setDepositPaying(false);
   }
 
   function handleClose() {
@@ -174,7 +219,7 @@ export default function IntakeWizard({ isOpen, onClose }: Props) {
       }
 
       const mockupRes = await fetch(`/api/intake/${currentIntakeId}/mockup`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
-      const mockupData = await mockupRes.json() as { html?: string; iterations_used?: number; iterations_remaining?: number; error?: string };
+      const mockupData = await mockupRes.json() as { html?: string; iterations_used?: number; iterations_remaining?: number; pricing?: PriceBreakdown; error?: string };
       if (!mockupRes.ok || !mockupData.html) {
         setError(mockupData.error || "Failed to generate your mockup.");
         setSubmitting(false);
@@ -183,6 +228,10 @@ export default function IntakeWizard({ isOpen, onClose }: Props) {
       setMockupHtml(mockupData.html);
       setIterationsUsed(mockupData.iterations_used || 1);
       setIterationsRemaining(mockupData.iterations_remaining ?? 7);
+      if (mockupData.pricing) {
+        setPricing(mockupData.pricing);
+        setPageItems(mockupData.pricing.pricedItems.map((p) => ({ type: p.type, label: p.label, included: true })));
+      }
       setPhase("mockup");
     } catch {
       setError("Network error. Please try again.");
@@ -201,7 +250,7 @@ export default function IntakeWizard({ isOpen, onClose }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ change_request: changeRequest.trim() }),
       });
-      const data = await res.json() as { html?: string; iterations_used?: number; iterations_remaining?: number; error?: string };
+      const data = await res.json() as { html?: string; iterations_used?: number; iterations_remaining?: number; pricing?: PriceBreakdown; error?: string };
       if (!res.ok || !data.html) {
         setError(data.error || "Failed to update your mockup.");
         return;
@@ -209,6 +258,10 @@ export default function IntakeWizard({ isOpen, onClose }: Props) {
       setMockupHtml(data.html);
       setIterationsUsed(data.iterations_used || iterationsUsed + 1);
       setIterationsRemaining(data.iterations_remaining ?? Math.max(0, iterationsRemaining - 1));
+      if (data.pricing && pageItems.length === 0) {
+        setPricing(data.pricing);
+        setPageItems(data.pricing.pricedItems.map((p) => ({ type: p.type, label: p.label, included: true })));
+      }
       setChangeRequest("");
       setShowChangeBox(false);
     } catch {
@@ -221,17 +274,93 @@ export default function IntakeWizard({ isOpen, onClose }: Props) {
   async function confirmMockup() {
     if (!intakeId) return;
     setMockupLoading(true);
+    setError("");
     try {
       await fetch(`/api/intake/${intakeId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "confirmed" }),
       });
-      setPhase("submitted");
+
+      // Pricing/pageItems should already be populated from the mockup call,
+      // but fall back to a fresh fetch if that best-effort inference failed.
+      if (!pricing) {
+        const res = await fetch(`/api/intake/${intakeId}/pricing`);
+        const data = await res.json() as PriceBreakdown & { error?: string };
+        if (res.ok && !data.error) {
+          setPricing(data);
+          setPageItems(data.pricedItems.map((p) => ({ type: p.type, label: p.label, included: true })));
+        }
+      }
+      setPhase("pricing");
     } catch {
       setError("Network error confirming your mockup. Please try again.");
     } finally {
       setMockupLoading(false);
+    }
+  }
+
+  async function refreshPricing(items: PageItem[], promoCodeArg?: string | null) {
+    if (!intakeId) return;
+    try {
+      const body: Record<string, unknown> = { page_list: items };
+      if (promoCodeArg !== undefined) body.promo_code = promoCodeArg;
+      const res = await fetch(`/api/intake/${intakeId}/pricing`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json() as PriceBreakdown & { promo_error?: string; error?: string };
+      if (res.ok && !data.error) {
+        setPricing(data);
+        setPromoError(data.promo_error || "");
+      } else if (data.error) {
+        setError(data.error);
+      }
+    } catch {
+      setError("Network error updating pricing. Please try again.");
+    }
+  }
+
+  function togglePage(index: number) {
+    const next = pageItems.map((p, i) => (i === index ? { ...p, included: !p.included } : p));
+    setPageItems(next);
+    refreshPricing(next);
+  }
+
+  async function applyPromo() {
+    if (!promoInput.trim()) return;
+    setPromoApplying(true);
+    await refreshPricing(pageItems, promoInput.trim());
+    setPromoApplying(false);
+  }
+
+  async function clearPromo() {
+    setPromoInput("");
+    setPromoError("");
+    await refreshPricing(pageItems, null);
+  }
+
+  async function payDeposit() {
+    if (!intakeId) return;
+    setDepositPaying(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/intake/${intakeId}/deposit/initialize`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ callback_url: `${window.location.origin}/digital/deposit-confirm?intake_id=${intakeId}` }),
+      });
+      const data = await res.json() as { authorization_url?: string; error?: string };
+      if (!res.ok || !data.authorization_url) {
+        setError(data.error || "Failed to start payment.");
+        setDepositPaying(false);
+        return;
+      }
+      window.location.href = data.authorization_url;
+    } catch {
+      setError("Network error. Please try again.");
+      setDepositPaying(false);
     }
   }
 
@@ -256,12 +385,12 @@ export default function IntakeWizard({ isOpen, onClose }: Props) {
         <div className="px-6 py-5" style={{ background: "linear-gradient(135deg, #2E1F16, #3a281a)" }}>
           <div className="flex items-center justify-between mb-1">
             <p className="text-xs uppercase tracking-[0.15em] text-[#B08A5E] font-semibold">
-              {phase === "wizard" ? "Start a project" : phase === "mockup" ? "Your mockup" : "Request received"}
+              {phase === "wizard" ? "Start a project" : phase === "mockup" ? "Your mockup" : "Price breakdown"}
             </p>
             <button onClick={handleClose} className="text-[#CBB89A] hover:text-[#F7F2EA] transition-colors text-2xl leading-none">&times;</button>
           </div>
           <h2 className="text-[#F7F2EA] font-normal text-xl" style={{ fontFamily: "Georgia, serif" }}>
-            {phase === "wizard" ? STEP_NAMES[step] + (step <= 7 ? "" : step === 8 ? " after launch" : " your answers") : phase === "mockup" ? "Here's what we understood" : "Thank you!"}
+            {phase === "wizard" ? STEP_NAMES[step] + (step <= 7 ? "" : step === 8 ? " after launch" : " your answers") : phase === "mockup" ? "Here's what we understood" : "Here's what your build costs"}
           </h2>
           {phase === "wizard" && (
             <>
@@ -501,15 +630,64 @@ export default function IntakeWizard({ isOpen, onClose }: Props) {
             </>
           )}
 
-          {phase === "submitted" && (
-            <div className="text-center py-6">
-              <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+          {phase === "pricing" && (
+            <>
+              <p className="text-sm text-gray-500">Here's the full price breakdown for your build, based on your brief. Uncheck anything you don't need.</p>
+
+              <div className="rounded-xl border border-gray-200 divide-y divide-gray-100 overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-2.5 text-sm bg-gray-50">
+                  <span className="font-semibold text-gray-700">Base build fee</span>
+                  <span className="font-semibold text-gray-800">R{BASE_BUILD_FEE.toLocaleString()}</span>
+                </div>
+                {pageItems.map((item, i) => (
+                  <div key={i} className="flex items-center justify-between px-4 py-2.5 text-sm">
+                    <label className="flex items-center gap-2 flex-1 cursor-pointer">
+                      <input type="checkbox" checked={item.included} onChange={() => togglePage(i)} className="accent-[#B08A5E]" />
+                      <span className={item.included ? "text-gray-700" : "text-gray-400 line-through"}>{item.label}</span>
+                    </label>
+                    <span className={item.included ? "text-gray-800 font-medium" : "text-gray-400"}>R{(PAGE_PRICES[item.type] ?? 0).toLocaleString()}</span>
+                  </div>
+                ))}
               </div>
-              <p className="text-lg font-bold text-gray-800 mb-2">Thanks, {contactName || "there"}!</p>
-              <p className="text-sm text-gray-500 max-w-sm mx-auto">Your brief and confirmed mockup are now with our Digital team. We'll be in touch at <span className="font-semibold">{contactEmail}</span> to kick things off.</p>
-              <button onClick={handleClose} className="mt-6 py-2.5 px-6 bg-[#2E1F16] text-[#F7F2EA] font-semibold rounded-xl hover:bg-[#241811] transition-colors">Close</button>
-            </div>
+
+              {pricing?.hasCustomItems && (
+                <div className="flex gap-2 items-start bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+                  <span>&#9888;</span>
+                  <p className="text-xs text-amber-800">One of your pages needs a quick custom quote from our team before you can pay a deposit — we'll follow up by email at {contactEmail}.</p>
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <input className={inputClass + " flex-1"} placeholder="Promo code" value={promoInput} onChange={(e) => setPromoInput(e.target.value)} />
+                <button onClick={applyPromo} disabled={promoApplying || !promoInput.trim()} className="px-4 py-2 bg-[#2E1F16] text-[#F7F2EA] font-semibold rounded-xl text-sm hover:bg-[#241811] disabled:opacity-50 transition-colors">
+                  {promoApplying ? "…" : "Apply"}
+                </button>
+              </div>
+              {promoError && <p className="text-xs text-red-500">{promoError}</p>}
+              {pricing?.promoCode && (
+                <div className="flex justify-between items-center text-xs bg-green-50 border border-green-100 rounded-lg px-3 py-2">
+                  <span className="text-green-700 font-semibold">Promo &ldquo;{pricing.promoCode}&rdquo; applied — &minus;R{pricing.discountAmount.toLocaleString()}</span>
+                  <button onClick={clearPromo} className="text-green-700 underline">Remove</button>
+                </div>
+              )}
+
+              <div className="rounded-xl bg-[#F7F2EA] border border-[#E4D6BC] p-4 space-y-1 text-sm">
+                <div className="flex justify-between"><span className="text-gray-600">Subtotal</span><span>R{((pricing?.baseFee || 0) + (pricing?.pagesSubtotal || 0)).toLocaleString()}</span></div>
+                {!!pricing?.discountAmount && (
+                  <div className="flex justify-between text-green-700"><span>Discount</span><span>&minus;R{pricing.discountAmount.toLocaleString()}</span></div>
+                )}
+                <div className="flex justify-between text-base font-bold border-t border-[#E4D6BC] pt-1 mt-1"><span>Total build price</span><span>R{(pricing?.totalPrice || 0).toLocaleString()}</span></div>
+                <div className="flex justify-between text-[#8a6a45] font-semibold"><span>Deposit due now (50%)</span><span>R{(pricing?.depositAmount || 0).toLocaleString()}</span></div>
+                <div className="flex justify-between text-gray-500 text-xs"><span>Remaining balance on delivery</span><span>R{(pricing?.finalAmount || 0).toLocaleString()}</span></div>
+                <div className="flex justify-between text-gray-500 text-xs border-t border-[#E4D6BC] pt-1 mt-1"><span>Ongoing support ({selectedTier.label})</span><span>R{selectedTier.rate.toLocaleString()}/mo</span></div>
+              </div>
+
+              <p className="text-xs text-gray-500">Your project is shared with our build team only once your deposit clears — this protects your build slot and our team's time. Deposits are non-refundable once paid, since labor and resources are then allocated to your project.</p>
+
+              <button onClick={payDeposit} disabled={depositPaying || !!pricing?.hasCustomItems || !pricing?.depositAmount} className="w-full py-3 bg-[#B08A5E] text-[#2E1F16] font-bold rounded-xl hover:bg-[#c39a6c] disabled:opacity-50 transition-colors">
+                {depositPaying ? "Redirecting to secure payment…" : `Pay R${(pricing?.depositAmount || 0).toLocaleString()} deposit now`}
+              </button>
+            </>
           )}
         </div>
 

@@ -98,9 +98,10 @@ export async function POST(request: NextRequest) {
       valid_until?: string;
       max_uses?: number | null;
       is_active?: boolean;
+      applies_to?: 'cleaning' | 'digital' | 'both';
     };
 
-    const { code, description, discount_type, discount_value, min_amount, valid_from, valid_until, max_uses, is_active } = body;
+    const { code, description, discount_type, discount_value, min_amount, valid_from, valid_until, max_uses, is_active, applies_to } = body;
 
     if (!code || !discount_type || discount_value === undefined) {
       return NextResponse.json({ error: 'code, discount_type, and discount_value are required' }, { status: 400 });
@@ -114,14 +115,17 @@ export async function POST(request: NextRequest) {
     if (discount_type === 'percentage' && discount_value > 100) {
       return NextResponse.json({ error: 'Percentage discount cannot exceed 100' }, { status: 400 });
     }
+    if (applies_to !== undefined && !['cleaning', 'digital', 'both'].includes(applies_to)) {
+      return NextResponse.json({ error: 'applies_to must be cleaning, digital, or both' }, { status: 400 });
+    }
 
     const result = await db.prepare(
-      `INSERT INTO promo_codes (code, description, discount_type, discount_value, min_amount, valid_from, valid_until, max_uses, used_count, is_active, created_at, updated_at)
-       VALUES (UPPER(?), ?, ?, ?, ?, ?, ?, ?, 0, ?, datetime('now'), datetime('now'))`
+      `INSERT INTO promo_codes (code, description, discount_type, discount_value, min_amount, valid_from, valid_until, max_uses, used_count, is_active, applies_to, created_at, updated_at)
+       VALUES (UPPER(?), ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, datetime('now'), datetime('now'))`
     ).bind(
       code.trim(), description || '', discount_type, discount_value,
       min_amount ?? null, valid_from || null, valid_until || null,
-      max_uses ?? null, is_active !== false ? 1 : 0
+      max_uses ?? null, is_active !== false ? 1 : 0, applies_to || 'both'
     ).run();
 
     const promoId = result.meta.last_row_id;
@@ -197,10 +201,14 @@ export async function PUT(request: NextRequest) {
       valid_until?: string | null;
       max_uses?: number | null;
       is_active?: boolean;
+      applies_to?: 'cleaning' | 'digital' | 'both';
     };
 
-    const { id, description, discount_type, discount_value, min_amount, valid_from, valid_until, max_uses, is_active } = body;
+    const { id, description, discount_type, discount_value, min_amount, valid_from, valid_until, max_uses, is_active, applies_to } = body;
     if (!id) return NextResponse.json({ error: 'id is required' }, { status: 400 });
+    if (applies_to !== undefined && !['cleaning', 'digital', 'both'].includes(applies_to)) {
+      return NextResponse.json({ error: 'applies_to must be cleaning, digital, or both' }, { status: 400 });
+    }
 
     const result = await db.prepare(
       `UPDATE promo_codes SET
@@ -212,12 +220,13 @@ export async function PUT(request: NextRequest) {
         valid_until = ?,
         max_uses = ?,
         is_active = COALESCE(?, is_active),
+        applies_to = COALESCE(?, applies_to),
         updated_at = datetime('now')
        WHERE id = ?`
     ).bind(
       description ?? null, discount_type ?? null, discount_value ?? null,
       min_amount ?? null, valid_from ?? null, valid_until ?? null, max_uses ?? null,
-      is_active !== undefined ? (is_active ? 1 : 0) : null, id
+      is_active !== undefined ? (is_active ? 1 : 0) : null, applies_to ?? null, id
     ).run();
 
     if (result.meta.changes === 0) {

@@ -3,8 +3,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { sanitizeText } from '@/lib/sanitization';
 import { withRateLimit, withTracing, withSecurityHeaders } from '@/lib/middleware';
-import { getDb, getIntakeRequest, getIntakeIterations, addMockupIteration, updateIntakeStatus } from '@/lib/db';
-import { generateMockup, type IntakeBrief } from '@/lib/intake-ai';
+import { getDb, getIntakeRequest, getIntakeIterations, addMockupIteration, updateIntakeStatus, updateIntakeRequest } from '@/lib/db';
+import { generateMockup, inferPageList, type IntakeBrief } from '@/lib/intake-ai';
+import { computeDigitalPriceBreakdown } from '@/lib/digital-pricing';
 
 // Hard server-side cap — this is what actually bounds cost, not the client's
 // own iteration counter. See project_scratchsolid intake plan: at ~$0.03-0.05
@@ -99,11 +100,50 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     });
     await updateIntakeStatus(db, intakeId, 'awaiting_confirmation');
 
+    // Page list only needs inferring once, from the brief itself - it
+    // doesn't change across visual refinement rounds, only the mockup's
+    // look does. Best-effort: a failure here shouldn't block the mockup
+    // the client is actually waiting on.
+    let pricing = null;
+    if (iterations.length === 0) {
+      try {
+        const inference = await inferPageList(brief);
+        pricing = await computeDigitalPriceBreakdown(db, {
+          pageList: inference.pages,
+          supportTier: intake.support_tier,
+        });
+        await updateIntakeRequest(db, intakeId, {
+          page_list: JSON.stringify(inference.pages),
+          base_fee: pricing.baseFee,
+          pages_subtotal: pricing.pagesSubtotal,
+          has_custom_items: pricing.hasCustomItems ? 1 : 0,
+          total_price: pricing.totalPrice,
+          deposit_amount: pricing.depositAmount,
+          final_amount: pricing.finalAmount,
+        });
+      } catch (pricingError) {
+        logger.error('Failed to infer page list / compute pricing for intake', pricingError as Error);
+      }
+    } else {
+      // Refinement round - return whatever pricing was already computed on
+      // the first round rather than nothing, so the client's price panel
+      // doesn't blank out on a change request.
+      const refreshed = await getIntakeRequest(db, intakeId) as Record<string, any> | null;
+      if (refreshed?.page_list) {
+        pricing = await computeDigitalPriceBreakdown(db, {
+          pageList: JSON.parse(refreshed.page_list),
+          promoCode: refreshed.promo_code,
+          supportTier: refreshed.support_tier,
+        });
+      }
+    }
+
     const response = NextResponse.json({
       html: result.html,
       iteration_number: iterationNumber,
       iterations_used: iterationNumber,
       iterations_remaining: MAX_ITERATIONS - iterationNumber,
+      pricing,
     }, { status: 201 });
     return withSecurityHeaders(response, traceId);
   } catch (error) {

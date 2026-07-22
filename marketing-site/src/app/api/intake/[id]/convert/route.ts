@@ -38,6 +38,8 @@ function buildBriefMessage(intake: Record<string, any>): string {
     `Backend & interactions: ${intake.backend_interaction_description || 'n/a'}`,
     '',
     `Support & pricing selected: ${tier} — R${intake.support_monthly_rate}/month.`,
+    '',
+    `Total build price: R${intake.total_price}. Deposit paid: R${intake.deposit_amount} (ref ${intake.deposit_payment_ref}). Remaining balance on delivery: R${intake.final_amount}.`,
   ].join('\n');
 }
 
@@ -64,6 +66,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
     if (intake.status !== 'confirmed') {
       return withSecurityHeaders(NextResponse.json({ error: 'Only a client-confirmed request can be converted. Ask them to confirm a mockup first.' }, { status: 400 }), traceId);
+    }
+    if (!intake.deposit_paid_at) {
+      // The whole point of the deposit gate: staff never see (or start work
+      // on) a project until the client has actually paid 50% up front.
+      return withSecurityHeaders(NextResponse.json({ error: 'This project cannot be converted until the client has paid their 50% deposit.' }, { status: 400 }), traceId);
     }
 
     const client = await getUserByEmail(db, intake.email);
