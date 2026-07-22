@@ -54,15 +54,19 @@ export default function CleanerTrainingPage() {
   const [error, setError] = useState('');
   const [view, setView] = useState<'hub' | 'lesson' | 'quiz'>('hub');
   const [activeModuleId, setActiveModuleId] = useState<string | null>(null);
+  const [onboardingComplete, setOnboardingComplete] = useState(false);
 
-  async function fetchTraining() {
+  // silent=true skips the page-level loading flag - used for background
+  // refreshes (e.g. right after a quiz submit) so the active quiz/lesson
+  // view doesn't get unmounted (and its result screen lost) mid-render.
+  async function fetchTraining(silent = false) {
     const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
     if (!token) {
       router.push('/auth/cleaner-login');
       return;
     }
 
-    setLoading(true);
+    if (!silent) setLoading(true);
     setError('');
 
     try {
@@ -85,7 +89,7 @@ export default function CleanerTrainingPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load training');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }
 
@@ -109,14 +113,25 @@ export default function CleanerTrainingPage() {
       return { passed: false, score: data.error?.score ?? 0, message: data.error?.message };
     }
 
-    await fetchTraining();
+    // Silent refresh - keeps the success screen on-screen instead of
+    // flashing back to a fresh, question-1 quiz mid-render.
+    await fetchTraining(true);
     if (data.data?.can_transition_to_cleaner_dashboard) {
-      localStorage.setItem('cleanerRedirectTo', '/cleaner-dashboard');
+      setOnboardingComplete(true);
     }
     return { passed: true, score: 100 };
   }
 
   const activeModule = modules.find((m) => m.id === activeModuleId) || null;
+
+  function returnFromQuiz() {
+    if (onboardingComplete) {
+      localStorage.setItem('cleanerRedirectTo', '/cleaner-dashboard');
+      router.push('/cleaner-dashboard');
+      return;
+    }
+    setView('hub');
+  }
 
   if (loading) {
     return (
@@ -138,7 +153,7 @@ export default function CleanerTrainingPage() {
           moduleTitle={activeModule.title}
           questions={activeModule.quiz}
           onSubmit={(answers) => submitQuiz(activeModule.id, answers)}
-          onCancel={() => setView('hub')}
+          onCancel={returnFromQuiz}
         />
       </div>
     );
