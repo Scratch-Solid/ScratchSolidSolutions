@@ -76,16 +76,24 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     // Get current training progress
     const progress = await ensureCleanerTrainingProgress(db, cleaner.paysheet_code);
 
-    // Check if module is already completed
+    // Reaching here means they just answered every question correctly. If
+    // this module was already marked complete (e.g. a review retake), that's
+    // still a pass - not an error - so respond with success rather than
+    // surfacing "already completed" as if the quiz had failed.
     if (progress.modules_completed.includes(moduleId)) {
+      const totalModules = progress.modules_completed.length + progress.modules_pending.length;
       const response = NextResponse.json({
-        success: false,
-        error: {
-          code: 'ALREADY_COMPLETED',
-          message: 'Module already completed',
-          suggestion: 'This module has already been marked as complete'
+        success: true,
+        message: 'Already completed - nice review!',
+        data: {
+          module_id: moduleId,
+          completed: progress.modules_completed.length,
+          total: totalModules,
+          percentage: progress.completion_percentage,
+          all_completed: progress.completed,
+          can_transition_to_cleaner_dashboard: progress.completed
         }
-      }, { status: 400 });
+      });
       return withSecurityHeaders(response, traceId);
     }
 
