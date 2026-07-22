@@ -45,7 +45,9 @@
     "uuid": "^11.1.0"
   },
   "overrides": {
-    "axios": "^1.8.2"
+    "axios": "^1.8.2",
+    "postcss": "^8.5.10",
+    "sharp": "^0.35.0"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260422.1",
