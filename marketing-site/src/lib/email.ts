@@ -423,6 +423,91 @@ export async function sendDigitalDepositAdminAlertEmail(clientName: string, clie
   });
 }
 
+export async function sendCustomQuoteNeededEmail(email: string, clientName: string) {
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #2E1F16; color: #F7F2EA; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }
+        .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>Scratch Solid Solutions</h1>
+        </div>
+        <div class="content">
+          <h2>Your Project Needs a Quick Custom Quote</h2>
+          <p>Dear ${clientName},</p>
+          <p>Thanks for confirming your mockup. Part of what you've asked for includes a feature that's bespoke enough that our standard pricing doesn't quite fit it, so a member of our team will review it and get back to you with an updated price before you can pay your deposit.</p>
+          <p>No action is needed from you right now &mdash; we'll be in touch by email shortly.</p>
+        </div>
+        <div class="footer">
+          <p>&copy; ${new Date().getFullYear()} Scratch Solid Solutions. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return sendEmail({
+    to: email,
+    subject: 'Your Project Needs a Quick Custom Quote',
+    html,
+    from: 'Scratch Solid Solutions <customerservice@scratchsolidsolutions.org>'
+  });
+}
+
+export async function sendCustomQuoteNeededAdminAlertEmail(clientName: string, clientEmail: string, projectName: string, intakeId: number) {
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #2E1F16; color: #F7F2EA; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }
+        .detail { background: white; padding: 15px; margin: 10px 0; border-radius: 6px; border-left: 4px solid #B08A5E; }
+        .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>Custom Quote Needed</h1>
+        </div>
+        <div class="content">
+          <h2>A confirmed project needs manual pricing</h2>
+          <p>A client confirmed their mockup, but their scope includes at least one page/feature that doesn't fit our standard page types &mdash; they can't pay a deposit until this is manually quoted.</p>
+          <div class="detail">
+            <strong>Client:</strong> ${clientName}<br>
+            <strong>Email:</strong> ${clientEmail}<br>
+            <strong>Project:</strong> ${projectName}
+          </div>
+          <p>Review the full scope on the digital dashboard (intake #${intakeId}), agree a price for the custom item(s) with the client, then update the intake's pricing so they can proceed to deposit.</p>
+        </div>
+        <div class="footer">
+          <p>&copy; ${new Date().getFullYear()} Scratch Solid Solutions. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return sendEmail({
+    to: 'it@scratchsolidsolutions.org',
+    subject: 'Custom Quote Needed - Confirmed Project Awaiting Pricing',
+    html,
+    from: 'Scratch Solid Solutions <customerservice@scratchsolidsolutions.org>'
+  });
+}
+
 export async function sendDigitalFinalPaymentConfirmationEmail(email: string, clientName: string, finalAmount: number, reference: string) {
   const html = `
     <!DOCTYPE html>

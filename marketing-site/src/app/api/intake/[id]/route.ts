@@ -5,6 +5,7 @@ import { sanitizeText } from '@/lib/sanitization';
 import { withAdminOrServiceAuth, withRateLimit, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { getDb, getIntakeRequest, updateIntakeRequest, getIntakeIterations } from '@/lib/db';
 import { resolveSupportTier } from '@/lib/digital-pricing';
+import { sendCustomQuoteNeededEmail, sendCustomQuoteNeededAdminAlertEmail } from '@/lib/email';
 
 const ALLOWED_STATUSES = ['draft', 'generating', 'awaiting_confirmation', 'confirmed', 'abandoned'];
 
@@ -88,6 +89,26 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const updated = await updateIntakeRequest(db, Number(id), updates);
+
+    // Fired exactly once, at the point the client confirms their mockup - a
+    // one-time client action, so this can't double-send under normal use.
+    // has_custom_items is fixed at mockup-generation time (the client can
+    // only toggle pages in/out afterwards, never change a page's type), so
+    // checking it here reflects the real final state.
+    if (updates.status === 'confirmed' && (existing as Record<string, any>).has_custom_items) {
+      const clientName = (existing as any).name || (existing as any).company_name || 'there';
+      try {
+        await sendCustomQuoteNeededEmail((existing as any).email, clientName);
+      } catch (emailError) {
+        logger.error('Failed to send custom-quote-needed client email', emailError as Error);
+      }
+      try {
+        await sendCustomQuoteNeededAdminAlertEmail(clientName, (existing as any).email, (existing as any).company_name || (existing as any).name || `Intake #${id}`, Number(id));
+      } catch (emailError) {
+        logger.error('Failed to send custom-quote-needed admin alert email', emailError as Error);
+      }
+    }
+
     return withSecurityHeaders(NextResponse.json(updated), traceId);
   } catch (error) {
     logger.error('Error updating intake request', error as Error);
