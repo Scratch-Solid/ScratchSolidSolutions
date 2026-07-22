@@ -58,6 +58,13 @@ export const CLEANER_TRAINING_MODULES: CleanerTrainingModule[] = [
       { question: 'You accidentally lose a client\'s gate access code. What should you do?', options: ['Say nothing - it will probably be fine', 'Tell your supervisor the same day', 'Write it down somewhere safer and keep working'], correctAnswerIndex: 1 },
       { question: 'You\'re cleaning a corporate desk covered in open client files and documents. What\'s the correct approach?', options: ['Stack the files neatly by size, wipe the desk, and put them back', 'Do not move or touch the paperwork - clean around the visible open desk areas only', 'Put the loose papers in a drawer to keep the surface clean'], correctAnswerIndex: 1 },
       { question: 'Which of these is fine to do with a client\'s gate or alarm code?', options: ['Save it in the job app as intended', 'Text it to a friend covering your shift', 'Post a before/after photo that includes it, for your own records'], correctAnswerIndex: 0 },
+      { question: 'What law governs how you must handle a client\'s personal information on the job?', options: ['The Consumer Protection Act', 'POPIA (Protection of Personal Information Act)', 'The Companies Act'], correctAnswerIndex: 1 },
+      { question: 'Which of these counts as personal information you must protect?', options: ['The street name the property is on', 'The client\'s gate and alarm codes', 'The colour of the front door'], correctAnswerIndex: 1 },
+      { question: 'How quickly does Scratch Solid need to report certain data breaches?', options: ['Within 48 hours', 'Within 30 days', 'Only if the client asks'], correctAnswerIndex: 0 },
+      { question: 'When does the 48-hour breach-reporting clock start?', options: ['When you tell your supervisor', 'When the client notices something wrong', 'When head office does a routine audit'], correctAnswerIndex: 0 },
+      { question: 'Is it OK to take extra photos "for your own records" beyond what the job-report tool asks for?', options: ['Yes, as long as they stay on your phone', 'No', 'Only for damage claims'], correctAnswerIndex: 1 },
+      { question: 'You find a client\'s document open on a desk. What should you do with it?', options: ['Leave it exactly as you found it', 'Turn it face-down for privacy', 'File it in a drawer to tidy up'], correctAnswerIndex: 0 },
+      { question: 'Is it OK to save a client\'s access code in your personal phone notes "just in case"?', options: ['Yes, it\'s more convenient', 'No - use the app\'s intended tools only', 'Only if you delete it after the job'], correctAnswerIndex: 1 },
     ],
   },
   {
@@ -88,6 +95,13 @@ export const CLEANER_TRAINING_MODULES: CleanerTrainingModule[] = [
       { question: 'Which two types of cleaning products should never be mixed?', options: ['Glass cleaner and water', 'Bleach-based and ammonia-based products', 'Two different brands of dish soap'], correctAnswerIndex: 1 },
       { question: 'What footwear is required on the job?', options: ['Whatever is comfortable', 'Closed, non-slip shoes', 'Sandals, as long as they\'re clean'], correctAnswerIndex: 1 },
       { question: 'You cut your finger slightly on a job. What should you do?', options: ['Ignore it, it\'s minor', 'Report it to your supervisor the same day', 'Only mention it if it gets worse'], correctAnswerIndex: 1 },
+      { question: 'What do the diamond-shaped GHS labels on a chemical bottle tell you?', options: ['The brand\'s marketing slogan', 'Hazard information for that product', 'The expiry date'], correctAnswerIndex: 1 },
+      { question: 'When should you wear a mask on the job?', options: ['Never - it\'s not required', 'When using strong-smelling or dust-generating products', 'Only on your first week'], correctAnswerIndex: 1 },
+      { question: 'What is the single biggest injury risk in this job?', options: ['Paper cuts', 'Wet floors (slips, trips, falls)', 'Sunburn'], correctAnswerIndex: 1 },
+      { question: 'Which Act covers you if you\'re injured while performing your duties?', options: ['COID (Compensation for Occupational Injuries and Diseases Act)', 'The Rental Housing Act', 'The Tax Administration Act'], correctAnswerIndex: 0 },
+      { question: 'When should you report a workplace injury, even a minor one?', options: ['Only if it needs medical attention', 'The same day it happens', 'At the end of the month'], correctAnswerIndex: 1 },
+      { question: 'You\'re not sure what a chemical contains. What should you do?', options: ['Mix a small amount with another product to test it', 'Check the label and don\'t combine it with anything else', 'Use it anyway, it\'s probably fine'], correctAnswerIndex: 1 },
+      { question: 'Why should the area be ventilated when using strong chemicals?', options: ['So the floor dries faster', 'Because the fumes can be dangerous', 'To make the scent last longer'], correctAnswerIndex: 1 },
     ],
   },
   {
@@ -124,20 +138,29 @@ export const CLEANER_TRAINING_MODULES: CleanerTrainingModule[] = [
       { question: 'Which task is a key differentiator of a Deep Clean vs. a Maintenance Clean?', options: ['Making beds and straightening cushions', 'Deep-cleaning skirting boards, door frames, light switches, and internal appliance surfaces', 'Emptying the kitchen trash can'], correctAnswerIndex: 1 },
       { question: 'What\'s the first step of the Final Walkthrough protocol?', options: ['Spray the signature lemon spray near the entry door', 'Do a slow, 360-degree visual check of the room from top to bottom', 'Lock the door and leave'], correctAnswerIndex: 1 },
       { question: 'Where and when should the signature lemon room spray be applied?', options: ['Heavily on fabric and curtains at the start of the shift', 'As a light mist near the exit door, right as you finish the final walkthrough', 'Heavily throughout the entire space'], correctAnswerIndex: 1 },
+      { question: 'What is the purpose of the 5-colour cloth system?', options: ['To make the cleaning cart look organised', 'To prevent cross-contamination between rooms and surfaces', 'To match the client\'s decor'], correctAnswerIndex: 1 },
+      { question: 'Why do you mop backward toward the exit door instead of forward?', options: ['It\'s faster', 'So you never walk on, or leave footprints in, the area you just cleaned', 'It uses less water'], correctAnswerIndex: 1 },
     ],
   },
   {
     id: 'module-4',
     title: 'Equipment, Chemicals & Sustainability',
     description:
-      'Correct use and daily maintenance of vacuum cleaners, floor scrubbers, pressure washers, and ' +
+      'Correct use and daily maintenance of vacuum cleaners, floor scrubbers, steam cleaners, pressure washers, and ' +
       'micro-fibre systems. Chemical dilution ratios, SDS sheets, green-cleaning alternatives, ' +
       'and water-saving practices for the South African context.',
-    duration_minutes: 20,
+    duration_minutes: 25,
     lessonContent: [
       { type: 'paragraph', text: 'Good equipment care protects both the client\'s home and your own safety, and gets you through the day faster.' },
       { type: 'heading', text: 'Deep-cleaning a refrigerator' },
       { type: 'paragraph', text: 'On a Deep Clean, the fridge gets a real interior clean, not just a wipe-down: temporarily remove all contents safely, wash the interior shelves and drawers with a food-safe sanitizer, dry them fully, and put everything back neatly in its original place.' },
+      { type: 'heading', text: 'Steam cleaners' },
+      { type: 'paragraph', text: 'We use steam cleaners for tile grout, high-touch disinfection, and some upholstery work - the heat kills germs with little to no chemical needed, which is great for chemical-sensitive homes and pets.' },
+      { type: 'list', items: [
+        'Never use a steam cleaner on unsealed wood, delicate electronics, or anywhere the client hasn\'t approved',
+        'Hot steam and hot water in the tank can burn - keep the nozzle pointed away from yourself and others, and use gloves',
+        'Empty, let cool, and descale the tank after use per the equipment\'s instructions - never store it full',
+      ] },
       { type: 'heading', text: 'Chemical dilution and SDS sheets' },
       { type: 'paragraph', text: 'Always follow the dilution ratio printed on the product - stronger isn\'t better, and over-diluting wastes product without cleaning properly. Every chemical on site should have an SDS (Safety Data Sheet) available; know where to find it if you need to check handling instructions.' },
       { type: 'heading', text: 'Equipment upkeep' },
@@ -152,6 +175,13 @@ export const CLEANER_TRAINING_MODULES: CleanerTrainingModule[] = [
       { question: 'What is the correct protocol for a residential fridge on a Deep Clean?', options: ['Spray disinfectant around the food containers without moving them', 'Temporarily remove all contents safely, wash interior shelves/drawers with food-safe sanitizer, dry, and replace items neatly', 'Unplug the appliance and leave the door open'], correctAnswerIndex: 1 },
       { question: 'How should you determine how much to dilute a cleaning chemical?', options: ['Always use it at full strength for a deeper clean', 'Follow the dilution ratio printed on the product', 'Dilute it as much as possible to save product'], correctAnswerIndex: 1 },
       { question: 'What should you do with vacuum canisters and mop heads at the end of a shift?', options: ['Leave them as-is for the next job', 'Empty/rinse the vacuum and rinse-and-wring the mop head before storing', 'Only clean them once a week'], correctAnswerIndex: 1 },
+      { question: 'What is a key benefit of using a steam cleaner?', options: ['It disinfects with heat, using little to no chemical', 'It works faster than any other tool on every surface', 'It never needs to be emptied'], correctAnswerIndex: 0 },
+      { question: 'Which surface should you avoid using a steam cleaner on?', options: ['Sealed tile grout', 'Unsealed wood or delicate electronics', 'Bathroom fittings'], correctAnswerIndex: 1 },
+      { question: 'What is the main safety risk with a steam cleaner?', options: ['It\'s too quiet to notice it\'s on', 'Burns from hot steam or hot water in the tank', 'It uses too much electricity'], correctAnswerIndex: 1 },
+      { question: 'What should you do to a steam cleaner after use?', options: ['Store it full so it\'s ready for next time', 'Empty it, let it cool, and descale per the instructions', 'Leave it running to dry out'], correctAnswerIndex: 1 },
+      { question: 'What does SDS stand for?', options: ['Safety Data Sheet', 'Standard Detergent System', 'Site Delivery Schedule'], correctAnswerIndex: 0 },
+      { question: 'Why shouldn\'t you over-dilute a cleaning chemical to save product?', options: ['It voids the warranty on the bottle', 'It wastes product without cleaning properly', 'It changes the chemical\'s colour'], correctAnswerIndex: 1 },
+      { question: 'What water-saving practice is recommended for the South African context?', options: ['Leaving taps running while you work for convenience', 'Bucket-and-cloth methods over running taps wherever possible', 'Using twice the recommended chemical to clean faster'], correctAnswerIndex: 1 },
     ],
   },
   {
@@ -180,6 +210,13 @@ export const CLEANER_TRAINING_MODULES: CleanerTrainingModule[] = [
       { question: 'A client is unhappy about a missed spot you can fix right away. What do you do?', options: ['Apologise and fix it on the spot', 'Tell them to submit a complaint through the app instead', 'Ignore it and finish the rest of the job first'], correctAnswerIndex: 0 },
       { question: 'A client raises a concern that\'s bigger than something you can fix on site. What\'s the right move?', options: ['Promise a discount yourself to keep them happy', 'Escalate it to your supervisor', 'Argue that the job was done correctly'], correctAnswerIndex: 1 },
       { question: 'What should before/after job photos always exclude?', options: ['The cleaned surface itself', 'Anything containing the client\'s personal information (documents, screens, codes)', 'The room\'s general lighting'], correctAnswerIndex: 1 },
+      { question: 'What percentage of your monthly KPI comes directly from client ratings?', options: ['25%', '50%', '75%'], correctAnswerIndex: 1 },
+      { question: 'Where should you confirm arrival and completion with a client?', options: ['Through the app\'s intended check-in flow, not casual chat', 'Through a personal phone call every time', 'It doesn\'t matter, any message works'], correctAnswerIndex: 0 },
+      { question: 'Within what timeframe does Scratch Solid aim to resolve client complaints?', options: ['24 hours', '7 days', '30 days'], correctAnswerIndex: 0 },
+      { question: 'Is escalating a complaint to your supervisor a sign you\'ve failed?', options: ['Yes, you should always resolve it yourself', 'No - escalating promptly is the correct process', 'Only if the client is very upset'], correctAnswerIndex: 1 },
+      { question: 'What tone should you keep in WhatsApp messages with clients?', options: ['Casual and chatty', 'Professional, brief, and job-related', 'As detailed as possible about your day'], correctAnswerIndex: 1 },
+      { question: 'A client raises their voice at you on site. What should you do?', options: ['Raise your voice back to be heard', 'Stay calm and professional', 'Leave the job immediately without a word'], correctAnswerIndex: 1 },
+      { question: 'What star-rating average does the company aim to maintain?', options: ['3.0+', '4.0+', '4.8+'], correctAnswerIndex: 2 },
     ],
   },
   {
@@ -204,6 +241,13 @@ export const CLEANER_TRAINING_MODULES: CleanerTrainingModule[] = [
       { question: 'What is Scratch Solid\'s primary check-in signal for a job?', options: ['A live GPS ping only', 'WhatsApp messages: START, HERE, and DONE', 'A phone call to the office'], correctAnswerIndex: 1 },
       { question: 'What role does GPS play in the check-in process?', options: ['It\'s the only method that matters', 'A backup confirmation if a WhatsApp message doesn\'t come through - it never overwrites a WhatsApp signal', 'It replaces WhatsApp check-ins entirely'], correctAnswerIndex: 1 },
       { question: 'What does your "system score" (part of your monthly KPI) measure?', options: ['How many jobs you\'ve done in total', 'How closely your check-in times match your scheduled booking', 'How many client reviews you\'ve received'], correctAnswerIndex: 1 },
+      { question: 'What are the three WhatsApp check-in messages, in order?', options: ['START, HERE, DONE', 'ARRIVE, CLEAN, LEAVE', 'BEGIN, MIDDLE, END'], correctAnswerIndex: 0 },
+      { question: 'When do you send the START message?', options: ['When you finish the job', 'When you begin travelling to a job', 'The night before'], correctAnswerIndex: 1 },
+      { question: 'When do you send the HERE message?', options: ['When you arrive at the job', 'Halfway through the job', 'When you leave home'], correctAnswerIndex: 0 },
+      { question: 'When do you send the DONE message?', options: ['When you start cleaning', 'When you finish the job', 'When the client pays'], correctAnswerIndex: 1 },
+      { question: 'What percentage of your monthly KPI does your system score represent?', options: ['10%', '25%', '50%'], correctAnswerIndex: 1 },
+      { question: 'Where are your payslips generated from?', options: ['A spreadsheet emailed manually', 'The ERPNext integration, available in the app', 'You have to request them by phone'], correctAnswerIndex: 1 },
+      { question: 'What happens if you rely on GPS alone and never send your WhatsApp messages?', options: ['Nothing, GPS covers everything', 'You risk incomplete confirmation - GPS is a backup, not a replacement', 'Your pay increases automatically'], correctAnswerIndex: 1 },
     ],
   },
   {
@@ -245,6 +289,13 @@ export const CLEANER_TRAINING_MODULES: CleanerTrainingModule[] = [
       { question: 'What are the three components of your monthly KPI, and their weights?', options: ['Client rating 50% / System score 25% / Admin review 25%', 'Client rating 33% / System score 33% / Admin review 34%', 'Attendance 50% / Client rating 50%'], correctAnswerIndex: 0 },
       { question: 'A KPI of 4 out of 5 pays what percentage of your bonus and increase?', options: ['60%', '80%', '100%'], correctAnswerIndex: 1 },
       { question: 'On a shared MANUAL-pool job with multiple cleaners assigned, what is shared vs. individual?', options: ['Everything is shared equally, including system and admin scores', 'The client rating is shared, but system score and admin score are always your own', 'Nothing is shared - each cleaner is rated completely separately'], correctAnswerIndex: 1 },
+      { question: 'What decides whether you\'re placed in the AUTO or MANUAL pool?', options: ['Seniority', 'Matching the right team size to the job, decided by admin', 'A random draw each month'], correctAnswerIndex: 1 },
+      { question: 'Which kinds of jobs typically go to the MANUAL pool?', options: ['Small standard maintenance cleans', 'Deep cleans, post-construction, commercial sites, and move-in/move-out jobs', 'Jobs with no client present'], correctAnswerIndex: 1 },
+      { question: 'Is being placed in the MANUAL pool a punishment?', options: ['Yes, it means you underperformed', 'No, it\'s about matching team size to the job', 'Only if you\'re new'], correctAnswerIndex: 1 },
+      { question: 'What does your monthly admin review score cover?', options: ['Only how many jobs you completed', 'Attendance, company values, work quality, and communication', 'Your client star rating'], correctAnswerIndex: 1 },
+      { question: 'When is your annual KPI used to set your bonus and salary increase?', options: ['Every February', 'Every January 1st automatically', 'Only when you ask for a review'], correctAnswerIndex: 0 },
+      { question: 'A KPI of 3 out of 5 pays what percentage of your bonus and increase?', options: ['40%', '60%', '80%'], correctAnswerIndex: 1 },
+      { question: 'Where can you check your current KPI and its three components at any time?', options: ['Your dashboard', 'Only during your annual review', 'You have to ask HR by email'], correctAnswerIndex: 0 },
     ],
   },
 ];
@@ -252,6 +303,7 @@ export const CLEANER_TRAINING_MODULES: CleanerTrainingModule[] = [
 export type NormalizedCleanerTrainingProgress = {
   modules_completed: string[];
   modules_pending: string[];
+  modules_completed_at: Record<string, string>;
   completion_percentage: number;
   completed: boolean;
   background_check_consent: boolean;
@@ -260,6 +312,33 @@ export type NormalizedCleanerTrainingProgress = {
   contract_signed_at: string | null;
   contract_signature_id: string | null;
 };
+
+function parseCompletedAtMap(value: unknown): Record<string, string> {
+  if (typeof value !== 'string' || value.trim() === '') return {};
+  try {
+    const parsed = JSON.parse(value);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+    const result: Record<string, string> = {};
+    for (const [key, val] of Object.entries(parsed)) {
+      if (typeof val === 'string') result[key] = val;
+    }
+    return result;
+  } catch {
+    return {};
+  }
+}
+
+// Cleaners are limited to completing 2 modules per rolling 24h window, so
+// onboarding is paced rather than rushed in one sitting.
+export const MAX_MODULES_PER_DAY = 2;
+
+export function countModulesCompletedInLast24h(modulesCompletedAt: Record<string, string>): number {
+  const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+  return Object.values(modulesCompletedAt).filter((timestamp) => {
+    const time = Date.parse(timestamp);
+    return !Number.isNaN(time) && time >= cutoff;
+  }).length;
+}
 
 function parseModuleList(value: unknown): string[] {
   if (typeof value !== 'string' || value.trim() === '') {
@@ -323,6 +402,7 @@ function normalizeTrainingProgressRecord(record: Record<string, unknown> | null)
   return {
     modules_completed: sanitizedCompleted,
     modules_pending: finalPending,
+    modules_completed_at: parseCompletedAtMap(record?.modules_completed_at),
     completion_percentage: completed ? 100 : completionPercentage,
     completed,
     background_check_consent: record?.background_check_consent === 1,
@@ -361,6 +441,7 @@ export async function ensureCleanerTrainingProgress(db: D1Database, paysheetCode
     return normalizeTrainingProgressRecord({
       modules_completed: '[]',
       modules_pending: JSON.stringify(defaultPendingModules),
+      modules_completed_at: '{}',
       completion_percentage: 0,
       completed: 0,
       background_check_consent: 0,
@@ -403,6 +484,7 @@ export function completeCleanerTrainingModule(
     return {
       modules_completed: progress.modules_completed,
       modules_pending: progress.modules_pending,
+      modules_completed_at: progress.modules_completed_at,
       completion_percentage: progress.completion_percentage,
       completed: progress.completed,
       all_completed: progress.completed,
@@ -411,6 +493,7 @@ export function completeCleanerTrainingModule(
 
   const modulesCompleted = [...progress.modules_completed, moduleId].filter((value, index, array) => array.indexOf(value) === index);
   const modulesPending = progress.modules_pending.filter((pendingModuleId) => pendingModuleId !== moduleId);
+  const modulesCompletedAt = { ...progress.modules_completed_at, [moduleId]: new Date().toISOString() };
   const total = CLEANER_TRAINING_MODULES.length;
   const allCompleted = modulesPending.length === 0;
   const completionPercentage = total > 0 ? Math.round((modulesCompleted.length / total) * 100) : 0;
@@ -418,6 +501,7 @@ export function completeCleanerTrainingModule(
   return {
     modules_completed: modulesCompleted,
     modules_pending: modulesPending,
+    modules_completed_at: modulesCompletedAt,
     completion_percentage: allCompleted ? 100 : completionPercentage,
     completed: allCompleted,
     all_completed: allCompleted,

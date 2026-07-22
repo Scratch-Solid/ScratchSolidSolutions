@@ -105,11 +105,14 @@ export default function CleanerTrainingPage() {
       body: JSON.stringify({ answers }),
     });
     const data = await response.json() as {
-      error?: { message?: string; score?: number };
+      error?: { code?: string; message?: string; score?: number };
       data?: { can_transition_to_cleaner_dashboard?: boolean; percentage?: number };
     };
 
     if (!response.ok) {
+      if (data.error?.code === 'DAILY_LIMIT_REACHED') {
+        return { passed: false, limited: true, score: 100, message: data.error?.message };
+      }
       return { passed: false, score: data.error?.score ?? 0, message: data.error?.message };
     }
 
