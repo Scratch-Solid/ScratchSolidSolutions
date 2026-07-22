@@ -72,6 +72,7 @@ export async function createOnboardingSignatureReference(
     cleanerEmail?: string;
     cleanerName?: string;
     returnUrl?: string;
+    db?: D1Database;
   }
 ) {
   const configured = await hasDocusignConfig();
@@ -79,7 +80,13 @@ export async function createOnboardingSignatureReference(
 
   if (configured && step === 'contract' && params?.cleanerEmail && params?.cleanerName) {
     try {
-      const contractHtml = buildEmploymentContractHtml(params.cleanerName);
+      // Same contract_content row the review UI shows a cleaner before they
+      // sign (see api/admin/contract-content/route.ts) - one source of truth
+      // for what gets reviewed vs. what actually gets signed via DocuSign.
+      const contractRow = params.db
+        ? await params.db.prepare('SELECT * FROM contract_content ORDER BY id DESC LIMIT 1').first<{ title?: string; content?: string }>()
+        : null;
+      const contractHtml = buildEmploymentContractHtml(params.cleanerName, contractRow?.title, contractRow?.content);
       const envelope = await createEnvelope({
         subject: 'Scratch Solid Solutions — Employment Contract',
         emailBlurb: `Hi ${params.cleanerName},\n\nPlease review and sign your employment contract with Scratch Solid Solutions.\n\nBest regards,\nThe Scratch Solid Solutions Team`,
@@ -161,12 +168,32 @@ export async function createOnboardingSignatureReference(
   };
 }
 
-function buildEmploymentContractHtml(cleanerName: string): string {
+const FALLBACK_CONTRACT_TITLE = 'Employment Contract';
+const FALLBACK_CONTRACT_BODY =
+  'The Employee is engaged as a Cleaning Services Professional and shall perform cleaning services at ' +
+  'client premises as assigned by the Employer, paid in accordance with the paysheet code assigned upon ' +
+  'approval. Either party may terminate this contract with 30 days written notice.';
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function buildEmploymentContractHtml(cleanerName: string, contractTitle?: string, contractBody?: string): string {
+  const title = contractTitle || FALLBACK_CONTRACT_TITLE;
+  const body = contractBody || FALLBACK_CONTRACT_BODY;
+  const bodyHtml = body
+    .split(/\n{2,}/)
+    .map((paragraph) => `<p>${escapeHtml(paragraph.trim())}</p>`)
+    .join('\n');
+
   return `<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Employment Contract</title>
+<title>${escapeHtml(title)}</title>
 <style>
 body { font-family: Arial, sans-serif; line-height: 1.6; margin: 40px; }
 h1 { text-align: center; }
@@ -175,30 +202,13 @@ h1 { text-align: center; }
 </style>
 </head>
 <body>
-<h1>Employment Contract</h1>
+<h1>${escapeHtml(title)}</h1>
 <div class="section">
 <p><strong>Between:</strong> Scratch Solid Solutions (Pty) Ltd<br>
-<strong>And:</strong> ${cleanerName}</p>
+<strong>And:</strong> ${escapeHtml(cleanerName)}</p>
 </div>
 <div class="section">
-<h2>1. Position</h2>
-<p>The Employee is engaged as a Cleaning Services Professional.</p>
-</div>
-<div class="section">
-<h2>2. Term</h2>
-<p>This contract is effective from the date of signature and continues until terminated in accordance with clause 5.</p>
-</div>
-<div class="section">
-<h2>3. Duties</h2>
-<p>The Employee shall perform cleaning services at client premises as assigned by the Employer.</p>
-</div>
-<div class="section">
-<h2>4. Remuneration</h2>
-<p>The Employee shall be paid in accordance with the paysheet code assigned upon approval.</p>
-</div>
-<div class="section">
-<h2>5. Termination</h2>
-<p>Either party may terminate this contract with 30 days written notice.</p>
+${bodyHtml}
 </div>
 <div class="signature-block">
 <p><strong>Employer Signature:</strong> ##SIGN_HERE##</p>

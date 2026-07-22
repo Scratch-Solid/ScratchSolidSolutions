@@ -13,16 +13,24 @@ export async function GET(request: NextRequest) {
 
   try {
     const applicants = await db.prepare(`
-      SELECT 
+      SELECT
         u.id,
         u.name,
         u.phone,
         u.email,
         s.department,
         u.onboarding_stage,
-        u.created_at
+        u.created_at,
+        tp.background_check_consent,
+        tp.background_check_consent_at,
+        tp.contract_signed,
+        tp.contract_signed_at,
+        tp.contract_signature_id,
+        tp.completion_percentage AS training_completion_percentage,
+        tp.completed AS training_completed
       FROM users u
       LEFT JOIN staff s ON u.id = s.user_id
+      LEFT JOIN training_progress tp ON s.paysheet_code = tp.employee_id
       WHERE u.onboarding_stage IS NOT NULL
       ORDER BY u.created_at DESC
     `).all();

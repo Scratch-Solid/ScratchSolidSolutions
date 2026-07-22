@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
         }
       }
     });
-    response.headers.set('Cache-Control', 'private, max-age=60');
+    response.headers.set('Cache-Control', 'no-store');
     return withSecurityHeaders(response, traceId);
 
   } catch (error) {

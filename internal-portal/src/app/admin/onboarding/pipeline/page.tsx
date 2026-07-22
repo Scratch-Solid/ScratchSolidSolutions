@@ -11,6 +11,13 @@ interface Applicant {
   department: string;
   onboarding_stage: string;
   created_at: string;
+  background_check_consent?: number | null;
+  background_check_consent_at?: string | null;
+  contract_signed?: number | null;
+  contract_signed_at?: string | null;
+  contract_signature_id?: string | null;
+  training_completion_percentage?: number | null;
+  training_completed?: number | null;
 }
 
 const STAGES = [
@@ -41,6 +48,12 @@ export default function OnboardingPipeline() {
       return;
     }
     fetchApplicants();
+
+    // A cleaner's own consent/contract/training progress updates the
+    // instant they act - poll so an admin watching this board sees it
+    // without a manual reload.
+    const interval = setInterval(fetchApplicants, 20000);
+    return () => clearInterval(interval);
   }, [router]);
 
   const authHeaders = () => ({
@@ -52,6 +65,7 @@ export default function OnboardingPipeline() {
     try {
       const response = await fetch('/api/admin/onboarding/pipeline', {
         headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` },
+        cache: 'no-store',
       });
       const data = await response.json() as { applicants: Applicant[] };
       setApplicants(data.applicants || []);
@@ -168,8 +182,16 @@ export default function OnboardingPipeline() {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-stone-900 mb-4">Onboarding Pipeline</h1>
-        
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-2xl font-bold text-stone-900">Onboarding Pipeline</h1>
+          <button
+            onClick={fetchApplicants}
+            className="text-sm font-medium text-stone-600 hover:text-stone-900 border border-stone-200 rounded-lg px-3 py-1.5 hover:bg-stone-50"
+          >
+            Refresh
+          </button>
+        </div>
+
         {/* Stats Cards */}
         <div className="grid grid-cols-7 gap-4 mb-6">
           {getStageStats().map(stat => (
@@ -324,6 +346,32 @@ export default function OnboardingPipeline() {
                 <label className="text-sm font-semibold text-stone-600">Created At</label>
                 <p className="text-stone-900">{new Date(selectedApplicant.created_at).toLocaleString()}</p>
               </div>
+              {(selectedApplicant.background_check_consent !== undefined || selectedApplicant.contract_signed !== undefined) && (
+                <div className="pt-3 border-t border-stone-200 space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-stone-600">Background check consent</span>
+                    <span className={selectedApplicant.background_check_consent === 1 ? 'text-green-700 font-medium' : 'text-stone-500'}>
+                      {selectedApplicant.background_check_consent === 1
+                        ? `Signed ${selectedApplicant.background_check_consent_at ? new Date(selectedApplicant.background_check_consent_at).toLocaleString() : ''}`
+                        : 'Not yet signed'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-stone-600">Contract</span>
+                    <span className={selectedApplicant.contract_signed === 1 ? 'text-green-700 font-medium' : 'text-stone-500'}>
+                      {selectedApplicant.contract_signed === 1
+                        ? `Signed ${selectedApplicant.contract_signed_at ? new Date(selectedApplicant.contract_signed_at).toLocaleString() : ''}`
+                        : 'Not yet signed'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-stone-600">Training</span>
+                    <span className={selectedApplicant.training_completed === 1 ? 'text-green-700 font-medium' : 'text-stone-500'}>
+                      {selectedApplicant.training_completion_percentage ?? 0}% complete
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
             <div className="mt-6 flex gap-2">
               <button
