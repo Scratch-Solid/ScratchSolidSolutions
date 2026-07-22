@@ -55,9 +55,21 @@ const fallbackKB: {
   },
   {
     question: "What is geofencing and how does it work",
-    response: "Geofencing is a virtual boundary around your property. When the cleaner enters it and marks 'Arrived,' the system auto-verifies they are physically there. This prevents false check-ins.",
-    keywords: "geofence,geofencing,virtual boundary,auto arrival,automatic,check in,verify",
+    response: "The cleaner sends a WhatsApp message the moment they arrive - that's the main signal. Geofencing is a backup: it checks their phone's GPS against your address (within about 150 metres) in case a message doesn't come through, preventing false check-ins.",
+    keywords: "geofence,geofencing,virtual boundary,auto arrival,automatic,check in,verify,whatsapp",
     category: "Transparency & Tracking"
+  },
+  {
+    question: "What is Scratch Solid Digital",
+    response: "Our in-house software studio - the same team behind the live cleaner-tracking system on our cleaning page. We build websites, apps, and booking systems, for our own operations and for other businesses.",
+    keywords: "digital,scratch solid digital,software,web development,app development",
+    category: "Digital"
+  },
+  {
+    question: "Is Scratch Solid Transportation available yet",
+    response: "Not yet - launching soon. Personal transport (airport runs, appointments) and corporate transport (staff shuttling, executive transport) are both planned. Message us on WhatsApp to get notified when it launches.",
+    keywords: "transport,transportation,is it available,when launch,coming soon",
+    category: "Transportation"
   },
   {
     question: "Is the geolocation data secure",

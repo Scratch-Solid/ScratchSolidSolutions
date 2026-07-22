@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
-import { completeCleanerTrainingModule, ensureCleanerTrainingProgress, getCleanerTrainingModule, setCleanerOnboardingStage } from '@/lib/cleaner-training';
+import { completeCleanerTrainingModule, countModulesCompletedInLast24h, ensureCleanerTrainingProgress, getCleanerTrainingModule, MAX_MODULES_PER_DAY, setCleanerOnboardingStage } from '@/lib/cleaner-training';
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { log } from '@/lib/logger';
 
@@ -97,17 +97,32 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return withSecurityHeaders(response, traceId);
     }
 
+    // Genuinely new completion (not a review-retake, already handled above) -
+    // enforce the daily pacing cap before recording it.
+    const completedToday = countModulesCompletedInLast24h(progress.modules_completed_at);
+    if (completedToday >= MAX_MODULES_PER_DAY) {
+      const response = NextResponse.json({
+        success: false,
+        error: {
+          code: 'DAILY_LIMIT_REACHED',
+          message: `You've completed ${MAX_MODULES_PER_DAY} modules in the last 24 hours - come back tomorrow to continue.`,
+        }
+      }, { status: 429 });
+      return withSecurityHeaders(response, traceId);
+    }
+
     const updatedProgress = completeCleanerTrainingModule(progress, moduleId);
     const totalModules = updatedProgress.modules_completed.length + updatedProgress.modules_pending.length;
 
     // Update training progress
     await db.prepare(
-      `UPDATE training_progress 
-       SET modules_completed = ?, modules_pending = ?, completion_percentage = ?, completed = ?, updated_at = datetime('now')
+      `UPDATE training_progress
+       SET modules_completed = ?, modules_pending = ?, modules_completed_at = ?, completion_percentage = ?, completed = ?, updated_at = datetime('now')
        WHERE employee_id = ?`
     ).bind(
       JSON.stringify(updatedProgress.modules_completed),
       JSON.stringify(updatedProgress.modules_pending),
+      JSON.stringify(updatedProgress.modules_completed_at),
       updatedProgress.completion_percentage,
       updatedProgress.completed ? 1 : 0,
       cleaner.paysheet_code

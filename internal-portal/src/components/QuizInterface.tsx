@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Check, PartyPopper, RotateCcw } from 'lucide-react';
+import { Check, Clock, PartyPopper, RotateCcw } from 'lucide-react';
 
 interface Question {
   question: string;
@@ -12,6 +12,7 @@ interface QuizResult {
   passed: boolean;
   score: number;
   message?: string;
+  limited?: boolean;
 }
 
 interface QuizInterfaceProps {
@@ -54,27 +55,30 @@ export default function QuizInterface({ moduleTitle, questions, onSubmit, onCanc
   };
 
   if (result) {
+    const icon = result.limited ? <Clock className="h-7 w-7" /> : result.passed ? <PartyPopper className="h-7 w-7" /> : <RotateCcw className="h-7 w-7" />;
+    const iconClasses = result.limited ? 'bg-accent/15 text-accent-foreground' : result.passed ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600';
+    const heading = result.limited ? 'Great answers - see you tomorrow!' : result.passed ? 'Nice work!' : 'Not quite there yet';
+    const message = result.limited
+      ? result.message
+      : result.passed
+      ? `You scored ${result.score}% on "${moduleTitle}".`
+      : result.message || `You scored ${result.score}%. All questions need to be correct to pass.`;
+
     return (
       <div className="w-full max-w-xl mx-auto bg-card border border-border rounded-xl shadow-sm p-7 text-center">
-        <div className={`mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full ${result.passed ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}`}>
-          {result.passed ? <PartyPopper className="h-7 w-7" /> : <RotateCcw className="h-7 w-7" />}
+        <div className={`mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full ${iconClasses}`}>
+          {icon}
         </div>
-        <h3 className="text-lg font-semibold text-foreground mb-1">
-          {result.passed ? 'Nice work!' : 'Not quite there yet'}
-        </h3>
-        <p className="text-sm text-muted-foreground mb-5">
-          {result.passed
-            ? `You scored ${result.score}% on "${moduleTitle}".`
-            : result.message || `You scored ${result.score}%. All questions need to be correct to pass.`}
-        </p>
+        <h3 className="text-lg font-semibold text-foreground mb-1">{heading}</h3>
+        <p className="text-sm text-muted-foreground mb-5">{message}</p>
         <div className="space-y-2.5">
-          {!result.passed && (
+          {!result.passed && !result.limited && (
             <button onClick={handleRetake} className="w-full primary-button">
               Retake quiz
             </button>
           )}
           <button onClick={onCancel} className="w-full text-sm text-muted-foreground hover:text-foreground py-2">
-            {result.passed ? 'Back to modules' : 'Cancel'}
+            {result.passed || result.limited ? 'Back to modules' : 'Cancel'}
           </button>
         </div>
       </div>
