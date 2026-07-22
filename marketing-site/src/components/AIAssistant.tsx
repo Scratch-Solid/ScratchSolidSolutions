@@ -9,34 +9,71 @@ interface Message {
   matched?: boolean;
 }
 
-const SUGGESTED_QUESTIONS = [
-  "What services do you offer?",
-  "How much does cleaning cost?",
-  "Which areas do you cover?",
-  "How do I book a clean?",
-  "How does tracking work?",
-  "What is geofencing?",
-  "Are your staff vetted?",
-  "How do I pay?",
-];
+type AssistantContext = "cleaning" | "digital" | "transportation";
 
-const TOPIC_BUTTONS = [
-  { label: "Services", query: "What services do you offer?" },
-  { label: "Pricing", query: "How much does cleaning cost?" },
-  { label: "Areas", query: "Which areas do you service?" },
-  { label: "Tracking", query: "How does real-time tracking work?" },
-  { label: "Booking", query: "How do I book a cleaning service?" },
-];
+const GREETINGS: Record<AssistantContext, string> = {
+  cleaning: "Hello! I'm your Scratch Solid Solutions assistant. I can help you with services, pricing, booking, tracking, geofencing, and more. What would you like to know?",
+  digital: "Hi! I'm the Scratch Solid assistant. Ask me about our web and app development work - or about our cleaning and transport services too.",
+  transportation: "Hi! I'm the Scratch Solid assistant. Ask me about our upcoming Transportation service - or about our cleaning and digital services too.",
+};
 
-export default function AIAssistant() {
+const SUGGESTED_QUESTIONS_BY_CONTEXT: Record<AssistantContext, string[]> = {
+  cleaning: [
+    "What services do you offer?",
+    "How much does cleaning cost?",
+    "Which areas do you cover?",
+    "How do I book a clean?",
+    "How does tracking work?",
+    "What is geofencing?",
+    "Are your staff vetted?",
+    "How do I pay?",
+  ],
+  digital: [
+    "What is Scratch Solid Digital?",
+    "What kind of digital projects do you build?",
+    "How do I start a project?",
+    "Can you build something like your live tracker?",
+    "What services do you offer?",
+  ],
+  transportation: [
+    "Is transportation available yet?",
+    "What will transportation offer?",
+    "How do I get notified when it launches?",
+    "What services do you offer?",
+  ],
+};
+
+const TOPIC_BUTTONS_BY_CONTEXT: Record<AssistantContext, { label: string; query: string }[]> = {
+  cleaning: [
+    { label: "Services", query: "What services do you offer?" },
+    { label: "Pricing", query: "How much does cleaning cost?" },
+    { label: "Areas", query: "Which areas do you service?" },
+    { label: "Tracking", query: "How does real-time tracking work?" },
+    { label: "Booking", query: "How do I book a cleaning service?" },
+  ],
+  digital: [
+    { label: "About Digital", query: "What is Scratch Solid Digital?" },
+    { label: "Projects", query: "What kind of digital projects do you build?" },
+    { label: "Start a project", query: "How do I start a digital project?" },
+  ],
+  transportation: [
+    { label: "Availability", query: "Is transportation available yet?" },
+    { label: "What's offered", query: "What will transportation offer?" },
+    { label: "Get notified", query: "How do I get notified when transportation launches?" },
+  ],
+};
+
+export default function AIAssistant({ context = "cleaning" }: { context?: AssistantContext }) {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
-      content: "Hello! I'm your Scratch Solid Solutions assistant. I can help you with services, pricing, booking, tracking, geofencing, and more. What would you like to know?",
+      content: GREETINGS[context],
       matched: true,
     }
   ]);
+  const suggestedQuestions = SUGGESTED_QUESTIONS_BY_CONTEXT[context];
+  const topicButtons = TOPIC_BUTTONS_BY_CONTEXT[context];
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -113,7 +150,7 @@ export default function AIAssistant() {
     setMessages([
       {
         role: "assistant",
-        content: "Hello! I'm your Scratch Solid Solutions assistant. I can help you with services, pricing, booking, tracking, geofencing, and more. What would you like to know?",
+        content: GREETINGS[context],
         matched: true,
       }
     ]);
@@ -222,7 +259,7 @@ export default function AIAssistant() {
           {/* Quick Topic Buttons */}
           <div className="px-4 pb-2 flex-shrink-0">
             <div className="flex flex-wrap gap-1">
-              {TOPIC_BUTTONS.map((topic) => (
+              {topicButtons.map((topic) => (
                 <button
                   key={topic.label}
                   onClick={() => handleSend(topic.query)}
@@ -240,7 +277,7 @@ export default function AIAssistant() {
             <div className="px-4 pb-2 flex-shrink-0">
               <p className="text-xs text-gray-500 mb-1">Popular questions:</p>
               <div className="flex flex-wrap gap-1">
-                {SUGGESTED_QUESTIONS.map((q) => (
+                {suggestedQuestions.map((q) => (
                   <button
                     key={q}
                     onClick={() => handleSend(q)}
