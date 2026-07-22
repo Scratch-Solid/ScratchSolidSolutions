@@ -2,21 +2,58 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import {
+  ShieldCheck,
+  HardHat,
+  Sparkles,
+  FlaskConical,
+  MessageCircle,
+  MapPin,
+  TrendingUp,
+  Check,
+  Lock,
+  Clock,
+  ArrowLeft,
+  BookOpen,
+} from 'lucide-react';
+import LessonReader from '@/components/LessonReader';
+import QuizInterface from '@/components/QuizInterface';
+
+const MODULE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  'module-1': ShieldCheck,
+  'module-2': HardHat,
+  'module-3': Sparkles,
+  'module-4': FlaskConical,
+  'module-5': MessageCircle,
+  'module-6': MapPin,
+  'module-7': TrendingUp,
+};
+
+type LessonBlock =
+  | { type: 'heading'; text: string }
+  | { type: 'paragraph'; text: string }
+  | { type: 'list'; items: string[] }
+  | { type: 'callout'; text: string };
+
+type TrainingModule = {
+  id: string;
+  title: string;
+  description: string;
+  duration: string;
+  lessonContent: LessonBlock[];
+  quiz: { question: string; options: string[] }[];
+  status: 'locked' | 'active' | 'completed';
+  completed: boolean;
+};
 
 export default function CleanerTrainingPage() {
   const router = useRouter();
-  const [modules, setModules] = useState<Array<{
-    id: string;
-    title: string;
-    description: string;
-    duration: string;
-    status: 'locked' | 'active' | 'completed';
-    completed: boolean;
-  }>>([]);
+  const [modules, setModules] = useState<TrainingModule[]>([]);
   const [progress, setProgress] = useState<{ completed: number; total: number; percentage: number } | null>(null);
   const [loading, setLoading] = useState(true);
-  const [submittingModuleId, setSubmittingModuleId] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [view, setView] = useState<'hub' | 'lesson' | 'quiz'>('hub');
+  const [activeModuleId, setActiveModuleId] = useState<string | null>(null);
 
   async function fetchTraining() {
     const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
@@ -31,6 +68,7 @@ export default function CleanerTrainingPage() {
     try {
       const response = await fetch('/api/cleaner/training', {
         headers: { Authorization: `Bearer ${token}` },
+        cache: 'no-store',
       });
 
       if (!response.ok) {
@@ -41,20 +79,7 @@ export default function CleanerTrainingPage() {
         throw new Error('Failed to load training modules');
       }
 
-      const data = await response.json() as {
-        data?: {
-          modules?: Array<{
-            id: string;
-            title: string;
-            description: string;
-            duration: string;
-            status: 'locked' | 'active' | 'completed';
-            completed: boolean;
-          }>;
-          progress?: { completed: number; total: number; percentage: number };
-        };
-      };
-
+      const data = await response.json() as { data?: { modules?: TrainingModule[]; progress?: typeof progress } };
       setModules(data.data?.modules || []);
       setProgress(data.data?.progress || null);
     } catch (err) {
@@ -68,132 +93,156 @@ export default function CleanerTrainingPage() {
     fetchTraining();
   }, []);
 
-  async function handleCompleteModule(moduleId: string) {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
-    if (!token) {
-      router.push('/auth/cleaner-login');
-      return;
+  async function submitQuiz(moduleId: string, answers: number[]) {
+    const token = localStorage.getItem('authToken');
+    const response = await fetch(`/api/cleaner/training/${moduleId}/complete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ answers }),
+    });
+    const data = await response.json() as {
+      error?: { message?: string; score?: number };
+      data?: { can_transition_to_cleaner_dashboard?: boolean; percentage?: number };
+    };
+
+    if (!response.ok) {
+      return { passed: false, score: data.error?.score ?? 0, message: data.error?.message };
     }
 
-    setSubmittingModuleId(moduleId);
-    setError('');
-
-    try {
-      const response = await fetch(`/api/cleaner/training/${moduleId}/complete`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const data = await response.json() as {
-        error?: { message?: string };
-        data?: { can_transition_to_cleaner_dashboard?: boolean };
-      };
-
-      if (!response.ok) {
-        throw new Error(data.error?.message || 'Failed to complete module');
-      }
-
-      if (data.data?.can_transition_to_cleaner_dashboard) {
-        localStorage.setItem('cleanerRedirectTo', '/cleaner-dashboard');
-        router.push('/cleaner-dashboard');
-        return;
-      }
-
-      await fetchTraining();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to complete module');
-    } finally {
-      setSubmittingModuleId(null);
+    await fetchTraining();
+    if (data.data?.can_transition_to_cleaner_dashboard) {
+      localStorage.setItem('cleanerRedirectTo', '/cleaner-dashboard');
     }
+    return { passed: true, score: 100 };
   }
+
+  const activeModule = modules.find((m) => m.id === activeModuleId) || null;
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-stone-900"></div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-foreground" />
+      </div>
+    );
+  }
+
+  if (view === 'quiz' && activeModule) {
+    return (
+      <div className="min-h-screen bg-background py-10 px-4">
+        <div className="max-w-xl mx-auto mb-6">
+          <button onClick={() => setView('lesson')} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-4 w-4" /> Back to lesson
+          </button>
+        </div>
+        <QuizInterface
+          moduleTitle={activeModule.title}
+          questions={activeModule.quiz}
+          onSubmit={(answers) => submitQuiz(activeModule.id, answers)}
+          onCancel={() => setView('hub')}
+        />
+      </div>
+    );
+  }
+
+  if (view === 'lesson' && activeModule) {
+    const Icon = MODULE_ICONS[activeModule.id] || BookOpen;
+    return (
+      <div className="min-h-screen bg-background py-10 px-4">
+        <div className="max-w-2xl mx-auto space-y-6">
+          <button onClick={() => setView('hub')} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-4 w-4" /> All modules
+          </button>
+
+          <div className="bg-card border border-border rounded-xl shadow-sm p-7">
+            <div className="flex items-center gap-3 mb-1">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/15 text-accent-foreground">
+                <Icon className="h-5 w-5" />
+              </div>
+              <div>
+                <h1 className="text-lg font-semibold text-foreground">{activeModule.title}</h1>
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Clock className="h-3 w-3" /> {activeModule.duration}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-card border border-border rounded-xl shadow-sm p-7">
+            <LessonReader blocks={activeModule.lessonContent} />
+          </div>
+
+          <button onClick={() => setView('quiz')} className="w-full primary-button">
+            Take the quiz
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 py-10 px-4">
+    <div className="min-h-screen bg-background py-10 px-4">
       <div className="max-w-4xl mx-auto space-y-6">
-        <div className="bg-white rounded-2xl shadow-sm border border-stone-200 p-8">
-          <h1 className="text-3xl font-bold text-stone-900">Cleaner Training</h1>
-          <p className="text-stone-600 mt-2">Complete each module in order to finish onboarding.</p>
+        <div className="bg-card border border-border rounded-xl shadow-sm p-7">
+          <h1 className="text-xl font-semibold text-foreground">Training</h1>
+          <p className="text-sm text-muted-foreground mt-1">Work through each module at your own pace - open it, read through, then take the quiz.</p>
 
-          <div className="mt-6">
-            <div className="flex justify-between text-sm text-stone-600 mb-2">
-              <span>Progress</span>
-              <span>{progress?.completed || 0}/{progress?.total || 0} modules</span>
+          <div className="mt-5">
+            <div className="flex justify-between text-xs font-medium text-muted-foreground mb-1.5">
+              <span>Overall progress</span>
+              <span>{progress?.completed || 0} of {progress?.total || 0} modules</span>
             </div>
-            <div className="w-full bg-stone-200 rounded-full h-3 overflow-hidden">
-              <div
-                className="bg-[#2E1F16] h-full rounded-full transition-all"
-                style={{ width: `${progress?.percentage || 0}%` }}
-              />
+            <div className="w-full bg-secondary rounded-full h-2 overflow-hidden">
+              <div className="bg-accent h-full rounded-full transition-all" style={{ width: `${progress?.percentage || 0}%` }} />
             </div>
           </div>
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-            {error}
-          </div>
+          <div className="error-msg text-sm">{error}</div>
         )}
 
-        <div className="grid gap-4">
+        <div className="grid gap-4 sm:grid-cols-2">
           {modules.map((module) => {
-            const disabled = module.status !== 'active' || submittingModuleId === module.id;
+            const Icon = MODULE_ICONS[module.id] || BookOpen;
+            const locked = module.status === 'locked';
+            const completed = module.status === 'completed';
             return (
-              <div key={module.id} className="bg-white rounded-2xl shadow-sm border border-stone-200 p-6">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                  <div>
-                    <div className="flex items-center gap-3 mb-2">
-                      <h2 className="text-xl font-semibold text-stone-900">{module.title}</h2>
-                      <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
-                        module.status === 'completed'
-                          ? 'bg-green-100 text-green-700'
-                          : module.status === 'active'
-                          ? 'bg-[#F0E6D6] text-[#241811]'
-                          : 'bg-stone-100 text-stone-600'
-                      }`}>
-                        {module.status}
-                      </span>
-                    </div>
-                    <p className="text-stone-600">{module.description}</p>
-                    <p className="text-sm text-stone-500 mt-2">Duration: {module.duration}</p>
+              <button
+                key={module.id}
+                disabled={locked}
+                onClick={() => {
+                  setActiveModuleId(module.id);
+                  setView('lesson');
+                }}
+                className={`text-left bg-card border rounded-xl p-5 transition-all ${
+                  locked
+                    ? 'border-border opacity-60 cursor-not-allowed'
+                    : 'border-border hover:border-accent/50 hover:shadow-md cursor-pointer'
+                }`}
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${
+                    completed ? 'bg-emerald-100 text-emerald-600' : locked ? 'bg-secondary text-muted-foreground' : 'bg-accent/15 text-accent-foreground'
+                  }`}>
+                    {completed ? <Check className="h-5 w-5" /> : locked ? <Lock className="h-4 w-4" /> : <Icon className="h-5 w-5" />}
                   </div>
-
-                  <div className="flex items-center gap-3">
-                    {module.status === 'completed' ? (
-                      <button disabled className="px-5 py-3 rounded-lg bg-green-50 text-green-700 font-medium cursor-not-allowed">
-                        Completed
-                      </button>
-                    ) : (
-                      <button
-                        disabled={disabled}
-                        onClick={() => handleCompleteModule(module.id)}
-                        className="px-5 py-3 rounded-lg bg-stone-900 text-white font-medium hover:bg-stone-800 disabled:bg-stone-300 disabled:cursor-not-allowed"
-                      >
-                        {submittingModuleId === module.id ? 'Saving...' : module.status === 'active' ? 'Mark Complete' : 'Locked'}
-                      </button>
-                    )}
-                  </div>
+                  <span className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                    <Clock className="h-3 w-3" /> {module.duration}
+                  </span>
                 </div>
-              </div>
+                <h2 className="text-sm font-semibold text-foreground mb-1">{module.title}</h2>
+                <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{module.description}</p>
+              </button>
             );
           })}
         </div>
 
-        <div className="flex justify-between items-center pt-2">
-          <button
-            onClick={() => router.push('/cleaner-pre-dashboard')}
-            className="px-5 py-3 rounded-lg border border-stone-300 text-stone-700 hover:bg-white"
-          >
-            Back to Onboarding
-          </button>
-        </div>
+        <button
+          onClick={() => router.push('/cleaner-pre-dashboard')}
+          className="text-sm text-muted-foreground hover:text-foreground"
+        >
+          ← Back to onboarding
+        </button>
       </div>
     </div>
   );

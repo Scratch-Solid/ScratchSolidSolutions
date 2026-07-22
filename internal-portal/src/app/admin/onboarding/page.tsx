@@ -57,6 +57,12 @@ export default function AdminOnboardingPage() {
     }
     fetchContracts();
     fetchJoiners();
+
+    const interval = setInterval(() => {
+      fetchContracts();
+      fetchJoiners();
+    }, 20000);
+    return () => clearInterval(interval);
   }, [router, token]);
 
   const fetchContracts = async () => {

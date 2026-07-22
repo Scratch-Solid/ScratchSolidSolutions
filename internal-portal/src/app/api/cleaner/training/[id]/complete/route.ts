@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
-import { completeCleanerTrainingModule, ensureCleanerTrainingProgress, setCleanerOnboardingStage } from '@/lib/cleaner-training';
+import { completeCleanerTrainingModule, ensureCleanerTrainingProgress, getCleanerTrainingModule, setCleanerOnboardingStage } from '@/lib/cleaner-training';
 import { withAuth, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { log } from '@/lib/logger';
 
@@ -14,6 +14,45 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const { id } = await params;
   try {
     const moduleId = id;
+
+    const module = getCleanerTrainingModule(moduleId);
+    if (!module) {
+      const response = NextResponse.json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Unknown training module' }
+      }, { status: 404 });
+      return withSecurityHeaders(response, traceId);
+    }
+
+    const body = await request.json().catch(() => ({})) as { answers?: number[] };
+    const answers = Array.isArray(body.answers) ? body.answers : [];
+
+    if (answers.length !== module.quiz.length) {
+      const response = NextResponse.json({
+        success: false,
+        error: { code: 'INVALID_SUBMISSION', message: `Expected ${module.quiz.length} answers, got ${answers.length}` }
+      }, { status: 400 });
+      return withSecurityHeaders(response, traceId);
+    }
+
+    const correctCount = module.quiz.reduce(
+      (count, question, index) => count + (answers[index] === question.correctAnswerIndex ? 1 : 0),
+      0
+    );
+    const scorePercentage = Math.round((correctCount / module.quiz.length) * 100);
+    const passed = scorePercentage === 100;
+
+    if (!passed) {
+      const response = NextResponse.json({
+        success: false,
+        error: {
+          code: 'QUIZ_FAILED',
+          message: `You scored ${correctCount}/${module.quiz.length}. All questions must be answered correctly to pass.`,
+          score: scorePercentage,
+        }
+      }, { status: 400 });
+      return withSecurityHeaders(response, traceId);
+    }
 
     // Get cleaner profile
     const cleanerProfile = await db.prepare(

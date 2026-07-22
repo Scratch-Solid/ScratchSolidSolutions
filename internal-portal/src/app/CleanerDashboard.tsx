@@ -8,12 +8,8 @@ import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import { useTokenRefresh } from "@/hooks/useTokenRefresh";
 import { useRequireRole } from "@/hooks/useRequireRole";
 import DashboardLayout from "@/components/DashboardLayout";
-import TrainingModuleCard from "@/components/TrainingModuleCard";
-import QuizInterface from "@/components/QuizInterface";
 import LeaveSection from "@/components/staff/LeaveSection";
 import PayslipSection from "@/components/staff/PayslipSection";
-import confetti from 'canvas-confetti';
-import jsPDF from 'jspdf';
 
 export default function CleanerDashboard() {
   useSessionTimeout(true);
@@ -88,12 +84,6 @@ export default function CleanerDashboard() {
   const [salaryData, setSalaryData] = useState<{ grossEarnings: number; uifDeductions: number; takeHomePay: number; payPeriod: string } | null>(null);
   const [salaryLoading, setSalaryLoading] = useState(false);
 
-  // Training state
-  const [trainingModules, setTrainingModules] = useState<any[]>([]);
-  const [trainingProgress, setTrainingProgress] = useState<any>(null);
-  const [showQuiz, setShowQuiz] = useState(false);
-  const [activeModuleId, setActiveModuleId] = useState<number | null>(null);
-  const [trainingLoading, setTrainingLoading] = useState(false);
   const [showTrainingPrompt, setShowTrainingPrompt] = useState(false);
 
   useEffect(() => {
@@ -222,19 +212,6 @@ export default function CleanerDashboard() {
             })));
           }
 
-          // Fetch training data
-          const modulesRes = await fetch('/api/training/modules');
-          if (modulesRes.ok) {
-            const modules = await modulesRes.json() as any[];
-            setTrainingModules(modules);
-          }
-
-          const progressRes = await fetch(`/api/training/current-state?user_id=${storedUserId}`);
-          if (progressRes.ok) {
-            const progressData = await progressRes.json() as { progress: any };
-            setTrainingProgress(progressData.progress);
-          }
-
           // Fetch cleaner-specific data from new APIs
           const shiftsRes = await fetch('/api/cleaner/shifts', {
             headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` }
@@ -274,196 +251,6 @@ export default function CleanerDashboard() {
     }
     fetchCleanerAndTasks();
   }, []);
-
-  // Helper function to get quiz questions for each module
-  const getModuleQuestions = (moduleId: number) => {
-    // Quiz questions from the specification document
-    const questions: Record<number, any[]> = {
-      1: [
-        {
-          id: 1,
-          question: "What is Scratch Solid Solutions' primary operational selling point regarding how we handle client bookings?",
-          options: [
-            "We use the cheapest chemicals available on the market.",
-            "Our Transparency Policy, driven by real-time staff geolocation tracking and client dashboard visibility.",
-            "We clean spaces without using any cloths."
-          ],
-          correctAnswer: 1
-        },
-        {
-          id: 2,
-          question: "Complete the Scratch Solid Solutions philosophy: \"Every smudge left behind is a scratch on our reputation; every gleaming surface is a...\"",
-          options: [
-            "...reason to ask for a tip.",
-            "...signature of our excellence.",
-            "...job done fast."
-          ],
-          correctAnswer: 1
-        },
-        {
-          id: 3,
-          question: "You are cleaning a client's master bathroom. What color microfiber cloth is permitted to wipe down the hand basins and polished silver faucets?",
-          options: ["Green", "Red", "Orange"],
-          correctAnswer: 2
-        }
-      ],
-      2: [
-        {
-          id: 4,
-          question: "When completing a routine hard-floor damp mop in a residential lounge, what is the correct spatial path to take?",
-          options: [
-            "Start directly at the doorway entry point and work your way inward.",
-            "Start in the absolute furthest corner of the room and mop backward toward the exit door so you never leave footprints.",
-            "Mop in circular shapes starting from the middle of the room out."
-          ],
-          correctAnswer: 1
-        },
-        {
-          id: 5,
-          question: "During a standard Maintenance Clean package, what is our operational rule regarding the client's kitchen appliances?",
-          options: [
-            "Open them up, take out all internal components, and scrub them down completely.",
-            "Clean and polish the external surfaces and handles perfectly; do not execute an intensive interior teardown.",
-            "Leave them entirely untouched to avoid fingerprints."
-          ],
-          correctAnswer: 1
-        }
-      ],
-      3: [
-        {
-          id: 6,
-          question: "What is the correct protocol when tasked with executing a Deep Clean on a residential refrigerator?",
-          options: [
-            "Spray disinfectant around food containers without moving them.",
-            "Temporarily extract all contents safely, wash all interior shelves and drawers with food-safe sanitizer, dry them, and put items back neatly.",
-            "Unplug the appliance and leave the door open."
-          ],
-          correctAnswer: 1
-        },
-        {
-          id: 7,
-          question: "Which of the following tasks is a key differentiator that must be performed during a Deep Clean compared to a Maintenance Clean?",
-          options: [
-            "Making beds and straightening living room cushions.",
-            "Deep-cleaning structural skirting boards, door frames, light switches, and internal appliance walls.",
-            "Emptying the main kitchen trash can."
-          ],
-          correctAnswer: 1
-        }
-      ],
-      4: [
-        {
-          id: 8,
-          question: "You are cleaning a corporate workspace and encounter a desk covered in loose client files, notes, and documents. What is your standard procedure?",
-          options: [
-            "Stack the files neatly by size, wipe down the entire desk, and put the files back.",
-            "Do not move, shift, or touch any of the paperwork. Clean around the visible open desk areas only.",
-            "Put all loose papers into a desk drawer to keep the surface clean."
-          ],
-          correctAnswer: 1
-        },
-        {
-          id: 9,
-          question: "What color cloth should be deployed to dust delicate electronic computer components, network servers, and keypads in an office environment?",
-          options: ["Green Cloth", "Red Cloth", "Yellow Cloth"],
-          correctAnswer: 2
-        }
-      ],
-      5: [
-        {
-          id: 10,
-          question: "What action defines the absolute first step of the Scratch Solid Solutions Final Walkthrough protocol?",
-          options: [
-            "Spraying the signature lemon room spray near the entry door.",
-            "Standing in the center of the room and conducting a slow, 360-degree eye-level visual check from top to bottom for any hidden details or missed smudges.",
-            "Locking the front door and walking away."
-          ],
-          correctAnswer: 1
-        },
-        {
-          id: 11,
-          question: "Where and when should our distinct signature lemon-scented room spray be applied?",
-          options: [
-            "Heavily over fabric curtains and beds at the start of the cleaning shift.",
-            "Applied as a light mist in the ambient air near the main exit door right as you complete your final walkthrough and leave the site.",
-            "Applied as a heavy spray throughout the entire space."
-          ],
-          correctAnswer: 1
-        }
-      ]
-    };
-    return questions[moduleId] || [];
-  };
-
-  // Helper function to generate certificate PDF
-  const generateCertificate = (certHash: string, completionDate: string) => {
-    const doc = new jsPDF({
-      orientation: 'landscape',
-      unit: 'mm',
-      format: 'a4'
-    });
-
-    // Background color
-    doc.setFillColor(245, 245, 250);
-    doc.rect(0, 0, 297, 210, 'F');
-
-    // Border
-    doc.setDrawColor(38, 103, 255);
-    doc.setLineWidth(3);
-    doc.rect(10, 10, 277, 190);
-
-    // Header
-    doc.setFontSize(32);
-    doc.setTextColor(38, 103, 255);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Certificate of Completion', 148.5, 40, { align: 'center' });
-
-    // Subtitle
-    doc.setFontSize(16);
-    doc.setTextColor(100, 100, 100);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Scratch Solid Solutions Training Program', 148.5, 55, { align: 'center' });
-
-    // Divider line
-    doc.setDrawColor(200, 200, 200);
-    doc.setLineWidth(1);
-    doc.line(50, 65, 247, 65);
-
-    // Recipient name
-    doc.setFontSize(14);
-    doc.setTextColor(100, 100, 100);
-    doc.text('This is to certify that', 148.5, 85, { align: 'center' });
-
-    doc.setFontSize(28);
-    doc.setTextColor(38, 103, 255);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`${profileData.firstName} ${profileData.lastName}`, 148.5, 100, { align: 'center' });
-
-    // Completion text
-    doc.setFontSize(14);
-    doc.setTextColor(100, 100, 100);
-    doc.setFont('helvetica', 'normal');
-    doc.text('has successfully completed all 5 training modules of the', 148.5, 120, { align: 'center' });
-    doc.text('Scratch Solid Solutions Cleaner Training Program', 148.5, 130, { align: 'center' });
-
-    // Date
-    doc.setFontSize(12);
-    doc.setTextColor(150, 150, 150);
-    doc.text(`Completed on: ${completionDate}`, 148.5, 150, { align: 'center' });
-
-    // Certificate ID
-    doc.setFontSize(10);
-    doc.setTextColor(150, 150, 150);
-    doc.text(`Certificate ID: ${certHash}`, 148.5, 165, { align: 'center' });
-
-    // Footer
-    doc.setFontSize(10);
-    doc.setTextColor(200, 200, 200);
-    doc.text('Scratch Solid Solutions - Excellence in Every Clean', 148.5, 190, { align: 'center' });
-
-    // Save the PDF
-    doc.save(`training-certificate-${certHash}.pdf`);
-  };
 
   const updateBookingStatus = async (bookingId: string, status: string) => {
     try {
@@ -595,7 +382,7 @@ export default function CleanerDashboard() {
         <div className="mb-4 glass-panel" style={{ background: 'rgba(59, 130, 246, 0.1)', borderColor: 'rgba(59, 130, 246, 0.3)' }}>
           <div className="font-bold" style={{ color: '#2E1F16' }}>Training Required</div>
           <div style={{ color: '#2E1F16' }}>Please complete the mandatory training modules to get started.</div>
-          <button className="mt-2 primary-button" onClick={() => { setActiveTile('training'); setShowTrainingPrompt(false); }}>
+          <button className="mt-2 primary-button" onClick={() => { window.location.href = '/cleaner-training'; }}>
             Start Training
           </button>
         </div>
@@ -645,13 +432,6 @@ export default function CleanerDashboard() {
           style={{ color: activeTile === "performance" ? '#2E1F16' : '#6B5D52' }}
         >
           Performance
-        </button>
-        <button
-          onClick={() => setActiveTile("training")}
-          className={`px-4 py-2 rounded-lg transition-all duration-200 ${activeTile === "training" ? "bg-white/20" : "bg-white/10 hover:bg-white/15"}`}
-          style={{ color: activeTile === "training" ? '#2E1F16' : '#6B5D52' }}
-        >
-          Training
         </button>
         <button
           onClick={() => setActiveTile("geolocation")}
@@ -1133,126 +913,6 @@ export default function CleanerDashboard() {
               </div>
             </div>
           </div>
-        </div>
-      )}
-
-      {activeTile === "training" && (
-        <div className="glass-card p-6">
-          <h3 className="font-bold text-lg mb-4" style={{ color: 'var(--text-h)' }}>Training Modules</h3>
-          
-          {trainingProgress && (
-            <div className="mb-6 glass-card">
-              <div className="flex justify-between items-center">
-                <div>
-                  <div style={{ color: 'var(--text-light)' }}>Training Status</div>
-                  <div className={`mt-1 badge ${
-                    trainingProgress.training_status === 'Completed' 
-                      ? 'badge-success' 
-                      : 'badge-info'
-                  }`}>
-                    {trainingProgress.training_status === 'Completed' ? 'Completed' : 'In Progress'}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div style={{ color: 'var(--text-light)' }}>Current Module</div>
-                  <div className="font-semibold" style={{ color: 'var(--text-h)' }}>
-                    Day {trainingProgress.current_module_id} of 5
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {showQuiz && activeModuleId ? (
-            <QuizInterface
-              moduleId={activeModuleId}
-              questions={getModuleQuestions(activeModuleId)}
-              onComplete={async (score, total) => {
-                const userId = typeof window !== 'undefined' ? localStorage.getItem('user_id') : null;
-                if (!userId) return;
-                
-                const response = await fetch('/api/training/submit-quiz', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    userId,
-                    moduleId: activeModuleId,
-                    totalQuestions: total,
-                    correctAnswers: score
-                  })
-                });
-                
-                if (response.ok) {
-                  const result = await response.json() as { status: string; message?: string; certHash?: string; completionDate?: string };
-                  if (result.status === 'certified') {
-                    // Trigger confetti celebration
-                    confetti({
-                      particleCount: 150,
-                      spread: 70,
-                      origin: { y: 0.6 },
-                      colors: ['#2667FF', '#00C853', '#FFD600', '#FF6D00']
-                    });
-                    
-                    // Second burst for emphasis
-                    setTimeout(() => {
-                      confetti({
-                        particleCount: 100,
-                        spread: 100,
-                        origin: { y: 0.6 },
-                        colors: ['#2667FF', '#00C853', '#FFD600', '#FF6D00']
-                      });
-                    }, 300);
-                    
-                    // Generate and download certificate
-                    if (result.certHash && result.completionDate) {
-                      generateCertificate(result.certHash, result.completionDate);
-                    }
-                    
-                    alert('Congratulations! You have completed all training modules! Your certificate has been downloaded.');
-                  }
-                  // Refresh training progress
-                  const progressRes = await fetch(`/api/training/current-state?user_id=${userId}`);
-                  if (progressRes.ok) {
-                    const progressData = await progressRes.json() as { progress: any };
-                    setTrainingProgress(progressData.progress);
-                  }
-                }
-                
-                setShowQuiz(false);
-                setActiveModuleId(null);
-              }}
-              onCancel={() => {
-                setShowQuiz(false);
-                setActiveModuleId(null);
-              }}
-            />
-          ) : (
-            <div className="space-y-4">
-              {trainingModules.map((module: any) => {
-                const isCompleted = trainingProgress?.current_module_id > module.module_id;
-                const isActive = trainingProgress?.current_module_id === module.module_id;
-                const isLocked = trainingProgress?.current_module_id < module.module_id;
-                const nextUnlockTime = isLocked ? trainingProgress?.next_unlock_at : undefined;
-                
-                return (
-                  <TrainingModuleCard
-                    key={module.module_id}
-                    moduleId={module.module_id}
-                    moduleTitle={module.module_title}
-                    estimatedDuration={module.estimated_duration_minutes}
-                    status={isCompleted ? 'completed' : isActive ? 'active' : 'locked'}
-                    nextUnlockTime={nextUnlockTime}
-                    onStart={() => {
-                      if (isActive) {
-                        setActiveModuleId(module.module_id);
-                        setShowQuiz(true);
-                      }
-                    }}
-                  />
-                );
-              })}
-            </div>
-          )}
         </div>
       )}
 

@@ -1,206 +1,150 @@
+"use client";
+
 import React, { useState } from 'react';
+import { Check, PartyPopper, RotateCcw } from 'lucide-react';
 
 interface Question {
-  id: number;
   question: string;
   options: string[];
-  correctAnswer: number; // Index of correct answer
+}
+
+interface QuizResult {
+  passed: boolean;
+  score: number;
+  message?: string;
 }
 
 interface QuizInterfaceProps {
-  moduleId: number;
+  moduleTitle: string;
   questions: Question[];
-  onComplete: (score: number, total: number) => void;
+  onSubmit: (answers: number[]) => Promise<QuizResult>;
   onCancel: () => void;
 }
 
-export default function QuizInterface({ moduleId, questions, onComplete, onCancel }: QuizInterfaceProps) {
+export default function QuizInterface({ moduleTitle, questions, onSubmit, onCancel }: QuizInterfaceProps) {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
-  const [showResults, setShowResults] = useState(false);
-  const [score, setScore] = useState(0);
+  const [result, setResult] = useState<QuizResult | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleAnswerSelect = (questionId: number, answerIndex: number) => {
-    setSelectedAnswers(prev => ({ ...prev, [questionId]: answerIndex }));
+  const handleAnswerSelect = (questionIndex: number, answerIndex: number) => {
+    setSelectedAnswers(prev => ({ ...prev, [questionIndex]: answerIndex }));
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentQuestion < questions.length - 1) {
       setCurrentQuestion(prev => prev + 1);
-    } else {
-      calculateResults();
+      return;
     }
+    setSubmitting(true);
+    const answers = questions.map((_, index) => selectedAnswers[index]);
+    const outcome = await onSubmit(answers);
+    setResult(outcome);
+    setSubmitting(false);
   };
 
   const handlePrevious = () => {
-    if (currentQuestion > 0) {
-      setCurrentQuestion(prev => prev - 1);
-    }
-  };
-
-  const calculateResults = () => {
-    let correctCount = 0;
-    questions.forEach(q => {
-      if (selectedAnswers[q.id] === q.correctAnswer) {
-        correctCount++;
-      }
-    });
-    setScore(correctCount);
-    setShowResults(true);
-    onComplete(correctCount, questions.length);
+    if (currentQuestion > 0) setCurrentQuestion(prev => prev - 1);
   };
 
   const handleRetake = () => {
     setCurrentQuestion(0);
     setSelectedAnswers({});
-    setShowResults(false);
-    setScore(0);
+    setResult(null);
   };
 
-  if (showResults) {
-    const percentage = (score / questions.length) * 100;
-    const passed = percentage === 100;
-
+  if (result) {
     return (
-      <div className="w-full max-w-2xl mx-auto bg-white rounded-xl shadow-md overflow-hidden border border-stone-100">
-        <div className="p-6">
-          <h3 className="text-2xl font-bold text-center mb-6" style={{ color: 'var(--text-h)' }}>
-            {passed ? '🎉 Congratulations!' : 'Keep Practicing'}
-          </h3>
-          
-          <div className="text-center mb-6">
-            <div className={`text-6xl font-bold mb-2 ${passed ? 'text-green-600' : 'text-amber-600'}`}>
-              {percentage}%
-            </div>
-            <p className="text-stone-600">
-              {score} out of {questions.length} questions correct
-            </p>
-          </div>
-
-          {passed ? (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-              <p className="text-green-800 text-center">
-                Excellent! You have demonstrated mastery of this module.
-                Your next module will unlock in 24 hours.
-              </p>
-            </div>
-          ) : (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
-              <p className="text-amber-800 text-center">
-                You need 100% correct answers to pass. Review the module content and try again!
-              </p>
-            </div>
-          )}
-
-          <div className="space-y-3">
-            {!passed && (
-              <button
-                onClick={handleRetake}
-                className="w-full bg-stone-900 hover:bg-stone-800 text-white font-medium py-3 px-4 rounded-lg transition duration-150"
-              >
-                Retake Quiz
-              </button>
-            )}
-            <button
-              onClick={onCancel}
-              className="w-full bg-white border border-stone-300 hover:bg-stone-50 text-stone-700 font-medium py-3 px-4 rounded-lg transition duration-150"
-            >
-              {passed ? 'Continue' : 'Cancel'}
+      <div className="w-full max-w-xl mx-auto bg-card border border-border rounded-xl shadow-sm p-7 text-center">
+        <div className={`mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full ${result.passed ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}`}>
+          {result.passed ? <PartyPopper className="h-7 w-7" /> : <RotateCcw className="h-7 w-7" />}
+        </div>
+        <h3 className="text-lg font-semibold text-foreground mb-1">
+          {result.passed ? 'Nice work!' : 'Not quite there yet'}
+        </h3>
+        <p className="text-sm text-muted-foreground mb-5">
+          {result.passed
+            ? `You scored ${result.score}% on "${moduleTitle}".`
+            : result.message || `You scored ${result.score}%. All questions need to be correct to pass.`}
+        </p>
+        <div className="space-y-2.5">
+          {!result.passed && (
+            <button onClick={handleRetake} className="w-full primary-button">
+              Retake quiz
             </button>
-          </div>
+          )}
+          <button onClick={onCancel} className="w-full text-sm text-muted-foreground hover:text-foreground py-2">
+            {result.passed ? 'Back to modules' : 'Cancel'}
+          </button>
         </div>
       </div>
     );
   }
 
-  const currentQ = questions[currentQuestion];
-  const hasAnswer = selectedAnswers[currentQ.id] !== undefined;
+  const question = questions[currentQuestion];
+  const hasAnswer = selectedAnswers[currentQuestion] !== undefined;
 
   return (
-    <div className="w-full max-w-2xl mx-auto bg-white rounded-xl shadow-md overflow-hidden border border-stone-100">
-      <div className="p-6">
-        {/* Progress indicator */}
-        <div className="mb-6">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-medium text-stone-600">
-              Question {currentQuestion + 1} of {questions.length}
-            </span>
-            <span className="text-sm font-medium text-stone-600">
-              Module {moduleId}
-            </span>
-          </div>
-          <div className="w-full bg-stone-200 rounded-full h-2">
-            <div
-              className="bg-stone-900 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${((currentQuestion + 1) / questions.length) * 100}%` }}
-            ></div>
-          </div>
+    <div className="w-full max-w-xl mx-auto bg-card border border-border rounded-xl shadow-sm p-7">
+      <div className="mb-6">
+        <div className="flex justify-between items-center mb-2 text-xs font-medium text-muted-foreground">
+          <span>Question {currentQuestion + 1} of {questions.length}</span>
+          <span>{moduleTitle}</span>
         </div>
+        <div className="w-full bg-secondary rounded-full h-1.5">
+          <div
+            className="bg-foreground h-1.5 rounded-full transition-all duration-300"
+            style={{ width: `${((currentQuestion + 1) / questions.length) * 100}%` }}
+          />
+        </div>
+      </div>
 
-        {/* Question */}
-        <h3 className="text-xl font-bold mb-6" style={{ color: 'var(--text-h)' }}>
-          {currentQ.question}
-        </h3>
+      <h3 className="text-lg font-semibold text-foreground mb-5">{question.question}</h3>
 
-        {/* Options */}
-        <div className="space-y-3 mb-6">
-          {currentQ.options.map((option, index) => (
+      <div className="space-y-2.5 mb-6">
+        {question.options.map((option, index) => {
+          const selected = selectedAnswers[currentQuestion] === index;
+          return (
             <button
               key={index}
-              onClick={() => handleAnswerSelect(currentQ.id, index)}
-              className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-200 ${
-                selectedAnswers[currentQ.id] === index
-                  ? 'border-stone-900 bg-stone-50'
-                  : 'border-stone-200 hover:border-stone-300 hover:bg-stone-50'
+              onClick={() => handleAnswerSelect(currentQuestion, index)}
+              className={`w-full text-left p-3.5 rounded-lg border transition-colors ${
+                selected ? 'border-foreground bg-secondary/60' : 'border-border hover:bg-secondary/30'
               }`}
             >
               <div className="flex items-center gap-3">
-                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                  selectedAnswers[currentQ.id] === index
-                    ? 'border-stone-900 bg-stone-900'
-                    : 'border-stone-300'
+                <div className={`h-5 w-5 shrink-0 rounded-full border flex items-center justify-center ${
+                  selected ? 'border-foreground bg-foreground' : 'border-muted-foreground/40'
                 }`}>
-                  {selectedAnswers[currentQ.id] === index && (
-                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                  )}
+                  {selected && <Check className="h-3.5 w-3.5 text-background" />}
                 </div>
-                <span className="font-medium" style={{ color: 'var(--text)' }}>
-                  {String.fromCharCode(65 + index)}
-                </span>
-                <span style={{ color: 'var(--text)' }}>{option}</span>
+                <span className="text-sm text-foreground">{option}</span>
               </div>
             </button>
-          ))}
-        </div>
+          );
+        })}
+      </div>
 
-        {/* Navigation buttons */}
-        <div className="flex gap-3">
-          <button
-            onClick={handlePrevious}
-            disabled={currentQuestion === 0}
-            className="flex-1 bg-white border border-stone-300 hover:bg-stone-50 text-stone-700 font-medium py-3 px-4 rounded-lg transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Previous
-          </button>
-          <button
-            onClick={handleNext}
-            disabled={!hasAnswer}
-            className="flex-1 bg-stone-900 hover:bg-stone-800 text-white font-medium py-3 px-4 rounded-lg transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {currentQuestion === questions.length - 1 ? 'Submit' : 'Next'}
-          </button>
-        </div>
-
-        {/* Cancel button */}
+      <div className="flex gap-3">
         <button
-          onClick={onCancel}
-          className="w-full mt-3 text-stone-500 hover:text-stone-700 text-sm py-2 transition duration-150"
+          onClick={handlePrevious}
+          disabled={currentQuestion === 0}
+          className="flex-1 text-sm font-medium text-muted-foreground border border-border rounded-lg py-2.5 hover:bg-secondary/40 transition disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          Cancel Quiz
+          Previous
+        </button>
+        <button
+          onClick={handleNext}
+          disabled={!hasAnswer || submitting}
+          className="flex-1 primary-button disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {submitting ? 'Checking...' : currentQuestion === questions.length - 1 ? 'Submit' : 'Next'}
         </button>
       </div>
+
+      <button onClick={onCancel} className="w-full mt-3 text-xs text-muted-foreground hover:text-foreground py-1.5">
+        Cancel quiz
+      </button>
     </div>
   );
 }

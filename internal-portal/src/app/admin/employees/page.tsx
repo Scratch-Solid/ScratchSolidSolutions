@@ -74,6 +74,8 @@ export default function AdminEmployeesPage() {
 
   useEffect(() => {
     load();
+    const interval = setInterval(load, 20000);
+    return () => clearInterval(interval);
   }, []);
 
   const existingRows = cleaners.map((c: any) => ({
@@ -340,15 +342,23 @@ export default function AdminEmployeesPage() {
             </TabsTrigger>
           </TabsList>
         </Tabs>
-        <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
-          <input
-            type="text"
-            placeholder="Search..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-stone-200 bg-white pl-9 pr-3 py-2 text-sm outline-none focus:border-[#2E1F16] focus:ring-1 focus:ring-[#2E1F16] transition-colors"
-          />
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="relative w-full sm:w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
+            <input
+              type="text"
+              placeholder="Search..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full rounded-lg border border-stone-200 bg-white pl-9 pr-3 py-2 text-sm outline-none focus:border-[#2E1F16] focus:ring-1 focus:ring-[#2E1F16] transition-colors"
+            />
+          </div>
+          <button
+            onClick={load}
+            className="shrink-0 text-sm font-medium text-stone-600 hover:text-stone-900 border border-stone-200 rounded-lg px-3 py-2 hover:bg-stone-50"
+          >
+            Refresh
+          </button>
         </div>
       </div>
 

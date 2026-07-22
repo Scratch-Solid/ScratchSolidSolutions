@@ -38,6 +38,7 @@ export async function POST(request: NextRequest) {
       cleanerEmail: cleaner.email || '',
       cleanerName,
       returnUrl: 'https://portal.scratchsolidsolutions.org/onboarding/contract-complete',
+      db,
     });
 
     // Update training progress
