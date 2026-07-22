@@ -14,7 +14,7 @@ import {
   createSecurityError,
   createRateLimitError
 } from '@/lib/security-middleware';
-import { recordFailedAttempt, isUserLockedOut, clearFailedAttempts, isAdminEmailDomain, isMFACompliant, verifyTOTP } from '@/lib/auth';
+import { recordFailedAttempt, isUserLockedOut, clearFailedAttempts, isMFACompliant, verifyTOTP } from '@/lib/auth';
 import { generateAccessToken, generateRefreshToken, setAuthCookies } from '@/lib/session';
 import crypto from 'crypto';
 
@@ -165,7 +165,7 @@ export async function POST(request: NextRequest) {
     // TODO: Implement email verification flow if needed
 
     // Determine role and redirect based on user type
-    const resolvedRole = user.role === 'admin' || isAdminEmailDomain(user.email) ? 'admin' : user.role;
+    const resolvedRole = user.role;
     const passwordChangeRequired = user.password_needs_reset === 1;
 
     let redirectTo: string | undefined;
