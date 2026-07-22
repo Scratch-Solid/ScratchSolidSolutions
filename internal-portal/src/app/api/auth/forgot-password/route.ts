@@ -65,7 +65,10 @@ export async function POST(request: NextRequest) {
     // Ensure password_reset_tokens table exists. Matches the table's actual
     // live production schema (which also backs an OTP-based reset method
     // this route doesn't use) - method is NOT NULL there, so every INSERT
-    // must supply it explicitly.
+    // must supply it explicitly. used_at (used by reset-password/route.ts
+    // to prevent token reuse) was missing from the live table entirely -
+    // see migration 069 - included here too so a fresh environment gets it
+    // right from the start.
     await db.prepare(`
       CREATE TABLE IF NOT EXISTS password_reset_tokens (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -74,6 +77,7 @@ export async function POST(request: NextRequest) {
         otp TEXT DEFAULT NULL,
         method TEXT NOT NULL,
         expires_at TEXT NOT NULL,
+        used_at TEXT DEFAULT NULL,
         created_at TEXT DEFAULT (datetime('now'))
       )
     `).run();
