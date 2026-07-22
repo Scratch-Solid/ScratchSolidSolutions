@@ -40,6 +40,12 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// Roles this endpoint may assign. 'admin' is deliberately excluded - admin
+// access is only ever granted via the invite-accept flow (api/admin/invite),
+// never through a generic role update. 'client'/'business' are excluded too
+// since those accounts have their own dedicated creation flows.
+const ALLOWED_ROLES = ['cleaner', 'staff', 'digital', 'transport'];
+
 export async function PUT(request: NextRequest) {
   const authResult = await withAuth(request, ['admin']);
   if (authResult instanceof NextResponse) return authResult;
@@ -51,6 +57,10 @@ export async function PUT(request: NextRequest) {
 
     if (!user_id) {
       return NextResponse.json({ error: 'Missing user_id' }, { status: 400 });
+    }
+
+    if (role && !ALLOWED_ROLES.includes(role)) {
+      return NextResponse.json({ error: `Invalid role. Must be one of: ${ALLOWED_ROLES.join(', ')}` }, { status: 400 });
     }
 
     const updates: string[] = [];

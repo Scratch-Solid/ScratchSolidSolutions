@@ -315,13 +315,6 @@ export async function hasPermission(db: any, userId: number, permission: string)
 }
 
 /**
- * Detect admin email domain for automatic admin routing
- */
-export function isAdminEmailDomain(email: string): boolean {
-  return email.toLowerCase().endsWith('@scratchsolidsolutions.org');
-}
-
-/**
  * MFA enforcement: ALL users MUST have 2FA enabled.
  * Returns true if the user has 2FA enabled in the user_2fa table.
  */

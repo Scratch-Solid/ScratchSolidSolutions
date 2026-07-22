@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb, validateSession } from './db';
 import { validateCsrfToken, generateCsrfToken } from './csrf';
 import { getUserPermissions, hasPermission, hasResourcePermission, hasRoleLevel, UserPermissions } from './rbac';
-import { isAdminEmailDomain } from './auth';
 
 /**
  * Determine whether an authenticated user satisfies a route's allowed roles.
@@ -11,7 +10,6 @@ import { isAdminEmailDomain } from './auth';
  * client shell about who counts as an admin:
  *  - Exact role match always passes.
  *  - `super_admin` inherits everything `admin` can do.
- *  - Users on the admin email domain are treated as admins.
  *
  * Defense in depth: an `admin`-role user must also have
  * admin_approval_status = 'approved' (set only by the invite-accept flow).
@@ -19,6 +17,12 @@ import { isAdminEmailDomain } from './auth';
  * gap for any admin-role row that reaches here by some other path - a role
  * column alone was previously sufficient, which is how a signup validation
  * gap became a full privilege-escalation bug (fixed 2026-07-16).
+ *
+ * The admin-email-domain fallback that used to live here was removed
+ * 2026-07-22: it granted admin access to any account on that domain
+ * regardless of role, which two staff/supervisor test accounts were
+ * relying on unintentionally. Admin access now requires role='admin',
+ * granted only via the invite-accept flow.
  */
 export function roleSatisfies(
   user: { role?: string; email?: string; admin_approval_status?: string | null } | null | undefined,
@@ -30,7 +34,6 @@ export function roleSatisfies(
   if (allowedRoles.includes(role)) return true;
   const wantsAdmin = allowedRoles.includes('admin');
   if (wantsAdmin && role === 'super_admin') return true;
-  if (wantsAdmin && user?.email && isAdminEmailDomain(user.email)) return true;
   return false;
 }
 

@@ -5,8 +5,9 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/Button";
 import { authFetch } from "@/lib/authFetch";
-import { ArrowLeft, AlertCircle, Calendar, DollarSign, ClipboardCheck, Gauge } from "lucide-react";
+import { ArrowLeft, AlertCircle, Calendar, DollarSign, ClipboardCheck, Gauge, ShieldCheck } from "lucide-react";
 
 type EmployeeDetail = {
   profile: {
@@ -38,21 +39,42 @@ export default function EmployeeDetailPage() {
   const [data, setData] = useState<EmployeeDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [promoting, setPromoting] = useState(false);
+  const [promoteError, setPromoteError] = useState("");
+
+  async function load() {
+    try {
+      const res = await authFetch(`/api/admin/employees/${id}`);
+      if (res.ok) setData(await res.json());
+      else setError("Unable to load this employee's details.");
+    } catch {
+      setError("Unable to load this employee's details. Please check your connection and try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    async function load() {
-      try {
-        const res = await authFetch(`/api/admin/employees/${id}`);
-        if (res.ok) setData(await res.json());
-        else setError("Unable to load this employee's details.");
-      } catch {
-        setError("Unable to load this employee's details. Please check your connection and try again.");
-      } finally {
-        setLoading(false);
-      }
-    }
     if (id) load();
   }, [id]);
+
+  const handlePromote = async () => {
+    setPromoteError("");
+    setPromoting(true);
+    try {
+      const res = await authFetch(`/api/admin/employees/${id}/promote-to-supervisor`, { method: "POST" });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setPromoteError(body?.error || `Promotion failed (${res.status})`);
+        return;
+      }
+      await load();
+    } catch {
+      setPromoteError("Network error while promoting. Please try again.");
+    } finally {
+      setPromoting(false);
+    }
+  };
 
   if (loading) return <p className="text-sm text-stone-500">Loading…</p>;
 
@@ -84,8 +106,18 @@ export default function EmployeeDetailPage() {
             {profile.email && <span> · {profile.email}</span>}
           </p>
         </div>
-        {profile.status && <Badge variant={statusVariant(profile.status)}>{profile.status}</Badge>}
+        <div className="flex items-center gap-3">
+          {profile.status && <Badge variant={statusVariant(profile.status)}>{profile.status}</Badge>}
+          {profile.role === "cleaner" && (
+            <Button size="sm" variant="outline" disabled={promoting} className="h-8 gap-1.5" onClick={handlePromote}>
+              <ShieldCheck className="h-3.5 w-3.5" /> {promoting ? "Promoting..." : "Promote to Supervisor"}
+            </Button>
+          )}
+        </div>
       </div>
+      {promoteError && (
+        <p className="text-sm text-red-600 -mt-4">{promoteError}</p>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
