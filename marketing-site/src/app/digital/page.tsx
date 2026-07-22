@@ -1,6 +1,7 @@
 import SiteNav from "@/components/SiteNav";
 import SiteFooter from "@/components/SiteFooter";
 import StartProjectButton from "@/components/digital/StartProjectButton";
+import AIAssistant from "@/components/AIAssistant";
 
 export const metadata = {
   title: "Scratch Solid Digital — Web & App Development",
@@ -68,6 +69,7 @@ export default function DigitalPage() {
       </section>
 
       <SiteFooter />
+      <AIAssistant context="digital" />
     </div>
   );
 }

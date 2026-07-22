@@ -1,5 +1,6 @@
 import SiteNav from "@/components/SiteNav";
 import SiteFooter from "@/components/SiteFooter";
+import AIAssistant from "@/components/AIAssistant";
 
 export const metadata = {
   title: "Transportation — Scratch Solid Solutions",
@@ -51,6 +52,7 @@ export default function TransportationPage() {
       </section>
 
       <SiteFooter />
+      <AIAssistant context="transportation" />
     </div>
   );
 }
