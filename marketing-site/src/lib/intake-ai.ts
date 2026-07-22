@@ -7,6 +7,7 @@
 // "recognizable sketch", not production code.
 import Anthropic from '@anthropic-ai/sdk';
 import { getAnthropicApiKey } from './env';
+import { PAGE_TYPE_LABELS, type PageType } from './digital-pricing';
 
 const MODEL = 'claude-haiku-4-5';
 const MAX_TOKENS = 8000;
@@ -114,4 +115,92 @@ export async function generateMockup(
     inputTokens * INPUT_COST_CENTS_PER_TOKEN + outputTokens * OUTPUT_COST_CENTS_PER_TOKEN;
 
   return { html, inputTokens, outputTokens, estimatedCostCents };
+}
+
+const PAGE_LIST_SYSTEM_PROMPT = `You are scoping a website/app build for Scratch Solid Digital from a client's brief. Break their brief down into a concrete list of pages or systems this build needs, using ONLY these page types:
+
+${(Object.keys(PAGE_TYPE_LABELS) as PageType[]).map((t) => `- ${t}: ${PAGE_TYPE_LABELS[t]}`).join('\n')}
+
+Rules:
+- Name each concrete page separately even if they share a type (e.g. Home, About, and Services are three separate "simple_page" entries, not one).
+- "auth_system" and "ecommerce" and "booking" and "blog" are whole systems - list each at most once even if they involve multiple screens.
+- Use "custom" ONLY for something that genuinely doesn't fit any other type (e.g. a bespoke calculator, a real-time dashboard, a custom admin portal) - don't default to it, and don't overuse it as a catch-all.
+- Every real website needs at least a Home page - always include one simple_page for it unless the brief clearly describes something else as the entry point.
+- Call submit_page_list with your result. Do not explain your reasoning in text.`;
+
+export interface InferredPage {
+  type: PageType;
+  label: string;
+}
+
+export interface PageListInferenceResult {
+  pages: InferredPage[];
+  inputTokens: number;
+  outputTokens: number;
+  estimatedCostCents: number;
+}
+
+const PAGE_LIST_TOOL: Anthropic.Tool = {
+  name: 'submit_page_list',
+  description: 'Submit the inferred list of pages/systems this project needs, each with a concrete label and a page type from the fixed set.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      pages: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            type: { type: 'string', enum: Object.keys(PAGE_TYPE_LABELS) },
+            label: { type: 'string', description: 'A short, concrete name for this page, e.g. "Home", "About", "Book a session"' },
+          },
+          required: ['type', 'label'],
+        },
+      },
+    },
+    required: ['pages'],
+  },
+};
+
+/**
+ * Infers a structured page/feature list from the same brief used to
+ * generate the mockup. This is what pricing is actually computed from
+ * (see lib/digital-pricing.ts) - a separate, forced tool-call rather than
+ * asking the mockup call to also emit JSON, so a malformed mockup
+ * response can never corrupt the price the client sees.
+ */
+export async function inferPageList(brief: IntakeBrief): Promise<PageListInferenceResult> {
+  const apiKey = await getAnthropicApiKey();
+  const client = new Anthropic({ apiKey });
+
+  const response = await client.messages.create({
+    model: MODEL,
+    max_tokens: 2000,
+    system: PAGE_LIST_SYSTEM_PROMPT,
+    messages: [{ role: 'user', content: briefToPrompt(brief) }],
+    tools: [PAGE_LIST_TOOL],
+    tool_choice: { type: 'tool', name: 'submit_page_list' },
+  });
+
+  const toolUseBlock = response.content.find((b): b is Anthropic.ToolUseBlock => b.type === 'tool_use');
+  const rawPages = (toolUseBlock?.input as { pages?: unknown } | undefined)?.pages;
+  const validTypes = new Set(Object.keys(PAGE_TYPE_LABELS));
+
+  const pages: InferredPage[] = Array.isArray(rawPages)
+    ? rawPages
+        .filter((p): p is { type: string; label: string } => !!p && typeof p.type === 'string' && typeof p.label === 'string' && validTypes.has(p.type))
+        .map((p) => ({ type: p.type as PageType, label: p.label.trim().slice(0, 80) }))
+    : [];
+
+  // Guarantee at least a Home page - a broken/empty inference should never
+  // leave the client with a zero-page, zero-price build.
+  if (pages.length === 0) {
+    pages.push({ type: 'simple_page', label: 'Home' });
+  }
+
+  const inputTokens = response.usage.input_tokens;
+  const outputTokens = response.usage.output_tokens;
+  const estimatedCostCents = inputTokens * INPUT_COST_CENTS_PER_TOKEN + outputTokens * OUTPUT_COST_CENTS_PER_TOKEN;
+
+  return { pages, inputTokens, outputTokens, estimatedCostCents };
 }

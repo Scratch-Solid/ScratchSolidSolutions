@@ -4,6 +4,7 @@ import { logger } from '@/lib/logger';
 import { sanitizeText } from '@/lib/sanitization';
 import { withAdminOrServiceAuth, withRateLimit, withTracing, withSecurityHeaders } from '@/lib/middleware';
 import { getDb, getIntakeRequest, updateIntakeRequest, getIntakeIterations } from '@/lib/db';
+import { resolveSupportTier } from '@/lib/digital-pricing';
 
 const ALLOWED_STATUSES = ['draft', 'generating', 'awaiting_confirmation', 'confirmed', 'abandoned'];
 
@@ -70,10 +71,16 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (typeof body.logo_file_url === 'string') updates.logo_file_url = body.logo_file_url;
     if (typeof body.color_theme === 'string') updates.color_theme = body.color_theme;
     if (['warranty', 'standard', 'growth', 'partner'].includes(body.support_tier)) {
-      updates.support_tier = body.support_tier;
+      // rate/min-term are never taken from the client - always re-derived
+      // from the server's own tier table (see digital-pricing.ts), same
+      // fix as the POST route. This previously accepted
+      // support_monthly_rate/support_min_term_months directly from the
+      // request body.
+      const tier = resolveSupportTier(body.support_tier);
+      updates.support_tier = tier.id;
+      updates.support_monthly_rate = tier.rate;
+      updates.support_min_term_months = tier.minMonths;
     }
-    if (typeof body.support_monthly_rate === 'number') updates.support_monthly_rate = body.support_monthly_rate;
-    if (typeof body.support_min_term_months === 'number') updates.support_min_term_months = body.support_min_term_months;
     if (ALLOWED_STATUSES.includes(body.status)) updates.status = body.status;
 
     if (Object.keys(updates).length === 0) {

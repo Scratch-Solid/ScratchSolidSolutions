@@ -34,9 +34,14 @@ type IntakeRequest = {
   support_monthly_rate: number;
   converted_project_id: number | null;
   created_at: string;
+  total_price?: number;
+  deposit_amount?: number;
+  deposit_paid_at?: string | null;
 };
 
 type IntakeIteration = { id: number; iteration_number: number; prompt_text: string; generated_html: string; created_at: string };
+
+type PageListItem = { type: string; label: string; included?: boolean };
 
 type IntakeDetail = IntakeRequest & {
   who_target_users: string;
@@ -50,6 +55,15 @@ type IntakeDetail = IntakeRequest & {
   color_theme: string;
   support_min_term_months: number;
   iterations: IntakeIteration[];
+  page_list?: string;
+  base_fee?: number;
+  pages_subtotal?: number;
+  promo_code?: string | null;
+  discount_amount?: number;
+  has_custom_items?: number;
+  deposit_payment_ref?: string | null;
+  final_amount?: number;
+  final_paid_at?: string | null;
 };
 
 const SUPPORT_TIER_LABELS: Record<string, string> = {
@@ -339,8 +353,14 @@ export default function DigitalProjectsPage() {
                   <div className="min-w-0 flex-1">
                     <div className="text-sm font-medium text-stone-900 truncate">{r.company_name || r.name}</div>
                     <div className="text-xs text-stone-500 truncate">{r.email}</div>
+                    {!!r.total_price && <div className="text-xs text-stone-400">R{r.total_price.toLocaleString()} build</div>}
                   </div>
                   <Badge variant={intakeStatusVariant(r.status)} className="shrink-0">{r.status.replace("_", " ")}</Badge>
+                  {r.status === "confirmed" && (
+                    <Badge className={`shrink-0 border-0 ${r.deposit_paid_at ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100" : "bg-amber-100 text-amber-700 hover:bg-amber-100"}`}>
+                      {r.deposit_paid_at ? "Deposit paid" : "Awaiting deposit"}
+                    </Badge>
+                  )}
                   <ChevronRight className="h-4 w-4 text-stone-400 shrink-0" />
                 </button>
               ))}
@@ -419,6 +439,49 @@ export default function DigitalProjectsPage() {
                     <Badge variant="secondary">Client-confirmed pricing</Badge>
                   </div>
 
+                  {(intakeDetail.total_price || 0) > 0 && (
+                    <div className="bg-stone-50 border border-stone-200 rounded-md p-3 text-sm space-y-2">
+                      <div className="flex items-center justify-between">
+                        <p className="text-[11px] font-semibold text-[#8a6a45] uppercase">Build price &amp; deposit</p>
+                        <Badge className={`border-0 ${intakeDetail.deposit_paid_at ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100" : "bg-amber-100 text-amber-700 hover:bg-amber-100"}`}>
+                          {intakeDetail.deposit_paid_at ? "Deposit paid" : "Awaiting deposit"}
+                        </Badge>
+                      </div>
+
+                      {intakeDetail.page_list && (() => {
+                        try {
+                          const pages = JSON.parse(intakeDetail.page_list) as PageListItem[];
+                          if (!pages.length) return null;
+                          return (
+                            <ul className="text-xs text-stone-600 space-y-0.5">
+                              {pages.map((p, i) => (
+                                <li key={i} className={p.included === false ? "line-through text-stone-400" : ""}>{p.label}</li>
+                              ))}
+                            </ul>
+                          );
+                        } catch {
+                          return null;
+                        }
+                      })()}
+
+                      {!!intakeDetail.has_custom_items && (
+                        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded px-2 py-1">Includes a custom item flagged for manual quoting — client cannot pay a deposit until this is resolved.</p>
+                      )}
+
+                      <div className="grid grid-cols-2 gap-1.5 text-xs text-stone-600">
+                        <div className="flex justify-between"><span>Total build price</span><span className="font-semibold text-stone-800">R{(intakeDetail.total_price || 0).toLocaleString()}</span></div>
+                        {!!intakeDetail.promo_code && (
+                          <div className="flex justify-between"><span>Promo &ldquo;{intakeDetail.promo_code}&rdquo;</span><span>&minus;R{(intakeDetail.discount_amount || 0).toLocaleString()}</span></div>
+                        )}
+                        <div className="flex justify-between"><span>Deposit (50%)</span><span className={intakeDetail.deposit_paid_at ? "text-emerald-700 font-semibold" : "font-semibold text-stone-800"}>R{(intakeDetail.deposit_amount || 0).toLocaleString()}{intakeDetail.deposit_paid_at ? " ✓ paid" : ""}</span></div>
+                        <div className="flex justify-between"><span>Final balance</span><span className={intakeDetail.final_paid_at ? "text-emerald-700 font-semibold" : "text-stone-800"}>R{(intakeDetail.final_amount || 0).toLocaleString()}{intakeDetail.final_paid_at ? " ✓ paid" : ""}</span></div>
+                      </div>
+                      {intakeDetail.deposit_paid_at && (
+                        <p className="text-[11px] text-stone-400">Deposit paid {new Date(intakeDetail.deposit_paid_at).toLocaleString()}{intakeDetail.deposit_payment_ref ? ` · ref ${intakeDetail.deposit_payment_ref}` : ""}</p>
+                      )}
+                    </div>
+                  )}
+
                   {convertError && <p className="text-sm text-red-500">{convertError}</p>}
 
                   <div className="flex gap-2 flex-wrap">
@@ -427,10 +490,16 @@ export default function DigitalProjectsPage() {
                     ) : (
                       <Button
                         onClick={convertIntake}
-                        disabled={converting || intakeDetail.status !== "confirmed"}
+                        disabled={converting || intakeDetail.status !== "confirmed" || !intakeDetail.deposit_paid_at}
                         size="sm"
                         className="bg-[#2E1F16] hover:bg-[#241811]"
-                        title={intakeDetail.status !== "confirmed" ? "Only a client-confirmed request can be converted" : undefined}
+                        title={
+                          intakeDetail.status !== "confirmed"
+                            ? "Only a client-confirmed request can be converted"
+                            : !intakeDetail.deposit_paid_at
+                            ? "The client's 50% deposit hasn't been paid yet"
+                            : undefined
+                        }
                       >
                         {converting ? "Converting…" : "Convert to project"}
                       </Button>

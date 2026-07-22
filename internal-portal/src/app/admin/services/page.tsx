@@ -65,6 +65,7 @@ export default function AdminServicesPage() {
     min_amount: "",
     max_uses: "",
     valid_until: "",
+    applies_to: "both",
   });
   const [showAddArea, setShowAddArea] = useState(false);
   const [areaForm, setAreaForm] = useState({ name: "", transport_fee: "" });
@@ -137,7 +138,7 @@ export default function AdminServicesPage() {
       const refreshed = await fetch("/api/promo-codes", { headers: { Authorization: `Bearer ${token2}` } });
       if (refreshed.ok) setPromoCodes(await refreshed.json());
       setShowAddPromo(false);
-      setPromoForm({ code: "", description: "", discount_type: "percentage", discount_value: "", min_amount: "", max_uses: "", valid_until: "" });
+      setPromoForm({ code: "", description: "", discount_type: "percentage", discount_value: "", min_amount: "", max_uses: "", valid_until: "", applies_to: "both" });
     }
   };
 
@@ -533,6 +534,13 @@ export default function AdminServicesPage() {
                   <input placeholder="Max uses (optional)" value={promoForm.max_uses} onChange={(e) => setPromoForm({ ...promoForm, max_uses: e.target.value })} className="rounded-lg border border-stone-200 px-3 py-2 text-sm outline-none focus:border-[#2E1F16]" />
                   <input type="date" placeholder="Valid until (optional)" value={promoForm.valid_until} onChange={(e) => setPromoForm({ ...promoForm, valid_until: e.target.value })} className="rounded-lg border border-stone-200 px-3 py-2 text-sm outline-none focus:border-[#2E1F16]" />
                 </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <select value={promoForm.applies_to} onChange={(e) => setPromoForm({ ...promoForm, applies_to: e.target.value })} className="rounded-lg border border-stone-200 px-3 py-2 text-sm outline-none focus:border-[#2E1F16]">
+                    <option value="both">Applies to: Cleaning + Digital</option>
+                    <option value="cleaning">Applies to: Cleaning only</option>
+                    <option value="digital">Applies to: Digital only</option>
+                  </select>
+                </div>
                 <textarea placeholder="Description" value={promoForm.description} onChange={(e) => setPromoForm({ ...promoForm, description: e.target.value })} className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm outline-none focus:border-[#2E1F16]" rows={2} />
                 <div className="flex gap-2">
                   <Button size="sm" className="gap-1 bg-emerald-600 hover:bg-emerald-700" onClick={addPromo}>
@@ -562,6 +570,9 @@ export default function AdminServicesPage() {
                         <Badge className={p.is_active ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-0" : "bg-stone-100 text-stone-500 hover:bg-stone-100 border-0"}>
                           {p.is_active ? "Active" : "Inactive"}
                         </Badge>
+                        {p.applies_to && p.applies_to !== "both" && (
+                          <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-0 capitalize">{p.applies_to} only</Badge>
+                        )}
                       </div>
                       <p className="text-xs text-stone-500 mt-0.5">{p.description}</p>
                       <div className="flex gap-4 mt-1 text-xs text-stone-400">
