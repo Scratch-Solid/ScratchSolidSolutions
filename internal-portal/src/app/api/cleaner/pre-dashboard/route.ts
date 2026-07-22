@@ -79,7 +79,11 @@ export async function GET(request: NextRequest) {
         can_transition_to_cleaner_dashboard: progress.completed
       }
     });
-    response.headers.set('Cache-Control', 'private, max-age=30');
+    // This endpoint is re-read via a full page reload immediately after the
+    // consent/contract-sign actions on this same page mutate the data it
+    // returns - a 30s browser cache here means that reload can show stale
+    // pre-mutation status, making a successful sign look like it did nothing.
+    response.headers.set('Cache-Control', 'no-store');
     return withSecurityHeaders(response, traceId);
 
   } catch (error) {
