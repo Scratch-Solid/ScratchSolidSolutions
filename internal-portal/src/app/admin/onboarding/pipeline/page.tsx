@@ -78,9 +78,9 @@ export default function OnboardingPipeline() {
 
   const filteredApplicants = applicants.filter(applicant => {
     const matchesFilter = filter === 'all' || applicant.onboarding_stage === filter;
-    const matchesSearch = applicant.name.toLowerCase().includes(search.toLowerCase()) ||
-                         applicant.phone.includes(search) ||
-                         applicant.email.toLowerCase().includes(search.toLowerCase());
+    const matchesSearch = (applicant.name || '').toLowerCase().includes(search.toLowerCase()) ||
+                         (applicant.phone || '').includes(search) ||
+                         (applicant.email || '').toLowerCase().includes(search.toLowerCase());
     return matchesFilter && matchesSearch;
   });
 
