@@ -17,6 +17,10 @@ import {
   Building2,
   AlertCircle,
   X,
+  Eye,
+  MapPin,
+  IdCard,
+  UserCheck,
 } from "lucide-react";
 
 const EMPTY_FORM = {
@@ -44,6 +48,28 @@ export default function AdminEmployeesPage() {
   const [successInfo, setSuccessInfo] = useState<{ paysheetCode: string; notificationsDelivered?: boolean; tempPassword?: string } | null>(null);
   const [actionError, setActionError] = useState("");
   const [actioningId, setActioningId] = useState<number | null>(null);
+  const [detailApplicant, setDetailApplicant] = useState<any | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState("");
+
+  async function viewDetails(id: number) {
+    setDetailLoading(true);
+    setDetailError("");
+    setDetailApplicant(null);
+    try {
+      const res = await authFetch(`/api/admin/new-joiners/${id}`);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setDetailError(data?.error?.message || "Unable to load applicant details.");
+        return;
+      }
+      setDetailApplicant(data.data);
+    } catch {
+      setDetailError("Unable to load applicant details. Please check your connection and try again.");
+    } finally {
+      setDetailLoading(false);
+    }
+  }
 
   async function load() {
     setLoading(true);
@@ -412,6 +438,9 @@ export default function AdminEmployeesPage() {
                   </div>
                   {tab === "new" ? (
                     <div className="flex items-center gap-2 shrink-0">
+                      <Button size="sm" variant="outline" className="h-8 gap-1" onClick={() => viewDetails(item.id)}>
+                        <Eye className="h-3.5 w-3.5" /> View Details
+                      </Button>
                       <Button size="sm" variant="outline" disabled={actioningId === item.id} className="h-8 gap-1 text-emerald-600 border-emerald-200 hover:bg-emerald-50" onClick={() => handleApprove(item.id)}>
                         <CheckCircle2 className="h-3.5 w-3.5" /> {actioningId === item.id ? "..." : "Approve"}
                       </Button>
@@ -435,6 +464,89 @@ export default function AdminEmployeesPage() {
           )}
         </CardContent>
       </Card>
+
+      {(detailLoading || detailError || detailApplicant) && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-5 border-b border-stone-100">
+              <h3 className="text-base font-semibold text-stone-900">Applicant Details</h3>
+              <button
+                onClick={() => { setDetailApplicant(null); setDetailError(""); }}
+                className="text-stone-400 hover:text-stone-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-5">
+              {detailLoading && (
+                <div className="space-y-3">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="h-10 bg-stone-100 rounded animate-pulse" />
+                  ))}
+                </div>
+              )}
+              {detailError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">{detailError}</div>
+              )}
+              {detailApplicant && (
+                <div className="space-y-4">
+                  {!detailApplicant.backgroundCheckConsent && (
+                    <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs px-3 py-2 rounded-lg">
+                      This applicant has not given background-check consent yet.
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-xs font-medium text-stone-500 uppercase tracking-wide mb-1">Full name</p>
+                    <p className="text-sm text-stone-900">{detailApplicant.fullName || "-"}</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs font-medium text-stone-500 uppercase tracking-wide mb-1 flex items-center gap-1"><IdCard className="h-3 w-3" /> ID / Passport number</p>
+                      <p className="text-sm text-stone-900 font-mono">{detailApplicant.idPassportNumber || "Not provided"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-stone-500 uppercase tracking-wide mb-1">Applying for</p>
+                      <p className="text-sm text-stone-900">{detailApplicant.positionAppliedFor || detailApplicant.role}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-stone-500 uppercase tracking-wide mb-1 flex items-center gap-1"><MapPin className="h-3 w-3" /> Address</p>
+                    <p className="text-sm text-stone-900">{detailApplicant.address || "Not provided"}</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs font-medium text-stone-500 uppercase tracking-wide mb-1 flex items-center gap-1"><Mail className="h-3 w-3" /> Email</p>
+                      <p className="text-sm text-stone-900 break-all">{detailApplicant.email || "-"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-stone-500 uppercase tracking-wide mb-1 flex items-center gap-1"><Phone className="h-3 w-3" /> Phone</p>
+                      <p className="text-sm text-stone-900">{detailApplicant.contactNumber || "-"}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-stone-500 uppercase tracking-wide mb-1 flex items-center gap-1"><UserCheck className="h-3 w-3" /> Emergency contact</p>
+                    <p className="text-sm text-stone-900">{detailApplicant.emergencyContact || "Not provided"}</p>
+                  </div>
+                  {detailApplicant.message && (
+                    <div>
+                      <p className="text-xs font-medium text-stone-500 uppercase tracking-wide mb-1">Message</p>
+                      <p className="text-sm text-stone-900">{detailApplicant.message}</p>
+                    </div>
+                  )}
+                  <div className="flex gap-3 pt-2 text-xs text-stone-500">
+                    <span className={detailApplicant.popiaConsent ? "text-emerald-600" : "text-stone-400"}>
+                      {detailApplicant.popiaConsent ? "✓" : "✕"} POPIA consent
+                    </span>
+                    <span className={detailApplicant.backgroundCheckConsent ? "text-emerald-600" : "text-stone-400"}>
+                      {detailApplicant.backgroundCheckConsent ? "✓" : "✕"} Background check consent
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

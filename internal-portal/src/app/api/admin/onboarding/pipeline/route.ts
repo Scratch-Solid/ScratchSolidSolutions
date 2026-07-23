@@ -32,6 +32,7 @@ export async function GET(request: NextRequest) {
       LEFT JOIN staff s ON u.id = s.user_id
       LEFT JOIN training_progress tp ON s.paysheet_code = tp.employee_id
       WHERE u.onboarding_stage IS NOT NULL
+        AND u.role IN ('cleaner', 'digital', 'transport')
       ORDER BY u.created_at DESC
     `).all();
 
