@@ -1,6 +1,7 @@
 import SiteNav from "@/components/SiteNav";
 import SiteFooter from "@/components/SiteFooter";
 import StartProjectButton from "@/components/digital/StartProjectButton";
+import CaseStudyShowcase from "@/components/digital/CaseStudyShowcase";
 import AIAssistant from "@/components/AIAssistant";
 
 export const metadata = {
@@ -37,6 +38,8 @@ export default function DigitalPage() {
           </div>
         </div>
       </section>
+
+      <CaseStudyShowcase />
 
       <section className="py-14 sm:py-16 px-4">
         <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-5">
