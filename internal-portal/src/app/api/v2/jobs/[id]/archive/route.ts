@@ -100,10 +100,10 @@ export async function GET(
     // ─── Tracking summary ───
     const trackingPoints = await db
       .prepare(
-        `SELECT latitude, longitude, timestamp, accuracy
+        `SELECT latitude, longitude, recorded_at, accuracy_meters
          FROM job_tracking
          WHERE job_id = ?
-         ORDER BY timestamp ASC`
+         ORDER BY recorded_at ASC`
       )
       .bind(jobId)
       .all<any>();

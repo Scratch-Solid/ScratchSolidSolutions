@@ -70,8 +70,8 @@ describe('GET /api/v2/jobs/[id]/archive', () => {
       })
       .mockResolvedValueOnce({
         results: [
-          { latitude: -33.9, longitude: 18.4, timestamp: '2026-06-15T09:00:00Z', accuracy: 5 },
-          { latitude: -33.9, longitude: 18.4, timestamp: '2026-06-15T10:30:00Z', accuracy: 3 },
+          { latitude: -33.9, longitude: 18.4, recorded_at: '2026-06-15T09:00:00Z', accuracy_meters: 5 },
+          { latitude: -33.9, longitude: 18.4, recorded_at: '2026-06-15T10:30:00Z', accuracy_meters: 3 },
         ],
       });
 

@@ -39,11 +39,18 @@ function formatDuration(minutes: number): string {
 // short visit.
 const SHORT_VISIT_GRACE_MINUTES = 10;
 
-function getDurationCheck(job: JobRow): { actualMinutes: number; isShort: boolean } | null {
-  if (!job.arrived_at || !job.completed_at) return null;
+type DurationCheck =
+  | { kind: "ok"; actualMinutes: number; isShort: boolean }
+  | { kind: "anomaly" } // completed_at before arrived_at - a timestamp race (e.g. WhatsApp "done" landing before GPS-backup "arrived"), not a real duration
+  | { kind: "arrival_missing" }; // job completed but no arrival was ever recorded
+
+function getDurationCheck(job: JobRow): DurationCheck | null {
+  if (!job.completed_at) return null;
+  if (!job.arrived_at) return { kind: "arrival_missing" };
   const actualMinutes = (new Date(job.completed_at).getTime() - new Date(job.arrived_at).getTime()) / 60000;
+  if (actualMinutes < 0) return { kind: "anomaly" };
   const isShort = actualMinutes < job.duration_minutes - SHORT_VISIT_GRACE_MINUTES;
-  return { actualMinutes, isShort };
+  return { kind: "ok", actualMinutes, isShort };
 }
 
 function ConfirmationBadge({ whatsapp, gps }: { whatsapp: string | null; gps: string | null }) {
@@ -148,7 +155,7 @@ export default function JobTrackingPage() {
                     <div className="text-xs font-semibold text-stone-600">
                       Time on site <span className="font-normal text-stone-400">(promised {formatDuration(job.duration_minutes)})</span>
                     </div>
-                    {durationCheck ? (
+                    {durationCheck?.kind === "ok" ? (
                       durationCheck.isShort ? (
                         <Badge className="bg-red-100 text-red-800">
                           Short visit — {formatDuration(durationCheck.actualMinutes)}
@@ -158,6 +165,10 @@ export default function JobTrackingPage() {
                           {formatDuration(durationCheck.actualMinutes)} on site
                         </Badge>
                       )
+                    ) : durationCheck?.kind === "anomaly" ? (
+                      <Badge className="bg-amber-100 text-amber-800">Timestamp mismatch — check manually</Badge>
+                    ) : durationCheck?.kind === "arrival_missing" ? (
+                      <Badge className="bg-amber-100 text-amber-800">Completed, arrival not recorded</Badge>
                     ) : (
                       <Badge className="bg-stone-100 text-stone-500">Not completed yet</Badge>
                     )}

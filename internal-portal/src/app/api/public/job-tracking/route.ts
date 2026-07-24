@@ -41,13 +41,17 @@ export async function GET(request: NextRequest) {
 
     // Backs the "guaranteed time on site" promise with a real, checkable
     // number rather than an unenforced claim - only computable once both
-    // ends of the visit are actually timestamped.
-    const duration = job.arrived_at && job.completed_at
-      ? {
-          promisedMinutes: job.duration_minutes,
-          actualMinutes: Math.round((new Date(job.completed_at).getTime() - new Date(job.arrived_at).getTime()) / 60000),
-        }
-      : null;
+    // ends of the visit are actually timestamped. A negative result means
+    // completed_at landed before arrived_at (a WhatsApp/GPS timestamp race,
+    // not a real duration) - null it out here so no consumer ever has to
+    // handle or accidentally display a nonsensical negative time.
+    let duration: { promisedMinutes: number; actualMinutes: number } | null = null;
+    if (job.arrived_at && job.completed_at) {
+      const actualMinutes = Math.round((new Date(job.completed_at).getTime() - new Date(job.arrived_at).getTime()) / 60000);
+      if (actualMinutes >= 0) {
+        duration = { promisedMinutes: job.duration_minutes, actualMinutes };
+      }
+    }
 
     return withSecurityHeaders(
       NextResponse.json({
