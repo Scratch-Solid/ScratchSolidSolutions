@@ -212,6 +212,19 @@ export default function PublicTrackingPage() {
                 </div>
               </div>
             </div>
+
+            {/* Guaranteed time on site - the actual, checkable number behind
+                that promise, not just a claim. Only appears once a real
+                arrival and completion timestamp both exist. */}
+            {tracking.duration && (
+              <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+                <p className="text-sm text-gray-500">Time on site</p>
+                <p className={`font-semibold ${tracking.duration.actualMinutes >= tracking.duration.promisedMinutes ? 'text-green-700' : 'text-amber-700'}`}>
+                  {Math.floor(tracking.duration.actualMinutes / 60)}h {Math.round(tracking.duration.actualMinutes % 60)}m
+                  <span className="text-gray-400 font-normal"> (promised {Math.floor(tracking.duration.promisedMinutes / 60)}h {Math.round(tracking.duration.promisedMinutes % 60)}m)</span>
+                </p>
+              </div>
+            )}
           </div>
         ) : (
           <div className="bg-white rounded-2xl shadow-xl p-6 mb-6 text-center">

@@ -10,6 +10,7 @@ interface JobRow {
   property_address: string;
   service_type: string;
   scheduled_at: string;
+  duration_minutes: number;
   status: string;
   started_at: string | null;
   arrived_at: string | null;
@@ -23,6 +24,26 @@ interface JobRow {
 function formatTime(iso: string | null): string {
   if (!iso) return "—";
   return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+function formatDuration(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const m = Math.round(minutes % 60);
+  if (h === 0) return `${m}m`;
+  return m === 0 ? `${h}h` : `${h}h ${m}m`;
+}
+
+// Backs the "guaranteed time on site" promise with an actual check: how long
+// was the cleaner really there, against what was promised for this job. A
+// 10-minute grace buffer avoids flagging normal WhatsApp-report lag as a
+// short visit.
+const SHORT_VISIT_GRACE_MINUTES = 10;
+
+function getDurationCheck(job: JobRow): { actualMinutes: number; isShort: boolean } | null {
+  if (!job.arrived_at || !job.completed_at) return null;
+  const actualMinutes = (new Date(job.completed_at).getTime() - new Date(job.arrived_at).getTime()) / 60000;
+  const isShort = actualMinutes < job.duration_minutes - SHORT_VISIT_GRACE_MINUTES;
+  return { actualMinutes, isShort };
 }
 
 function ConfirmationBadge({ whatsapp, gps }: { whatsapp: string | null; gps: string | null }) {
@@ -120,6 +141,29 @@ export default function JobTrackingPage() {
                   <ConfirmationBadge whatsapp={job.completed_at_whatsapp} gps={job.completed_at_gps} />
                 </div>
               </div>
+              {(() => {
+                const durationCheck = getDurationCheck(job);
+                return (
+                  <div className="mt-3 pt-3 border-t border-stone-100 flex items-center justify-between">
+                    <div className="text-xs font-semibold text-stone-600">
+                      Time on site <span className="font-normal text-stone-400">(promised {formatDuration(job.duration_minutes)})</span>
+                    </div>
+                    {durationCheck ? (
+                      durationCheck.isShort ? (
+                        <Badge className="bg-red-100 text-red-800">
+                          Short visit — {formatDuration(durationCheck.actualMinutes)}
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-green-100 text-green-800">
+                          {formatDuration(durationCheck.actualMinutes)} on site
+                        </Badge>
+                      )
+                    ) : (
+                      <Badge className="bg-stone-100 text-stone-500">Not completed yet</Badge>
+                    )}
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
         ))}

@@ -17,9 +17,11 @@ export default function RootPage() {
       return;
     }
 
-    // Fallback: detect admin by email domain if role is missing or generic
-    const isAdminDomain = username && username.toLowerCase().endsWith('@scratchsolidsolutions.org');
-    const effectiveRole = userRole === 'admin' || isAdminDomain ? 'admin' : userRole;
+    // No email-domain fallback here - role comes from the server-issued
+    // session only. A domain-based admin fallback was a real privilege
+    // escalation path (fixed server-side); this client-side redirect must
+    // never reintroduce it, even just visually.
+    const effectiveRole = userRole;
 
     async function redirectUser() {
       switch (effectiveRole) {

@@ -385,7 +385,6 @@ export default function ClientDashboard() {
 
     setReviewImagesLoading(true);
     try {
-      const userId = localStorage.getItem('userId');
       const csrfToken = await getCsrfToken();
       const reviewRes = await authFetch('/api/reviews', {
         method: 'POST',
@@ -394,7 +393,6 @@ export default function ClientDashboard() {
           ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}),
         },
         body: JSON.stringify({
-          user_id: userId,
           booking_id: parseInt(selectedBookingForReview),
           rating: reviewRating,
           text: reviewText,
