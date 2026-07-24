@@ -335,8 +335,6 @@ export default function BusinessDashboard() {
       return;
     }
 
-    const userId = localStorage.getItem('userId');
-
     setReviewImagesLoading(true);
     try {
       const csrfToken = await getCsrfToken();
@@ -347,7 +345,6 @@ export default function BusinessDashboard() {
           ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}),
         },
         body: JSON.stringify({
-          user_id: userId,
           booking_id: parseInt(selectedBookingForReview),
           rating: reviewRating,
           text: reviewText,

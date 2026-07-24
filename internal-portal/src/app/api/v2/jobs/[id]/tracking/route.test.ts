@@ -42,8 +42,8 @@ describe('GET /api/v2/jobs/[id]/tracking', () => {
   test('returns tracking points in chronological order', async () => {
     mockDb.all.mockResolvedValue({
       results: [
-        { id: 2, latitude: -33.9, longitude: 18.4, timestamp: '2026-06-15T10:00:00Z', accuracy: 5, source: 'mobile_app' },
-        { id: 1, latitude: -33.8, longitude: 18.5, timestamp: '2026-06-15T09:00:00Z', accuracy: 8, source: 'mobile_app' },
+        { id: 2, latitude: -33.9, longitude: 18.4, recorded_at: '2026-06-15T10:00:00Z', accuracy_meters: 5, source: 'mobile_app' },
+        { id: 1, latitude: -33.8, longitude: 18.5, recorded_at: '2026-06-15T09:00:00Z', accuracy_meters: 8, source: 'mobile_app' },
       ],
     });
 
@@ -54,7 +54,7 @@ describe('GET /api/v2/jobs/[id]/tracking', () => {
     const json = await res.json();
     expect(json.success).toBe(true);
     expect(json.data).toHaveLength(2);
-    expect(json.data[0].timestamp).toBe('2026-06-15T09:00:00Z'); // reversed to chronological
+    expect(json.data[0].recorded_at).toBe('2026-06-15T09:00:00Z'); // reversed to chronological
   });
 });
 

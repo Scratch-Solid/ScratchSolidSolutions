@@ -12,6 +12,10 @@ export async function POST(request: NextRequest) {
   const authResult = await withAuth(request, ['client', 'business']);
   if (authResult instanceof NextResponse) return withSecurityHeaders(authResult, traceId);
   const { db } = authResult;
+  // The session row's own `.id` is the session's primary key, not the
+  // user's - `.user_id` is the actual authenticated user. Reviews must be
+  // attributed to whoever is actually logged in, never a client-supplied id.
+  const authenticatedUserId = (authResult.user as { user_id: number }).user_id;
 
   // Rate limiting check
   const rateLimitResult = await withRateLimit(request, rateLimits.standard);
@@ -34,21 +38,15 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json() as {
-      user_id?: string;
       booking_id?: number;
       rating?: number;
       text?: string;
       images?: string[];
     };
 
-    const { user_id, booking_id, rating = 5, text, images = [] } = body;
+    const { booking_id, rating = 5, text, images = [] } = body;
 
     // Validate required fields
-    const userIdValidation = validateString(user_id, 'user_id');
-    if (!userIdValidation.valid) {
-      return NextResponse.json({ error: userIdValidation.errors.join(', ') }, { status: 400 });
-    }
-
     const bookingIdValidation = validateNumber(booking_id, 'booking_id');
     if (!bookingIdValidation.valid) {
       return NextResponse.json({ error: bookingIdValidation.errors.join(', ') }, { status: 400 });
@@ -64,7 +62,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: ratingValidation.errors.join(', ') }, { status: 400 });
     }
 
-    if (!user_id || !booking_id || !text) {
+    if (!booking_id || !text) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -79,10 +77,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Maximum 3 images allowed' }, { status: 400 });
     }
 
-    // Verify booking belongs to user and is completed
+    // Verify booking belongs to the authenticated user and is completed
     const booking = await db.prepare(
       `SELECT * FROM bookings WHERE id = ? AND client_id = ? AND status = 'completed'`
-    ).bind(booking_id, parseInt(user_id)).first();
+    ).bind(booking_id, authenticatedUserId).first();
 
     if (!booking) {
       return NextResponse.json({ error: 'Booking not found or not completed' }, { status: 404 });
@@ -101,7 +99,7 @@ export async function POST(request: NextRequest) {
     const result = await db.prepare(
       `INSERT INTO reviews (user_id, booking_id, rating, text, images, status, created_at)
        VALUES (?, ?, ?, ?, ?, 'pending', datetime('now')) RETURNING *`
-    ).bind(parseInt(user_id), booking_id, rating, text, JSON.stringify(images)).first();
+    ).bind(authenticatedUserId, booking_id, rating, text, JSON.stringify(images)).first();
 
     if (!result) {
       return NextResponse.json({ error: 'Review creation failed' }, { status: 500 });

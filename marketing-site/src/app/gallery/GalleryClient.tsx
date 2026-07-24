@@ -115,7 +115,8 @@ export default function GalleryClient() {
           </h1>
           <p className="text-lg md:text-xl text-[#CBB89A]/90 max-w-2xl mx-auto leading-relaxed">
             Every photo you see here was submitted by a real client after their cleaning service.
-            No stock images. No filters. Just honest work and honest feedback.
+            No stock images, no cherry-picking &mdash; the average reviews make it onto this page
+            right alongside the glowing ones.
           </p>
 
           {/* Live rotating testimonial hero card */}

@@ -28,10 +28,10 @@ export async function GET(
 
     const points = await db
       .prepare(
-        `SELECT id, latitude, longitude, timestamp, accuracy, source
+        `SELECT id, latitude, longitude, recorded_at, accuracy_meters, source
          FROM job_tracking
          WHERE job_id = ?
-         ORDER BY timestamp DESC
+         ORDER BY recorded_at DESC
          LIMIT ?`
       )
       .bind(jobId, Math.min(limit, 500))

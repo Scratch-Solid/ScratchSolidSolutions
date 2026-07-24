@@ -86,6 +86,7 @@ export async function GET(
         started_at: jobStatus.started_at,
         arrived_at: jobStatus.arrived_at,
         completed_at: jobStatus.completed_at,
+        duration: jobStatus.duration,
         location: jobStatus.location,
       } : null,
     };
